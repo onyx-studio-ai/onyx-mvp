@@ -168,6 +168,7 @@ function NativeLanguageSelect({ value, onChange, onLanguageChange }: {
   onChange: (v: string) => void;
   onLanguageChange?: (lang: string) => void;
 }) {
+  const t = useTranslations('apply');
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(!value);
   const filtered = NATIVE_LANGUAGES.filter(l => l.toLowerCase().includes(search.toLowerCase()));
@@ -188,7 +189,7 @@ function NativeLanguageSelect({ value, onChange, onLanguageChange }: {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-300 mb-3">
-        Native Language <span className="text-red-400">*</span>
+        {t('labelNativeLanguage')} <span className="text-red-400">*</span>
       </label>
 
       {value && (
@@ -205,7 +206,7 @@ function NativeLanguageSelect({ value, onChange, onLanguageChange }: {
               onClick={() => setOpen(true)}
               className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
             >
-              Change
+              {t('changeLang')}
             </button>
           )}
         </div>
@@ -219,14 +220,14 @@ function NativeLanguageSelect({ value, onChange, onLanguageChange }: {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search languages..."
+              placeholder={t('placeholderSearchLang')}
               className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-amber-500/60 focus:outline-none transition-colors"
             />
           </div>
 
           <div className="h-52 overflow-y-auto bg-zinc-900 border border-zinc-700 rounded-lg p-2 space-y-0.5 scrollbar-thin">
             {filtered.length === 0 ? (
-              <p className="text-center text-gray-500 text-sm py-6">No languages match your search</p>
+              <p className="text-center text-gray-500 text-sm py-6">{t('noLangMatch')}</p>
             ) : (
               filtered.map(lang => (
                 <button
@@ -381,8 +382,8 @@ export default function ApplyPage() {
     setFileError('');
     if (!f) { setFile(null); return; }
     const isWav = f.name.toLowerCase().endsWith('.wav') || f.type === 'audio/wav' || f.type === 'audio/x-wav' || f.type === 'audio/wave';
-    if (!isWav) { setFileError('Only .WAV files are accepted. Please convert your audio and re-upload.'); setFile(null); return; }
-    if (f.size > 50 * 1024 * 1024) { setFileError('File exceeds the 50MB limit. Please trim your recording.'); setFile(null); return; }
+    if (!isWav) { setFileError(t('fileErrorFormat')); setFile(null); return; }
+    if (f.size > 50 * 1024 * 1024) { setFileError(t('fileErrorSize')); setFile(null); return; }
     setFile(f);
   };
 
@@ -485,7 +486,7 @@ export default function ApplyPage() {
             {t('successMessage')}
           </p>
           <div className="bg-zinc-900 border border-zinc-700 rounded-xl px-6 py-4 mb-8">
-            <p className="text-xs text-gray-500 mb-1">Application Reference</p>
+            <p className="text-xs text-gray-500 mb-1">{t('appRef')}</p>
             <p className="text-lg font-mono font-bold text-amber-400">{applicationNumber}</p>
           </div>
           <a href="/" className="inline-block text-sm text-gray-400 hover:text-white transition-colors">
@@ -541,22 +542,22 @@ export default function ApplyPage() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <Shield className="h-6 w-6 text-amber-400" />
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1.5">100% Artist-Authorized AI</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">Your voice, your rules. We create a secure, legal digital twin.</p>
+              <h3 className="text-sm font-semibold text-white mb-1.5">{t('featureAITitle')}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{t('featureAIDesc')}</p>
             </div>
             <div className="flex flex-col items-center text-center px-5 py-6 rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-md">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <DollarSign className="h-6 w-6 text-amber-400" />
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1.5">Earn While You Sleep</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">Get a fair revenue share every time a client uses your AI voice.</p>
+              <h3 className="text-sm font-semibold text-white mb-1.5">{t('featureEarnTitle')}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{t('featureEarnDesc')}</p>
             </div>
             <div className="flex flex-col items-center text-center px-5 py-6 rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-md">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <Mic className="h-6 w-6 text-amber-400" />
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1.5">Premium Live Gigs</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">Stay in the loop for high-ticket, 100% live recording contracts.</p>
+              <h3 className="text-sm font-semibold text-white mb-1.5">{t('featureGigsTitle')}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{t('featureGigsDesc')}</p>
             </div>
           </motion.div>
         </div>
@@ -599,8 +600,8 @@ export default function ApplyPage() {
               {/* Step 1: Role Selection */}
               {step === 1 && (
                 <div>
-                  <h2 className="text-xl font-bold mb-2">What is your role?</h2>
-                  <p className="text-gray-400 text-sm mb-8">Select your primary talent type.</p>
+                  <h2 className="text-xl font-bold mb-2">{t('step1Title')}</h2>
+                  <p className="text-gray-400 text-sm mb-8">{t('step1Subtitle')}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       type="button"
@@ -611,7 +612,7 @@ export default function ApplyPage() {
                     >
                       <Mic className={`w-8 h-8 mb-3 ${form.role_type === 'VO' ? 'text-amber-400' : 'text-gray-400'}`} />
                       <h3 className="font-bold text-white mb-1">{t('roleVoiceActor')}</h3>
-                      <p className="text-xs text-gray-400">Narration, commercial, character, IVR, e-learning</p>
+                      <p className="text-xs text-gray-400">{t('roleVODesc')}</p>
                     </button>
                     <button
                       type="button"
@@ -622,7 +623,7 @@ export default function ApplyPage() {
                     >
                       <Music className={`w-8 h-8 mb-3 ${form.role_type === 'Singer' ? 'text-amber-400' : 'text-gray-400'}`} />
                       <h3 className="font-bold text-white mb-1">{t('roleSinger')}</h3>
-                      <p className="text-xs text-gray-400">Pop, jazz, classical, R&B, rock, and beyond</p>
+                      <p className="text-xs text-gray-400">{t('roleSingerDesc')}</p>
                     </button>
                   </div>
                 </div>
@@ -632,31 +633,31 @@ export default function ApplyPage() {
               {step === 2 && (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="text-xl font-bold mb-1">Basic Information</h2>
-                    <p className="text-gray-400 text-sm">Tell us who you are.</p>
+                    <h2 className="text-xl font-bold mb-1">{t('step2Title')}</h2>
+                    <p className="text-gray-400 text-sm">{t('step2Subtitle')}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <InputField label="Full Name" value={form.full_name} onChange={v => update('full_name', v)} placeholder="Your full legal name" required />
-                    <InputField label="Email Address" value={form.email} onChange={v => update('email', v)} type="email" placeholder="you@example.com" required />
+                    <InputField label={t('labelFullName')} value={form.full_name} onChange={v => update('full_name', v)} placeholder={t('placeholderFullName')} required />
+                    <InputField label={t('labelEmail')} value={form.email} onChange={v => update('email', v)} type="email" placeholder={t('placeholderEmail')} required />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <InputField label="Phone (Optional)" value={form.phone} onChange={v => update('phone', v)} placeholder="+1 555 000 0000" />
+                    <InputField label={t('labelPhone')} value={form.phone} onChange={v => update('phone', v)} placeholder={t('placeholderPhone')} />
                     <SelectField
-                      label="Country" value={form.country} onChange={v => update('country', v)}
+                      label={t('labelCountry')} value={form.country} onChange={v => update('country', v)}
                       options={COUNTRIES.map(c => ({ value: c.name, label: c.name }))}
-                      placeholder="Select country" required
+                      placeholder={t('placeholderCountry')} required
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <SelectField
-                      label="Gender" value={form.gender} onChange={v => update('gender', v)}
-                      options={[{ value: 'Male', label: 'Male' }, { value: 'Female', label: 'Female' }]}
-                      placeholder="Select gender" required
+                      label={t('labelGender')} value={form.gender} onChange={v => update('gender', v)}
+                      options={[{ value: 'Male', label: t('genderMale') }, { value: 'Female', label: t('genderFemale') }]}
+                      placeholder={t('placeholderGender')} required
                     />
                     <SelectField
-                      label="Age Range" value={form.age_range} onChange={v => update('age_range', v)}
+                      label={t('labelAgeRange')} value={form.age_range} onChange={v => update('age_range', v)}
                       options={AGE_RANGES.map(a => ({ value: a, label: a }))}
-                      placeholder="Select age range" required
+                      placeholder={t('placeholderAgeRange')} required
                     />
                   </div>
 
@@ -670,7 +671,7 @@ export default function ApplyPage() {
                     ACCENT_MAP[form.native_language] ? (
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Native Accent <span className="text-red-400">*</span>
+                          {t('labelNativeAccent')} <span className="text-red-400">*</span>
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {ACCENT_MAP[form.native_language].map(acc => (
@@ -689,15 +690,15 @@ export default function ApplyPage() {
                             </button>
                           ))}
                         </div>
-                        <p className="text-xs text-gray-600 mt-2">Select the accent that best describes your native pronunciation.</p>
+                        <p className="text-xs text-gray-600 mt-2">{t('accentHintKnown')}</p>
                       </div>
                     ) : (
                       <InputField
-                        label="Native Accent"
+                        label={t('labelNativeAccent')}
                         value={form.accent}
                         onChange={v => update('accent', v)}
                         placeholder={`e.g. Standard ${form.native_language}, Regional dialect`}
-                        hint="Describe your native accent or dialect in your own words."
+                        hint={t('accentHintFree')}
                       />
                     )
                   )}
@@ -708,58 +709,58 @@ export default function ApplyPage() {
               {step === 3 && form.role_type === 'Singer' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-bold mb-1">Vocal Profile</h2>
-                    <p className="text-gray-400 text-sm">Help us understand your singing voice and style.</p>
+                    <h2 className="text-xl font-bold mb-1">{t('step3TitleSinger')}</h2>
+                    <p className="text-gray-400 text-sm">{t('step3SubtitleSinger')}</p>
                   </div>
 
                   <MultiSelect
-                    label="Voice Type (Vocal Range) *"
+                    label={t('labelVocalRange')}
                     options={VOCAL_RANGES}
                     selected={form.vocal_range}
                     onChange={v => update('vocal_range', v)}
-                    hint="What is your primary voice type / vocal range?"
+                    hint={t('hintVocalRange')}
                   />
 
                   <MultiSelect
-                    label="Vocal Tone & Timbre *"
+                    label={t('labelVocalTone')}
                     options={VOCAL_TONES}
                     selected={form.vocal_tone}
                     onChange={v => update('vocal_tone', v)}
                     maxSelect={3}
-                    hint="How would you describe the unique texture of your singing voice? (Select up to 3)"
+                    hint={t('hintVocalTone')}
                   />
 
                   <MultiSelect
-                    label="Primary Genres *"
+                    label={t('labelPrimaryGenres')}
                     options={SINGER_GENRES}
                     selected={form.singer_genres}
                     onChange={v => update('singer_genres', v)}
-                    hint="What musical genres do you excel in?"
+                    hint={t('hintPrimaryGenres')}
                   />
 
                   <SelectField
-                    label="Years of Professional Experience *"
+                    label={t('labelExperience')}
                     value={form.experience_years}
                     onChange={v => update('experience_years', v)}
                     options={EXPERIENCE_YEARS.map(e => ({ value: e, label: e }))}
-                    placeholder="Select experience"
+                    placeholder={t('placeholderExperience')}
                   />
 
                   <InputField
-                    label="Notable Credits or Labels (Optional)"
+                    label={t('labelNotableCredits')}
                     value={form.notable_clients}
                     onChange={v => update('notable_clients', v)}
-                    placeholder="e.g. Universal Music, Warner, Spotify Original"
-                    hint="Any notable releases, labels, or projects you've sung for?"
+                    placeholder={t('placeholderNotableCreditsSinger')}
+                    hint={t('hintNotableCredits')}
                   />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Short Bio (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">{t('labelBio')}</label>
                     <textarea
                       value={form.bio}
                       onChange={e => update('bio', e.target.value)}
                       rows={3}
-                      placeholder="A brief professional background..."
+                      placeholder={t('placeholderBio')}
                       className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500/60 focus:outline-none transition-colors resize-none"
                     />
                   </div>
@@ -769,24 +770,24 @@ export default function ApplyPage() {
               {step === 3 && form.role_type !== 'Singer' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-bold mb-1">Voice Profile</h2>
-                    <p className="text-gray-400 text-sm">Help us understand your vocal range and style.</p>
+                    <h2 className="text-xl font-bold mb-1">{t('step3TitleVO')}</h2>
+                    <p className="text-gray-400 text-sm">{t('step3SubtitleVO')}</p>
                   </div>
-                  <MultiSelect label="Voice Quality / Tone *" options={VOICE_TYPES} selected={form.voice_types} onChange={v => update('voice_types', v)} />
-                  <MultiSelect label="VO Specialties *" options={VO_SPECIALTIES} selected={form.specialties} onChange={v => update('specialties', v)} />
+                  <MultiSelect label={t('labelVoiceQuality')} options={VOICE_TYPES} selected={form.voice_types} onChange={v => update('voice_types', v)} />
+                  <MultiSelect label={t('labelVOSpecialties')} options={VO_SPECIALTIES} selected={form.specialties} onChange={v => update('specialties', v)} />
                   <SelectField
-                    label="Years of Professional Experience *" value={form.experience_years} onChange={v => update('experience_years', v)}
+                    label={t('labelExperience')} value={form.experience_years} onChange={v => update('experience_years', v)}
                     options={EXPERIENCE_YEARS.map(e => ({ value: e, label: e }))}
-                    placeholder="Select experience"
+                    placeholder={t('placeholderExperience')}
                   />
-                  <InputField label="Notable Clients or Credits (Optional)" value={form.notable_clients} onChange={v => update('notable_clients', v)} placeholder="e.g. Toyota, NHK, NetEase" />
+                  <InputField label={t('labelNotableClients')} value={form.notable_clients} onChange={v => update('notable_clients', v)} placeholder={t('placeholderNotableClientsVO')} />
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Short Bio (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">{t('labelBio')}</label>
                     <textarea
                       value={form.bio}
                       onChange={e => update('bio', e.target.value)}
                       rows={3}
-                      placeholder="A brief professional background..."
+                      placeholder={t('placeholderBio')}
                       className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500/60 focus:outline-none transition-colors resize-none"
                     />
                   </div>
@@ -797,40 +798,40 @@ export default function ApplyPage() {
               {step === 4 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-bold mb-1">Recording Setup</h2>
-                    <p className="text-gray-400 text-sm">We require dry, unprocessed audio. Tell us about your current setup.</p>
+                    <h2 className="text-xl font-bold mb-1">{t('step4Title')}</h2>
+                    <p className="text-gray-400 text-sm">{t('step4Subtitle')}</p>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-xl border border-zinc-700">
                     <div>
-                      <p className="font-medium text-white">Home Recording Studio</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Do you have a dedicated recording space?</p>
+                      <p className="font-medium text-white">{t('labelHomeStudio')}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t('hintHomeStudio')}</p>
                     </div>
                     <Toggle checked={form.has_home_studio} onChange={v => update('has_home_studio', v)} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <InputField label="Microphone Model" value={form.microphone_model} onChange={v => update('microphone_model', v)} placeholder="e.g. Neumann TLM 103" />
-                    <InputField label="DAW / Recording Software" value={form.daw_software} onChange={v => update('daw_software', v)} placeholder="e.g. Pro Tools, Logic Pro" />
+                    <InputField label={t('labelMicrophone')} value={form.microphone_model} onChange={v => update('microphone_model', v)} placeholder={t('placeholderMicrophone')} />
+                    <InputField label={t('labelDAW')} value={form.daw_software} onChange={v => update('daw_software', v)} placeholder={t('placeholderDAW')} />
                   </div>
                   <SelectField
-                    label="Recording Environment *" value={form.recording_environment} onChange={v => update('recording_environment', v)}
+                    label={t('labelRecEnv')} value={form.recording_environment} onChange={v => update('recording_environment', v)}
                     options={[
-                      { value: 'Home Studio', label: 'Home Studio' },
-                      { value: 'Professional Studio', label: 'Professional Studio' },
-                      { value: 'Both', label: 'Both Home & Pro Studio' },
+                      { value: 'Home Studio', label: t('recEnvHome') },
+                      { value: 'Professional Studio', label: t('recEnvPro') },
+                      { value: 'Both', label: t('recEnvBoth') },
                     ]}
-                    placeholder="Select environment"
+                    placeholder={t('placeholderRecEnv')}
                   />
                   <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-xl border border-zinc-700">
                     <div>
-                      <p className="font-medium text-white">Can deliver 100% Dry / RAW audio</p>
-                      <p className="text-xs text-gray-400 mt-0.5">No reverb, no compression, no BGM — pure dry signal</p>
+                      <p className="font-medium text-white">{t('labelDryAudio')}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t('hintDryAudio')}</p>
                     </div>
                     <Toggle checked={form.can_deliver_dry_audio} onChange={v => update('can_deliver_dry_audio', v)} />
                   </div>
                   {!form.can_deliver_dry_audio && (
                     <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
                       <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-red-300">Onyx requires 100% dry audio for all talent submissions. Applications without dry audio capability will not be reviewed.</p>
+                      <p className="text-sm text-red-300">{t('dryAudioWarning')}</p>
                     </div>
                   )}
                 </div>
@@ -841,12 +842,12 @@ export default function ApplyPage() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-bold mb-1">
-                      {form.role_type === 'VO' ? 'Expected Rates & AI Revenue Share' : 'Expected Rates & Licensing Preferences'}
+                      {form.role_type === 'VO' ? t('step5TitleVO') : t('step5TitleSinger')}
                     </h2>
                     <p className="text-gray-400 text-sm">
                       {form.role_type === 'VO'
-                        ? 'Review the terms below to proceed. All monetary values are in USD.'
-                        : 'We recruit singers for both AI vocal training and traditional live recording. Select your preferences below. All rates in USD.'}
+                        ? t('step5SubtitleVO')
+                        : t('step5SubtitleSinger')}
                     </p>
                   </div>
 
@@ -870,7 +871,7 @@ export default function ApplyPage() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-white mb-2">
-                              Official AI Digital Twin &amp; Service Agreement <span className="text-red-400">*</span>
+                              {t('aiTwinTitle')} <span className="text-red-400">*</span>
                             </p>
                             <p className="text-xs text-gray-400 leading-relaxed">
                               I agree to provide 1 hour of clean, home-studio audio based on Onyx&apos;s provided script.
@@ -890,12 +891,12 @@ export default function ApplyPage() {
                       </div>
 
                       <InputField
-                        label="Minimum Budget for Custom Live Gig (USD)"
+                        label={t('labelMinLiveGig')}
                         value={form.min_live_gig_budget}
                         onChange={v => update('min_live_gig_budget', v)}
                         type="number"
-                        placeholder="e.g. 200"
-                        hint="What's the absolute minimum budget you'd consider for a 100% custom live recording session? We'll only pitch you 100% Live Studio projects at or above this rate."
+                        placeholder={t('placeholderMinLiveGig')}
+                        hint={t('hintMinLiveGig')}
                       />
                     </>
                   )}
@@ -904,8 +905,8 @@ export default function ApplyPage() {
                     <>
                       {/* Path A: AI Vocal Twin Program */}
                       <div className="p-5 rounded-xl border border-amber-500/30 bg-amber-500/5">
-                        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-1">Path A</p>
-                        <p className="text-sm font-bold text-white mb-3">AI Vocal Twin Program <span className="text-xs font-normal text-gray-400">(Optional but Recommended)</span></p>
+                        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-1">{t('pathALabel')}</p>
+                        <p className="text-sm font-bold text-white mb-3">{t('pathATitle')} <span className="text-xs font-normal text-gray-400">{t('pathAOptional')}</span></p>
 
                         <div
                           onClick={() => update('consent_ai_twin', !form.consent_ai_twin)}
@@ -924,7 +925,7 @@ export default function ApplyPage() {
                               {form.consent_ai_twin && <Check className="w-3.5 h-3.5 text-black" />}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-white mb-2">Official AI Vocal Twin Agreement</p>
+                              <p className="text-sm font-semibold text-white mb-2">{t('singerAiTwinTitle')}</p>
                               <p className="text-xs text-gray-400 leading-relaxed">
                                 Yes, I want to earn passive income! I agree to provide dry vocal stems for Onyx to train and host my secure AI Vocal model.
                                 I grant Onyx commercial licensing rights and will receive a flat <span className="text-amber-300 font-semibold">10% royalty</span> on all pure-AI vocal generations.
@@ -939,29 +940,29 @@ export default function ApplyPage() {
 
                       {/* Path B: Traditional Studio Recording */}
                       <div className="p-5 rounded-xl border border-zinc-700 bg-zinc-900">
-                        <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1">Path B</p>
-                        <p className="text-sm font-bold text-white mb-2">Traditional Studio Recording <span className="text-xs font-normal text-gray-400">(Work-for-Hire)</span></p>
+                        <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1">{t('pathBLabel')}</p>
+                        <p className="text-sm font-bold text-white mb-2">{t('pathBTitle')} <span className="text-xs font-normal text-gray-400">{t('pathBTag')}</span></p>
                         <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                          If you opt-out of AI training, or for client projects requiring 100% live human vocals, please set your traditional buyout rates below. Onyx guarantees no AI training on traditional work-for-hire stems.
+                          {t('pathBDesc')}
                         </p>
 
                         <div className="space-y-4">
                           <InputField
-                            label="Flat Fee — Full Lead Vocal Buyout (USD)"
+                            label={t('labelLeadVocal')}
                             value={form.rate_lead_vocal}
                             onChange={v => update('rate_lead_vocal', v)}
                             type="number"
-                            placeholder="e.g. 350"
-                            hint="Minimum budget for a full custom lead vocal track (approx. 3-4 mins) with full commercial buyout."
+                            placeholder={t('placeholderLeadVocal')}
+                            hint={t('hintLeadVocal')}
                             required
                           />
                           <InputField
-                            label="Flat Fee — Short Hook / Chorus Buyout (USD)"
+                            label={t('labelHookChorus')}
                             value={form.rate_hook_chorus}
                             onChange={v => update('rate_hook_chorus', v)}
                             type="number"
-                            placeholder="e.g. 120"
-                            hint="Minimum budget for a short hook/chorus section with full commercial buyout."
+                            placeholder={t('placeholderHookChorus')}
+                            hint={t('hintHookChorus')}
                             required
                           />
                         </div>
@@ -970,12 +971,12 @@ export default function ApplyPage() {
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Additional Notes (Optional)</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">{t('labelAdditionalNotes')}</label>
                     <textarea
                       value={form.rate_notes}
                       onChange={e => update('rate_notes', e.target.value)}
                       rows={3}
-                      placeholder="Any specific studio gear, revision limits, or project preferences?"
+                      placeholder={t('placeholderAdditionalNotes')}
                       className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500/60 focus:outline-none transition-colors resize-none"
                     />
                   </div>
@@ -986,30 +987,30 @@ export default function ApplyPage() {
               {step === 6 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-bold mb-1">Demo Submission</h2>
+                    <h2 className="text-xl font-bold mb-1">{t('step6Title')}</h2>
                     <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl mt-3">
                       <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-amber-200 space-y-1">
-                        <p className="font-semibold">Read before uploading:</p>
+                        <p className="font-semibold">{t('readBeforeUpload')}</p>
                         <ul className="space-y-1 text-amber-300/80 list-disc list-inside">
-                          <li>ONE single .WAV file only (max 2 minutes)</li>
-                          <li>Include 3-4 different emotional deliveries or styles</li>
-                          <li>100% DRY audio — NO reverb, NO BGM, NO compression</li>
-                          <li>Maximum file size: 50MB</li>
+                          <li>{t('uploadRule1')}</li>
+                          <li>{t('uploadRule2')}</li>
+                          <li>{t('uploadRule3')}</li>
+                          <li>{t('uploadRule4')}</li>
                         </ul>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-gray-300 mb-2">Auto-generated filename:</p>
+                    <p className="text-sm font-medium text-gray-300 mb-2">{t('labelAutoFilename')}</p>
                     <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 font-mono text-sm text-amber-400">
                       {form.full_name && form.native_language && form.gender
                         ? buildFileName()
-                        : <span className="text-gray-500">Complete previous steps to generate filename</span>
+                        : <span className="text-gray-500">{t('autoFilenameIncomplete')}</span>
                       }
                     </div>
-                    <p className="text-xs text-gray-500 mt-1.5">Format: [Name]_[Language]_[VO|Singer]_[Gender].wav</p>
+                    <p className="text-xs text-gray-500 mt-1.5">{t('autoFilenameHint')}</p>
                   </div>
 
                   <div>
@@ -1040,8 +1041,8 @@ export default function ApplyPage() {
                           <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-3">
                             <Upload className="w-6 h-6 text-gray-400" />
                           </div>
-                          <p className="font-medium text-white">Upload Your .WAV</p>
-                          <p className="text-xs text-gray-500 mt-1">.WAV format only · Max 50MB</p>
+                          <p className="font-medium text-white">{t('uploadCTA')}</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('uploadHint')}</p>
                         </div>
                       )}
                     </button>
@@ -1059,36 +1060,36 @@ export default function ApplyPage() {
               {step === 7 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-xl font-bold mb-1">Consent & Declaration</h2>
-                    <p className="text-gray-400 text-sm">Please read and confirm the following before submitting.</p>
+                    <h2 className="text-xl font-bold mb-1">{t('step7Title')}</h2>
+                    <p className="text-gray-400 text-sm">{t('step7Subtitle')}</p>
                   </div>
                   {[
                     {
                       key: 'consent_data_processing' as const,
-                      title: 'Evaluation & Data Processing Consent',
-                      desc: 'I consent to Onyx Studios using my uploaded audio for talent evaluation and AI model compatibility testing. I understand and agree that, for the purposes of platform security and copyright tracking, Onyx retains internal archival rights over all data generated during this evaluation phase.',
+                      title: t('consentDataTitle'),
+                      desc: t('consentDataDesc'),
                     },
                     {
                       key: 'consent_terms' as const,
-                      title: 'Originality & IP Declaration',
+                      title: t('consentIPTitleVO'),
                       desc: form.role_type === 'Singer'
-                        ? 'I legally confirm that the submitted audio features my own natural voice and original vocal performance. It does not contain synthetic generation, voice cloning, or infringe upon any third-party rights. I warrant that all recordings are 100% original and do not contain pitch-corrected samples or melodies from other copyrighted artists. I understand that formal commercial terms, including Work Made for Hire and rights transfer, will be presented in a separate agreement upon acceptance into the Onyx Talent Network.'
-                        : 'I legally confirm that the submitted audio features my own natural voice and original performance. It does not contain synthetic generation, voice cloning, or infringe upon any third-party rights. I understand that formal commercial terms, including Work Made for Hire and rights transfer, will be presented in a separate agreement upon acceptance into the Onyx Talent Network.',
+                        ? t('consentIPDescSinger')
+                        : t('consentIPDescVO'),
                     },
                     {
                       key: 'consent_moral_rights' as const,
-                      title: 'Evaluation Use Authorization',
-                      desc: 'I authorize Onyx Studios to use my submitted audio for internal evaluation, demo playback to the review panel, and technical compatibility testing. I understand this authorization is limited to the evaluation process and does not constitute a commercial license.',
+                      title: t('consentEvalTitle'),
+                      desc: t('consentEvalDesc'),
                     },
                     {
                       key: 'consent_voice_id' as const,
-                      title: 'Voice ID Affidavit',
-                      desc: 'I agree to provide a 10-second "Voice ID" recording as part of my final delivery for any project. This recording serves as a biological digital signature confirming my identity and the lawful transfer of rights, which will be linked to the License Certificate issued to the client.',
+                      title: t('consentVoiceIDTitle'),
+                      desc: t('consentVoiceIDDesc'),
                     },
                     {
                       key: 'consent_age_verified' as const,
-                      title: 'Age Verification & Capacity',
-                      desc: 'I confirm that I am 18 years of age or older and possess the legal capacity to enter into binding licensing agreements.',
+                      title: t('consentAgeTitle'),
+                      desc: t('consentAgeDesc'),
                     },
                   ].map(item => (
                     <div
@@ -1126,7 +1127,7 @@ export default function ApplyPage() {
               className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
-              Back
+              {t('btnBack')}
             </button>
 
             {step < 7 ? (
@@ -1136,7 +1137,7 @@ export default function ApplyPage() {
                 disabled={!canProceed}
                 className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                Continue
+                {t('btnContinue')}
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
@@ -1149,12 +1150,12 @@ export default function ApplyPage() {
                 {uploading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                    Uploading...
+                    {t('btnUploading')}
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4" />
-                    Submit Application
+                    {t('btnSubmit')}
                   </>
                 )}
               </button>
@@ -1163,7 +1164,7 @@ export default function ApplyPage() {
         </div>
 
         <p className="text-center text-xs text-gray-600 mt-6">
-          Applications are reviewed manually by our A&R team. We do not guarantee placement.
+          {t('disclaimer')}
         </p>
       </div>
     </div>
