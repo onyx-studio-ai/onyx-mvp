@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { generateCertificatePdf } from '@/lib/certificate-pdf';
 import { mapRightsForCertificate, getAssetType, getProductCategory, type RightsLevel } from '@/lib/certificate-rights';
 import { sendEmail } from '@/lib/mail';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -17,6 +18,9 @@ function getAdminClient() {
 
 // GET: List certificates (optionally filter by order_id)
 export async function GET(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const supabase = getAdminClient();
     const { searchParams } = new URL(request.url);
@@ -43,6 +47,9 @@ export async function GET(request: NextRequest) {
 
 // POST: Generate a certificate
 export async function POST(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const body = await request.json();
     const {

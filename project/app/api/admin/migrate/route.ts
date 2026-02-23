@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function POST(request: Request) {
-  try {
-    const { code } = await request.json();
-    if (code !== process.env.ADMIN_CODE) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function POST(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
 
+  try {
     const seeds = [
       { section: 'featured_voices', slot_key: 'slot_1', label: 'Onyx Alpha', subtitle: 'The Authority', description: 'Deep, commanding presence for high-stakes narration', tags: ['News', 'Corporate', 'Deep'], sort_order: 0 },
       { section: 'featured_voices', slot_key: 'slot_2', label: 'Onyx Nova', subtitle: 'The Visionary', description: 'Crystalline clarity with sophisticated warmth', tags: ['Tech', 'Premium', 'Elegant'], sort_order: 1 },

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/mail';
 import { applicationStatusEmail } from '@/lib/mail-templates';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 function getAdminClient() {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -12,7 +13,13 @@ function getAdminClient() {
   });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'Admin database config missing' }, { status: 500 });
+  }
+
   try {
     const db = getAdminClient();
     const { data, error } = await db
@@ -30,6 +37,12 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'Admin database config missing' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { id, ...updateData } = body;

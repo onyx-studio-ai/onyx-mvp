@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 
 function getServiceClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   return createClient(SUPABASE_URL, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
 
 export async function POST(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+  if (!SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'Admin storage config missing' }, { status: 500 });
+  }
+
   try {
     const contentType = request.headers.get('content-type') || '';
 

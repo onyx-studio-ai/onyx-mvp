@@ -2,17 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/mail';
 import { musicWorkflowEmail, stringsWorkflowEmail, voiceWorkflowEmail, type MusicNotificationType, type StringsNotificationType, type VoiceNotificationType } from '@/lib/mail-templates';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 
 function getServiceClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   return createClient(SUPABASE_URL, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
 
 export async function PATCH(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+  if (!SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'Admin database config missing' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { orderId, orderType, updates } = body;

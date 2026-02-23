@@ -5,13 +5,11 @@ import { SANCTIONED_COUNTRY_NAMES } from '@/lib/countries';
 import { sendEmail, sendInternalError } from '@/lib/mail';
 import { orderConfirmationEmail, paymentReceiptEmail, newOrderNotificationEmail } from '@/lib/mail-templates';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 function createServiceClient() {
-  const key = SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-  return createClient(SUPABASE_URL, key, {
+  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 }
@@ -23,6 +21,13 @@ const TAPPAY_APP_ID = TAPPAY_CONFIG.appId;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Server payment configuration is incomplete' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     console.log('📦 [Payment API] Received body:', {
       hasPrime: !!body.prime,
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
       hasPartnerKey: !!TAPPAY_PARTNER_KEY
     });
 
-    const { prime, orderId, amount, cardholder, orderEmail, orderNumber, orderType: clientOrderType } = body;
+    const { prime, orderId, amount, cardholder } = body;
 
     const missingFields = [];
     if (!prime) missingFields.push('prime');
@@ -108,19 +113,11 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (orchestraError || !orchestraOrder) {
-          if (orderEmail && orderNumber) {
-            console.log('⚠️ [Payment API] Using client-provided order data as fallback');
-            order = { id: orderId, email: orderEmail, order_number: orderNumber, status: 'pending_payment' };
-            const tableMap: Record<string, string> = { music: 'music_orders', voice: 'voice_orders', orchestra: 'orchestra_orders' };
-            orderTable = tableMap[clientOrderType] || 'voice_orders';
-            orderType = clientOrderType || 'music';
-          } else {
-            console.error('❌ [Payment API] Order not found in any table');
-            return NextResponse.json(
-              { error: 'Order not found in any table' },
-              { status: 404 }
-            );
-          }
+          console.error('❌ [Payment API] Order not found in any table');
+          return NextResponse.json(
+            { error: 'Order not found in any table' },
+            { status: 404 }
+          );
         } else {
           order = orchestraOrder;
           orderTable = 'orchestra_orders';
@@ -146,6 +143,32 @@ export async function POST(request: NextRequest) {
       type: orderType
     });
 
+    const trustedAmount = Number(order.price);
+    if (!Number.isFinite(trustedAmount) || trustedAmount <= 0) {
+      return NextResponse.json(
+        { error: 'Order amount is invalid or missing' },
+        { status: 409 }
+      );
+    }
+
+    const roundedTrustedAmount = Math.round(trustedAmount);
+    if (Math.round(amount) !== roundedTrustedAmount) {
+      return NextResponse.json(
+        {
+          error: 'Amount mismatch with order record',
+          orderId,
+        },
+        { status: 409 }
+      );
+    }
+
+    if (order.status === 'paid' || order.payment_status === 'completed' || order.payment_status === 'paid') {
+      return NextResponse.json(
+        { error: 'Order has already been paid' },
+        { status: 409 }
+      );
+    }
+
     const orderLabel = orderType === 'music' ? 'Music Order' : orderType === 'orchestra' ? 'Live Strings Order' : 'Voice Order';
 
     const tappayPayload = {
@@ -153,7 +176,7 @@ export async function POST(request: NextRequest) {
       partner_key: TAPPAY_PARTNER_KEY,
       merchant_id: TAPPAY_MERCHANT_ID,
       details: `${orderLabel} #${order.order_number || orderId}`,
-      amount: Math.round(amount),
+      amount: roundedTrustedAmount,
       cardholder: {
         phone_number: '+886912345678',
         name: cardholder?.name || 'Customer',
@@ -171,7 +194,7 @@ export async function POST(request: NextRequest) {
     console.log('📦 [TAPPAY] PAYLOAD APP_ID:', TAPPAY_APP_ID);
     console.log('📦 [TAPPAY] PAYLOAD MERCHANT_ID:', TAPPAY_MERCHANT_ID);
     console.log('📦 [TAPPAY] PAYLOAD PARTNER_KEY:', TAPPAY_PARTNER_KEY ? `${TAPPAY_PARTNER_KEY.substring(0, 20)}...` : 'MISSING');
-    console.log('💰 [TAPPAY] AMOUNT:', Math.round(amount));
+    console.log('💰 [TAPPAY] AMOUNT:', roundedTrustedAmount);
     console.log('📧 [TAPPAY] BUYER EMAIL:', order.email);
     console.log('🏷️ [TAPPAY] ORDER DETAILS:', `${orderLabel} #${order.order_number || orderId}`);
 
@@ -226,7 +249,7 @@ export async function POST(request: NextRequest) {
       const updateData: any = {
         status: 'paid',
         payment_status: orderType === 'orchestra' ? 'paid' : 'completed',
-        price: amount,
+        price: roundedTrustedAmount,
         updated_at: new Date().toISOString(),
       };
 
@@ -257,9 +280,12 @@ export async function POST(request: NextRequest) {
       if (updateError) {
         console.error('❌ [Database] Error updating order status:', updateError);
         console.error('❌ [Database] Table:', orderTable, 'Order ID:', orderId);
-      } else {
-        console.log('✅ [Database] Order marked as paid in', orderTable, ':', orderId);
+        return NextResponse.json(
+          { error: 'Payment captured but order update failed. Manual reconciliation required.' },
+          { status: 500 }
+        );
       }
+      console.log('✅ [Database] Order marked as paid in', orderTable, ':', orderId);
 
       // Generate magic link for dashboard access
       let dashboardLink = 'https://www.onyxstudios.ai/dashboard';
@@ -282,7 +308,7 @@ export async function POST(request: NextRequest) {
       const confirmPayload = {
         email: order.email,
         orderNumber: order.order_number || orderId,
-        amount,
+        amount: roundedTrustedAmount,
         currency: 'TWD' as const,
         orderType: orderType as 'voice' | 'music' | 'orchestra',
         transactionId: tappayResult.rec_trade_id,
@@ -316,7 +342,7 @@ export async function POST(request: NextRequest) {
       const { subject: receiptSubject, html: receiptHtml } = paymentReceiptEmail({
         email: order.email,
         orderNumber: order.order_number || orderId,
-        amount,
+        amount: roundedTrustedAmount,
         currency: 'TWD',
         transactionId: tappayResult.rec_trade_id,
         orderType: orderType as 'voice' | 'music' | 'orchestra',
@@ -334,7 +360,7 @@ export async function POST(request: NextRequest) {
         orderNumber: order.order_number || orderId,
         orderType: orderType as 'voice' | 'music' | 'orchestra',
         email: order.email,
-        amount,
+        amount: roundedTrustedAmount,
         currency: 'TWD',
         transactionId: tappayResult.rec_trade_id,
         orderDetails: orderType === 'voice' ? {

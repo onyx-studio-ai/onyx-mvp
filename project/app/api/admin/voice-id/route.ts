@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 import { sendEmail } from '@/lib/mail';
 import { voiceIdRequestEmail } from '@/lib/mail-templates';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -15,6 +16,9 @@ function getAdminClient() {
 }
 
 export async function POST(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const { talentId } = await request.json();
     if (!talentId) {
@@ -95,6 +99,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const supabase = getAdminClient();
     const { searchParams } = new URL(request.url);

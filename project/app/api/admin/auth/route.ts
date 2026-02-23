@@ -5,7 +5,7 @@ import crypto from 'crypto';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const ADMIN_CODE = process.env.ADMIN_CODE || '';
-const SESSION_SECRET = process.env.ADMIN_CODE || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret';
+const SESSION_SECRET = process.env.ADMIN_CODE || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SESSION_MAX_AGE = 24 * 60 * 60;
 
 const ADMIN_EMAILS = [
@@ -19,6 +19,9 @@ function getAdminClient() {
 }
 
 function createSessionToken(): string {
+  if (!SESSION_SECRET) {
+    throw new Error('Admin session secret is not configured');
+  }
   const timestamp = Date.now().toString();
   const signature = crypto.createHmac('sha256', SESSION_SECRET).update(timestamp).digest('hex');
   return `${timestamp}.${signature}`;
