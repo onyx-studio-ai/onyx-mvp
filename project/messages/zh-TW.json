@@ -272,7 +272,7 @@
       "tier1Feature6": "WAV + MP3 高品質交付",
 
       "tier1Deliverable1": "WAV + MP3 高品質交付",
-
+      "tier1Deliverable2": "自助式客戶入口",
       "tier1Deliverable3": "自訂交付格式與分軌",
       "tier1Deliverable4": "專屬製作經理",
       "tier1Deliverable5": "多語言專案協調",
@@ -428,7 +428,7 @@
       "compScriptUpdates": "允許腳本小幅修改",
       "compWavMp3": "WAV + MP3 高品質交付",
       "compCustomFormats": "客製化交付格式與分軌",
-      
+      "compSelfServe": "自助式客戶入口",
       "compDedicatedPM": "專屬製作經理",
       "compMultiLang": "多語言專案統籌",
       "compStandardRights": "標準商業使用權",
