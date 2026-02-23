@@ -1,0 +1,62 @@
+/* Styling for translated legal body content rendered via dangerouslySetInnerHTML */
+.legal-content strong {
+  color: #d1d5db;
+}
+.legal-content a {
+  color: #d1d5db;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+.legal-content a:hover {
+  color: #fff;
+}
+.legal-content .note {
+  color: #6b7280;
+  font-size: 0.75rem;
+  border-left: 2px solid #374151;
+  padding-left: 1rem;
+}
+.legal-content .card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+}
+.legal-content .card > * + * {
+  margin-top: 0.75rem;
+}
+.legal-content .card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #d1d5db;
+}
+.legal-content ul {
+  margin-left: 1rem;
+  list-style: none;
+}
+.legal-content ul > li + li {
+  margin-top: 0.5rem;
+}
+.legal-content .card > div + div {
+  margin-top: 0.75rem;
+}
+.legal-content .card > div > p {
+  margin-top: 0.25rem;
+}
+.legal-content .card ul {
+  margin-top: 0.5rem;
+}
+.legal-content .callout {
+  color: #d1d5db;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.legal-content .footnote {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+.legal-content p + p {
+  margin-top: 0.75rem;
+}
