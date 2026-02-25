@@ -78,6 +78,18 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   };
 
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10">
@@ -217,7 +229,7 @@ export default function Navbar() {
       />
 
       <div
-        className={`fixed top-0 right-0 bottom-0 w-64 bg-gradient-to-b from-black via-gray-950 to-black border-l border-white/10 z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed top-0 right-0 bottom-0 w-64 overflow-y-auto overscroll-contain bg-gradient-to-b from-black via-gray-950 to-black border-l border-white/10 z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -332,7 +344,7 @@ export default function Navbar() {
           </div>
 
           <div className="mt-auto pb-8 pt-6 border-t border-white/10">
-            <LanguageSwitcher />
+            <LanguageSwitcher onLocaleChange={closeMobileMenu} />
           </div>
         </div>
       </div>

@@ -13,7 +13,11 @@ const localeLabels: Record<string, string> = {
   'zh-CN': '简体中文',
 };
 
-export default function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  onLocaleChange?: () => void;
+}
+
+export default function LanguageSwitcher({ onLocaleChange }: LanguageSwitcherProps) {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -33,6 +37,7 @@ export default function LanguageSwitcher() {
   const handleSwitch = (newLocale: Locale) => {
     router.replace(pathname, { locale: newLocale });
     setOpen(false);
+    onLocaleChange?.();
   };
 
   return (

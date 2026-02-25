@@ -63,7 +63,12 @@ export default function Footer() {
 
             <div className="pt-4">
               <p className="text-gray-500 text-xs leading-relaxed max-w-3xl mx-auto">
-                <strong>{t('refundPolicyLabel')}</strong> {t('refundPolicyText')}
+                <strong>
+                  <Link href="/legal/refund" className="hover:text-gray-400 transition-colors">
+                    {t('refundPolicyLabel')}
+                  </Link>
+                </strong>{' '}
+                {t('refundPolicyText')}
               </p>
             </div>
           </div>

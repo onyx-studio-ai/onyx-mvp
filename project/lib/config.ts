@@ -3,12 +3,14 @@ export const SUPABASE_CONFIG = {
   anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 }
 
+const tappayEnvironment = process.env.NEXT_PUBLIC_TAPPAY_ENV || process.env.TAPPAY_ENV || 'sandbox';
+
 export const TAPPAY_CONFIG = {
   appId: process.env.NEXT_PUBLIC_TAPPAY_APP_ID!,
-  appKey: process.env.NEXT_PUBLIC_TAPPAY_PARTNER_KEY!,
+  appKey: process.env.NEXT_PUBLIC_TAPPAY_APP_KEY || process.env.NEXT_PUBLIC_TAPPAY_PARTNER_KEY!,
   partnerKey: process.env.TAPPAY_PARTNER_KEY!,
   merchantId: process.env.TAPPAY_MERCHANT_ID!,
-  environment: (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox') as 'sandbox' | 'production',
+  environment: (tappayEnvironment === 'production' ? 'production' : 'sandbox') as 'sandbox' | 'production',
 }
 
 export const ADMIN_CONFIG = {

@@ -142,7 +142,7 @@ export default function CheckoutPage() {
       if ((window as any).TPDirect) {
         try {
           (window as any).TPDirect.setupSDK(
-            TAPPAY_CONFIG.appId,
+            Number(TAPPAY_CONFIG.appId),
             TAPPAY_CONFIG.appKey,
             TAPPAY_CONFIG.environment
           );
