@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Script from 'next/script';
 import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -27,11 +27,23 @@ export default function PaddleCheckoutPage() {
   const searchParams = useSearchParams();
   const [statusText, setStatusText] = useState('正在啟動安全付款頁面...');
   const [scriptReady, setScriptReady] = useState(false);
+  const completedRef = useRef(false);
 
   const transactionId = useMemo(
     () => searchParams.get('_ptxn') || searchParams.get('transaction_id') || '',
     [searchParams],
   );
+  const successUrl = useMemo(() => searchParams.get('success_url') || '', [searchParams]);
+  const cancelUrl = useMemo(() => searchParams.get('cancel_url') || '', [searchParams]);
+
+  const safeRedirect = (targetUrl: string, fallbackPath: string) => {
+    if (typeof window === 'undefined') return;
+    if (targetUrl && /^https?:\/\//i.test(targetUrl)) {
+      window.location.assign(targetUrl);
+      return;
+    }
+    window.location.assign(fallbackPath);
+  };
 
   useEffect(() => {
     if (!scriptReady) return;
@@ -80,6 +92,23 @@ export default function PaddleCheckoutPage() {
     if (PUBLIC_PADDLE_CLIENT_TOKEN && window.Paddle.Initialize) {
       window.Paddle.Initialize({
         token: PUBLIC_PADDLE_CLIENT_TOKEN,
+        eventCallback: (event: any) => {
+          const eventName = String(event?.name || '');
+          if (!eventName) return;
+
+          if (eventName.includes('checkout.completed')) {
+            completedRef.current = true;
+            setStatusText('付款成功，正在返回訂單完成頁...');
+            safeRedirect(successUrl, '/');
+            return;
+          }
+
+          if (eventName.includes('checkout.closed')) {
+            if (completedRef.current) return;
+            setStatusText('已關閉付款視窗，正在返回訂單頁...');
+            safeRedirect(cancelUrl, '/');
+          }
+        },
       });
     }
 
