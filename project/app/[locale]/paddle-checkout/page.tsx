@@ -12,6 +12,9 @@ declare global {
         set: (environment: 'sandbox' | 'production') => void;
       };
       Initialize?: (params: { token: string; eventCallback?: (event: unknown) => void }) => void;
+      Checkout?: {
+        open: (params: { transactionId: string }) => void;
+      };
     };
   }
 }
@@ -23,6 +26,7 @@ const PUBLIC_PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN |
 export default function PaddleCheckoutPage() {
   const searchParams = useSearchParams();
   const [statusText, setStatusText] = useState('正在啟動安全付款頁面...');
+  const [scriptReady, setScriptReady] = useState(false);
 
   const transactionId = useMemo(
     () => searchParams.get('_ptxn') || searchParams.get('transaction_id') || '',
@@ -30,17 +34,38 @@ export default function PaddleCheckoutPage() {
   );
 
   useEffect(() => {
+    if (!scriptReady) return;
+
     if (!transactionId) {
       setStatusText('找不到交易資訊，請回到結帳頁重新發起付款。');
       return;
     }
 
+    if (!PUBLIC_PADDLE_CLIENT_TOKEN) {
+      setStatusText('付款元件尚未完成設定，請聯絡管理員補上 NEXT_PUBLIC_PADDLE_CLIENT_TOKEN。');
+      return;
+    }
+
+    if (!window.Paddle?.Checkout?.open) {
+      setStatusText('付款元件載入失敗，請重新整理頁面。');
+      return;
+    }
+
+    setStatusText('正在開啟 Paddle 付款視窗...');
+    try {
+      window.Paddle.Checkout.open({ transactionId });
+    } catch (error) {
+      console.error('[Paddle Checkout Page] Open failed:', error);
+      setStatusText('無法開啟付款視窗，請稍後重試或聯絡客服。');
+      return;
+    }
+
     const timeout = setTimeout(() => {
-      setStatusText('若付款視窗未自動開啟，請確認瀏覽器未封鎖彈出視窗，然後重新嘗試。');
+      setStatusText('若付款視窗未顯示，請確認瀏覽器未封鎖彈出視窗並重新整理。');
     }, 7000);
 
     return () => clearTimeout(timeout);
-  }, [transactionId]);
+  }, [scriptReady, transactionId]);
 
   const initializePaddle = () => {
     if (!window.Paddle) {
@@ -52,13 +77,13 @@ export default function PaddleCheckoutPage() {
       window.Paddle.Environment.set(PUBLIC_PADDLE_ENV);
     }
 
-    // For hosted checkout links (_ptxn), including Paddle.js is usually enough.
-    // Initialize is optional here but helps keep behavior explicit when token exists.
     if (PUBLIC_PADDLE_CLIENT_TOKEN && window.Paddle.Initialize) {
       window.Paddle.Initialize({
         token: PUBLIC_PADDLE_CLIENT_TOKEN,
       });
     }
+
+    setScriptReady(true);
   };
 
   return (
