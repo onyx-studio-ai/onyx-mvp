@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { FileAudio, Settings, LogOut, Receipt } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
@@ -9,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 function DashboardHeader() {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('dashboard');
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -16,9 +18,9 @@ function DashboardHeader() {
   };
 
   const mainLinks = [
-    { href: '/voice', label: 'Voice Studio' },
-    { href: '/music', label: 'Music Studio' },
-    { href: '/contact', label: 'Contact' },
+    { href: '/voice', label: t('navVoiceStudio') },
+    { href: '/music', label: t('navMusicStudio') },
+    { href: '/contact', label: t('navContact') },
   ];
 
   return (
@@ -46,19 +48,19 @@ function DashboardHeader() {
         <Link
           href="/dashboard"
           className={`text-sm font-medium px-4 py-1.5 rounded-lg transition-colors ${
-            pathname?.startsWith('/dashboard')
+            pathname?.includes('/dashboard')
               ? 'bg-white/10 text-white'
               : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
           }`}
         >
-          Dashboard
+          {t('navDashboard')}
         </Link>
         <button
           onClick={handleSignOut}
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          Sign Out
+          {t('navSignOut')}
         </button>
       </nav>
     </header>
@@ -67,12 +69,14 @@ function DashboardHeader() {
 
 function Sidebar() {
   const pathname = usePathname();
+  const safePathname = pathname || '';
   const user = useDashboardUser();
+  const t = useTranslations('dashboard');
 
   const nav = [
-    { href: '/dashboard', label: 'Projects', icon: FileAudio },
-    { href: '/dashboard/invoices', label: 'Invoices', icon: Receipt },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { href: '/dashboard', label: t('navProjects'), icon: FileAudio },
+    { href: '/dashboard/invoices', label: t('navInvoices'), icon: Receipt },
+    { href: '/dashboard/settings', label: t('navSettings'), icon: Settings },
   ];
 
   const displayName = user.user_metadata?.full_name || user.email;
@@ -83,8 +87,8 @@ function Sidebar() {
         {nav.map(({ href, label, icon: Icon }) => {
           const active =
             href === '/dashboard'
-              ? pathname === '/dashboard' || pathname.startsWith('/dashboard/orders')
-              : pathname === href;
+              ? safePathname === '/dashboard' || safePathname.startsWith('/dashboard/orders')
+              : safePathname === href;
           return (
             <Link
               key={href}
@@ -114,10 +118,12 @@ function Sidebar() {
 
 function MobileNav() {
   const pathname = usePathname();
+  const safePathname = pathname || '';
+  const t = useTranslations('dashboard');
   const nav = [
-    { href: '/dashboard', label: 'Projects' },
-    { href: '/dashboard/invoices', label: 'Invoices' },
-    { href: '/dashboard/settings', label: 'Settings' },
+    { href: '/dashboard', label: t('navProjects') },
+    { href: '/dashboard/invoices', label: t('navInvoices') },
+    { href: '/dashboard/settings', label: t('navSettings') },
   ];
 
   return (
@@ -125,8 +131,8 @@ function MobileNav() {
       {nav.map(({ href, label }) => {
         const active =
           href === '/dashboard'
-            ? pathname === '/dashboard' || pathname.startsWith('/dashboard/orders')
-            : pathname === href;
+            ? safePathname === '/dashboard' || safePathname.startsWith('/dashboard/orders')
+            : safePathname === href;
         return (
           <Link
             key={href}
