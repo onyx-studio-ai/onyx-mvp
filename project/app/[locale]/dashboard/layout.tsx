@@ -11,6 +11,10 @@ function DashboardHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations('dashboard');
+  const tr = (key: string, fallback: string) => {
+    const value = t(key as any);
+    return value === `dashboard.${key}` ? fallback : value;
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -18,9 +22,9 @@ function DashboardHeader() {
   };
 
   const mainLinks = [
-    { href: '/voice', label: t('navVoiceStudio') },
-    { href: '/music', label: t('navMusicStudio') },
-    { href: '/contact', label: t('navContact') },
+    { href: '/voice', label: tr('navVoiceStudio', '配音工作室') },
+    { href: '/music', label: tr('navMusicStudio', '音樂工作室') },
+    { href: '/contact', label: tr('navContact', '聯絡我們') },
   ];
 
   return (
@@ -53,14 +57,14 @@ function DashboardHeader() {
               : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
           }`}
         >
-          {t('navDashboard')}
+          {tr('navDashboard', '控制台')}
         </Link>
         <button
           onClick={handleSignOut}
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          {t('navSignOut')}
+          {tr('navSignOut', '登出')}
         </button>
       </nav>
     </header>
@@ -72,11 +76,15 @@ function Sidebar() {
   const safePathname = pathname || '';
   const user = useDashboardUser();
   const t = useTranslations('dashboard');
+  const tr = (key: string, fallback: string) => {
+    const value = t(key as any);
+    return value === `dashboard.${key}` ? fallback : value;
+  };
 
   const nav = [
-    { href: '/dashboard', label: t('navProjects'), icon: FileAudio },
-    { href: '/dashboard/invoices', label: t('navInvoices'), icon: Receipt },
-    { href: '/dashboard/settings', label: t('navSettings'), icon: Settings },
+    { href: '/dashboard', label: tr('navProjects', '專案') , icon: FileAudio },
+    { href: '/dashboard/invoices', label: tr('navInvoices', '發票'), icon: Receipt },
+    { href: '/dashboard/settings', label: tr('navSettings', '設定'), icon: Settings },
   ];
 
   const displayName = user.user_metadata?.full_name || user.email;
@@ -120,10 +128,14 @@ function MobileNav() {
   const pathname = usePathname();
   const safePathname = pathname || '';
   const t = useTranslations('dashboard');
+  const tr = (key: string, fallback: string) => {
+    const value = t(key as any);
+    return value === `dashboard.${key}` ? fallback : value;
+  };
   const nav = [
-    { href: '/dashboard', label: t('navProjects') },
-    { href: '/dashboard/invoices', label: t('navInvoices') },
-    { href: '/dashboard/settings', label: t('navSettings') },
+    { href: '/dashboard', label: tr('navProjects', '專案') },
+    { href: '/dashboard/invoices', label: tr('navInvoices', '發票') },
+    { href: '/dashboard/settings', label: tr('navSettings', '設定') },
   ];
 
   return (
