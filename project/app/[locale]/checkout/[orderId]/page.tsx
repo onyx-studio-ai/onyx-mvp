@@ -96,7 +96,12 @@ export default function CheckoutPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const orderTypeLabel = orderType === 'orchestra' ? t('liveStrings') : orderType;
+  const orderTypeLabel =
+    orderType === 'orchestra'
+      ? t('liveStrings')
+      : orderType === 'voice'
+        ? t('orderTypeVoice')
+        : t('orderTypeMusic');
 
   useEffect(() => {
     loadOrder();
@@ -315,7 +320,7 @@ export default function CheckoutPage() {
                       type="text"
                       value={billing.fullName}
                       onChange={(e) => setBilling({ ...billing, fullName: e.target.value })}
-                      placeholder="John Doe"
+                      placeholder={t('placeholderFullName')}
                       className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                     />
                   </div>
@@ -329,7 +334,7 @@ export default function CheckoutPage() {
                         type="text"
                         value={billing.companyName}
                         onChange={(e) => setBilling({ ...billing, companyName: e.target.value })}
-                        placeholder="Acme Inc."
+                        placeholder={t('placeholderCompanyName')}
                         className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                       />
                     </div>
@@ -341,7 +346,7 @@ export default function CheckoutPage() {
                         type="text"
                         value={billing.vatNumber}
                         onChange={(e) => setBilling({ ...billing, vatNumber: e.target.value })}
-                        placeholder="12345678 or VAT123456789"
+                        placeholder={t('placeholderVatNumber')}
                         className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                       />
                     </div>
@@ -459,7 +464,11 @@ export default function CheckoutPage() {
                       type="text"
                       value={licensee.name}
                       onChange={(e) => setLicensee({ ...licensee, name: e.target.value })}
-                      placeholder={licensee.type === 'company' ? 'Acme Corporation Ltd.' : 'John Doe'}
+                      placeholder={
+                        licensee.type === 'company'
+                          ? t('placeholderLicenseeCompanyName')
+                          : t('placeholderLicenseeIndividualName')
+                      }
                       className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                     />
                   </div>
@@ -474,7 +483,7 @@ export default function CheckoutPage() {
                           type="text"
                           value={licensee.taxId}
                           onChange={(e) => setLicensee({ ...licensee, taxId: e.target.value })}
-                          placeholder="e.g. 12345678 / VAT123456789 / EIN 12-3456789"
+                          placeholder={t('placeholderTaxRegistrationNumber')}
                           className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                         />
                         <p className="text-xs text-gray-500 mt-1">{t('taxIdHint')}</p>
@@ -487,7 +496,7 @@ export default function CheckoutPage() {
                           type="text"
                           value={licensee.contactPerson}
                           onChange={(e) => setLicensee({ ...licensee, contactPerson: e.target.value })}
-                          placeholder="Name of the person handling this project"
+                          placeholder={t('placeholderContactPerson')}
                           className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                         />
                       </div>
@@ -502,7 +511,7 @@ export default function CheckoutPage() {
                       type="email"
                       value={licensee.email}
                       onChange={(e) => setLicensee({ ...licensee, email: e.target.value })}
-                      placeholder="license-holder@company.com"
+                      placeholder={t('placeholderContactEmail')}
                       className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                     />
                   </div>
@@ -545,7 +554,7 @@ export default function CheckoutPage() {
                         }}
                         className="w-[120px] flex-shrink-0 px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500/50"
                       >
-                        <option value="" className="bg-black">Code</option>
+                        <option value="" className="bg-black">{t('dialCode')}</option>
                         {COUNTRIES.map((c) => (
                           <option key={c.code} value={c.dialCode} className="bg-black">
                             {c.dialCode} {c.code}
@@ -562,7 +571,7 @@ export default function CheckoutPage() {
                           const full = phoneDialCode && digits.trim() ? `${phoneDialCode} ${digits.trim()}` : '';
                           setLicensee((prev) => ({ ...prev, phone: full }));
                         }}
-                        placeholder="912 345 678"
+                        placeholder={t('placeholderMobileNumber')}
                         className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                       />
                     </div>
@@ -675,7 +684,9 @@ export default function CheckoutPage() {
                   {orderType === 'orchestra' && order.duration_minutes && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">{t('duration')}</span>
-                      <span className="text-amber-300">{order.duration_minutes} min</span>
+                      <span className="text-amber-300">
+                        {order.duration_minutes} {t('minuteUnitAbbr')}
+                      </span>
                     </div>
                   )}
                   {orderType === 'orchestra' && order.project_name && (
