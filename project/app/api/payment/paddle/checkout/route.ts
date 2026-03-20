@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       amount,
       billingDetails,
       licenseeDetails,
-      checkoutUrl: buildCheckoutLandingUrl(request, successUrl),
+      checkoutBaseUrl: buildCheckoutLandingUrl(request, successUrl),
     });
 
     const hostedUrl = new URL(checkoutUrl);

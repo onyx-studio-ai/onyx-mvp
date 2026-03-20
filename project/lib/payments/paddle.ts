@@ -24,7 +24,7 @@ export async function createHostedCheckout(params: {
   amount: number;
   billingDetails?: Record<string, unknown>;
   licenseeDetails?: Record<string, unknown>;
-  checkoutUrl?: string;
+  checkoutBaseUrl?: string;
 }) {
   const { apiKey } = getRequiredPaddleConfig();
   const {
@@ -34,7 +34,7 @@ export async function createHostedCheckout(params: {
     amount,
     billingDetails,
     licenseeDetails,
-    checkoutUrl,
+    checkoutBaseUrl,
   } = params;
 
   const normalizedAmount = Math.round(amount * 100).toString();
@@ -69,7 +69,7 @@ export async function createHostedCheckout(params: {
         },
       },
     ],
-    ...(checkoutUrl ? { checkout: { url: checkoutUrl } } : {}),
+    ...(checkoutBaseUrl ? { checkout: { url: checkoutBaseUrl } } : {}),
   };
 
   const response = await fetch(`${PADDLE_API_BASE}/transactions`, {
