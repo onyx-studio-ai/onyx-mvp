@@ -34,6 +34,28 @@ function isPaid(order: any): boolean {
   return order?.status === 'paid' || order?.payment_status === 'paid' || order?.payment_status === 'completed';
 }
 
+function buildCheckoutLandingUrl(request: NextRequest, successUrl?: string): string {
+  const fallbackOrigin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    request.headers.get('origin') ||
+    request.nextUrl.origin;
+
+  let locale = 'en';
+  if (typeof successUrl === 'string' && successUrl.startsWith('http')) {
+    try {
+      const url = new URL(successUrl);
+      const firstSegment = url.pathname.split('/').filter(Boolean)[0];
+      if (firstSegment && ['en', 'zh-TW', 'zh-CN'].includes(firstSegment)) {
+        locale = firstSegment;
+      }
+    } catch {
+      // Ignore parse errors and keep fallback locale.
+    }
+  }
+
+  return `${fallbackOrigin.replace(/\/$/, '')}/${locale}/paddle-checkout`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
@@ -69,6 +91,7 @@ export async function POST(request: NextRequest) {
       amount,
       billingDetails,
       licenseeDetails,
+      checkoutUrl: buildCheckoutLandingUrl(request, successUrl),
     });
 
     const hostedUrl = new URL(checkoutUrl);
