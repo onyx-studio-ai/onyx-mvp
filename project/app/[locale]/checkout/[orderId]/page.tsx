@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { Loader2, AlertCircle, CheckCircle, Lock, CreditCard, Building, User, Shield } from 'lucide-react';
-import { TAPPAY_CONFIG } from '@/lib/config';
+import { Loader2, AlertCircle, CheckCircle, Lock, Building, User, Shield } from 'lucide-react';
 import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.config';
 import { COUNTRIES, getDialCode } from '@/lib/countries';
 
@@ -74,9 +73,6 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
-  const [tappayReady, setTappayReady] = useState(false);
-  const [orderLoaded, setOrderLoaded] = useState(false);
-  const cardSetupDone = useRef(false);
 
   const [billing, setBilling] = useState<BillingDetails>({
     type: 'individual',
@@ -100,19 +96,11 @@ export default function CheckoutPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  const orderTypeLabel = orderType === 'orchestra' ? t('liveStrings') : orderType;
+
   useEffect(() => {
     loadOrder();
   }, [orderId]);
-
-  useEffect(() => {
-    loadTapPaySDK();
-  }, []);
-
-  useEffect(() => {
-    if (tappayReady && orderLoaded) {
-      setupCardFields();
-    }
-  }, [tappayReady, orderLoaded]);
 
   const loadOrder = async () => {
     try {
@@ -126,144 +114,12 @@ export default function CheckoutPage() {
       const data = await response.json();
       if (data.status !== 'pending_payment') { router.push('/'); return; }
       setOrder(data);
-      setOrderLoaded(true);
     } catch (error) {
       console.error('Error loading order:', error);
       setError(t('orderNotFound'));
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadTapPaySDK = () => {
-    if (typeof window === 'undefined') return;
-
-    const initSDK = () => {
-      if ((window as any).TPDirect) {
-        try {
-          (window as any).TPDirect.setupSDK(
-            Number(TAPPAY_CONFIG.appId),
-            TAPPAY_CONFIG.appKey,
-            TAPPAY_CONFIG.environment
-          );
-        } catch (e) {
-          console.warn('TPDirect setupSDK error (may already be initialized):', e);
-        }
-        setTappayReady(true);
-        return true;
-      }
-      return false;
-    };
-
-    if (initSDK()) return;
-
-    const existingScript = document.querySelector('script[src*="tappaysdk.com"]');
-    if (existingScript) {
-      let attempts = 0;
-      const poll = setInterval(() => {
-        attempts++;
-        if (initSDK() || attempts > 50) clearInterval(poll);
-      }, 200);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://js.tappaysdk.com/tpdirect/v5.18.0';
-    script.async = true;
-
-    script.onload = () => { initSDK(); };
-    script.onerror = () => { console.error('Failed to load TapPay SDK'); };
-
-    document.body.appendChild(script);
-  };
-
-  const setupCardFields = () => {
-    if (typeof window === 'undefined' || !(window as any).TPDirect) return;
-
-    cardSetupDone.current = false;
-
-    let retryCount = 0;
-    const maxRetries = 30;
-
-    const setup = () => {
-      const cardNumber = document.getElementById('card-number');
-      const cardExpiration = document.getElementById('card-expiration-date');
-      const cardCcv = document.getElementById('card-ccv');
-
-      if (!cardNumber || !cardExpiration || !cardCcv) {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setTimeout(setup, 300);
-        }
-        return;
-      }
-
-      if (cardNumber.offsetWidth === 0 || cardNumber.offsetHeight === 0) {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setTimeout(setup, 300);
-        }
-        return;
-      }
-
-      const hasExistingIframe = cardNumber.querySelector('iframe');
-      if (hasExistingIframe) {
-        cardSetupDone.current = true;
-        return;
-      }
-
-      if (cardSetupDone.current) return;
-      cardSetupDone.current = true;
-
-      try {
-        (window as any).TPDirect.card.setup({
-          fields: {
-            number: {
-              element: '#card-number',
-              placeholder: '**** **** **** ****',
-            },
-            expirationDate: {
-              element: '#card-expiration-date',
-              placeholder: 'MM / YY',
-            },
-            ccv: {
-              element: '#card-ccv',
-              placeholder: 'CCV',
-            },
-          },
-          styles: {
-            input: {
-              color: '#ffffff',
-              'font-size': '16px',
-              'font-family': 'Inter, sans-serif',
-            },
-            ':focus': {
-              color: '#ffffff',
-            },
-            '.valid': {
-              color: '#10b981',
-            },
-            '.invalid': {
-              color: '#ef4444',
-            },
-          },
-          isMaskCreditCardNumber: true,
-          maskCreditCardNumberRange: {
-            beginIndex: 6,
-            endIndex: 11,
-          },
-        });
-      } catch (err) {
-        console.error('Error setting up card fields:', err);
-        cardSetupDone.current = false;
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setTimeout(setup, 500);
-        }
-      }
-    };
-
-    setTimeout(setup, 500);
   };
 
   const getEffectiveLicensee = (): LicenseeDetails => {
@@ -329,32 +185,7 @@ export default function CheckoutPage() {
     setError('');
 
     try {
-      if (typeof window !== 'undefined' && (window as any).TPDirect && tappayReady) {
-        const tappayStatus = (window as any).TPDirect.card.getTappayFieldsStatus();
-
-        if (!tappayStatus.canGetPrime) {
-          setError(t('validationCardInfo'));
-          setIsProcessing(false);
-          return;
-        }
-
-        (window as any).TPDirect.card.getPrime((result: any) => {
-          if (result.status !== 0) {
-            setError(t('invalidCardInfo'));
-            setIsProcessing(false);
-            return;
-          }
-
-          processPayment(result.card.prime).catch((err) => {
-            console.error('Payment error:', err);
-            setError(t('paymentProcessingFailed'));
-            setIsProcessing(false);
-          });
-        });
-      } else {
-        setError(t('paymentSystemNotReady'));
-        setIsProcessing(false);
-      }
+      await processPayment();
     } catch (error) {
       console.error('Payment error:', error);
       setError(t('paymentProcessingFailed'));
@@ -362,34 +193,31 @@ export default function CheckoutPage() {
     }
   };
 
-  const processPayment = async (prime: string | null) => {
+  const processPayment = async () => {
     try {
+      const effectiveLicensee = getEffectiveLicensee();
+      const locale = typeof params.locale === 'string' ? params.locale : 'en';
+      const successUrl = `${window.location.origin}/${locale}/checkout/success?id=${orderId}`;
+      const cancelUrl = window.location.href;
 
-          const effectiveLicensee = getEffectiveLicensee();
-          const response = await fetch('/api/payment/pay', {
+      const response = await fetch('/api/payment/paddle/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prime,
           orderId,
-          amount: Number(order?.price) || 0,
-          cardholder: {
-            name: billing.type === 'individual' ? billing.fullName : billing.companyName,
-          },
-          orderType,
-          orderEmail: order?.email || '',
-          orderNumber: order?.order_number || orderId,
           billingDetails: billing,
           licenseeDetails: effectiveLicensee,
+          successUrl,
+          cancelUrl,
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        router.push(`/checkout/success?id=${orderId}`);
+      if (response.ok && data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
       } else {
         setError(data.message || t('paymentFailed'));
         setIsProcessing(false);
@@ -513,7 +341,7 @@ export default function CheckoutPage() {
                         type="text"
                         value={billing.vatNumber}
                         onChange={(e) => setBilling({ ...billing, vatNumber: e.target.value })}
-                        placeholder="EU123456789"
+                        placeholder="12345678 or VAT123456789"
                         className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                       />
                     </div>
@@ -546,7 +374,7 @@ export default function CheckoutPage() {
                     type="text"
                     value={billing.region}
                     onChange={(e) => setBilling({ ...billing, region: e.target.value })}
-                    placeholder="California"
+                    placeholder={t('stateRegionOptional')}
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50"
                   />
                 </div>
@@ -750,53 +578,14 @@ export default function CheckoutPage() {
               className="p-8 rounded-3xl bg-black/40 border border-white/10 backdrop-blur-sm"
             >
               <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
-                <CreditCard className="w-6 h-6" />
-                {t('paymentInformation')}
+                <Lock className="w-6 h-6" />
+                {t('secureCheckout')}
               </h2>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-white mb-2">
-                    {t('cardNumber')} <span className="text-red-500">*</span>
-                  </label>
-                  <div
-                    id="card-number"
-                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 min-h-[48px] flex items-center"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
-                      {t('expirationDate')} <span className="text-red-500">*</span>
-                    </label>
-                    <div
-                      id="card-expiration-date"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 min-h-[48px] flex items-center"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
-                      {t('ccv')} <span className="text-red-500">*</span>
-                    </label>
-                    <div
-                      id="card-ccv"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 min-h-[48px] flex items-center"
-                    />
-                  </div>
-                </div>
-
-                {!tappayReady && (
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{t('loadingPaymentFields')}</span>
-                  </div>
-                )}
-
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
                   <p className="text-xs text-blue-400">
-                    {t('testCardInfo')}
+                    {t('completeOrderSecurely')}
                   </p>
                 </div>
 
@@ -833,17 +622,17 @@ export default function CheckoutPage() {
                   </div>
                   <span className="text-sm text-gray-400 leading-relaxed">
                     {tc('agreePrefix')}{' '}
-                    <a href="/legal/terms" target="_blank" className="text-white underline underline-offset-2 hover:text-gray-200 transition-colors">{tc('termsOfService')}</a>
+                    <Link href="/legal/terms" target="_blank" className="text-white underline underline-offset-2 hover:text-gray-200 transition-colors">{tc('termsOfService')}</Link>
                     {', '}
-                    <a href="/legal/privacy" target="_blank" className="text-white underline underline-offset-2 hover:text-gray-200 transition-colors">{tc('privacyPolicy')}</a>
+                    <Link href="/legal/privacy" target="_blank" className="text-white underline underline-offset-2 hover:text-gray-200 transition-colors">{tc('privacyPolicy')}</Link>
                     {', '}
-                    <a href="/legal/aup" target="_blank" className="text-white underline underline-offset-2 hover:text-gray-200 transition-colors">{tc('acceptableUsePolicy')}</a>
+                    <Link href="/legal/aup" target="_blank" className="text-white underline underline-offset-2 hover:text-gray-200 transition-colors">{tc('acceptableUsePolicy')}</Link>
                   </span>
                 </label>
 
                 <button
                   onClick={handlePayment}
-                  disabled={isProcessing || !tappayReady || !agreedToTerms}
+                  disabled={isProcessing || !agreedToTerms}
                   className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isProcessing ? (
@@ -854,7 +643,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      {t('completePaymentPrefix')} US${Number(order.price).toLocaleString()}
+                      {t('payNowAmount', { amount: Number(order.price).toLocaleString() })}
                     </>
                   )}
                 </button>
@@ -875,7 +664,7 @@ export default function CheckoutPage() {
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-400">{t('orderTypeLabel')}</span>
-                    <span className="text-white font-semibold capitalize">{orderType === 'orchestra' ? t('liveStrings') : orderType}</span>
+                    <span className="text-white font-semibold capitalize">{orderTypeLabel}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">{orderType === 'orchestra' ? t('stringSetup') : t('servicePlan')}</span>
