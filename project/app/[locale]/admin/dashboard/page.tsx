@@ -65,15 +65,28 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch('/api/admin/stats');
       if (!res.ok) { setLoading(false); return; }
+      type AdminOrder = {
+        id: string;
+        email: string;
+        price?: string | number | null;
+        payment_status?: string | null;
+        status?: string | null;
+        paid_at?: string | null;
+        created_at: string;
+        voice_selection?: string | null;
+        tier?: string | null;
+        vibe?: string | null;
+      };
+
       const { voiceOrders: vo_raw, musicOrders: mo_raw } = await res.json();
-      const vo = vo_raw || [];
-      const mo = mo_raw || [];
+      const vo: AdminOrder[] = vo_raw || [];
+      const mo: AdminOrder[] = mo_raw || [];
 
     const paidVoice = vo.filter((o) => o.payment_status === 'completed');
     const paidMusic = mo.filter((o) => o.payment_status === 'completed');
 
-    const voiceRevenue = paidVoice.reduce((s, o) => s + parseFloat(o.price || '0'), 0);
-    const musicRevenue = paidMusic.reduce((s, o) => s + parseFloat(o.price || '0'), 0);
+    const voiceRevenue = paidVoice.reduce((s, o) => s + parseFloat(String(o.price ?? '0')), 0);
+    const musicRevenue = paidMusic.reduce((s, o) => s + parseFloat(String(o.price ?? '0')), 0);
 
     const pending = [...vo, ...mo].filter(
       (o) => o.payment_status === 'pending' && o.status !== 'draft'
@@ -91,7 +104,7 @@ export default function AdminDashboardPage() {
         o._type === 'voice'
           ? `Voice Order${o.voice_selection ? ` – ${o.voice_selection.split(' ')[0]}` : ''} (${getVoiceTierLabel(o.tier || 'tier-1')})`
           : `Music Order${o.vibe ? ` – ${o.vibe}` : ''} (${getMusicTierLabel(o.tier || '')})`,
-      amount: parseFloat(o.price || '0'),
+      amount: parseFloat(String(o.price ?? '0')),
       created_at: o.paid_at || o.created_at,
       type: o._type,
     }));
@@ -110,7 +123,7 @@ export default function AdminDashboardPage() {
       const key = (o.paid_at || o.created_at).split('T')[0];
       if (dailyMap[key]) {
         dailyMap[key].orders++;
-        dailyMap[key].revenue += parseFloat(o.price || '0');
+        dailyMap[key].revenue += parseFloat(String(o.price ?? '0'));
       }
     });
 

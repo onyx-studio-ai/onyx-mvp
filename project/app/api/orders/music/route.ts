@@ -112,6 +112,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!data) {
+      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+    }
+
     return NextResponse.json({ id: data.id, order_number: data.order_number });
   } catch (error) {
     console.error('Music order API error:', error);
