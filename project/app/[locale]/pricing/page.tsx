@@ -155,7 +155,7 @@ export default function PricingPage() {
     mainEntity: faqSchemaItems,
   };
 
-  const handleSelectPlan = (plan: typeof PRICING_TIERS[number]) => {
+  const handleSelectPlan = (plan: (typeof translatedTiers)[number]) => {
     if (plan.isCustom) {
       setIsContactOpen(true);
       return;

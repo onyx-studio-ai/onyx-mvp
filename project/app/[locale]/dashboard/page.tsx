@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { supabase, Order } from '@/lib/supabase';
 import { useDashboardUser } from '@/contexts/DashboardContext';
 import { getMusicTierLabel } from '@/lib/config/pricing.config';
+import { languages } from '@/lib/voices';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/dashboard/StatusBadge';
@@ -143,6 +144,68 @@ type CertificateItem = {
   project_name: string | null;
 };
 
+type VoiceCreateMapKey =
+  | 'toneProfessional'
+  | 'toneEnergetic'
+  | 'toneSoothing'
+  | 'toneMovieTrailer'
+  | 'toneFriendly'
+  | 'useCaseAdvertisement'
+  | 'useCaseSocialMedia'
+  | 'useCaseELearning'
+  | 'useCaseAudiobook'
+  | 'useCaseCorporate'
+  | 'useCaseFilmTV'
+  | 'useCaseVideoGame'
+  | 'useCaseIVR'
+  | 'useCaseYouTube'
+  | 'useCaseOther';
+
+const normalizeValue = (value: string) => value.trim().toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ');
+
+const VOICE_TONE_MAP: Record<string, VoiceCreateMapKey> = {
+  professional: 'toneProfessional',
+  energetic: 'toneEnergetic',
+  soothing: 'toneSoothing',
+  'movie trailer': 'toneMovieTrailer',
+  'deep/authority': 'toneMovieTrailer',
+  friendly: 'toneFriendly',
+  conversational: 'toneFriendly',
+};
+
+const VOICE_USE_CASE_MAP: Record<string, VoiceCreateMapKey> = {
+  advertisement: 'useCaseAdvertisement',
+  'paid ad/commercial': 'useCaseAdvertisement',
+  'social media': 'useCaseSocialMedia',
+  'e-learning': 'useCaseELearning',
+  audiobook: 'useCaseAudiobook',
+  'audiobook/podcast': 'useCaseAudiobook',
+  corporate: 'useCaseCorporate',
+  'film/tv': 'useCaseFilmTV',
+  'video game': 'useCaseVideoGame',
+  ivr: 'useCaseIVR',
+  youtube: 'useCaseYouTube',
+  other: 'useCaseOther',
+};
+
+function localizeVoiceLanguage(value: string, isZhLocale: boolean): string {
+  if (!isZhLocale || !value) return value;
+  const key = value.trim().toLowerCase();
+  const lang = languages.find((item) => item.code.toLowerCase() === key || item.name.toLowerCase() === key);
+  return lang?.zhName || value;
+}
+
+function localizeVoiceMappedValue(
+  value: string,
+  isZhLocale: boolean,
+  map: Record<string, VoiceCreateMapKey>,
+  tVoice: (key: VoiceCreateMapKey) => string,
+): string {
+  if (!isZhLocale || !value) return value;
+  const mappedKey = map[normalizeValue(value)];
+  return mappedKey ? tVoice(mappedKey) : value;
+}
+
 function LicenseCard({ cert }: { cert: CertificateItem }) {
   const t = useTranslations('dashboard');
   const issuedDate = new Date(cert.issued_at).toLocaleDateString(undefined, {
@@ -261,10 +324,16 @@ function VoiceOrderCard({
   onRefresh: () => void;
 }) {
   const t = useTranslations('dashboard');
+  const tVoice = useTranslations('voice.create');
+  const locale = useLocale();
+  const isZhLocale = locale.startsWith('zh');
   const router = useRouter();
   const relativeTime = useRelativeTime();
   const getNextAction = useNextAction();
-  const displayName = order.project_name || `${order.tone_style} / ${order.voice_selection}`;
+  const localizedTone = localizeVoiceMappedValue(order.tone_style || '', isZhLocale, VOICE_TONE_MAP, tVoice as (key: VoiceCreateMapKey) => string);
+  const localizedUseCase = localizeVoiceMappedValue(order.use_case || '', isZhLocale, VOICE_USE_CASE_MAP, tVoice as (key: VoiceCreateMapKey) => string);
+  const localizedLanguage = localizeVoiceLanguage(order.language || '', isZhLocale);
+  const displayName = order.project_name || `${localizedTone || order.tone_style} / ${order.voice_selection}`;
   const date = new Date(order.created_at).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -303,15 +372,15 @@ function VoiceOrderCard({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
           <div className="rounded-lg bg-white/[0.02] px-3 py-2">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{t('labelLanguage')}</p>
-            <p className="text-white text-xs font-medium">{order.language}</p>
+            <p className="text-white text-xs font-medium">{localizedLanguage || order.language}</p>
           </div>
           <div className="rounded-lg bg-white/[0.02] px-3 py-2">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{t('labelUseCase')}</p>
-            <p className="text-white text-xs font-medium">{order.use_case}</p>
+            <p className="text-white text-xs font-medium">{localizedUseCase || order.use_case}</p>
           </div>
           <div className="rounded-lg bg-white/[0.02] px-3 py-2">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{t('labelTone')}</p>
-            <p className="text-white text-xs font-medium">{order.tone_style}</p>
+            <p className="text-white text-xs font-medium">{localizedTone || order.tone_style}</p>
           </div>
           <div className="rounded-lg bg-white/[0.02] px-3 py-2">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{t('labelRights')}</p>
@@ -468,6 +537,9 @@ function MusicOrderCard({ order }: { order: MusicOrder }) {
 
 function OrchestraOrderCard({ order }: { order: OrchestraOrder }) {
   const t = useTranslations('dashboard');
+  const tOrchestraOrder = useTranslations('orchestra.order');
+  const locale = useLocale();
+  const isZhLocale = locale.startsWith('zh');
   const router = useRouter();
   const relativeTime = useRelativeTime();
   const getNextAction = useNextAction();
@@ -479,6 +551,14 @@ function OrchestraOrderCard({ order }: { order: OrchestraOrder }) {
   const step = getStepInfo(order.status, ORCH_STEPS);
   const nextAction = getNextAction(order.status);
   const needsFileUpload = order.status === 'awaiting_files' && !order.midi_file_url;
+  const localizedTierName = !isZhLocale
+    ? order.tier_name
+    : ({
+        'pop/indie setup': tOrchestraOrder('tierName1'),
+        'acoustic chamber': tOrchestraOrder('tierName2'),
+        'television standard': tOrchestraOrder('tierName3'),
+        'cinematic epic': tOrchestraOrder('tierName4'),
+      } as Record<string, string>)[normalizeValue(order.tier_name || '')] || order.tier_name;
 
   return (
     <div
@@ -509,7 +589,7 @@ function OrchestraOrderCard({ order }: { order: OrchestraOrder }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
           <div className="rounded-lg bg-white/[0.02] px-3 py-2">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{t('labelSetup')}</p>
-            <p className="text-white text-xs font-medium">{order.tier_name || '—'}</p>
+            <p className="text-white text-xs font-medium">{localizedTierName || '—'}</p>
           </div>
           <div className="rounded-lg bg-white/[0.02] px-3 py-2">
             <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{t('labelDuration')}</p>
@@ -569,9 +649,9 @@ function OrchestraOrderCard({ order }: { order: OrchestraOrder }) {
   );
 }
 
-function EmptyState({ type }: { type: Tab }) {
+function EmptyState({ type }: { type: Exclude<Tab, 'licenses'> }) {
   const t = useTranslations('dashboard');
-  const config: Record<Tab, { icon: typeof Mic2; titleKey: string; descKey: string; ctaKey: string; href: string; color: string }> = {
+  const config: Record<Exclude<Tab, 'licenses'>, { icon: typeof Mic2; titleKey: string; descKey: string; ctaKey: string; href: string; color: string }> = {
     voice: {
       icon: Mic2,
       titleKey: 'emptyVoiceTitle',

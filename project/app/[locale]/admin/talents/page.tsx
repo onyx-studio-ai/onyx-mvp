@@ -538,7 +538,9 @@ export default function AdminTalentsPage() {
       is_active: talent.is_active,
       sort_order: talent.sort_order,
       headshot_url: talent.headshot_url || "",
-      demo_urls: talent.demo_urls || [],
+      demo_urls: (talent.demo_urls || []).filter(
+        (d): d is { name: string; url: string } => Boolean(d?.name && d?.url),
+      ),
       payment_method: talent.payment_method || "",
       payment_details: {
         paypal_email: pd?.paypal_email || "",

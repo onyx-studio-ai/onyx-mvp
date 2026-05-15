@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { supabase, Order } from '@/lib/supabase';
 import { useDashboardUser } from '@/contexts/DashboardContext';
 import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.config';
+import { languages } from '@/lib/voices';
 import StatusBadge from '@/components/dashboard/StatusBadge';
 import EditOrderModal from '@/components/dashboard/EditOrderModal';
 import MusicOrderDetail from '@/components/dashboard/MusicOrderDetail';
@@ -100,10 +101,152 @@ interface MusicOrderData {
   estimated_delivery_date: string | null;
 }
 
+type VoiceCreateMapKey =
+  | 'toneProfessional'
+  | 'toneEnergetic'
+  | 'toneSoothing'
+  | 'toneMovieTrailer'
+  | 'toneFriendly'
+  | 'useCaseAdvertisement'
+  | 'useCaseSocialMedia'
+  | 'useCaseELearning'
+  | 'useCaseAudiobook'
+  | 'useCaseCorporate'
+  | 'useCaseFilmTV'
+  | 'useCaseVideoGame'
+  | 'useCaseIVR'
+  | 'useCaseYouTube'
+  | 'useCaseOther'
+  | 'tierNameAiInstant'
+  | 'tierNameDirectorsCut'
+  | 'tierNameLiveStudio';
+
+type MusicCreateMapKey =
+  | 'genreCinematicOrchestral'
+  | 'genreUpbeatPop'
+  | 'genreDarkAmbient'
+  | 'genreEpicTrailer'
+  | 'genreChillLoFi'
+  | 'genreCorporateUplifting'
+  | 'genreElectronicDance'
+  | 'genreAcousticFolk'
+  | 'genreHipHopBeat'
+  | 'genreJazzFusion'
+  | 'usageCommercial'
+  | 'usageSocialMedia'
+  | 'usageFilmTV'
+  | 'usageVideoGame'
+  | 'usagePodcastRadio'
+  | 'usageCorporate'
+  | 'usageYouTube'
+  | 'usageLiveEvent'
+  | 'usageOther';
+
+const VOICE_TONE_MAP: Record<string, VoiceCreateMapKey> = {
+  professional: 'toneProfessional',
+  energetic: 'toneEnergetic',
+  soothing: 'toneSoothing',
+  'movie trailer': 'toneMovieTrailer',
+  'deep / authority': 'toneMovieTrailer',
+  'deep/authority': 'toneMovieTrailer',
+  friendly: 'toneFriendly',
+};
+
+const VOICE_USE_CASE_MAP: Record<string, VoiceCreateMapKey> = {
+  advertisement: 'useCaseAdvertisement',
+  'paid ad / commercial': 'useCaseAdvertisement',
+  'paid ad/commercial': 'useCaseAdvertisement',
+  'social media': 'useCaseSocialMedia',
+  'e-learning': 'useCaseELearning',
+  audiobook: 'useCaseAudiobook',
+  'audiobook / podcast': 'useCaseAudiobook',
+  'audiobook/podcast': 'useCaseAudiobook',
+  corporate: 'useCaseCorporate',
+  'film/tv': 'useCaseFilmTV',
+  'video game': 'useCaseVideoGame',
+  ivr: 'useCaseIVR',
+  youtube: 'useCaseYouTube',
+  other: 'useCaseOther',
+};
+
+const MUSIC_VIBE_MAP: Record<string, MusicCreateMapKey> = {
+  'cinematic orchestral': 'genreCinematicOrchestral',
+  'upbeat pop': 'genreUpbeatPop',
+  'dark ambient': 'genreDarkAmbient',
+  'epic trailer': 'genreEpicTrailer',
+  'chill lo-fi': 'genreChillLoFi',
+  'corporate uplifting': 'genreCorporateUplifting',
+  'electronic dance': 'genreElectronicDance',
+  'acoustic folk': 'genreAcousticFolk',
+  'hip hop beat': 'genreHipHopBeat',
+  'jazz fusion': 'genreJazzFusion',
+};
+
+const MUSIC_USAGE_MAP: Record<string, MusicCreateMapKey> = {
+  'commercial advertisement': 'usageCommercial',
+  'social media content': 'usageSocialMedia',
+  'film/tv production': 'usageFilmTV',
+  'video game': 'usageVideoGame',
+  'podcast/radio': 'usagePodcastRadio',
+  'corporate video': 'usageCorporate',
+  'youtube content': 'usageYouTube',
+  'live event': 'usageLiveEvent',
+  other: 'usageOther',
+};
+
+function localizeVoiceLanguage(value: string, isZhLocale: boolean): string {
+  if (!isZhLocale || !value) return value;
+  const key = value.trim().toLowerCase();
+  const lang = languages.find((item) => item.code.toLowerCase() === key || item.name.toLowerCase() === key);
+  return lang?.zhName || value;
+}
+
+function localizeVoiceMappedValue(
+  value: string,
+  isZhLocale: boolean,
+  map: Record<string, VoiceCreateMapKey>,
+  tVoice: (key: VoiceCreateMapKey) => string,
+): string {
+  if (!isZhLocale || !value) return value;
+  const normalized = value.trim().toLowerCase();
+  const mappedKey = map[normalized];
+  return mappedKey ? tVoice(mappedKey) : value;
+}
+
+function localizeMusicMappedValue(
+  value: string,
+  isZhLocale: boolean,
+  map: Record<string, MusicCreateMapKey>,
+  tMusicCreate: (key: MusicCreateMapKey) => string,
+): string {
+  if (!isZhLocale || !value) return value;
+  const mappedKey = map[value.trim().toLowerCase()];
+  return mappedKey ? tMusicCreate(mappedKey) : value;
+}
+
+function localizeMusicTierLabel(tierLabel: string, locale: string): string {
+  if (!locale.startsWith('zh')) return tierLabel;
+  const mapZhTw: Record<string, string> = {
+    'AI Curator': 'AI 策展版',
+    'Pro Arrangement': '專業編曲版',
+    Masterpiece: '大師典藏版',
+  };
+  const mapZhCn: Record<string, string> = {
+    'AI Curator': 'AI 策展版',
+    'Pro Arrangement': '专业编曲版',
+    Masterpiece: '大师典藏版',
+  };
+  return locale === 'zh-CN' ? (mapZhCn[tierLabel] || tierLabel) : (mapZhTw[tierLabel] || tierLabel);
+}
+
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const t = useTranslations('dashboard.orderDetail');
+  const tVoice = useTranslations('voice.create');
+  const tMusicCreate = useTranslations('music.create');
+  const locale = useLocale();
+  const isZhLocale = locale.startsWith('zh');
   const user = useDashboardUser();
   const [order, setOrder] = useState<Order | null>(null);
   const [musicOrder, setMusicOrder] = useState<MusicOrderData | null>(null);
@@ -174,11 +317,23 @@ export default function OrderDetailPage() {
   }
 
   if (musicOrder) {
-    const date = new Date(musicOrder.created_at).toLocaleDateString('en-US', {
+    const date = new Date(musicOrder.created_at).toLocaleDateString(locale, {
       weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
     });
 
-    const tierLabel = getMusicTierLabel(musicOrder.tier);
+    const tierLabel = localizeMusicTierLabel(getMusicTierLabel(musicOrder.tier), locale);
+    const localizedMusicVibe = localizeMusicMappedValue(
+      musicOrder.vibe || '',
+      isZhLocale,
+      MUSIC_VIBE_MAP,
+      tMusicCreate as (key: MusicCreateMapKey) => string,
+    );
+    const localizedMusicUsageType = localizeMusicMappedValue(
+      musicOrder.usage_type || '',
+      isZhLocale,
+      MUSIC_USAGE_MAP,
+      tMusicCreate as (key: MusicCreateMapKey) => string,
+    );
 
     const stringAddonLabel =
       musicOrder.string_addon === 'intimate-ensemble' ? t('intimateEnsemble') :
@@ -187,9 +342,9 @@ export default function OrderDetailPage() {
       musicOrder.string_addon || t('none');
 
     const details = [
-      { label: t('vibeGenre'), value: musicOrder.vibe },
+      { label: t('vibeGenre'), value: localizedMusicVibe || musicOrder.vibe },
       { label: t('plan'), value: tierLabel },
-      { label: t('usageType'), value: musicOrder.usage_type || '—' },
+      { label: t('usageType'), value: localizedMusicUsageType || musicOrder.usage_type || '—' },
       { label: t('stringAddon'), value: stringAddonLabel },
       { label: t('price'), value: `US$${Number(musicOrder.price).toLocaleString()}` },
     ];
@@ -212,7 +367,7 @@ export default function OrderDetailPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
-                  <h1 className="text-2xl font-bold tracking-tight">{musicOrder.vibe}</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">{localizedMusicVibe || musicOrder.vibe}</h1>
                   <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-xs">{t('badgeMusic')}</Badge>
                 </div>
                 <p className="text-gray-500 text-sm">
@@ -302,18 +457,40 @@ export default function OrderDetailPage() {
   const canEdit = VOICE_EDITABLE_STATUSES.includes(order.status);
   const isLocked = order.status === 'completed';
 
-  const date = new Date(order.created_at).toLocaleDateString('en-US', {
+  const date = new Date(order.created_at).toLocaleDateString(locale, {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
 
-  const displayName = order.project_name || `${order.tone_style} / ${order.voice_selection}`;
+  const localizedLanguage = localizeVoiceLanguage(order.language || '', isZhLocale);
+  const localizedTone = localizeVoiceMappedValue(
+    order.tone_style || '',
+    isZhLocale,
+    VOICE_TONE_MAP,
+    tVoice as (key: VoiceCreateMapKey) => string,
+  );
+  const localizedUseCase = localizeVoiceMappedValue(
+    order.use_case || '',
+    isZhLocale,
+    VOICE_USE_CASE_MAP,
+    tVoice as (key: VoiceCreateMapKey) => string,
+  );
+  const tierLabel = isZhLocale
+    ? (order.tier === 'tier-1'
+      ? tVoice('tierNameAiInstant')
+      : order.tier === 'tier-2'
+        ? tVoice('tierNameDirectorsCut')
+        : order.tier === 'tier-3'
+          ? tVoice('tierNameLiveStudio')
+          : getVoiceTierLabel(order.tier))
+    : getVoiceTierLabel(order.tier);
+  const displayName = order.project_name || `${localizedTone || order.tone_style} / ${order.voice_selection}`;
 
   const details = [
-    { label: t('language'), value: order.language },
+    { label: t('language'), value: localizedLanguage || order.language },
     { label: t('voice'), value: order.voice_selection },
-    { label: t('tone'), value: order.tone_style },
-    { label: t('useCase'), value: order.use_case },
-    { label: t('plan'), value: getVoiceTierLabel(order.tier) },
+    { label: t('tone'), value: localizedTone || order.tone_style },
+    { label: t('useCase'), value: localizedUseCase || order.use_case },
+    { label: t('plan'), value: tierLabel },
     { label: t('rights'), value: order.rights_level === 'global' ? t('rightsGlobalTvGame') : order.rights_level === 'broadcast' ? t('rightsBroadcastBuyout') : order.broadcast_rights ? t('rightsBroadcastBuyout') : t('rightsStandard') },
     { label: t('duration'), value: `${order.duration} ${order.duration !== 1 ? t('mins') : t('min')}` },
     { label: t('price'), value: `US$${Number(order.price).toFixed(2)}` },

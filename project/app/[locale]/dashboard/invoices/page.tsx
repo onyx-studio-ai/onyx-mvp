@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { supabase, Order } from '@/lib/supabase';
 import { useDashboardUser } from '@/contexts/DashboardContext';
 import { getMusicTierLabel } from '@/lib/config/pricing.config';
+import { languages } from '@/lib/voices';
 import { Receipt, Download, Loader2, Music, Music2, Mic2, ExternalLink } from 'lucide-react';
 import StatusBadge from '@/components/dashboard/StatusBadge';
 
@@ -19,8 +20,18 @@ type InvoiceItem = {
   subtitle?: string;
 };
 
+function localizeVoiceLanguage(value: string, isZhLocale: boolean): string {
+  if (!isZhLocale || !value) return value;
+  const key = value.trim().toLowerCase();
+  const lang = languages.find((item) => item.code.toLowerCase() === key || item.name.toLowerCase() === key);
+  return lang?.zhName || value;
+}
+
 export default function InvoicesPage() {
   const t = useTranslations('dashboard.invoices');
+  const tDashboard = useTranslations('dashboard');
+  const locale = useLocale();
+  const isZhLocale = locale.startsWith('zh');
   const user = useDashboardUser();
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,22 +59,22 @@ export default function InvoicesPage() {
           .catch(() => []),
       ]);
 
-      const voiceItems: InvoiceItem[] = (voiceRes.data || []).map((o: Order) => ({
-        id: o.id,
+      const voiceItems: InvoiceItem[] = (voiceRes.data || []).map((o: Record<string, unknown>) => ({
+        id: String(o.id),
         type: 'voice',
         order_number: String(o.order_number),
-        display_name: o.project_name || `AI Voiceover - ${new Date(o.paid_at || '').toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}`,
-        paid_at: o.paid_at,
+        display_name: (o.project_name as string) || `${t('fallbackVoiceTitle')} - ${new Date(String(o.paid_at || '')).toLocaleDateString(locale, { year: 'numeric', month: 'numeric', day: 'numeric' })}`,
+        paid_at: String(o.paid_at || ''),
         price: Number(o.price),
-        status: o.status,
-        subtitle: o.language,
+        status: String(o.status || ''),
+        subtitle: localizeVoiceLanguage(String(o.language || ''), isZhLocale),
       }));
 
       const musicItems: InvoiceItem[] = (musicRes.data || []).map((o: Record<string, unknown>) => ({
         id: String(o.id),
         type: 'music',
         order_number: String(o.order_number || o.id),
-        display_name: o.vibe ? `${String(o.vibe)} Music` : 'Custom Music',
+        display_name: o.vibe ? `${String(o.vibe)} ${t('musicSuffix')}` : t('fallbackCustomMusic'),
         paid_at: String(o.paid_at || o.created_at || ''),
         price: Number(o.price),
         status: String(o.status || 'paid'),
@@ -77,7 +88,7 @@ export default function InvoicesPage() {
           id: String(o.id),
           type: 'orchestra' as const,
           order_number: String(o.order_number || o.id),
-          display_name: o.project_name ? String(o.project_name) : 'Live Strings Session',
+          display_name: o.project_name ? String(o.project_name) : t('fallbackStringsSession'),
           paid_at: String(o.created_at || ''),
           price: Number(o.price),
           status: String(o.status || 'paid'),
@@ -96,7 +107,7 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [user.email]);
+  }, [user.email, t, locale, isZhLocale]);
 
   useEffect(() => {
     fetchOrders();
@@ -123,7 +134,7 @@ export default function InvoicesPage() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -131,14 +142,14 @@ export default function InvoicesPage() {
   };
 
   const formatCurrency = (amount: number) =>
-    `US$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    `US$${amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="text-white p-6 lg:p-10">
       <div className="max-w-4xl">
         <div className="mb-8">
           <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-medium">
-            Billing
+            {t('billingLabel')}
           </p>
           <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-gray-500 text-sm mt-1">{t('subtitle')}</p>
@@ -204,7 +215,7 @@ export default function InvoicesPage() {
                           item.type === 'orchestra' ? 'text-amber-400 bg-amber-500/10' :
                           'text-blue-400 bg-blue-500/10'
                         }`}>
-                          {item.type === 'music' ? 'Music' : item.type === 'orchestra' ? 'Strings' : 'Voice'}
+                          {item.type === 'music' ? tDashboard('typeMusic') : item.type === 'orchestra' ? tDashboard('typeStrings') : tDashboard('typeVoiceover')}
                         </span>
                       </div>
                     </div>
@@ -241,9 +252,9 @@ export default function InvoicesPage() {
             </div>
 
             <div className="px-5 py-4 border-t border-white/[0.06] flex items-center justify-between">
-              <span className="text-xs text-gray-600">{items.length} invoice{items.length !== 1 ? 's' : ''} total</span>
+              <span className="text-xs text-gray-600">{t('invoiceCount', { count: items.length })}</span>
               <span className="text-sm font-semibold text-white">
-                Total paid: {formatCurrency(items.reduce((sum, o) => sum + o.price, 0))}
+                {t('totalPaidLabel')}: {formatCurrency(items.reduce((sum, o) => sum + o.price, 0))}
               </span>
             </div>
           </div>
@@ -252,7 +263,7 @@ export default function InvoicesPage() {
         <div className="mt-6 rounded-xl bg-white/[0.02] border border-white/[0.05] px-5 py-4 flex items-start gap-3">
           <ExternalLink className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
           <p className="text-xs text-gray-500 leading-relaxed">
-            Invoices are generated automatically for all paid orders. Each invoice includes your order number, billing details, line items, and payment confirmation. Contact support if you need a formal tax invoice.
+            {t('footerNote')}
           </p>
         </div>
       </div>

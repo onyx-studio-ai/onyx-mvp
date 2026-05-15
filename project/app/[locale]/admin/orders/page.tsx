@@ -172,7 +172,7 @@ async function callUpdateOrder(orderId: string, orderType: 'voice' | 'music' | '
 }
 
 function deriveRightsLevel(order: AnyOrder): 'standard' | 'broadcast' | 'global' {
-  if (order.type === 'strings' || order.type === 'orchestra') return 'global';
+  if (order.type === 'strings') return 'global';
   if (order.type === 'voice') {
     const vo = order as VoiceOrder;
     if (vo.tier === 'tier-3') return 'global';

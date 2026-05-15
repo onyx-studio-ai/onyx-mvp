@@ -1051,7 +1051,7 @@ export default function MusicOrderWorkflow({ order, onStatusChange }: MusicOrder
               )}
             </div>
 
-            {deliverables.length > 0 && order.status !== 'completed' && !uploadingDeliverables && (
+            {deliverables.length > 0 && !uploadingDeliverables && (
               <div className="pt-2 border-t border-zinc-800">
                 <Button
                   size="sm"
