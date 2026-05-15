@@ -32,6 +32,7 @@ const TIER_DISPLAY = {
 
 export default function OrchestraPage() {
   const t = useTranslations('orchestra.landing');
+  const tc = useTranslations('common');
   const [rawSrc, setRawSrc] = useState('/audio/sample-raw.mp3');
   const [liveSrc, setLiveSrc] = useState('/audio/sample-human.mp3');
 
@@ -182,13 +183,11 @@ export default function OrchestraPage() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className="text-5xl md:text-7xl font-bold text-white leading-[1.08] tracking-tight mb-6"
           >
-            {t('heroTitle1')}
-            <br />
-            <span className="bg-gradient-to-r from-amber-400 via-orange-300 to-yellow-400 bg-clip-text text-transparent">
+            <span className="block">{t('heroTitle1')}</span>
+            <span className="block bg-gradient-to-r from-amber-400 via-orange-300 to-yellow-400 bg-clip-text text-transparent">
               {t('heroTitle2')}
             </span>
-            <br />
-            <span className="text-gray-300 text-4xl md:text-5xl font-semibold">
+            <span className="block text-gray-300 text-3xl md:text-4xl font-semibold mt-1">
               {t('heroTitle3')}
             </span>
           </motion.h1>

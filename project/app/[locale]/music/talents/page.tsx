@@ -5,7 +5,6 @@ import { TalentGrid } from "@/components/TalentGrid";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-
 function MusicTalentsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();

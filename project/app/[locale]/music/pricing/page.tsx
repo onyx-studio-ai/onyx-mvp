@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
 import { Music, CheckCircle2, XCircle, ArrowRight, FileAudio, Download, Shield, Clock, Repeat, Users } from 'lucide-react';
@@ -26,9 +27,9 @@ function buildMusicFaqs(t: ReturnType<typeof useTranslations>, onContact: () => 
     ),
     em: (chunks: React.ReactNode) => <em className="text-gray-500">{chunks}</em>,
     terms: (chunks: React.ReactNode) => (
-      <a href="/legal/terms" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
+      <Link href="/legal/terms" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
         {chunks}
-      </a>
+      </Link>
     ),
   };
 
@@ -96,6 +97,8 @@ function buildMusicFaqs(t: ReturnType<typeof useTranslations>, onContact: () => 
 
 export default function MusicPricingPage() {
   const t = useTranslations('music.pricing');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [isContactOpen, setIsContactOpen] = useState(false);
   const faqs = buildMusicFaqs(t, () => setIsContactOpen(true));
 
@@ -216,9 +219,54 @@ export default function MusicPricingPage() {
       { name: t('compFullBuyout'), tier1: false, tier2: false, tier3: true },
     ]},
   ];
+  const faqSchemaItems = [
+    { q: t('faq1Q'), a: t('faq1A') },
+    { q: t('faq2Q'), a: t('faq2A') },
+    { q: t('faq3Q'), a: `${t('faq3AIntro')} ${t('faq3APart1')} ${t('faq3APart2')}` },
+    { q: t('faq4Q'), a: t('faq4A') },
+    { q: t('faq5Q'), a: `${t('faq5APart1')} ${t('faq5APart2')}` },
+    { q: t('faq6Q'), a: t('faq6A') },
+    { q: t('faq7Q'), a: `${t('faq7AIntro')} ${t('faq7APart1')} ${t('faq7APart2')} ${t('faq7ANote')}` },
+    { q: t('faq8Q'), a: t('faq8A') },
+    { q: t('faq9Q'), a: t('faq9A') },
+    { q: t('faq10Q'), a: t('faq10A') },
+  ].map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.a,
+    },
+  }));
+  const serviceJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    serviceType: 'AI Music Production Pricing Plans',
+    name: 'Onyx Music Pricing',
+    provider: {
+      '@type': 'Organization',
+      name: 'Onyx Studios',
+      url: 'https://www.onyxstudios.ai',
+    },
+    areaServed: 'Worldwide',
+    inLanguage: locale,
+  };
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqSchemaItems,
+  };
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-28">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <ContactModal
         isOpen={isContactOpen}
         onClose={() => setIsContactOpen(false)}

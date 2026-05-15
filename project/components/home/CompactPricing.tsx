@@ -3,7 +3,7 @@
 import { Zap, Star, Crown, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from '@/i18n/navigation';
-import { PRICING_TIERS } from '@/lib/pricing';
+import { PRICING_TIERS } from '@/lib/config/pricing.config';
 import { useTranslations } from 'next-intl';
 
 const TIER_ICONS: Record<string, React.ReactNode> = {
@@ -25,6 +25,7 @@ export default function CompactPricing() {
       tagline: t(`${k}Tagline`),
       badge: plan.badge ? t(`${k}Badge`) : null,
       subtitle: t(`${k}Subtitle`),
+      audience: t(`${k}Audience`),
       price: plan.id === 'tier-3' ? `${t('tier3PricePrefix')} US$${plan.numericPrice}` : `US$${plan.numericPrice}`,
       unit: t(`${k}Unit`),
       buttonText: t(`${k}Button`),
@@ -51,6 +52,9 @@ export default function CompactPricing() {
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
             {t('sectionSubtitle')}
+          </p>
+          <p className="text-sm text-gray-500 max-w-2xl mx-auto mt-3 leading-relaxed">
+            {t('pricingDifferentiatorLead')}
           </p>
         </motion.div>
 
@@ -93,7 +97,10 @@ export default function CompactPricing() {
                   {plan.unit && <span className="text-gray-500 text-sm ml-1.5">{plan.unit}</span>}
                 </div>
 
-                <p className="text-gray-400 text-sm mb-6 leading-relaxed">{plan.subtitle}</p>
+                <p className="text-gray-400 text-sm mb-2 leading-relaxed">{plan.subtitle}</p>
+                <p className="text-xs text-slate-500 mb-6 leading-relaxed border-l-2 border-blue-500/30 pl-2">
+                  {plan.audience}
+                </p>
 
                 <Link
                   href={plan.isCustom ? '/contact' : `/voice/create?tier=${plan.id}`}

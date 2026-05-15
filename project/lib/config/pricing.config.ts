@@ -152,13 +152,42 @@ export const ORCHESTRA_TIERS = [
 // VOICE SERVICE PRICING
 // ============================================================================
 
+export type VoiceTierId = 'tier-1' | 'tier-2' | 'tier-3';
+
+export const VOICE_DURATION_PRICING: Record<VoiceTierId, { ranges: { maxMinutes: number; price: number }[]; overagePerMinute: number }> = {
+  'tier-1': {
+    ranges: [
+      { maxMinutes: 1, price: 39 },
+      { maxMinutes: 2, price: 49 },
+      { maxMinutes: 3, price: 57 },
+    ],
+    overagePerMinute: 7,
+  },
+  'tier-2': {
+    ranges: [
+      { maxMinutes: 1, price: 89 },
+      { maxMinutes: 2, price: 119 },
+      { maxMinutes: 3, price: 139 },
+    ],
+    overagePerMinute: 18,
+  },
+  'tier-3': {
+    ranges: [
+      { maxMinutes: 1, price: 229 },
+      { maxMinutes: 2, price: 309 },
+      { maxMinutes: 3, price: 369 },
+    ],
+    overagePerMinute: 55,
+  },
+};
+
 export const VOICE_TIERS = [
   {
     id: 'tier-1',
-    name: 'AI Instant Voice',
-    price: 49,
+    name: 'AI Fast Lane',
+    price: 39,
     badge: null,
-    description: 'Fast, scalable, and 100% royalty-free for standard commercial use.',
+    description: 'Fast delivery with standard commercial rights; closest to typical AI-only pricing.',
     features: [
       'Pure AI generation',
       'Standard Commercial Rights included',
@@ -166,9 +195,9 @@ export const VOICE_TIERS = [
       'Minor script updates allowed',
       '24-hour fast delivery',
       'WAV + MP3 high-quality delivery',
-      'Self-serve client portal access',
+      'Online project dashboard (order status & file delivery)',
     ],
-    priceLabel: 'US$49 / block (approx. 1 min)',
+    priceLabel: 'US$39 / 0-60s (AI Fast Lane)',
     gradient: 'from-slate-600 to-slate-700',
     popular: false,
     isCustom: false,
@@ -176,9 +205,9 @@ export const VOICE_TIERS = [
   {
     id: 'tier-2',
     name: "Director's Cut",
-    price: 149,
+    price: 89,
     badge: 'MOST POPULAR',
-    description: 'AI generation polished by a human director. Perfect emotional delivery, guaranteed.',
+    description: 'AI first pass + human director polish, with commercial licensing and traceable QA.',
     features: [
       'AI + Human Director emotional tuning',
       'Standard Commercial Rights included',
@@ -188,7 +217,7 @@ export const VOICE_TIERS = [
       'Priority delivery queue',
       'WAV + MP3 high-quality delivery',
     ],
-    priceLabel: 'US$149 / block (approx. 1 min)',
+    priceLabel: 'US$89 / 0-60s package',
     gradient: 'from-blue-600 to-cyan-600',
     popular: true,
     isCustom: false,
@@ -196,9 +225,9 @@ export const VOICE_TIERS = [
   {
     id: 'tier-3',
     name: '100% Live Studio',
-    price: 299,
+    price: 229,
     badge: 'PREMIUM',
-    description: 'Recorded live by the human voice actor for premium, custom-directed projects.',
+    description: 'Full human studio recording for broadcast-grade and custom-directed projects.',
     features: [
       '100% Human actor studio recording',
       'Broadcast & Full Media Buyout options available',
@@ -208,10 +237,10 @@ export const VOICE_TIERS = [
       'Custom delivery formats & stems',
       'Multi-language project coordination',
     ],
-    priceLabel: 'Starting at US$299',
+    priceLabel: 'US$229 / 0-60s package',
     gradient: 'from-amber-600 to-orange-600',
     popular: false,
-    isCustom: true,
+    isCustom: false,
   },
 ];
 
@@ -249,13 +278,13 @@ export type VoiceRightsLevel = 'standard' | 'broadcast' | 'global';
 export const VOICE_RIGHTS_PRICING: Record<string, Record<VoiceRightsLevel, number>> = {
   'tier-1': {
     standard: 0,      // ← Included in base price
-    broadcast: 99,     // ← EDIT HERE: Broadcast add-on for AI Instant
-    global: 199,       // ← EDIT HERE: Global add-on for AI Instant
+    broadcast: 89,     // ← EDIT HERE: Broadcast add-on for AI Instant
+    global: 189,       // ← EDIT HERE: Global add-on for AI Instant
   },
   'tier-2': {
     standard: 0,
-    broadcast: 150,    // ← EDIT HERE: Broadcast add-on for Director's Cut
-    global: 350,       // ← EDIT HERE: Global add-on for Director's Cut
+    broadcast: 89,     // ← EDIT HERE: Broadcast add-on for Director's Cut
+    global: 189,       // ← EDIT HERE: Global add-on for Director's Cut
   },
   'tier-3': {
     standard: 0,
@@ -379,3 +408,146 @@ export const PRICING_META = {
   taxIncluded: false,
   notes: 'All prices in US Dollars. Talent prices fetched from Supabase database.',
 };
+
+// ============================================================================
+// PRICING DISPLAY TIERS (formerly lib/pricing.ts)
+// ----------------------------------------------------------------------------
+// Presentation layer for the /pricing page and home page CompactPricing.
+// Built on top of VOICE_TIERS + VOICE_RIGHTS_PRICING above so prices stay in
+// sync automatically.
+// ============================================================================
+
+const voiceById = Object.fromEntries(VOICE_TIERS.map(t => [t.id, t]));
+
+export const PRICING_TIERS = [
+  {
+    id: 'tier-1',
+    title: voiceById['tier-1'].name,
+    tagline: 'Speed Meets Quality',
+    subtitle: voiceById['tier-1'].description,
+    price: `US$${voiceById['tier-1'].price}`,
+    unit: '/ 0-60s package',
+    subtext: null,
+    buttonText: 'Start Project',
+    gradient: 'from-green-600 to-teal-600',
+    features: [
+      'Pure AI generation',
+      'Standard Commercial Rights included',
+      '2 rounds of AI retakes & regenerations',
+      'Minor script updates allowed',
+      '24-hour fast delivery',
+      'WAV + MP3 high-quality delivery',
+      'Online project dashboard (status & downloads)',
+    ],
+    deliverables: [
+      { name: 'WAV + MP3 high-quality delivery', included: true },
+      { name: 'Online project dashboard (status & downloads)', included: true },
+      { name: 'Custom delivery formats & stems', included: false },
+      { name: 'Dedicated production manager', included: false },
+      { name: 'Multi-language project coordination', included: false },
+    ],
+    rights: [
+      { name: 'Standard Commercial (YouTube / Social)', included: true },
+      { name: `Broadcast TV & Full Media Buyout (+US$${VOICE_RIGHTS_PRICING['tier-1'].broadcast})`, included: false },
+      { name: `Global TV & Game Rights (+US$${VOICE_RIGHTS_PRICING['tier-1'].global})`, included: false },
+    ],
+    quickStats: [
+      { icon: 'clock', text: '24-Hour Delivery' },
+      { icon: 'repeat', text: '2 AI Retakes' },
+      { icon: 'audio', text: '~1 Min Block' },
+      { icon: 'users', text: 'Pure AI Generation' },
+    ],
+    numericPrice: voiceById['tier-1'].price,
+    highlighted: false,
+    isCustom: false,
+    badge: null,
+    badgeStyle: null,
+  },
+  {
+    id: 'tier-2',
+    title: voiceById['tier-2'].name,
+    tagline: 'Studio Polish, AI Speed',
+    badge: 'MOST POPULAR',
+    subtitle: voiceById['tier-2'].description,
+    price: `US$${voiceById['tier-2'].price}`,
+    unit: '/ 0-60s package',
+    subtext: null,
+    buttonText: 'Start Project',
+    gradient: 'from-blue-600 to-cyan-600',
+    features: [
+      'AI + Human Director emotional tuning',
+      'Standard Commercial Rights included',
+      '2 rounds of Director revisions',
+      'Original actor micro-patching included (if needed)',
+      '100% perfect pronunciation guarantee',
+      'Priority delivery queue',
+      'WAV + MP3 high-quality delivery',
+    ],
+    deliverables: [
+      { name: 'WAV + MP3 high-quality delivery', included: true },
+      { name: 'Priority delivery queue', included: true },
+      { name: 'Original actor micro-patching', included: true },
+      { name: 'Custom delivery formats & stems', included: false },
+      { name: 'Dedicated production manager', included: false },
+    ],
+    rights: [
+      { name: 'Standard Commercial (YouTube / Social)', included: true },
+      { name: `Broadcast TV & Full Media Buyout (+US$${VOICE_RIGHTS_PRICING['tier-2'].broadcast})`, included: false },
+      { name: `Global TV & Game Rights (+US$${VOICE_RIGHTS_PRICING['tier-2'].global})`, included: false },
+    ],
+    quickStats: [
+      { icon: 'clock', text: 'Priority Delivery' },
+      { icon: 'repeat', text: '2 Director Revisions' },
+      { icon: 'audio', text: '~1 Min Block' },
+      { icon: 'users', text: 'AI + Human Director' },
+    ],
+    numericPrice: voiceById['tier-2'].price,
+    highlighted: true,
+    isCustom: false,
+    badgeStyle: 'gold',
+  },
+  {
+    id: 'tier-3',
+    title: voiceById['tier-3'].name,
+    tagline: 'Premium Custom Sessions',
+    badge: 'PREMIUM',
+    subtitle: voiceById['tier-3'].description,
+    price: `US$${voiceById['tier-3'].price}`,
+    unit: '/ 0-60s package',
+    subtext: null,
+    buttonText: 'Start Project',
+    gradient: 'from-amber-600 to-orange-600',
+    features: [
+      '100% Human actor studio recording',
+      'Broadcast & Full Media Buyout options available',
+      '1 round of performance pickups (script changes billed separately)',
+      'Live directed session available',
+      'Dedicated production manager',
+      'Custom delivery formats & stems',
+      'Multi-language project coordination',
+    ],
+    deliverables: [
+      { name: 'WAV + MP3 high-quality delivery', included: true },
+      { name: 'Custom delivery formats & stems', included: true },
+      { name: 'Dedicated production manager', included: true },
+      { name: 'Live directed session', included: true },
+      { name: 'Multi-language project coordination', included: true },
+      { name: '1 round of performance pickups', included: true },
+    ],
+    rights: [
+      { name: 'Standard Commercial (YouTube / Social)', included: true },
+      { name: 'Broadcast TV & Full Media Buyout', included: true },
+      { name: 'Global TV & Game Rights', included: true },
+    ],
+    quickStats: [
+      { icon: 'clock', text: 'Custom Timeline' },
+      { icon: 'repeat', text: '1 Pickup Round' },
+      { icon: 'audio', text: 'Any Duration' },
+      { icon: 'users', text: '100% Human Actor' },
+    ],
+    numericPrice: voiceById['tier-3'].price,
+    highlighted: false,
+    isCustom: false,
+    badgeStyle: 'premium',
+  },
+];

@@ -43,13 +43,15 @@ export default function Navbar() {
 
   const isVoiceContext = pathname?.startsWith('/voice') || pathname === '/voices' || pathname === '/pricing';
   const isMusicContext = pathname?.startsWith('/music');
+  const isDubbingContext = pathname?.startsWith('/dubbing');
   const isLobby = pathname === '/';
 
   if (isDashboard) return null;
 
-  const mainModules = [
+  const visibleModules = [
     { href: '/voice' as const, label: t('voiceStudio') },
     { href: '/music' as const, label: t('musicStudio') },
+    { href: '/dubbing' as const, label: t('dubbingStudio') },
   ];
 
   const getContextTools = (): NavigationLink[] => {
@@ -104,7 +106,7 @@ export default function Navbar() {
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
-              {mainModules.map((module) => {
+              {visibleModules.map((module) => {
                 let isActive = false;
 
                 if (module.href === '/voice' && isVoiceContext) {
@@ -112,6 +114,10 @@ export default function Navbar() {
                 }
 
                 if (module.href === '/music' && isMusicContext) {
+                  isActive = true;
+                }
+
+                if (module.href === '/dubbing' && isDubbingContext) {
                   isActive = true;
                 }
 
@@ -209,7 +215,7 @@ export default function Navbar() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
-              aria-label="Toggle mobile menu"
+              aria-label={t('toggleMobileMenu')}
             >
               {mobileMenuOpen ? (
                 <X className="w-6 h-6" />
@@ -235,7 +241,7 @@ export default function Navbar() {
       >
         <div className="flex flex-col h-full pt-20 px-6">
           <div className="flex flex-col gap-6">
-            {mainModules.map((module) => {
+              {visibleModules.map((module) => {
               let isActive = false;
 
               if (module.href === '/voice' && isVoiceContext) {
@@ -243,6 +249,10 @@ export default function Navbar() {
               }
 
               if (module.href === '/music' && isMusicContext) {
+                isActive = true;
+              }
+
+              if (module.href === '/dubbing' && isDubbingContext) {
                 isActive = true;
               }
 

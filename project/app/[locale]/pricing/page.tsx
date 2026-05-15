@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { CheckCircle2, XCircle, ArrowRight, Clock, Repeat, FileAudio, Users, Download, Shield, Mic } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { PRICING_TIERS } from '@/lib/pricing';
+import { PRICING_TIERS, VOICE_DURATION_PRICING } from '@/lib/config/pricing.config';
 import { Link } from '@/i18n/navigation';
 
 const STAT_ICONS: Record<string, React.ReactNode> = {
@@ -53,8 +54,8 @@ const COMPARISON_FEATURES: { category: string; features: { name: string; tier1: 
   { category: 'compCategoryRights', features: [
     { name: 'compStandardRights', tier1: true, tier2: true, tier3: true },
     { name: 'compYouTube', tier1: true, tier2: true, tier3: true },
-    { name: 'compBroadcast', tier1: '+US$99', tier2: '+US$150', tier3: true },
-    { name: 'compGlobalTV', tier1: '+US$199', tier2: '+US$350', tier3: true },
+    { name: 'compBroadcast', tier1: '+US$89', tier2: '+US$89', tier3: true },
+    { name: 'compGlobalTV', tier1: '+US$189', tier2: '+US$189', tier3: true },
   ]},
 ];
 
@@ -63,6 +64,7 @@ const FAQ_COUNT = 7;
 export default function PricingPage() {
   const t = useTranslations('voice.pricing');
   const tp = useTranslations('home.pricing');
+  const locale = useLocale();
   const router = useRouter();
   const [isContactOpen, setIsContactOpen] = useState(false);
 
@@ -76,7 +78,8 @@ export default function PricingPage() {
       tagline: tp(`${k}Tagline`),
       badge: plan.badge ? tp(`${k}Badge`) : null,
       subtitle: tp(`${k}Subtitle`),
-      price: plan.id === 'tier-3' ? `${tp('tier3PricePrefix')} US$${plan.numericPrice}` : `US$${plan.numericPrice}`,
+      audience: tp(`${k}Audience`),
+      price: `US$${plan.numericPrice}`,
       unit: tp(`${k}Unit`),
       buttonText: tp(`${k}Button`),
       deliverables: plan.deliverables.map((d, i) => ({ ...d, name: tp(`${k}Deliverable${i + 1}`) })),
@@ -99,6 +102,58 @@ export default function PricingPage() {
     question: t(`faq${i + 1}Q`),
     answer: <p>{t.rich(`faq${i + 1}A`, richComponents)}</p>,
   }));
+  const durationPricingRows = [
+    {
+      label: '0-60s',
+      tier1: `US$${VOICE_DURATION_PRICING['tier-1'].ranges[0].price}`,
+      tier2: `US$${VOICE_DURATION_PRICING['tier-2'].ranges[0].price}`,
+      tier3: `US$${VOICE_DURATION_PRICING['tier-3'].ranges[0].price}`,
+    },
+    {
+      label: '61-120s',
+      tier1: `US$${VOICE_DURATION_PRICING['tier-1'].ranges[1].price}`,
+      tier2: `US$${VOICE_DURATION_PRICING['tier-2'].ranges[1].price}`,
+      tier3: `US$${VOICE_DURATION_PRICING['tier-3'].ranges[1].price}`,
+    },
+    {
+      label: '121-180s',
+      tier1: `US$${VOICE_DURATION_PRICING['tier-1'].ranges[2].price}`,
+      tier2: `US$${VOICE_DURATION_PRICING['tier-2'].ranges[2].price}`,
+      tier3: `US$${VOICE_DURATION_PRICING['tier-3'].ranges[2].price}`,
+    },
+    {
+      label: t('calcOverageLabel'),
+      tier1: `+US$${VOICE_DURATION_PRICING['tier-1'].overagePerMinute}/${t('calcPerMin')}`,
+      tier2: `+US$${VOICE_DURATION_PRICING['tier-2'].overagePerMinute}/${t('calcPerMin')}`,
+      tier3: `+US$${VOICE_DURATION_PRICING['tier-3'].overagePerMinute}/${t('calcPerMin')}`,
+    },
+  ];
+  const faqSchemaItems = Array.from({ length: FAQ_COUNT }, (_, i) => ({
+    '@type': 'Question',
+    name: t(`faq${i + 1}Q`),
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: t(`faq${i + 1}A`),
+    },
+  }));
+  const serviceJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    serviceType: 'AI Voiceover Pricing Plans',
+    name: 'Onyx Voiceover Pricing',
+    provider: {
+      '@type': 'Organization',
+      name: 'Onyx Studios',
+      url: 'https://www.onyxstudios.ai',
+    },
+    areaServed: 'Worldwide',
+    inLanguage: locale,
+  };
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqSchemaItems,
+  };
 
   const handleSelectPlan = (plan: typeof PRICING_TIERS[number]) => {
     if (plan.isCustom) {
@@ -110,6 +165,14 @@ export default function PricingPage() {
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-28">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <ContactModal
         isOpen={isContactOpen}
         onClose={() => setIsContactOpen(false)}
@@ -140,6 +203,9 @@ export default function PricingPage() {
 
             <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto">
               {t('pageSubtitle')}
+            </p>
+            <p className="text-base text-gray-500 max-w-3xl mx-auto mt-4 leading-relaxed">
+              {tp('pricingDifferentiatorLead')}
             </p>
           </motion.div>
 
@@ -186,7 +252,10 @@ export default function PricingPage() {
                       {plan.unit && <span className="text-gray-500 ml-2">{plan.unit}</span>}
                     </div>
 
-                    <p className="text-gray-400 mb-8 leading-relaxed">{plan.subtitle}</p>
+                    <p className="text-gray-400 mb-3 leading-relaxed">{plan.subtitle}</p>
+                    <p className="text-sm text-slate-400/90 mb-8 leading-relaxed border-l-2 border-blue-500/40 pl-3">
+                      {plan.audience}
+                    </p>
 
                     <Button
                       onClick={() => handleSelectPlan(plan)}
@@ -257,6 +326,65 @@ export default function PricingPage() {
               </motion.div>
             ))}
           </div>
+
+          <p className="text-center text-sm text-gray-500 max-w-3xl mx-auto mb-16 px-4">
+            {tp('revisionPolicyNote')}
+          </p>
+
+          {/* Pricing Logic */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="mb-20"
+          >
+            <div className="text-center mb-10">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">
+                {t('calcTitle')}
+              </h2>
+              <p className="text-xl text-gray-400 max-w-4xl mx-auto">
+                {t('calcSubtitle')}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-sm text-blue-300 font-semibold mb-2">{t('calcStep1Title')}</p>
+                <p className="text-sm text-gray-300">{t('calcStep1Desc')}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-sm text-blue-300 font-semibold mb-2">{t('calcStep2Title')}</p>
+                <p className="text-sm text-gray-300">{t('calcStep2Desc')}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-sm text-blue-300 font-semibold mb-2">{t('calcStep3Title')}</p>
+                <p className="text-sm text-gray-300">{t('calcStep3Desc')}</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]">
+              <div className="min-w-[720px]">
+                <div className="grid grid-cols-4 gap-4 p-5 border-b border-white/10 text-sm font-semibold text-gray-300">
+                  <div>{t('calcDurationHeader')}</div>
+                  <div className="text-center">{t('compColumnTier1')}</div>
+                  <div className="text-center text-blue-300">{t('compColumnTier2')}</div>
+                  <div className="text-center text-amber-300">{t('compColumnTier3')}</div>
+                </div>
+                {durationPricingRows.map((row, idx) => (
+                  <div
+                    key={row.label}
+                    className={`grid grid-cols-4 gap-4 p-5 text-sm ${idx !== durationPricingRows.length - 1 ? 'border-b border-white/10' : ''}`}
+                  >
+                    <div className="text-gray-300 font-medium">{row.label}</div>
+                    <div className="text-center text-gray-200">{row.tier1}</div>
+                    <div className="text-center text-blue-200">{row.tier2}</div>
+                    <div className="text-center text-amber-200">{row.tier3}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
 
           {/* Detailed Comparison */}
           <motion.div
