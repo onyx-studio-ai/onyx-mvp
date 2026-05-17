@@ -60,3 +60,7 @@ docs/operations/QUOTE_TEMPLATE_STANDARD.md
 docs/backup_數據王_*
 docs/tts-project-master_數據王_*
 docs/tts-recruitment-copy_數據王_*
+
+# local-only tooling (not used by website platform)
+.pydeps/
+scripts/faam_*.py

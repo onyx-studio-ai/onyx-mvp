@@ -4,7 +4,7 @@ import { sendEmail } from '@/lib/mail';
 import { applicationReceivedEmail, applicationTeamNotifyEmail } from '@/lib/mail-templates';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 function getServiceClient() {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -13,6 +13,14 @@ function getServiceClient() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    console.error('[Apply API] Missing Supabase config:', {
+      hasUrl: Boolean(SUPABASE_URL),
+      hasServiceRoleKey: Boolean(SERVICE_ROLE_KEY),
+    });
+    return NextResponse.json({ error: 'Apply service is not configured' }, { status: 500 });
+  }
+
   try {
     const body = await request.json();
     const { fileUrl, fileName, fileSize, ...formData } = body;

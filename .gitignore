@@ -46,3 +46,7 @@ project/HARDCODED_CONFIG_SUMMARY.md
 
 # Cursor
 .cursor/
+
+# nested working trees / local-only assets (not part of main repo)
+hotfix-onyx-mvp/
+tts_acceptance_default.mp3

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { estimateAudioMinutes, calculatePrice } from '@/lib/estimateAudio';
+import { getVoiceRightsAddonPrice, type VoiceRightsLevel } from '@/lib/config/pricing.config';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -122,20 +124,27 @@ export async function POST(request: NextRequest) {
 
     const maxRevisions = resolvedTier === 'tier-3' ? 1 : 2;
 
-    const resolvedRightsLevel = rights_level || (resolvedBroadcast ? 'broadcast' : 'standard');
+    const resolvedRightsLevel = (rights_level || (resolvedBroadcast ? 'broadcast' : 'standard')) as VoiceRightsLevel;
+    const resolvedScriptText = (script_text || '').trim();
+    const recomputedDuration = estimateAudioMinutes(resolvedScriptText);
+    const recomputedBasePrice = calculatePrice(recomputedDuration, resolvedTier as 'tier-1' | 'tier-2' | 'tier-3');
+    const recomputedRightsAddon = getVoiceRightsAddonPrice(resolvedTier, resolvedRightsLevel);
+    const recomputedTotal = recomputedBasePrice + recomputedRightsAddon;
+    const clientPrice = Number(price) || 0;
+    const finalPrice = Math.abs(clientPrice - recomputedTotal) <= 1 ? clientPrice : recomputedTotal;
 
     const orderData: Record<string, unknown> = {
       order_number,
       email: email.trim().toLowerCase(),
       language: language || 'English',
       voice_selection: voice_selection || '',
-      script_text: script_text.trim(),
+      script_text: resolvedScriptText,
       tone_style: tone_style || 'Professional',
       use_case: resolvedUseCase,
       broadcast_rights: resolvedBroadcast,
       tier: resolvedTier,
-      duration: duration || 0,
-      price: price || 0,
+      duration: recomputedDuration,
+      price: finalPrice,
       project_name: project_name || '',
       talent_id: talent_id || null,
       talent_price: talent_price || 0,
