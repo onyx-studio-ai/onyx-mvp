@@ -53,7 +53,9 @@
     "pricing": "Pricing",
     "catalog": "Catalog",
     "liveStrings": "Live Strings",
-    "contact": "Contact"
+    "contact": "Contact",
+    "dubbingStudio": "Dubbing Studio",
+    "toggleMobileMenu": "Toggle mobile menu"
   },
   "footer": {
     "tagline": "AI Generated. Human Perfected.",
@@ -270,7 +272,6 @@
       "tier1Feature4": "Minor script updates allowed",
       "tier1Feature5": "24-hour fast delivery",
       "tier1Feature6": "WAV + MP3 high-quality delivery",
-
       "tier1Deliverable1": "WAV + MP3 high-quality delivery",
       "tier1Deliverable2": "Self-serve client portal access",
       "tier1Deliverable3": "Custom delivery formats & stems",
@@ -334,7 +335,11 @@
       "tier3Stat1": "Custom Timeline",
       "tier3Stat2": "1 Pickup Round",
       "tier3Stat3": "Any Duration",
-      "tier3Stat4": "100% Human Actor"
+      "tier3Stat4": "100% Human Actor",
+      "tier1Audience": "Best for: budget-first buyers, internal pilots, and per-minute price shopping.",
+      "tier2Audience": "Best for: shipping to clients, platforms, or finance/legal teams who ask who approved the audio and what rights apply.",
+      "tier3Audience": "Best for: cast-specific reads, live-directed sessions, and a different risk profile than AI tiers.",
+      "pricingDifferentiatorLead": "If you are comparing raw AI per-minute quotes, start with Tier 1. If you need defensible licensing and a production story—not just a louder AI file—use Tier 2. Choose Tier 3 when you need a human actor and live direction."
     }
   },
   "voice": {
@@ -451,7 +456,9 @@
       "faq6Q": "What is the turnaround time?",
       "faq6A": "<strong>AI Instant Voice</strong> delivers within minutes. <strong>Director's Cut</strong> and <strong>100% Live Studio</strong> typically take <strong>24–48 hours</strong>. For scripts exceeding 10 minutes of audio, delivery times may be extended to ensure production quality.",
       "faq7Q": "Can I have multiple voices in one order?",
-      "faq7A": "Each order is processed for <strong>a single voice profile</strong>. If your project requires dialogue between two or more characters, please place separate orders for each character's lines. This ensures the AI engine (or human actor) correctly applies the intended vocal characteristics to each role."
+      "faq7A": "Each order is processed for <strong>a single voice profile</strong>. If your project requires dialogue between two or more characters, please place separate orders for each character's lines. This ensures the AI engine (or human actor) correctly applies the intended vocal characteristics to each role.",
+      "calcOverageLabel": ">180s overage",
+      "calcPerMin": "min"
     }
   },
   "music": {
@@ -1423,19 +1430,16 @@
     "successTitle": "Application Received",
     "successMessage": "Thank you for applying to join the Onyx Studios talent roster.",
     "backToOnyxStudios": "Back to Onyx Studios",
-
     "featureAITitle": "100% Artist-Authorized AI",
     "featureAIDesc": "Your voice, your rules. We create a secure, legal digital twin.",
     "featureEarnTitle": "Earn While You Sleep",
     "featureEarnDesc": "Get a fair revenue share every time a client uses your AI voice.",
     "featureGigsTitle": "Premium Live Gigs",
     "featureGigsDesc": "Stay in the loop for high-ticket, 100% live recording contracts.",
-
     "step1Title": "What is your role?",
     "step1Subtitle": "Select your primary talent type.",
     "roleVODesc": "Narration, commercial, character, IVR, e-learning",
     "roleSingerDesc": "Pop, jazz, classical, R&B, rock, and beyond",
-
     "step2Title": "Basic Information",
     "step2Subtitle": "Tell us who you are.",
     "labelFullName": "Full Name",
@@ -1460,7 +1464,6 @@
     "accentHintFree": "Describe your native accent or dialect in your own words.",
     "genderMale": "Male",
     "genderFemale": "Female",
-
     "step3TitleVO": "Voice Profile",
     "step3SubtitleVO": "Help us understand your vocal range and style.",
     "labelVoiceQuality": "Voice Quality / Tone *",
@@ -1471,7 +1474,6 @@
     "placeholderNotableClientsVO": "e.g. Toyota, NHK, NetEase",
     "labelBio": "Short Bio (Optional)",
     "placeholderBio": "A brief professional background...",
-
     "step3TitleSinger": "Vocal Profile",
     "step3SubtitleSinger": "Help us understand your singing voice and style.",
     "labelVocalRange": "Voice Type (Vocal Range) *",
@@ -1483,7 +1485,6 @@
     "labelNotableCredits": "Notable Credits or Labels (Optional)",
     "placeholderNotableCreditsSinger": "e.g. Universal Music, Warner, Spotify Original",
     "hintNotableCredits": "Any notable releases, labels, or projects you've sung for?",
-
     "step4Title": "Recording Setup",
     "step4Subtitle": "We require dry, unprocessed audio. Tell us about your current setup.",
     "labelHomeStudio": "Home Recording Studio",
@@ -1500,7 +1501,6 @@
     "labelDryAudio": "Can deliver 100% Dry / RAW audio",
     "hintDryAudio": "No reverb, no compression, no BGM — pure dry signal",
     "dryAudioWarning": "Onyx requires 100% dry audio for all talent submissions. Applications without dry audio capability will not be reviewed.",
-
     "step5TitleVO": "Expected Rates & AI Revenue Share",
     "step5SubtitleVO": "Review the terms below to proceed. All monetary values are in USD.",
     "aiTwinTitle": "Official AI Digital Twin & Service Agreement",
@@ -1510,7 +1510,6 @@
     "labelMinLiveGig": "Minimum Budget for Custom Live Gig (USD)",
     "placeholderMinLiveGig": "e.g. 200",
     "hintMinLiveGig": "What's the absolute minimum budget you'd consider for a 100% custom live recording session? We'll only pitch you 100% Live Studio projects at or above this rate.",
-
     "step5TitleSinger": "Expected Rates & Licensing Preferences",
     "step5SubtitleSinger": "We recruit singers for both AI vocal training and traditional live recording. Select your preferences below. All rates in USD.",
     "pathALabel": "Path A",
@@ -1531,7 +1530,6 @@
     "hintHookChorus": "Minimum budget for a short hook/chorus section with full commercial buyout.",
     "labelAdditionalNotes": "Additional Notes (Optional)",
     "placeholderAdditionalNotes": "Any specific studio gear, revision limits, or project preferences?",
-
     "step6Title": "Demo Submission",
     "readBeforeUpload": "Read before uploading:",
     "uploadRule1": "ONE single .WAV file only (max 2 minutes)",
@@ -1546,7 +1544,6 @@
     "clickToReplace": "Click to replace",
     "fileErrorFormat": "Only .WAV files are accepted. Please convert your audio and re-upload.",
     "fileErrorSize": "File exceeds the 50MB limit. Please trim your recording.",
-
     "step7Title": "Consent & Declaration",
     "step7Subtitle": "Please read and confirm the following before submitting.",
     "consentDataTitle": "Evaluation & Data Processing Consent",
@@ -1560,7 +1557,6 @@
     "consentVoiceIDDesc": "I agree to provide a 10-second \"Voice ID\" recording as part of my final delivery for any project. This recording serves as a biological digital signature confirming my identity and the lawful transfer of rights, which will be linked to the License Certificate issued to the client.",
     "consentAgeTitle": "Age Verification & Capacity",
     "consentAgeDesc": "I confirm that I am 18 years of age or older and possess the legal capacity to enter into binding licensing agreements.",
-
     "btnBack": "Back",
     "btnContinue": "Continue",
     "btnSubmit": "Submit Application",

@@ -53,7 +53,9 @@
     "pricing": "方案價格",
     "catalog": "音樂庫",
     "liveStrings": "現場弦樂錄製",
-    "contact": "聯繫我們"
+    "contact": "聯繫我們",
+    "dubbingStudio": "影片工作室",
+    "toggleMobileMenu": "切換手機選單"
   },
   "footer": {
     "tagline": "AI 生成，賦予靈魂",
@@ -246,7 +248,6 @@
       "featureScriptUpdates": "允許腳本小幅修改",
       "featureWavMp3": "WAV + MP3 高品質交付",
       "featureCustomFormats": "客製化交付格式與分軌",
-
       "featureDedicatedPM": "專屬製作經理",
       "featureMultiLang": "多語言專案統籌",
       "featureStandardRights": "標準商業使用權",
@@ -270,7 +271,6 @@
       "tier1Feature4": "允許小幅腳本修改",
       "tier1Feature5": "24 小時快速交付",
       "tier1Feature6": "WAV + MP3 高品質交付",
-
       "tier1Deliverable1": "WAV + MP3 高品質交付",
       "tier1Deliverable2": "自助式客戶入口",
       "tier1Deliverable3": "自訂交付格式與分軌",
@@ -334,7 +334,11 @@
       "tier3Stat1": "自訂時程",
       "tier3Stat2": "1 輪修正",
       "tier3Stat3": "任意長度",
-      "tier3Stat4": "100% 真人配音"
+      "tier3Stat4": "100% 真人配音",
+      "tier1Audience": "適合：預算優先、內部試聽、要比「每分鐘幾美元」的客戶。",
+      "tier2Audience": "適合：要上線商用、平台／客戶會問「授權與誰把關」的專案。",
+      "tier3Audience": "適合：指定真人、要現場導演、與前兩檔完全不同的風險與交付標準。",
+      "pricingDifferentiatorLead": "若只比市面上每分鐘幾美元的純 AI 代工，請對準第一檔；若要比「檔案」多買「可對外說明的授權與製作把關」，請看第二檔；要真人與現場導演再選第三檔。"
     }
   },
   "voice": {
@@ -451,7 +455,9 @@
       "faq6Q": "交付時間是多久？",
       "faq6A": "<strong>AI 即時語音</strong>在幾分鐘內交付。<strong>聲音導演版</strong>和<strong>100% 現場錄製</strong>通常需要 <strong>24–48 小時</strong>。超過 10 分鐘音訊的腳本可能需要延長交付時間，以確保製作品質。",
       "faq7Q": "一筆訂單可以有多個聲音嗎？",
-      "faq7A": "每筆訂單針對<strong>單一聲音角色</strong>處理。若您的專案需要兩個或更多角色的對話，請為每個角色的台詞分別下單。這確保 AI 引擎（或真人配音員）能正確應用各角色的聲音特質。"
+      "faq7A": "每筆訂單針對<strong>單一聲音角色</strong>處理。若您的專案需要兩個或更多角色的對話，請為每個角色的台詞分別下單。這確保 AI 引擎（或真人配音員）能正確應用各角色的聲音特質。",
+      "calcOverageLabel": ">180 秒超時費",
+      "calcPerMin": "分鐘"
     }
   },
   "music": {
@@ -1423,19 +1429,16 @@
     "successTitle": "申請已收到",
     "successMessage": "感謝您申請加入 Onyx Studios 聲優陣容。",
     "backToOnyxStudios": "返回 Onyx Studios",
-
     "featureAITitle": "100% 藝人授權 AI",
     "featureAIDesc": "您的聲音，由您做主。我們為您打造安全、合法的數位分身。",
     "featureEarnTitle": "睡覺也能賺錢",
     "featureEarnDesc": "每當客戶使用您的 AI 語音，您都能獲得合理的分潤。",
     "featureGigsTitle": "高端現場案件",
     "featureGigsDesc": "持續為您媒合高價位、100% 真人錄音的合作機會。",
-
     "step1Title": "您的角色是？",
     "step1Subtitle": "請選擇您的主要專長類型。",
     "roleVODesc": "旁白、廣告、角色配音、IVR、數位學習",
     "roleSingerDesc": "流行、爵士、古典、R&B、搖滾及更多",
-
     "step2Title": "基本資料",
     "step2Subtitle": "請告訴我們您是誰。",
     "labelFullName": "全名",
@@ -1460,7 +1463,6 @@
     "accentHintFree": "請用您自己的話描述您的母語口音或方言。",
     "genderMale": "男性",
     "genderFemale": "女性",
-
     "step3TitleVO": "聲音檔案",
     "step3SubtitleVO": "幫助我們了解您的音域與風格。",
     "labelVoiceQuality": "聲音質感 / 音色 *",
@@ -1471,7 +1473,6 @@
     "placeholderNotableClientsVO": "例如：Toyota、NHK、網易",
     "labelBio": "簡短自我介紹（選填）",
     "placeholderBio": "簡述您的專業背景...",
-
     "step3TitleSinger": "歌聲檔案",
     "step3SubtitleSinger": "幫助我們了解您的歌聲與風格。",
     "labelVocalRange": "聲部類型（音域）*",
@@ -1483,7 +1484,6 @@
     "labelNotableCredits": "知名作品或唱片公司（選填）",
     "placeholderNotableCreditsSinger": "例如：環球音樂、華納、Spotify Original",
     "hintNotableCredits": "您參與過哪些知名發行、唱片公司或專案？",
-
     "step4Title": "錄音設備",
     "step4Subtitle": "我們要求乾淨、未經處理的音檔。請告訴我們您目前的錄音環境。",
     "labelHomeStudio": "家用錄音室",
@@ -1500,7 +1500,6 @@
     "labelDryAudio": "可提供 100% 乾聲 / RAW 音檔",
     "hintDryAudio": "無殘響、無壓縮、無背景音樂 — 純淨乾聲",
     "dryAudioWarning": "Onyx 要求所有人才提交 100% 乾聲音檔。無法提供乾聲的申請將不予審核。",
-
     "step5TitleVO": "期望費率與 AI 分潤",
     "step5SubtitleVO": "請檢視以下條款以繼續。所有金額以美元計。",
     "aiTwinTitle": "官方 AI 數位分身與服務合約",
@@ -1510,7 +1509,6 @@
     "labelMinLiveGig": "自訂現場錄音最低預算（美元）",
     "placeholderMinLiveGig": "例如：200",
     "hintMinLiveGig": "您願意接受 100% 自訂現場錄音的最低預算是多少？我們只會為您媒合達到或超過此費率的 100% 現場錄音專案。",
-
     "step5TitleSinger": "期望費率與授權偏好",
     "step5SubtitleSinger": "我們同時招募歌手參與 AI 聲音訓練及傳統現場錄音。請在下方選擇您的偏好。所有費率以美元計。",
     "pathALabel": "方案 A",
@@ -1531,7 +1529,6 @@
     "hintHookChorus": "短副歌/合唱段落含完全商業買斷的最低預算。",
     "labelAdditionalNotes": "補充說明（選填）",
     "placeholderAdditionalNotes": "任何特殊錄音設備需求、修改次數限制或專案偏好？",
-
     "step6Title": "作品提交",
     "readBeforeUpload": "上傳前請詳閱：",
     "uploadRule1": "僅限上傳一個 .WAV 檔案（最長 2 分鐘）",
@@ -1546,7 +1543,6 @@
     "clickToReplace": "點擊以替換",
     "fileErrorFormat": "僅接受 .WAV 檔案。請轉換您的音檔後重新上傳。",
     "fileErrorSize": "檔案超過 50MB 限制。請裁剪您的錄音。",
-
     "step7Title": "同意聲明",
     "step7Subtitle": "提交前請詳閱並確認以下內容。",
     "consentDataTitle": "評估與資料處理同意",
@@ -1560,7 +1556,6 @@
     "consentVoiceIDDesc": "我同意在每個專案的最終交付中提供一段 10 秒的「聲紋辨識」錄音。此錄音將作為生物數位簽章，確認我的身分及合法權利轉讓，並將連結至發給客戶的授權證書。",
     "consentAgeTitle": "年齡驗證與行為能力",
     "consentAgeDesc": "我確認本人已年滿 18 歲，且具有簽訂具約束力之授權合約的法律行為能力。",
-
     "btnBack": "上一步",
     "btnContinue": "繼續",
     "btnSubmit": "提交申請",
