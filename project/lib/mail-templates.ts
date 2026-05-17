@@ -373,7 +373,7 @@ export function paymentReceiptEmail(p: PaymentReceiptPayload): { subject: string
     { label: 'Receipt Number', value: `#${p.orderNumber}` },
     { label: 'Service', value: typeLabel },
     { label: 'Amount', value: formatCurrency(p.amount, currency) },
-    { label: 'Payment Method', value: 'Credit Card (TapPay)' },
+    { label: 'Payment Method', value: 'Credit Card (Paddle)' },
     { label: 'Transaction ID', value: p.transactionId },
     { label: 'Date', value: new Date(p.paidAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) },
   ];
