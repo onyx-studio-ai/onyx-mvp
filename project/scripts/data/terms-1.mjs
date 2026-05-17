@@ -22,17 +22,17 @@ export const en = {
 <div class="card">
 <h3 class="card-title">3.1 Base Packages</h3>
 <ul>
-<li><strong>AI Instant Voice ($49 USD/block):</strong> Pure AI generation. Includes Standard Commercial Rights.</li>
-<li><strong>Director\u2019s Cut ($149 USD/block):</strong> AI + Human Director polish. Includes Standard Commercial Rights.</li>
-<li><strong>100% Live Studio (From $299 USD):</strong> Recorded live by professional human actors. All rights levels included.</li>
+<li><strong>AI Instant Voice (US$39, up to 60s):</strong> Pure AI generation. Includes Standard Commercial Rights.</li>
+<li><strong>Director\u2019s Cut (US$89, up to 60s):</strong> AI + Human Director polish. Includes Standard Commercial Rights.</li>
+<li><strong>100% Live Studio (US$229, up to 60s):</strong> Recorded live by professional human actors. All rights levels included.</li>
 </ul>
 </div>
 <div class="card">
 <h3 class="card-title">3.2 Cumulative Rights Levels (Add-On Pricing)</h3>
 <ul>
 <li><strong>Standard Commercial:</strong> YouTube, Social Media, Podcast, Website \u2014 included in all packages.</li>
-<li><strong>Broadcast TV &amp; Full Media Buyout:</strong> Television, Radio, Cinema \u2014 add-on for AI Instant (+$99 USD) and Director\u2019s Cut (+$150 USD); included in 100% Live Studio.</li>
-<li><strong>Global TV &amp; Game Rights:</strong> All territories, all channels, gaming, OTT, streaming \u2014 add-on for AI Instant (+$199 USD) and Director\u2019s Cut (+$350 USD); included in 100% Live Studio.</li>
+<li><strong>Broadcast TV &amp; Full Media Buyout:</strong> Television, Radio, Cinema \u2014 add-on for AI Instant (+$89 USD) and Director\u2019s Cut (+$89 USD); included in 100% Live Studio.</li>
+<li><strong>Global TV &amp; Game Rights:</strong> All territories, all channels, gaming, OTT, streaming \u2014 add-on for AI Instant (+$189 USD) and Director\u2019s Cut (+$189 USD); included in 100% Live Studio.</li>
 </ul>
 <p class="footnote">Rights levels are cumulative: Global includes all Broadcast rights, which includes all Standard rights.</p>
 </div>`,
@@ -229,17 +229,17 @@ export const zhTW = {
 <div class="card">
 <h3 class="card-title">3.1 \u57FA\u790E\u65B9\u6848</h3>
 <ul>
-<li><strong>AI \u5373\u6642\u8A9E\u97F3\uFF08$49 USD/\u5340\u584A\uFF09\uFF1A</strong>\u7D14 AI \u751F\u6210\u3002\u5305\u542B\u6A19\u6E96\u5546\u696D\u4F7F\u7528\u6B0A\u3002</li>
-<li><strong>Director\u2019s Cut\uFF08$149 USD/\u5340\u584A\uFF09\uFF1A</strong>AI + \u4EBA\u5DE5\u5C0E\u6F14\u6F64\u98FE\u3002\u5305\u542B\u6A19\u6E96\u5546\u696D\u4F7F\u7528\u6B0A\u3002</li>
-<li><strong>100% \u73FE\u5834\u9304\u97F3\u5BA4\uFF08$299 USD \u8D77\uFF09\uFF1A</strong>\u7531\u5C08\u696D\u771F\u4EBA\u6F14\u54E1\u73FE\u5834\u9304\u88FD\u3002\u5305\u542B\u6240\u6709\u6B0A\u5229\u5C64\u7D1A\u3002</li>
+<li><strong>AI \u5373\u6642\u8A9E\u97F3\uFF08US$39\uFF0C0-60 \u79D2\uFF09\uFF1A</strong>\u7D14 AI \u751F\u6210\u3002\u5305\u542B\u6A19\u6E96\u5546\u696D\u4F7F\u7528\u6B0A\u3002</li>
+<li><strong>Director\u2019s Cut\uFF08US$89\uFF0C0-60 \u79D2\uFF09\uFF1A</strong>AI + \u4EBA\u5DE5\u5C0E\u6F14\u6F64\u98FE\u3002\u5305\u542B\u6A19\u6E96\u5546\u696D\u4F7F\u7528\u6B0A\u3002</li>
+<li><strong>100% \u73FE\u5834\u9304\u97F3\u5BA4\uFF08US$229\uFF0C0-60 \u79D2\uFF09\uFF1A</strong>\u7531\u5C08\u696D\u771F\u4EBA\u6F14\u54E1\u73FE\u5834\u9304\u88FD\u3002\u5305\u542B\u6240\u6709\u6B0A\u5229\u5C64\u7D1A\u3002</li>
 </ul>
 </div>
 <div class="card">
 <h3 class="card-title">3.2 \u7D2F\u9032\u5F0F\u6B0A\u5229\u5C64\u7D1A\uFF08\u52A0\u8CFC\u50F9\u683C\uFF09</h3>
 <ul>
 <li><strong>\u6A19\u6E96\u5546\u696D\u4F7F\u7528\u6B0A\uFF1A</strong>YouTube\u3001\u793E\u7FA4\u5A92\u9AD4\u3001Podcast\u3001\u7DB2\u7AD9 \u2014 \u6240\u6709\u65B9\u6848\u5747\u5305\u542B\u3002</li>
-<li><strong>\u96FB\u8996\u5EE3\u64AD\u53CA\u5168\u5A92\u9AD4\u8CB7\u65B7\u6B0A\uFF1A</strong>\u96FB\u8996\u3001\u5EE3\u64AD\u3001\u96FB\u5F71\u9662 \u2014 AI \u5373\u6642\u8A9E\u97F3\u52A0\u8CFC\uFF08+$99 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8CFC\uFF08+$150 USD\uFF09\uFF1B100% \u73FE\u5834\u9304\u97F3\u5BA4\u5DF2\u5305\u542B\u3002</li>
-<li><strong>\u5168\u7403\u96FB\u8996\u53CA\u904A\u6232\u6388\u6B0A\uFF1A</strong>\u6240\u6709\u5730\u5340\u3001\u6240\u6709\u983B\u9053\u3001\u904A\u6232\u3001OTT\u3001\u4E32\u6D41 \u2014 AI \u5373\u6642\u8A9E\u97F3\u52A0\u8CFC\uFF08+$199 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8CFC\uFF08+$350 USD\uFF09\uFF1B100% \u73FE\u5834\u9304\u97F3\u5BA4\u5DF2\u5305\u542B\u3002</li>
+<li><strong>\u96FB\u8996\u5EE3\u64AD\u53CA\u5168\u5A92\u9AD4\u8CB7\u65B7\u6B0A\uFF1A</strong>\u96FB\u8996\u3001\u5EE3\u64AD\u3001\u96FB\u5F71\u9662 \u2014 AI \u5373\u6642\u8A9E\u97F3\u52A0\u8CFC\uFF08+$89 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8CFC\uFF08+$89 USD\uFF09\uFF1B100% \u73FE\u5834\u9304\u97F3\u5BA4\u5DF2\u5305\u542B\u3002</li>
+<li><strong>\u5168\u7403\u96FB\u8996\u53CA\u904A\u6232\u6388\u6B0A\uFF1A</strong>\u6240\u6709\u5730\u5340\u3001\u6240\u6709\u983B\u9053\u3001\u904A\u6232\u3001OTT\u3001\u4E32\u6D41 \u2014 AI \u5373\u6642\u8A9E\u97F3\u52A0\u8CFC\uFF08+$189 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8CFC\uFF08+$189 USD\uFF09\uFF1B100% \u73FE\u5834\u9304\u97F3\u5BA4\u5DF2\u5305\u542B\u3002</li>
 </ul>
 <p class="footnote">\u6B0A\u5229\u5C64\u7D1A\u70BA\u7D2F\u9032\u5F0F\uFF1A\u5168\u7403\u6388\u6B0A\u5305\u542B\u6240\u6709\u5EE3\u64AD\u6B0A\u5229\uFF0C\u5EE3\u64AD\u6B0A\u5229\u5305\u542B\u6240\u6709\u6A19\u6E96\u6B0A\u5229\u3002</p>
 </div>`,
@@ -436,17 +436,17 @@ export const zhCN = {
 <div class="card">
 <h3 class="card-title">3.1 \u57FA\u7840\u65B9\u6848</h3>
 <ul>
-<li><strong>AI \u5373\u65F6\u8BED\u97F3\uFF08$49 USD/\u533A\u5757\uFF09\uFF1A</strong>\u7EAF AI \u751F\u6210\u3002\u5305\u542B\u6807\u51C6\u5546\u4E1A\u4F7F\u7528\u6743\u3002</li>
-<li><strong>Director\u2019s Cut\uFF08$149 USD/\u533A\u5757\uFF09\uFF1A</strong>AI + \u4EBA\u5DE5\u5BFC\u6F14\u6DA6\u9970\u3002\u5305\u542B\u6807\u51C6\u5546\u4E1A\u4F7F\u7528\u6743\u3002</li>
-<li><strong>100% \u73B0\u573A\u5F55\u97F3\u68DA\uFF08$299 USD \u8D77\uFF09\uFF1A</strong>\u7531\u4E13\u4E1A\u771F\u4EBA\u6F14\u5458\u73B0\u573A\u5F55\u5236\u3002\u5305\u542B\u6240\u6709\u6743\u5229\u5C42\u7EA7\u3002</li>
+<li><strong>AI \u5373\u65F6\u8BED\u97F3\uFF08US$39\uFF0C0-60 \u79D2\uFF09\uFF1A</strong>\u7EAF AI \u751F\u6210\u3002\u5305\u542B\u6807\u51C6\u5546\u4E1A\u4F7F\u7528\u6743\u3002</li>
+<li><strong>Director\u2019s Cut\uFF08US$89\uFF0C0-60 \u79D2\uFF09\uFF1A</strong>AI + \u4EBA\u5DE5\u5BFC\u6F14\u6DA6\u9970\u3002\u5305\u542B\u6807\u51C6\u5546\u4E1A\u4F7F\u7528\u6743\u3002</li>
+<li><strong>100% \u73B0\u573A\u5F55\u97F3\u68DA\uFF08US$229\uFF0C0-60 \u79D2\uFF09\uFF1A</strong>\u7531\u4E13\u4E1A\u771F\u4EBA\u6F14\u5458\u73B0\u573A\u5F55\u5236\u3002\u5305\u542B\u6240\u6709\u6743\u5229\u5C42\u7EA7\u3002</li>
 </ul>
 </div>
 <div class="card">
 <h3 class="card-title">3.2 \u7D2F\u8FDB\u5F0F\u6743\u5229\u5C42\u7EA7\uFF08\u52A0\u8D2D\u4EF7\u683C\uFF09</h3>
 <ul>
 <li><strong>\u6807\u51C6\u5546\u4E1A\u4F7F\u7528\u6743\uFF1A</strong>YouTube\u3001\u793E\u4EA4\u5A92\u4F53\u3001Podcast\u3001\u7F51\u7AD9 \u2014 \u6240\u6709\u65B9\u6848\u5747\u5305\u542B\u3002</li>
-<li><strong>\u7535\u89C6\u5E7F\u64AD\u53CA\u5168\u5A92\u4F53\u4E70\u65AD\u6743\uFF1A</strong>\u7535\u89C6\u3001\u5E7F\u64AD\u3001\u7535\u5F71\u9662 \u2014 AI \u5373\u65F6\u8BED\u97F3\u52A0\u8D2D\uFF08+$99 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8D2D\uFF08+$150 USD\uFF09\uFF1B100% \u73B0\u573A\u5F55\u97F3\u68DA\u5DF2\u5305\u542B\u3002</li>
-<li><strong>\u5168\u7403\u7535\u89C6\u53CA\u6E38\u620F\u6388\u6743\uFF1A</strong>\u6240\u6709\u5730\u533A\u3001\u6240\u6709\u9891\u9053\u3001\u6E38\u620F\u3001OTT\u3001\u6D41\u5A92\u4F53 \u2014 AI \u5373\u65F6\u8BED\u97F3\u52A0\u8D2D\uFF08+$199 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8D2D\uFF08+$350 USD\uFF09\uFF1B100% \u73B0\u573A\u5F55\u97F3\u68DA\u5DF2\u5305\u542B\u3002</li>
+<li><strong>\u7535\u89C6\u5E7F\u64AD\u53CA\u5168\u5A92\u4F53\u4E70\u65AD\u6743\uFF1A</strong>\u7535\u89C6\u3001\u5E7F\u64AD\u3001\u7535\u5F71\u9662 \u2014 AI \u5373\u65F6\u8BED\u97F3\u52A0\u8D2D\uFF08+$89 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8D2D\uFF08+$89 USD\uFF09\uFF1B100% \u73B0\u573A\u5F55\u97F3\u68DA\u5DF2\u5305\u542B\u3002</li>
+<li><strong>\u5168\u7403\u7535\u89C6\u53CA\u6E38\u620F\u6388\u6743\uFF1A</strong>\u6240\u6709\u5730\u533A\u3001\u6240\u6709\u9891\u9053\u3001\u6E38\u620F\u3001OTT\u3001\u6D41\u5A92\u4F53 \u2014 AI \u5373\u65F6\u8BED\u97F3\u52A0\u8D2D\uFF08+$189 USD\uFF09\u53CA Director\u2019s Cut \u52A0\u8D2D\uFF08+$189 USD\uFF09\uFF1B100% \u73B0\u573A\u5F55\u97F3\u68DA\u5DF2\u5305\u542B\u3002</li>
 </ul>
 <p class="footnote">\u6743\u5229\u5C42\u7EA7\u4E3A\u7D2F\u8FDB\u5F0F\uFF1A\u5168\u7403\u6388\u6743\u5305\u542B\u6240\u6709\u5E7F\u64AD\u6743\u5229\uFF0C\u5E7F\u64AD\u6743\u5229\u5305\u542B\u6240\u6709\u6807\u51C6\u6743\u5229\u3002</p>
 </div>`,

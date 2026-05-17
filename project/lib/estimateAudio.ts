@@ -1,3 +1,5 @@
+import { VOICE_DURATION_PRICING, type VoiceTierId } from '@/lib/config/pricing.config';
+
 const CJK_REGEX = /[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\u31f0-\u31ff\u3200-\u32ff]/g;
 
 const MID_DENSITY_REGEX = /[\u0e00-\u0e7f\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\u0900-\u097f\u0980-\u09ff\u0a00-\u0a7f\u0a80-\u0aff\u0b00-\u0b7f\u0b80-\u0bff\u0c00-\u0c7f\u0c80-\u0cff\u0d00-\u0d7f\u0e80-\u0eff\u1000-\u109f\u1780-\u17ff\u1200-\u137f\u0f00-\u0fff]/g;
@@ -26,8 +28,19 @@ export function estimateAudioMinutes(text: string): number {
   return Math.max(1, Math.ceil(total));
 }
 
-export function calculatePrice(minutes: number, tier: 'tier-1' | 'tier-2'): number {
+export function calculatePrice(minutes: number, tier: VoiceTierId): number {
   if (minutes <= 0) return 0;
-  const rate = tier === 'tier-1' ? 49 : 149;
-  return minutes * rate;
+
+  const model = VOICE_DURATION_PRICING[tier];
+  if (!model) return 0;
+
+  for (const range of model.ranges) {
+    if (minutes <= range.maxMinutes) {
+      return range.price;
+    }
+  }
+
+  const highestRange = model.ranges[model.ranges.length - 1];
+  const extraMinutes = minutes - highestRange.maxMinutes;
+  return highestRange.price + extraMinutes * model.overagePerMinute;
 }
