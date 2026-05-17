@@ -17,6 +17,7 @@
 
 # misc
 .DS_Store
+._*
 *.pem
 
 # debug
@@ -34,3 +35,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sensitive / large local-only assets (not for public repo)
+CLAUDE.md
+docs/final_contracts_bundle/
+docs/pdf_exports_signed_bundle/
+docs/voice-training/
+docs/fonts/
