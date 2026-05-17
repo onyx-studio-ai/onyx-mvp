@@ -1836,7 +1836,10 @@
     "pricingTitle": "价格方案 | Onyx Studios",
     "aboutTitle": "关于我们 | Onyx Studios",
     "contactTitle": "联系我们 | Onyx Studios",
-    "dashboardTitle": "控制台 | Onyx Studios"
+    "dashboardTitle": "控制台 | Onyx Studios",
+    "musicPricingTitle": "音乐价格方案 | Onyx Studios",
+    "musicPricingDescription": "比较 Onyx 音乐制作方案的交付内容、修订次数、授权范围与时程，选择最适合你的等级。",
+    "pricingDescription": "比较 Onyx 语音制作方案的价格、交付时程、可修改次数与授权范围，快速选择最适合的方案。"
   },
   "verify": {
     "loading": "正在验证证书...",

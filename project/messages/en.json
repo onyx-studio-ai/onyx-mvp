@@ -1837,7 +1837,10 @@
     "pricingTitle": "Pricing | Onyx Studios",
     "aboutTitle": "About | Onyx Studios",
     "contactTitle": "Contact | Onyx Studios",
-    "dashboardTitle": "Dashboard | Onyx Studios"
+    "dashboardTitle": "Dashboard | Onyx Studios",
+    "musicPricingTitle": "Music Pricing | Onyx Studios",
+    "musicPricingDescription": "Compare Onyx music production plans across deliverables, revisions, licensing, and timeline to select the right tier for your release.",
+    "pricingDescription": "Compare Onyx voice production pricing tiers, delivery speed, revision scope, and licensing options to choose the right plan for your project."
   },
   "verify": {
     "loading": "Verifying certificate...",
