@@ -42,3 +42,21 @@ docs/final_contracts_bundle/
 docs/pdf_exports_signed_bundle/
 docs/voice-training/
 docs/fonts/
+
+# internal-only docs (margin numbers / pricing strategy / client info / internal SOPs)
+# kept locally but not exposed in public repo
+OPS_BLUEPRINT.md
+VOICE_TAGGING_VISION.md
+docs/COPY_CLARITY_CRITERIA.md
+docs/COPY_QA_AND_METRICS.md
+docs/WEBSITE_MESSAGING_CLARITY.md
+docs/VOICE_PRICING_ANCHOR_SHEET_TEMPLATE.md
+docs/VOICE_PRICING_DECISION_FRAMEWORK.md
+docs/VOICE_PRICING_RANGE_LOGIC.md
+docs/VOICE_PRICING_VALIDATION_METRICS.md
+docs/VOICE_RIGHTS_COVERAGE_MATRIX.md
+docs/operations/LOW_TIER_GUARDRAILS.md
+docs/operations/QUOTE_TEMPLATE_STANDARD.md
+docs/backup_數據王_*
+docs/tts-project-master_數據王_*
+docs/tts-recruitment-copy_數據王_*
