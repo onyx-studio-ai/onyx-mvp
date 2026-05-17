@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import {
   ArrowLeft, Music2, Upload, Download, Check, Clock, Loader2,
   FileMusic, Info, ExternalLink, MessageSquare, Send, CheckCircle2,
@@ -56,6 +56,83 @@ const STATUS_STEPS = [
   { key: 'completed', labelKey: 'statusCompleted' },
 ];
 
+type OrchestraOrderMapKey =
+  | 'tierName1'
+  | 'tierName2'
+  | 'tierName3'
+  | 'tierName4'
+  | 'usageFilmShort'
+  | 'usageTvCommercial'
+  | 'usageVideoGame'
+  | 'usageTrailer'
+  | 'usageAlbumEp'
+  | 'usageYouTubeOnline'
+  | 'usageOther'
+  | 'genreCinematicFilmScore'
+  | 'genreNeoClassical'
+  | 'genreRomanticEra'
+  | 'genreContemporaryClassical'
+  | 'genreMinimalist'
+  | 'genreEpicTrailer'
+  | 'genrePopOrchestral'
+  | 'genreJazzStrings'
+  | 'genreFolkCeltic'
+  | 'genreAmbientTextural'
+  | 'genreGameScore'
+  | 'genreTvCommercial'
+  | 'genreWorldEthnic'
+  | 'genreSacredChoral'
+  | 'genreOther';
+
+const normalizeValue = (value: string) => value.trim().toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ');
+
+const ORCH_TIER_MAP: Record<string, OrchestraOrderMapKey> = {
+  'pop/indie setup': 'tierName1',
+  'acoustic chamber': 'tierName2',
+  'television standard': 'tierName3',
+  'cinematic epic': 'tierName4',
+};
+
+const ORCH_USAGE_MAP: Record<string, OrchestraOrderMapKey> = {
+  'film/short film': 'usageFilmShort',
+  'tv series/commercial': 'usageTvCommercial',
+  'tv/commercial': 'usageTvCommercial',
+  'video game': 'usageVideoGame',
+  trailer: 'usageTrailer',
+  'album/ep': 'usageAlbumEp',
+  'youtube/online': 'usageYouTubeOnline',
+  other: 'usageOther',
+};
+
+const ORCH_GENRE_MAP: Record<string, OrchestraOrderMapKey> = {
+  'cinematic/film score': 'genreCinematicFilmScore',
+  'neo-classical': 'genreNeoClassical',
+  'romantic era': 'genreRomanticEra',
+  'contemporary classical': 'genreContemporaryClassical',
+  minimalist: 'genreMinimalist',
+  'epic/trailer': 'genreEpicTrailer',
+  'pop orchestral': 'genrePopOrchestral',
+  'jazz strings': 'genreJazzStrings',
+  'folk/celtic': 'genreFolkCeltic',
+  'ambient/textural': 'genreAmbientTextural',
+  'game score': 'genreGameScore',
+  'tv/commercial': 'genreTvCommercial',
+  'world/ethnic': 'genreWorldEthnic',
+  'sacred/choral': 'genreSacredChoral',
+  other: 'genreOther',
+};
+
+function localizeOrchestraValue(
+  value: string,
+  isZhLocale: boolean,
+  map: Record<string, OrchestraOrderMapKey>,
+  tOrchestraOrder: (key: OrchestraOrderMapKey) => string,
+): string {
+  if (!isZhLocale || !value) return value;
+  const mappedKey = map[normalizeValue(value)];
+  return mappedKey ? tOrchestraOrder(mappedKey) : value;
+}
+
 function getStepIndex(status: string): number {
   const idx = STATUS_STEPS.findIndex((s) => s.key === status);
   return idx === -1 ? 0 : idx;
@@ -69,7 +146,10 @@ function getDaysRemaining(autoCompleteAt: string | null): number | null {
 
 export default function OrchestraOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const locale = useLocale();
   const t = useTranslations('dashboard.orchestraDetail');
+  const tOrchestraOrder = useTranslations('orchestra.order');
+  const isZhLocale = locale.startsWith('zh');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -289,7 +369,10 @@ export default function OrchestraOrderDetailPage() {
   const canUpload = order.status === 'awaiting_files' || order.status === 'paid';
   const canMessage = ['under_review', 'in_production', 'delivered'].includes(order.status);
   const daysRemaining = getDaysRemaining(order.auto_complete_at);
-  const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const date = new Date(order.created_at).toLocaleDateString(locale, { month: 'long', day: 'numeric', year: 'numeric' });
+  const localizedTierName = localizeOrchestraValue(order.tier_name || '', isZhLocale, ORCH_TIER_MAP, tOrchestraOrder as (key: OrchestraOrderMapKey) => string);
+  const localizedUsage = localizeOrchestraValue(order.usage_type || '', isZhLocale, ORCH_USAGE_MAP, tOrchestraOrder as (key: OrchestraOrderMapKey) => string);
+  const localizedGenre = localizeOrchestraValue(order.genre || '', isZhLocale, ORCH_GENRE_MAP, tOrchestraOrder as (key: OrchestraOrderMapKey) => string);
 
   return (
     <main className="min-h-screen bg-[#050505] text-white">
@@ -349,7 +432,7 @@ export default function OrchestraOrderDetailPage() {
             <div>
               <p className="text-sm font-semibold text-amber-300">{t('estimatedDelivery')}</p>
               <p className="text-xs text-gray-400 mt-0.5">
-                {new Date(order.estimated_delivery_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                {new Date(order.estimated_delivery_date).toLocaleDateString(locale, { month: 'long', day: 'numeric', year: 'numeric' })}
               </p>
             </div>
           </motion.div>
@@ -361,11 +444,11 @@ export default function OrchestraOrderDetailPage() {
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-4 font-medium">{t('orderDetails')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { label: t('stringSetup'), value: order.tier_name },
+              { label: t('stringSetup'), value: localizedTierName || order.tier_name },
               { label: t('duration'), value: `${order.duration_minutes} ${t('minUnit')}` },
               { label: t('amount'), value: `US$${order.price?.toLocaleString()}` },
-              { label: t('usage'), value: order.usage_type || '—' },
-              { label: t('genre'), value: order.genre || '—' },
+              { label: t('usage'), value: localizedUsage || order.usage_type || '—' },
+              { label: t('genre'), value: localizedGenre || order.genre || '—' },
               { label: t('payment'), value: order.payment_status === 'paid' ? t('paid') : t('pending') },
             ].map((item) => (
               <div key={item.label} className="rounded-lg bg-white/[0.02] px-3 py-2.5">

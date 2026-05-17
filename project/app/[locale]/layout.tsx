@@ -1,4 +1,3 @@
-import { Inter, Noto_Sans_TC, Noto_Sans_SC } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import Navbar from '@/components/Navbar';
 import { SelectionProvider } from '@/contexts/SelectionContext';
@@ -6,10 +5,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { notFound } from 'next/navigation';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const notoSansTC = Noto_Sans_TC({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-noto-tc' });
-const notoSansSC = Noto_Sans_SC({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-noto-sc' });
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -53,28 +48,41 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   const messages = await getMessages();
+  const baseUrl = 'https://www.onyxstudios.ai';
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Onyx Studios',
+    url: baseUrl,
+    logo: `${baseUrl}/logo-onyx.png`,
+  };
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Onyx Studios',
+    url: baseUrl,
+    inLanguage: ['en', 'zh-TW', 'zh-CN'],
+  };
 
-  const fontClass = locale === 'zh-TW'
-    ? `${inter.variable} ${notoSansTC.variable} font-sans`
-    : locale === 'zh-CN'
-      ? `${inter.variable} ${notoSansSC.variable} font-sans`
-      : inter.className;
+  const fontClass = 'font-sans';
 
   return (
-    <html lang={locale}>
-      <head>
-        <link rel="icon" href="/logo-onyx.png" type="image/png" />
-        <script src="https://js.tappaysdk.com/sdk/tpdirect/v5.18.0" async></script>
-      </head>
-      <body className={fontClass}>
-        <NextIntlClientProvider messages={messages}>
-          <SelectionProvider>
-            <Navbar />
-            {children}
-            <Toaster />
-          </SelectionProvider>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <div className={fontClass}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <NextIntlClientProvider messages={messages}>
+        <SelectionProvider>
+          <Navbar />
+          {children}
+          <Toaster />
+        </SelectionProvider>
+      </NextIntlClientProvider>
+    </div>
   );
 }

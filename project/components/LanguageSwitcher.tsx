@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { routing, type Locale } from '@/i18n/routing';
 import { Globe } from 'lucide-react';
@@ -19,6 +20,7 @@ interface LanguageSwitcherProps {
 
 export default function LanguageSwitcher({ onLocaleChange }: LanguageSwitcherProps) {
   const locale = useLocale();
+  const t = useTranslations('common');
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -49,7 +51,7 @@ export default function LanguageSwitcher({ onLocaleChange }: LanguageSwitcherPro
           'text-gray-400 hover:text-white hover:bg-white/10',
           open && 'text-white bg-white/10'
         )}
-        aria-label="Switch language"
+        aria-label={t('switchLanguage')}
       >
         <Globe className="w-4 h-4" />
         <span className="hidden sm:inline">{localeLabels[locale]}</span>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Music, Sparkles, CheckCircle, AlertCircle, Loader2, Music2, Users, Crown, Star, Award, X, Lock } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import Footer from '@/components/landing/Footer';
 import { supabase } from '@/lib/supabase';
@@ -47,17 +47,17 @@ interface ConfiguratorState {
 }
 
 const POPULAR_GENRES = [
-  'Cinematic Orchestral',
-  'Upbeat Pop',
-  'Dark Ambient',
-  'Epic Trailer',
-  'Chill Lo-Fi',
-  'Corporate Uplifting',
-  'Electronic Dance',
-  'Acoustic Folk',
-  'Hip Hop Beat',
-  'Jazz Fusion'
-];
+  { value: 'Cinematic Orchestral', key: 'genreCinematicOrchestral' },
+  { value: 'Upbeat Pop', key: 'genreUpbeatPop' },
+  { value: 'Dark Ambient', key: 'genreDarkAmbient' },
+  { value: 'Epic Trailer', key: 'genreEpicTrailer' },
+  { value: 'Chill Lo-Fi', key: 'genreChillLoFi' },
+  { value: 'Corporate Uplifting', key: 'genreCorporateUplifting' },
+  { value: 'Electronic Dance', key: 'genreElectronicDance' },
+  { value: 'Acoustic Folk', key: 'genreAcousticFolk' },
+  { value: 'Hip Hop Beat', key: 'genreHipHopBeat' },
+  { value: 'Jazz Fusion', key: 'genreJazzFusion' },
+] as const;
 
 // Map icons to tiers
 const TIER_ICONS: Record<string, any> = {
@@ -74,6 +74,8 @@ const STRING_ICONS: Record<string, any> = {
 
 export default function MusicConfiguratorPage() {
   const t = useTranslations('music.create');
+  const locale = useLocale();
+  const isZhLocale = locale.startsWith('zh');
   const router = useRouter();
   const searchParams = useSearchParams();
   const preTier = searchParams.get('tier') || '';
@@ -247,6 +249,24 @@ export default function MusicConfiguratorPage() {
   const totalPrice = calculateTotal();
   const selectedBaseTier = getMusicTier(config.baseTier || '');
   const selectedStringTier = getMusicStringAddon(config.stringTier || '');
+  const selectedBaseTierLabel = selectedBaseTier
+    ? (isZhLocale
+      ? (selectedBaseTier.id === 'ai-curator'
+        ? t('baseTierAiCuratorName')
+        : selectedBaseTier.id === 'pro-arrangement'
+          ? t('baseTierProArrangementName')
+          : t('baseTierMasterpieceName'))
+      : selectedBaseTier.name)
+    : '';
+  const selectedStringTierLabel = selectedStringTier
+    ? (isZhLocale
+      ? (selectedStringTier.id === 'intimate-ensemble'
+        ? t('stringTierIntimateName')
+        : selectedStringTier.id === 'rich-studio-strings'
+          ? t('stringTierRichName')
+          : t('stringTierCinematicName'))
+      : selectedStringTier.name)
+    : '';
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-28 pb-20">
@@ -311,7 +331,7 @@ export default function MusicConfiguratorPage() {
                         setConfig({ ...config, email: e.target.value });
                         setErrors({ ...errors, email: undefined });
                       }}
-                      placeholder="your@email.com"
+                      placeholder={t('placeholderEmail')}
                       className={`w-full px-6 py-4 rounded-xl bg-white/5 border ${
                         errors.email ? 'border-red-500/50' : 'border-white/10'
                       } text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors`}
@@ -337,7 +357,7 @@ export default function MusicConfiguratorPage() {
                         setConfig({ ...config, emailConfirm: e.target.value });
                         setErrors({ ...errors, emailConfirm: undefined });
                       }}
-                      placeholder="Re-enter your email"
+                      placeholder={t('placeholderConfirmEmail')}
                       className={`w-full px-6 py-4 rounded-xl bg-white/5 border ${
                         errors.emailConfirm ? 'border-red-500/50' : 'border-white/10'
                       } text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors`}
@@ -380,6 +400,21 @@ export default function MusicConfiguratorPage() {
                 {MUSIC_TIERS.map((tier) => {
                   const Icon = TIER_ICONS[tier.id] || Music;
                   const isSelected = config.baseTier === tier.id;
+                  const tierNameKey = tier.id === 'ai-curator'
+                    ? 'baseTierAiCuratorName'
+                    : tier.id === 'pro-arrangement'
+                      ? 'baseTierProArrangementName'
+                      : 'baseTierMasterpieceName';
+                  const tierDescKey = tier.id === 'ai-curator'
+                    ? 'baseTierAiCuratorDesc'
+                    : tier.id === 'pro-arrangement'
+                      ? 'baseTierProArrangementDesc'
+                      : 'baseTierMasterpieceDesc';
+                  const tierFeatures = tier.id === 'ai-curator'
+                    ? [t('baseTierAiCuratorFeature1'), t('baseTierAiCuratorFeature2'), t('baseTierAiCuratorFeature3')]
+                    : tier.id === 'pro-arrangement'
+                      ? [t('baseTierProArrangementFeature1'), t('baseTierProArrangementFeature2'), t('baseTierProArrangementFeature3')]
+                      : [t('baseTierMasterpieceFeature1'), t('baseTierMasterpieceFeature2'), t('baseTierMasterpieceFeature3')];
 
                   return (
                     <button
@@ -396,7 +431,7 @@ export default function MusicConfiguratorPage() {
                     >
                       {tier.popular && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-xs font-bold">
-                          MOST POPULAR
+                          {t('badgeMostPopular')}
                         </div>
                       )}
 
@@ -406,14 +441,14 @@ export default function MusicConfiguratorPage() {
                         </div>
                       </div>
 
-                      <h3 className="text-xl font-bold text-white mb-2">{tier.name}</h3>
+                      <h3 className="text-xl font-bold text-white mb-2">{isZhLocale ? t(tierNameKey) : tier.name}</h3>
                       <div className="text-3xl font-bold text-purple-400 mb-3">
                         ${tier.price.toLocaleString()}
                       </div>
-                      <p className="text-sm text-gray-400 mb-4">{tier.description}</p>
+                      <p className="text-sm text-gray-400 mb-4">{isZhLocale ? t(tierDescKey) : tier.description}</p>
 
                       <ul className="space-y-2">
-                        {tier.features.map((feature, idx) => (
+                        {(isZhLocale ? tierFeatures : tier.features).map((feature, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
                             <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                             <span>{feature}</span>
@@ -458,6 +493,16 @@ export default function MusicConfiguratorPage() {
                 {MUSIC_STRING_ADDONS.map((tier) => {
                   const Icon = STRING_ICONS[tier.id] || Music;
                   const isSelected = config.stringTier === tier.id;
+                  const stringNameKey = tier.id === 'intimate-ensemble'
+                    ? 'stringTierIntimateName'
+                    : tier.id === 'rich-studio-strings'
+                      ? 'stringTierRichName'
+                      : 'stringTierCinematicName';
+                  const stringDescKey = tier.id === 'intimate-ensemble'
+                    ? 'stringTierIntimateDesc'
+                    : tier.id === 'rich-studio-strings'
+                      ? 'stringTierRichDesc'
+                      : 'stringTierCinematicDesc';
 
                   return (
                     <button
@@ -471,7 +516,7 @@ export default function MusicConfiguratorPage() {
                     >
                       {tier.popular && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-600 to-orange-600 text-xs font-bold">
-                          RECOMMENDED
+                          {t('badgeRecommended')}
                         </div>
                       )}
 
@@ -479,14 +524,14 @@ export default function MusicConfiguratorPage() {
                         <Icon className="w-8 h-8 text-amber-400" />
                       </div>
 
-                      <h3 className="text-xl font-bold text-white mb-1">{tier.name}</h3>
+                      <h3 className="text-xl font-bold text-white mb-1">{isZhLocale ? t(stringNameKey) : tier.name}</h3>
                       <div className="text-sm text-amber-400 font-semibold mb-3">
                         {tier.players} {t('professionalPlayers')}
                       </div>
                       <div className="text-2xl font-bold text-amber-400 mb-3">
                         +${tier.price.toLocaleString()}
                       </div>
-                      <p className="text-sm text-gray-400">{tier.description}</p>
+                      <p className="text-sm text-gray-400">{isZhLocale ? t(stringDescKey) : tier.description}</p>
 
                       {isSelected && (
                         <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center">
@@ -620,7 +665,7 @@ export default function MusicConfiguratorPage() {
                     onChange={(e) => {
                       setConfig({ ...config, projectName: e.target.value });
                     }}
-                    placeholder="(Optional) e.g., Brand Campaign Q3 2026, Short Film OST"
+                    placeholder={t('placeholderProjectName')}
                     className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
                   />
                 </div>
@@ -643,15 +688,15 @@ export default function MusicConfiguratorPage() {
                   <div className="flex flex-wrap gap-3 mb-4">
                     {POPULAR_GENRES.map((genre) => (
                       <button
-                        key={genre}
-                        onClick={() => toggleGenreTag(genre)}
+                        key={genre.value}
+                        onClick={() => toggleGenreTag(genre.value)}
                         className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
-                          config.genreTags.includes(genre)
+                          config.genreTags.includes(genre.value)
                             ? 'bg-purple-600 border-purple-500 text-white'
                             : 'bg-white/5 border-white/10 text-gray-300 hover:border-purple-500/50'
                         }`}
                       >
-                        {genre}
+                        {t(genre.key)}
                       </button>
                     ))}
                   </div>
@@ -667,7 +712,7 @@ export default function MusicConfiguratorPage() {
                         setConfig({ ...config, customGenre: e.target.value });
                         setErrors({ ...errors, genreTags: undefined });
                       }}
-                      placeholder="e.g., Experimental electronic with tribal percussion"
+                      placeholder={t('placeholderCustomStyle')}
                       className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
                     />
                   </div>
@@ -684,7 +729,7 @@ export default function MusicConfiguratorPage() {
                       setConfig({ ...config, sonicRefUrl: e.target.value });
                       setErrors({ ...errors, sonicRefUrl: undefined });
                     }}
-                    placeholder="https://youtube.com/... or any cloud link"
+                    placeholder={t('placeholderSonicRefUrl')}
                     className={`w-full px-6 py-4 rounded-xl bg-white/5 border ${
                       errors.sonicRefUrl ? 'border-red-500/50' : 'border-white/10'
                     } text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors`}
@@ -730,7 +775,7 @@ export default function MusicConfiguratorPage() {
                       setErrors({ ...errors, description: undefined });
                     }}
                     rows={6}
-                    placeholder="Describe your project, mood, target audience, and any specific requirements..."
+                    placeholder={t('placeholderProjectDescription')}
                     className={`w-full px-6 py-4 rounded-xl bg-white/5 border ${
                       errors.description ? 'border-red-500/50' : 'border-white/10'
                     } text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors resize-none`}
@@ -757,14 +802,14 @@ export default function MusicConfiguratorPage() {
                 <div className="flex items-center gap-4 flex-wrap">
                   {selectedBaseTier && (
                     <div className="flex items-center gap-2">
-                      <span className="text-white font-semibold">{selectedBaseTier.name}</span>
+                      <span className="text-white font-semibold">{selectedBaseTierLabel}</span>
                       <span className="text-gray-400">US${selectedBaseTier.price.toLocaleString()}</span>
                     </div>
                   )}
                   {selectedStringTier && (
                     <div className="flex items-center gap-2">
                       <span className="text-gray-400">+</span>
-                      <span className="text-white font-semibold">{selectedStringTier.name}</span>
+                      <span className="text-white font-semibold">{selectedStringTierLabel}</span>
                       <span className="text-amber-400">US${selectedStringTier.price.toLocaleString()}</span>
                     </div>
                   )}

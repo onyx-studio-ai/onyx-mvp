@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowRight, Mic, Music, Video, Database } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -39,8 +39,8 @@ export default function LobbyPage() {
       title: t('videoTitle'),
       description: t('videoDesc'),
       icon: Video,
-      href: '#',
-      type: 'contact' as const,
+      href: '/dubbing',
+      type: 'link' as const,
       gradient: 'from-emerald-600/20 to-teal-600/20',
       borderGradient: 'from-emerald-500 to-teal-500',
       featured: false,
@@ -59,18 +59,18 @@ export default function LobbyPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-28">
+    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-24">
       {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative min-h-[calc(100vh-6rem)] flex items-center justify-center pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 via-transparent to-transparent pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto text-center relative z-10">
+        <div className="max-w-6xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-6xl md:text-8xl font-bold mb-8 bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent tracking-tight">
               {t('brandName')}
             </h1>
 
@@ -81,20 +81,15 @@ export default function LobbyPage() {
                 </p>
               </div>
             </div>
-
-            <p className="text-lg md:text-xl text-gray-400 mb-3 max-w-3xl mx-auto">
-              {t('subtitle')}
-            </p>
-            <p className="text-sm md:text-base text-gray-500 max-w-2xl mx-auto">
-              {t('description')}
-            </p>
+            <p className="text-lg md:text-xl text-gray-400 mb-3 max-w-3xl mx-auto leading-relaxed">{t('subtitle')}</p>
+            <p className="text-sm md:text-base text-gray-500 max-w-2xl mx-auto leading-relaxed">{t('description')}</p>
           </motion.div>
         </div>
       </section>
 
       {/* Product Grid */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 mb-20">
-        <div className="max-w-7xl mx-auto">
+      <section className="py-10 px-4 sm:px-6 lg:px-8 mb-20">
+        <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {products.map((product, index) => {
               const Icon = product.icon;
@@ -110,7 +105,7 @@ export default function LobbyPage() {
                   {/* Gradient Border Effect */}
                   <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r ${product.borderGradient} blur-xl -z-10`} />
 
-                  <div className="relative h-full p-8 flex flex-col justify-between">
+                  <div className="relative h-full p-7 flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between mb-4">
                         <div className={`p-3 rounded-xl bg-gradient-to-br ${product.gradient} border border-white/20`}>
@@ -123,10 +118,10 @@ export default function LobbyPage() {
                         )}
                       </div>
 
-                      <h3 className="text-2xl lg:text-3xl font-bold mb-3 group-hover:text-white transition-colors">
+                      <h3 className="text-2xl lg:text-[2rem] font-bold mb-3 group-hover:text-white transition-colors leading-tight">
                         {product.title}
                       </h3>
-                      <p className="text-gray-400 text-base lg:text-lg mb-6">
+                      <p className="text-gray-300 text-base lg:text-lg mb-6 leading-relaxed">
                         {product.description}
                       </p>
                     </div>

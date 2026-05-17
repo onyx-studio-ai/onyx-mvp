@@ -36,6 +36,10 @@ export default function Footer() {
                 {t('aboutUs')}
               </Link>
               <span>•</span>
+              <Link href="/pricing" className="hover:text-gray-400 transition-colors">
+                {t('pricing')}
+              </Link>
+              <span>•</span>
               <Link href="/contact" className="hover:text-gray-400 transition-colors">
                 {t('contact')}
               </Link>

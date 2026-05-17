@@ -34,6 +34,7 @@ function CheckoutSuccessContent() {
   const [loading, setLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
   const [orderType, setOrderType] = useState<'music' | 'voice' | 'orchestra'>('music');
+  const [isSettlingPayment, setIsSettlingPayment] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -41,7 +42,30 @@ function CheckoutSuccessContent() {
     }
   }, [orderId]);
 
-  const loadOrder = async () => {
+  useEffect(() => {
+    if (!orderId) return;
+
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts += 1;
+      const latest = await loadOrder(false);
+      const paid =
+        latest?.status === 'paid' ||
+        latest?.payment_status === 'completed' ||
+        latest?.payment_status === 'paid';
+
+      setIsSettlingPayment(Boolean(latest) && !paid);
+
+      if (paid || attempts >= 20) {
+        clearInterval(interval);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [orderId]);
+
+  const loadOrder = async (showLoading = true): Promise<Order | null> => {
+    if (showLoading) setLoading(true);
     try {
       let found: Order | null = null;
 
@@ -58,10 +82,12 @@ function CheckoutSuccessContent() {
 
       setOrder(found);
       setIsNewUser(found.user_id === null);
+      return found;
     } catch (error) {
       console.error('Error loading order:', error);
+      return null;
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -104,7 +130,7 @@ function CheckoutSuccessContent() {
           </h1>
 
           <p className="text-xl text-gray-400 mb-8">
-            {t('thankYou')}
+            {isSettlingPayment ? t('processingPayment') : t('thankYou')}
           </p>
 
           <motion.div
@@ -132,7 +158,11 @@ function CheckoutSuccessContent() {
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">{t('statusLabel')}</span>
                 <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-semibold">
-                  {order.payment_status === 'completed' ? t('paid') : order.status}
+                  {isSettlingPayment
+                    ? t('processingPayment')
+                    : order.payment_status === 'completed' || order.payment_status === 'paid'
+                      ? t('paid')
+                      : order.status}
                 </span>
               </div>
             </div>

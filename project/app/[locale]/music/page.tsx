@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Music, Sparkles, Wand2, Headphones, Mic2, Play, Pause, ArrowRight, ChevronDown, Zap, Library, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,8 @@ import { audioManager } from '@/lib/audioManager';
 
 export default function MusicPage() {
   const t = useTranslations('music.landing');
+  const locale = useLocale();
+  const isEnglish = locale === 'en';
   const [isPlayingA, setIsPlayingA] = useState(false);
   const [isPlayingB, setIsPlayingB] = useState(false);
   const [rawUrl, setRawUrl] = useState('');
@@ -76,10 +79,28 @@ export default function MusicPage() {
     }
   };
 
+  const serviceJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    serviceType: 'Hybrid AI Music Production',
+    name: 'Onyx Music Production',
+    provider: {
+      '@type': 'Organization',
+      name: 'Onyx Studios',
+      url: 'https://www.onyxstudios.ai',
+    },
+    areaServed: 'Worldwide',
+    inLanguage: locale,
+  };
+
   return (
-    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden">
+    <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+      />
       {/* SECTION 1: CINEMATIC HERO */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20">
+      <section className="relative min-h-[calc(100vh-6rem)] flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-[#050505] to-[#050505]" />
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/30 rounded-full blur-[120px]" />
@@ -92,29 +113,51 @@ export default function MusicPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
           >
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-600/20 to-pink-600/20 border border-purple-500/30 backdrop-blur-sm">
-                <Music className="w-12 h-12 text-purple-400" />
-              </div>
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-purple-300/25 bg-purple-500/[0.08] px-5 py-2">
+              <span className="w-2 h-2 rounded-full bg-purple-300" />
+              <span className="text-sm tracking-wide text-gray-100 font-medium">{t('studioBadge')}</span>
             </div>
 
-            <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight">
-              <span className="bg-gradient-to-r from-purple-200 via-pink-200 to-purple-400 bg-clip-text text-transparent">
-                {t('heroLine1')}
-              </span>
-              <br />
-              <span className="text-white/90">
-                {t('heroLine2')}
-              </span>
-              <br />
-              <span className="text-white/90">
-                {t('heroLine3')}
-              </span>
-            </h1>
+            {isEnglish ? (
+              <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-[1.1] tracking-tight">
+                <span className="block bg-gradient-to-r from-purple-200 via-pink-200 to-purple-400 bg-clip-text text-transparent">
+                  {t('heroLine1')}
+                </span>
+                <span className="block text-white/90">
+                  {t('heroLine2')} {t('heroLine3')}
+                </span>
+              </h1>
+            ) : (
+              <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-tight">
+                <span className="block bg-gradient-to-r from-purple-200 via-pink-200 to-purple-400 bg-clip-text text-transparent">
+                  {t('heroLine1')}
+                </span>
+                <span className="block text-white/90">
+                  {t('heroLine2')} {t('heroLine3')}
+                </span>
+              </h1>
+            )}
 
-            <p className="text-2xl md:text-3xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-2xl md:text-3xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               {t('heroSubtitle')}
             </p>
+
+            <div className="mb-12 max-w-5xl mx-auto">
+              <p className="text-xs md:text-sm uppercase tracking-[0.16em] text-purple-300 mb-4">
+                {t('offerTitle')}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="rounded-lg bg-white/[0.04] border border-white/[0.10] px-4 py-3 text-sm text-gray-200">
+                  {t('offerPoint1')}
+                </div>
+                <div className="rounded-lg bg-white/[0.04] border border-white/[0.10] px-4 py-3 text-sm text-gray-200">
+                  {t('offerPoint2')}
+                </div>
+                <div className="rounded-lg bg-white/[0.04] border border-white/[0.10] px-4 py-3 text-sm text-gray-200">
+                  {t('offerPoint3')}
+                </div>
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
               <Link href="/music/catalog">

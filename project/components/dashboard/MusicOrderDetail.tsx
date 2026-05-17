@@ -9,7 +9,7 @@ import {
   Clock, RotateCcw, Play, Pause, Send, Lock, AlertTriangle, ArrowRight, CheckCircle, Calendar
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import DemoFeedbackPanel from './DemoFeedbackPanel';
 
 interface Demo {
@@ -160,6 +160,8 @@ async function sendNotification(
 export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailProps) {
   const { toast } = useToast();
   const t = useTranslations('dashboard.musicDetail');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [demos, setDemos] = useState<Demo[]>([]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -196,11 +198,11 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
       await supabase.from('music_order_versions').update({ status: 'selected' }).eq('id', demoId);
       await supabase.from('music_order_versions').update({ status: 'pending_review' }).eq('music_order_id', order.id).neq('id', demoId);
       await supabase.from('music_orders').update({ confirmed_version_id: demoId }).eq('id', order.id);
-      toast({ title: 'Direction selected', description: 'Add your feedback below, then confirm when ready.' });
+      toast({ title: t('directionSelectedToastTitle'), description: t('directionSelectedToastDesc') });
       fetchData();
       onRefresh();
     } catch (err: unknown) {
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+      toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
     } finally {
       setSelectingDemo(false);
     }
@@ -208,18 +210,18 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
 
   const handleConfirmDirection = async () => {
     if (!order.confirmed_version_id) {
-      toast({ title: 'Please select a direction first', variant: 'destructive' });
+      toast({ title: t('selectDirectionFirst'), variant: 'destructive' });
       return;
     }
     setSubmittingFeedback(true);
     try {
       await supabase.from('music_orders').update({ status: 'in_production' }).eq('id', order.id);
       await sendNotification('direction_confirmed', order.email, order.order_number, order.id);
-      toast({ title: 'Direction confirmed!', description: 'Our team will now begin full production.' });
+      toast({ title: t('directionConfirmedToastTitle'), description: t('directionConfirmedToastDesc') });
       fetchData();
       onRefresh();
     } catch (err: unknown) {
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+      toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
     } finally {
       setSubmittingFeedback(false);
     }
@@ -227,18 +229,18 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
 
   const handleConfirmVersion = async () => {
     if (!order.confirmed_version_id) {
-      toast({ title: 'Please select a version first', variant: 'destructive' });
+      toast({ title: t('selectVersionFirst'), variant: 'destructive' });
       return;
     }
     setSubmittingFeedback(true);
     try {
       await supabase.from('music_orders').update({ status: 'awaiting_final', awaiting_final_upload: true }).eq('id', order.id);
       await sendNotification('version_confirmed', order.email, order.order_number, order.id);
-      toast({ title: 'Version confirmed!', description: 'We will now prepare your final files.' });
+      toast({ title: t('versionConfirmedToastTitle'), description: t('versionConfirmedToastDesc') });
       fetchData();
       onRefresh();
     } catch (err: unknown) {
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+      toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
     } finally {
       setSubmittingFeedback(false);
     }
@@ -246,7 +248,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
 
   const handleSubmitRevision = async () => {
     if (!revisionNotes.trim()) {
-      toast({ title: 'Please describe the changes needed', variant: 'destructive' });
+      toast({ title: t('describeChangesNeeded'), variant: 'destructive' });
       return;
     }
     setSubmittingRevision(true);
@@ -266,11 +268,11 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
       await sendNotification('changes_requested', order.email, order.order_number, order.id, { extraMessage: revisionNotes.trim() });
       setRevisionNotes('');
       setShowRevisionForm(false);
-      toast({ title: 'Revision request sent', description: 'Our team will get back to you shortly.' });
+      toast({ title: t('revisionRequestSentTitle'), description: t('revisionRequestSentDesc') });
       fetchData();
       onRefresh();
     } catch (err: unknown) {
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+      toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
     } finally {
       setSubmittingRevision(false);
     }
@@ -342,7 +344,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
           <div>
             <p className="text-sm font-semibold text-amber-300">{t('estimatedDelivery')}</p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {new Date(order.estimated_delivery_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {new Date(order.estimated_delivery_date).toLocaleDateString(locale, { month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
         </div>
@@ -418,7 +420,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                     {demo.status === 'selected' ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-200 font-medium">Demo {idx + 1}</p>
+                    <p className="text-sm text-gray-200 font-medium">{t('demoN', { index: idx + 1 })}</p>
                     {demo.notes && <p className="text-xs text-gray-500 truncate">{demo.notes}</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -467,7 +469,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                     {demo.id === order.confirmed_version_id ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-200 font-medium">Demo {idx + 1}</p>
+                    <p className="text-sm text-gray-200 font-medium">{t('demoN', { index: idx + 1 })}</p>
                     {demo.notes && <p className="text-xs text-gray-500 truncate">{demo.notes}</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -547,7 +549,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
             )}
 
             <div className="flex items-center gap-3">
-              <AudioPreview url={latestRevision.file_url} label={`Preview V${revisionVersions.length}`} />
+              <AudioPreview url={latestRevision.file_url} label={t('previewVn', { version: revisionVersions.length })} />
               <a
                 href={latestRevision.file_url}
                 download
@@ -588,7 +590,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                     <p className="text-xs text-gray-500">{t('describeChanges')} <span className="text-red-400">{t('required')}</span></p>
                     <textarea
                       rows={3}
-                      placeholder="e.g. 'The second half needs more energy — add more drums and push the bass.'"
+                      placeholder={t('revisionPlaceholder')}
                       value={revisionNotes}
                       onChange={(e) => setRevisionNotes(e.target.value)}
                       className="w-full text-sm bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white resize-none focus:outline-none focus:border-blue-500 placeholder:text-gray-600"
@@ -609,7 +611,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                         onClick={() => { setShowRevisionForm(false); setRevisionNotes(''); }}
                         className="border-zinc-700 text-gray-400"
                       >
-                        Cancel
+                        {tc('cancel')}
                       </Button>
                     </div>
                   </div>
@@ -654,7 +656,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                           </Badge>
                         )}
                         <div className="flex-1" />
-                        <AudioPreview url={ver.file_url} label={`Preview V${verNum}`} />
+                        <AudioPreview url={ver.file_url} label={t('previewVn', { version: verNum })} />
                         {!isLatest && !isConfirmed && (
                           <Button
                             size="sm"
@@ -663,11 +665,11 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                               try {
                                 await supabase.from('music_orders').update({ confirmed_version_id: ver.id, status: 'awaiting_final', awaiting_final_upload: true }).eq('id', order.id);
                                 await sendNotification('version_confirmed', order.email, order.order_number, order.id);
-                                toast({ title: `V${verNum} confirmed!`, description: 'We will now prepare your final files.' });
+                                toast({ title: t('confirmVn', { version: verNum }), description: t('versionConfirmedToastDesc') });
                                 fetchData();
                                 onRefresh();
                               } catch {
-                                toast({ title: 'Error', variant: 'destructive' });
+                                toast({ title: tc('error'), description: t('operationFailed'), variant: 'destructive' });
                               } finally {
                                 setSubmittingFeedback(false);
                               }
@@ -675,7 +677,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                             disabled={submittingFeedback}
                             className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs"
                           >
-                            {submittingFeedback ? <Loader2 className="w-3 h-3 animate-spin" /> : `Confirm V${verNum}`}
+                            {submittingFeedback ? <Loader2 className="w-3 h-3 animate-spin" /> : t('confirmVn', { version: verNum })}
                           </Button>
                         )}
                       </div>
@@ -704,7 +706,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                 <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-200 font-medium">
-                    {confirmedVersion.version_type === 'demo' ? t('confirmedDirection') : `Confirmed V${confirmedVersionIndex - demoBatch.length + 1}`}
+                    {confirmedVersion.version_type === 'demo' ? t('confirmedDirection') : t('confirmedVn', { version: confirmedVersionIndex - demoBatch.length + 1 })}
                   </p>
                   {confirmedVersion.notes && <p className="text-xs text-gray-500 truncate">{confirmedVersion.notes}</p>}
                 </div>
@@ -734,7 +736,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                           </Badge>
                         )}
                         <div className="flex-1" />
-                        <AudioPreview url={ver.file_url} label={`Preview V${verNum}`} />
+                        <AudioPreview url={ver.file_url} label={t('previewVn', { version: verNum })} />
                         {!isConfirmed && (
                           <Button
                             size="sm"
@@ -742,11 +744,11 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                               setSubmittingFeedback(true);
                               try {
                                 await supabase.from('music_orders').update({ confirmed_version_id: ver.id }).eq('id', order.id);
-                                toast({ title: `Switched to V${verNum}`, description: 'Your confirmed version has been updated.' });
+                                toast({ title: t('confirmVn', { version: verNum }), description: t('switchedToVersion') });
                                 fetchData();
                                 onRefresh();
                               } catch {
-                                toast({ title: 'Error', variant: 'destructive' });
+                                toast({ title: tc('error'), description: t('operationFailed'), variant: 'destructive' });
                               } finally {
                                 setSubmittingFeedback(false);
                               }
@@ -754,7 +756,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                             disabled={submittingFeedback}
                             className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs"
                           >
-                            {submittingFeedback ? <Loader2 className="w-3 h-3 animate-spin" /> : `Confirm V${verNum}`}
+                            {submittingFeedback ? <Loader2 className="w-3 h-3 animate-spin" /> : t('confirmVn', { version: verNum })}
                           </Button>
                         )}
                       </div>
@@ -783,7 +785,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
               }`}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <Badge variant="outline" className={`text-xs ${ver.id === order.confirmed_version_id ? 'border-green-500/30 text-green-400' : 'border-blue-500/30 text-blue-400'}`}>
-                    {ver.version_type === 'revision' ? `Revision ${idx + 1 - demoBatch.length}` : `Demo ${idx + 1}`}
+                    {ver.version_type === 'revision' ? t('revisionN', { index: idx + 1 - demoBatch.length }) : t('demoN', { index: idx + 1 })}
                   </Badge>
                   <span className="text-xs text-gray-600">{new Date(ver.created_at).toLocaleDateString()}</span>
                   {ver.id === order.confirmed_version_id && (

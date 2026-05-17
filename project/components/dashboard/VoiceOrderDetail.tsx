@@ -87,6 +87,7 @@ function AudioPreview({ url, label }: { url: string; label: string }) {
 export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   const { toast } = useToast();
   const t = useTranslations('dashboard.voiceDetail');
+  const tc = useTranslations('common');
   const [versions, setVersions] = useState<Version[]>([]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -142,11 +143,11 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
           }),
         });
       } catch { /* non-critical */ }
-      toast({ title: 'Version approved!', description: 'We will now prepare your final files.' });
+      toast({ title: t('versionApproved'), description: t('versionApprovedDesc') });
       fetchData();
       onRefresh();
     } catch (err: unknown) {
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+      toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -154,7 +155,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
 
   const handleRequestRevision = async () => {
     if (!revisionNotes.trim()) {
-      toast({ title: 'Please describe the changes needed', variant: 'destructive' });
+      toast({ title: t('describeChangesNeeded'), variant: 'destructive' });
       return;
     }
     setSubmitting(true);
@@ -183,11 +184,11 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
       } catch { /* non-critical */ }
       setRevisionNotes('');
       setShowRevisionForm(false);
-      toast({ title: 'Revision request sent', description: 'Our team will get back to you shortly.' });
+      toast({ title: t('revisionRequestSentTitle'), description: t('revisionRequestSentDesc') });
       fetchData();
       onRefresh();
     } catch (err: unknown) {
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+      toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -298,7 +299,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
                 {t('versionReady', { version: versions.length })}
               </p>
               <p className="text-sm text-gray-400">
-                Listen to your voiceover, then either <strong className="text-white">approve</strong> to proceed to final delivery, or <strong className="text-white">request changes</strong>.
+                {t('versionReviewDesc')}
               </p>
             </div>
 
@@ -330,7 +331,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
                     <p className="text-xs text-gray-500">{t('describeChanges')}</p>
                     <textarea
                       rows={3}
-                      placeholder="e.g. 'Please adjust the pacing in the second paragraph — it feels too rushed.'"
+                      placeholder={t('revisionPlaceholder')}
                       value={revisionNotes}
                       onChange={(e) => setRevisionNotes(e.target.value)}
                       className="w-full text-sm bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white resize-none focus:outline-none focus:border-cyan-500 placeholder:text-gray-600"
@@ -341,7 +342,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
                         {t('submitRevisionRequest')}
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => { setShowRevisionForm(false); setRevisionNotes(''); }} className="border-zinc-700 text-gray-400">
-                        Cancel
+                        {tc('cancel')}
                       </Button>
                     </div>
                   </div>

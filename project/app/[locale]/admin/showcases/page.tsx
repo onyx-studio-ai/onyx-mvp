@@ -320,24 +320,60 @@ function SlotEditor({
   );
 }
 
+const FETCH_TIMEOUT_MS = 20_000;
+
 export default function AdminShowcasesPage() {
   const [showcases, setShowcases] = useState<AudioShowcase[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["featured_voices"])
   );
 
   const fetchShowcases = async () => {
+    setLoadError(null);
+    setLoading(true);
+
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+    ) {
+      const msg =
+        "缺少 NEXT_PUBLIC_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_ANON_KEY（請在 Vercel / .env 設定後重新部署）";
+      console.error(msg);
+      setLoadError(msg);
+      toast.error("Supabase 未設定");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
-        .from("audio_showcases")
-        .select("*")
-        .order("sort_order", { ascending: true });
+      const { data, error } = await Promise.race([
+        supabase
+          .from("audio_showcases")
+          .select("*")
+          .order("sort_order", { ascending: true }),
+        new Promise<{ data: null; error: { message: string } }>((_, reject) => {
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  `連線逾時（${FETCH_TIMEOUT_MS / 1000} 秒）。可能是網路、瀏覽器外掛阻擋，或 Supabase 無法連線。`
+                )
+              ),
+            FETCH_TIMEOUT_MS
+          );
+        }),
+      ]);
+
       if (error) throw error;
       setShowcases(data || []);
     } catch (err) {
       console.error("Error fetching showcases:", err);
-      toast.error("Failed to load showcases");
+      const message =
+        err instanceof Error ? err.message : "Failed to load showcases";
+      setLoadError(message);
+      toast.error("無法載入音訊作品設定");
     } finally {
       setLoading(false);
     }
@@ -362,14 +398,33 @@ export default function AdminShowcasesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 px-4">
         <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+        <p className="text-sm text-gray-500 text-center max-w-md">
+          正在從 Supabase 載入 audio_showcases… 若超過約 20 秒仍無反應，請改用 Chrome
+          試試，或暫停廣告阻擋／隱私外掛後重整。
+        </p>
       </div>
     );
   }
 
   return (
     <div className="p-6 md:p-10 text-white">
+      {loadError && (
+        <div className="mb-6 rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          <p className="font-medium text-red-100 mb-1">無法載入資料</p>
+          <p className="text-red-200/90 mb-3">{loadError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fetchShowcases()}
+            className="border-red-400/50 text-red-100 hover:bg-red-900/50"
+          >
+            重試
+          </Button>
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white flex items-center gap-3">
           <Volume2 className="w-6 h-6 text-cyan-400" />

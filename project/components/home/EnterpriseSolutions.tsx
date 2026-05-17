@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Video, Database } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import ContactModal from '@/components/ContactModal';
 
 export default function EnterpriseSolutions() {
@@ -17,6 +18,8 @@ export default function EnterpriseSolutions() {
       description: t('lipSyncDescription'),
       iconColor: 'text-cyan-400',
       iconBg: 'bg-cyan-500/20',
+      href: '/dubbing',
+      cta: t('learnButton'),
     },
     {
       icon: Database,
@@ -25,6 +28,7 @@ export default function EnterpriseSolutions() {
       iconColor: 'text-emerald-400',
       iconBg: 'bg-emerald-500/20',
       disclaimer: t('acousticDisclaimer'),
+      cta: t('consultButton'),
     },
   ];
 
@@ -77,12 +81,21 @@ export default function EnterpriseSolutions() {
                       {solution.description}
                     </p>
 
-                    <button
-                      onClick={() => handleChatClick(solution.title)}
-                      className="inline-flex items-center justify-center w-full px-6 py-3 rounded-lg font-medium transition-all bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20"
-                    >
-                      {t('consultButton')}
-                    </button>
+                    {'href' in solution && solution.href ? (
+                      <Link
+                        href={solution.href}
+                        className="inline-flex items-center justify-center w-full px-6 py-3 rounded-lg font-medium transition-all bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20"
+                      >
+                        {solution.cta}
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => handleChatClick(solution.title)}
+                        className="inline-flex items-center justify-center w-full px-6 py-3 rounded-lg font-medium transition-all bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20"
+                      >
+                        {solution.cta}
+                      </button>
+                    )}
                     {'disclaimer' in solution && solution.disclaimer && (
                       <p className="text-[11px] text-gray-500 mt-3 text-center leading-relaxed">
                         {solution.disclaimer}

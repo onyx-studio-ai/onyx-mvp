@@ -506,7 +506,7 @@ export default function ApplyPage() {
       <div className="relative overflow-hidden">
         <img
           src="https://images.pexels.com/photos/164938/pexels-photo-164938.jpeg?auto=compress&cs=tinysrgb&w=1600"
-          alt="Recording studio"
+          alt={t('heroImageAlt')}
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black" />

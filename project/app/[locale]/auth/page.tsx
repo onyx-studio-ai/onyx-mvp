@@ -145,11 +145,11 @@ export default function AuthPage() {
                 <div>
                   <p className="text-white font-semibold text-lg mb-2">{t('checkYourInbox')}</p>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    We sent a password reset link to<br />
+                    {t('resetEmailSentPrefix')}<br />
                     <span className="text-white font-medium">{email}</span>
                   </p>
                   <p className="text-gray-600 text-xs mt-3">
-                    The link expires in 1 hour. Check your spam folder if you don't see it.
+                    {t('resetEmailSentHint')}
                   </p>
                 </div>
                 <button
@@ -185,7 +185,7 @@ export default function AuthPage() {
                       <Input
                         id="password"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter your password"
+                        placeholder={t('placeholderPassword')}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -233,17 +233,17 @@ export default function AuthPage() {
                       htmlFor="terms-agreement"
                       className="text-sm text-gray-300 leading-relaxed cursor-pointer"
                     >
-                      I agree to the{' '}
+                      {t('agreeToPrefix')}{' '}
                       <Link href="/legal/terms" target="_blank" className="text-blue-400 hover:text-blue-300 underline">
-                        Terms of Service
+                        {t('termsOfService')}
                       </Link>
                       ,{' '}
                       <Link href="/legal/privacy" target="_blank" className="text-blue-400 hover:text-blue-300 underline">
-                        Privacy Policy
+                        {t('privacyPolicy')}
                       </Link>
-                      , and{' '}
+                      , {t('and')}{' '}
                       <Link href="/legal/aup" target="_blank" className="text-blue-400 hover:text-blue-300 underline">
-                        Acceptable Use Policy
+                        {t('acceptableUsePolicy')}
                       </Link>
                       .
                     </Label>
@@ -276,7 +276,7 @@ export default function AuthPage() {
                     onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
                     className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
                   >
-                    {mode === 'login' ? 'Sign Up' : 'Sign In'}
+                    {mode === 'login' ? t('switchToSignUp') : t('switchToSignIn')}
                   </button>
                 </p>
               </div>
@@ -285,13 +285,13 @@ export default function AuthPage() {
         </Card>
 
         <p className="text-gray-600 text-xs text-center mt-6">
-          By continuing, you agree to our{' '}
+          {t('continueAgreementPrefix')}{' '}
           <Link href="/legal/terms" className="text-gray-500 hover:text-gray-400 underline">
-            Terms of Service
+            {t('termsOfService')}
           </Link>{' '}
-          and{' '}
+          {t('and')}{' '}
           <Link href="/legal/privacy" className="text-gray-500 hover:text-gray-400 underline">
-            Privacy Policy
+            {t('privacyPolicy')}
           </Link>
         </p>
       </div>

@@ -29,29 +29,36 @@ const TIER_UI = {
 
 const TIERS = ORCHESTRA_TIERS.map(t => ({
   ...t,
-  players: `${t.players} Players`,
   ...(TIER_UI[t.id as keyof typeof TIER_UI] ?? {}),
 }));
 
 const GENRE_STYLES = [
-  'Cinematic / Film Score',
-  'Neo-Classical',
-  'Romantic Era',
-  'Contemporary Classical',
-  'Minimalist',
-  'Epic / Trailer',
-  'Pop Orchestral',
-  'Jazz Strings',
-  'Folk / Celtic',
-  'Ambient / Textural',
-  'Game Score',
-  'TV / Commercial',
-  'World / Ethnic',
-  'Sacred / Choral',
-  'Other',
-];
+  { value: 'Cinematic / Film Score', key: 'genreCinematicFilmScore' },
+  { value: 'Neo-Classical', key: 'genreNeoClassical' },
+  { value: 'Romantic Era', key: 'genreRomanticEra' },
+  { value: 'Contemporary Classical', key: 'genreContemporaryClassical' },
+  { value: 'Minimalist', key: 'genreMinimalist' },
+  { value: 'Epic / Trailer', key: 'genreEpicTrailer' },
+  { value: 'Pop Orchestral', key: 'genrePopOrchestral' },
+  { value: 'Jazz Strings', key: 'genreJazzStrings' },
+  { value: 'Folk / Celtic', key: 'genreFolkCeltic' },
+  { value: 'Ambient / Textural', key: 'genreAmbientTextural' },
+  { value: 'Game Score', key: 'genreGameScore' },
+  { value: 'TV / Commercial', key: 'genreTvCommercial' },
+  { value: 'World / Ethnic', key: 'genreWorldEthnic' },
+  { value: 'Sacred / Choral', key: 'genreSacredChoral' },
+  { value: 'Other', key: 'genreOther' },
+] as const;
 
-const USAGE_TYPES = ['Film / Short Film', 'TV Series / Commercial', 'Video Game', 'Trailer', 'Album / EP', 'YouTube / Online', 'Other'];
+const USAGE_TYPES = [
+  { value: 'Film / Short Film', key: 'usageFilmShort' },
+  { value: 'TV Series / Commercial', key: 'usageTvCommercial' },
+  { value: 'Video Game', key: 'usageVideoGame' },
+  { value: 'Trailer', key: 'usageTrailer' },
+  { value: 'Album / EP', key: 'usageAlbumEp' },
+  { value: 'YouTube / Online', key: 'usageYouTubeOnline' },
+  { value: 'Other', key: 'usageOther' },
+] as const;
 
 function calcPrice(tierId: string, duration: number): number {
   const tier = TIERS.find((t) => t.id === tierId);
@@ -63,6 +70,7 @@ function calcPrice(tierId: string, duration: number): number {
 
 export default function OrchestraOrderPage() {
   const t = useTranslations('orchestra.order');
+  const tl = useTranslations('orchestra.landing');
   const router = useRouter();
   const searchParams = useSearchParams();
   const preTier = searchParams.get('tier') || '';
@@ -215,11 +223,13 @@ export default function OrchestraOrderPage() {
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selectedTier === tier.id ? 'border-amber-400 bg-amber-400' : 'border-gray-600'}`}>
                       {selectedTier === tier.id && <Check className="w-2.5 h-2.5 text-black" />}
                     </div>
-                    <h3 className="font-bold text-white text-sm">{tier.name}</h3>
+                    <h3 className="font-bold text-white text-sm">{tl(`tierName${tier.id.replace('tier', '')}`)}</h3>
                   </div>
                   <p className="text-2xl font-bold text-white mb-1">US${tier.basePrice.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500 mb-3">{tier.players} &middot; {tier.section}</p>
-                  <p className="text-xs text-gray-400 mb-3">{tier.suitable}</p>
+                  <p className="text-xs text-gray-500 mb-3">
+                    {tier.players} {tl('playersUnit')} &middot; {tl(`tierSection${tier.id.replace('tier', '')}`)}
+                  </p>
+                  <p className="text-xs text-gray-400 mb-3">{tl(`tierSuitable${tier.id.replace('tier', '')}`)}</p>
                   <p className="text-[11px] text-gray-600">{t('overagePerMin', { amount: String(tier.overagePerMin) })}</p>
                 </button>
               ))}
@@ -272,7 +282,7 @@ export default function OrchestraOrderPage() {
                   <p className="text-4xl font-bold text-amber-400">US${price.toLocaleString()}</p>
                   {duration > tier.includedMinutes && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Includes +US${((duration - tier.includedMinutes) * tier.overagePerMin).toLocaleString()} overage
+                      {t('overageIncluded', { amount: ((duration - tier.includedMinutes) * tier.overagePerMin).toLocaleString() })}
                     </p>
                   )}
                 </div>
@@ -295,10 +305,10 @@ export default function OrchestraOrderPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">{t('projectNameLabel')} <span className="text-gray-600 normal-case">(Optional)</span></label>
+                <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">{t('projectNameLabel')} <span className="text-gray-600 normal-case">({t('optional')})</span></label>
                 <input
                   type="text"
-                  placeholder="e.g. Main Theme — Dragon's Quest"
+                  placeholder={t('projectNamePlaceholder')}
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-amber-500/50 transition-colors"
@@ -317,7 +327,7 @@ export default function OrchestraOrderPage() {
                     >
                       <option value="" className="bg-[#111]">{t('selectGenreStyle')}</option>
                       {GENRE_STYLES.map((s) => (
-                        <option key={s} value={s} className="bg-[#111]">{s}</option>
+                        <option key={s.value} value={s.value} className="bg-[#111]">{t(s.key)}</option>
                       ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
@@ -336,7 +346,7 @@ export default function OrchestraOrderPage() {
                     >
                       <option value="" disabled className="bg-[#111]">{t('selectUsageType')}</option>
                       {USAGE_TYPES.map((u) => (
-                        <option key={u} value={u} className="bg-[#111]">{u}</option>
+                        <option key={u.value} value={u.value} className="bg-[#111]">{t(u.key)}</option>
                       ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
@@ -392,7 +402,7 @@ export default function OrchestraOrderPage() {
                   <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">{t('emailLabel')}</label>
                   <input
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t('emailPlaceholder')}
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-amber-500/50 transition-colors"
@@ -446,7 +456,7 @@ export default function OrchestraOrderPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-sm text-gray-400">
-                  {tier.name} &middot; {duration} min &middot; {tier.players}
+                  {tl(`tierName${tier.id.replace('tier', '')}`)} &middot; {duration} {t('minUnit')} &middot; {tier.players} {tl('playersUnit')}
                 </p>
               </div>
               <div className="text-right">
@@ -471,9 +481,9 @@ export default function OrchestraOrderPage() {
             </p>
             <p className="text-center text-xs text-gray-600 mt-1.5">
               {t('agreeTermsPrefix')}{' '}
-              <a href="/legal/terms" target="_blank" className="text-gray-400 underline underline-offset-2 hover:text-white transition-colors">{t('termsOfService')}</a>
+              <Link href="/legal/terms" target="_blank" className="text-gray-400 underline underline-offset-2 hover:text-white transition-colors">{t('termsOfService')}</Link>
               {' & '}
-              <a href="/legal/aup" target="_blank" className="text-gray-400 underline underline-offset-2 hover:text-white transition-colors">{t('acceptableUsePolicy')}</a>.
+              <Link href="/legal/aup" target="_blank" className="text-gray-400 underline underline-offset-2 hover:text-white transition-colors">{t('acceptableUsePolicy')}</Link>.
             </p>
           </motion.div>
         </div>

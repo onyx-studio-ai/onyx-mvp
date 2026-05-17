@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { Shield, CheckCircle, XCircle, Download, Loader2, Globe, Tv, Youtube, Music, Ban, FileText, AlertTriangle } from 'lucide-react';
 
 interface CertificateData {
@@ -268,8 +269,8 @@ export default function VerifyPage() {
           <p>{t('footerSupport')}</p>
           <p className="pt-2 italic">
             {t.rich('footerLegal', {
-              terms: (c) => <a href="/legal/terms" className="text-gray-500 underline underline-offset-2 hover:text-gray-400 transition-colors">{c}</a>,
-              aup: (c) => <a href="/legal/aup" className="text-gray-500 underline underline-offset-2 hover:text-gray-400 transition-colors">{c}</a>,
+              terms: (c) => <Link href="/legal/terms" className="text-gray-500 underline underline-offset-2 hover:text-gray-400 transition-colors">{c}</Link>,
+              aup: (c) => <Link href="/legal/aup" className="text-gray-500 underline underline-offset-2 hover:text-gray-400 transition-colors">{c}</Link>,
             })}
           </p>
         </div>

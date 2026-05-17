@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Mic, CheckCircle, AlertCircle, Loader2, Zap, Star, Crown, Lock, Check, Link2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Footer from '@/components/landing/Footer';
 import { supabase } from '@/lib/supabase';
 import { VOICE_TIERS, VOICE_RIGHTS_LABELS, type VoiceRightsLevel, getVoiceRightsAddonPrice } from '@/lib/config/pricing.config';
@@ -57,6 +57,8 @@ const USE_CASE_KEYS: Record<string, string> = {
 
 export default function VoiceConfiguratorPage() {
   const t = useTranslations('voice.create');
+  const locale = useLocale();
+  const isZhLocale = locale.startsWith('zh');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -107,6 +109,29 @@ export default function VoiceConfiguratorPage() {
 
   const selectedTier = VOICE_TIERS.find(t => t.id === config.baseTier);
   const isCustomTier = selectedTier?.isCustom ?? false;
+  const selectedTierLabel = selectedTier
+    ? (isZhLocale
+      ? (selectedTier.id === 'tier-1'
+        ? t('tierNameAiInstant')
+        : selectedTier.id === 'tier-2'
+          ? t('tierNameDirectorsCut')
+          : t('tierNameLiveStudio'))
+      : selectedTier.name)
+    : '';
+  const selectedTierPriceLabel = selectedTier
+    ? (isZhLocale
+      ? (selectedTier.id === 'tier-1'
+        ? t('tierPriceLabelAiInstant')
+        : selectedTier.id === 'tier-2'
+          ? t('tierPriceLabelDirectorsCut')
+          : t('tierPriceLabelLiveStudio'))
+      : (selectedTier.priceLabel || `US$${selectedTier.price}`))
+    : '';
+  const rightsLevelLabel = rightsLevel === 'standard'
+    ? t('rightsStandardName')
+    : rightsLevel === 'broadcast'
+      ? t('rightsBroadcastName')
+      : t('rightsGlobalName');
 
   useEffect(() => {
     if (config.baseTier === 'tier-3') setRightsLevel('global');
@@ -114,7 +139,7 @@ export default function VoiceConfiguratorPage() {
 
   const estimatedMinutes = estimateAudioMinutes(config.scriptText);
   const basePrice = config.baseTier && !isCustomTier
-    ? calculatePrice(estimatedMinutes, config.baseTier as 'tier-1' | 'tier-2')
+    ? calculatePrice(estimatedMinutes, config.baseTier as 'tier-1' | 'tier-2' | 'tier-3')
     : 0;
   const rightsAddon = config.baseTier ? getVoiceRightsAddonPrice(config.baseTier, rightsLevel) : 0;
   const totalPrice = basePrice + rightsAddon;
@@ -290,7 +315,7 @@ export default function VoiceConfiguratorPage() {
                       setConfig({ ...config, email: e.target.value });
                       setErrors({ ...errors, email: undefined });
                     }}
-                    placeholder="your@email.com"
+                    placeholder={t('placeholderEmail')}
                     className={`w-full px-6 py-4 rounded-xl bg-white/5 border ${
                       errors.email ? 'border-red-500/50' : 'border-white/10'
                     } text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors`}
@@ -316,7 +341,7 @@ export default function VoiceConfiguratorPage() {
                       setConfig({ ...config, emailConfirm: e.target.value });
                       setErrors({ ...errors, emailConfirm: undefined });
                     }}
-                    placeholder="Re-enter your email"
+                    placeholder={t('placeholderConfirmEmail')}
                     className={`w-full px-6 py-4 rounded-xl bg-white/5 border ${
                       errors.emailConfirm ? 'border-red-500/50' : 'border-white/10'
                     } text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors`}
@@ -346,7 +371,9 @@ export default function VoiceConfiguratorPage() {
             className="p-8 rounded-3xl bg-black/40 border border-white/10 backdrop-blur-sm"
           >
             <h2 className="text-3xl font-bold mb-2 text-white">{t('selectServiceTierTitle')}</h2>
-            <p className="text-gray-400 mb-8">{t('selectServiceTierDesc')}</p>
+            <p className="text-gray-400 mb-3">{t('selectServiceTierDesc')}</p>
+            <p className="text-sm text-gray-500 mb-2 leading-relaxed">{t('tierSelectionLead')}</p>
+            <p className="text-xs text-gray-600 mb-8 leading-relaxed">{t('revisionSurchargeNote')}</p>
 
             {errors.baseTier && (
               <p className="mb-4 text-sm text-red-400 flex items-center gap-2">
@@ -359,6 +386,26 @@ export default function VoiceConfiguratorPage() {
               {VOICE_TIERS.map((tier) => {
                 const Icon = TIER_ICONS[tier.id] || Mic;
                 const isSelected = config.baseTier === tier.id;
+                const tierNameKey = tier.id === 'tier-1'
+                  ? 'tierNameAiInstant'
+                  : tier.id === 'tier-2'
+                    ? 'tierNameDirectorsCut'
+                    : 'tierNameLiveStudio';
+                const tierDescKey = tier.id === 'tier-1'
+                  ? 'tierDescAiInstant'
+                  : tier.id === 'tier-2'
+                    ? 'tierDescDirectorsCut'
+                    : 'tierDescLiveStudio';
+                const tierPriceKey = tier.id === 'tier-1'
+                  ? 'tierPriceLabelAiInstant'
+                  : tier.id === 'tier-2'
+                    ? 'tierPriceLabelDirectorsCut'
+                    : 'tierPriceLabelLiveStudio';
+                const tierFeatures = tier.id === 'tier-1'
+                  ? [t('tier1Feature1'), t('tier1Feature2'), t('tier1Feature3')]
+                  : tier.id === 'tier-2'
+                    ? [t('tier2Feature1'), t('tier2Feature2'), t('tier2Feature3')]
+                    : [t('tier3Feature1'), t('tier3Feature2'), t('tier3Feature3')];
 
                 return (
                   <button
@@ -386,7 +433,11 @@ export default function VoiceConfiguratorPage() {
                             ? 'bg-gradient-to-r from-yellow-600 to-amber-500 shadow-[0_0_16px_rgba(251,191,36,0.5)]'
                             : 'bg-gradient-to-r from-purple-600 to-pink-500 shadow-[0_0_16px_rgba(168,85,247,0.5)]'
                         }`}>
-                          {tier.badge}
+                          {tier.badge === 'MOST POPULAR'
+                            ? t('badgeMostPopular')
+                            : tier.badge === 'PREMIUM'
+                              ? t('badgePremium')
+                              : tier.badge}
                         </div>
                       </div>
                     )}
@@ -397,16 +448,16 @@ export default function VoiceConfiguratorPage() {
                       </div>
                     </div>
 
-                    <h3 className="text-xl font-bold text-white mb-1">{tier.name}</h3>
+                    <h3 className="text-xl font-bold text-white mb-1">{isZhLocale ? t(tierNameKey) : tier.name}</h3>
                     <div className={`text-2xl font-bold mb-3 ${
                       tier.popular ? 'text-yellow-400' : 'text-blue-400'
                     }`}>
-                      {tier.priceLabel || `US$${tier.price}`}
+                      {isZhLocale ? t(tierPriceKey) : (tier.priceLabel || `US$${tier.price}`)}
                     </div>
-                    <p className="text-sm text-gray-400 mb-5 leading-relaxed">{tier.description}</p>
+                    <p className="text-sm text-gray-400 mb-5 leading-relaxed">{isZhLocale ? t(tierDescKey) : tier.description}</p>
 
                     <div className="space-y-2.5 mt-auto">
-                      {tier.features.map((feature, idx) => (
+                      {(isZhLocale ? tierFeatures : tier.features).map((feature, idx) => (
                         <div key={idx} className="flex items-start gap-2.5">
                           <div className={`mt-0.5 flex-shrink-0 w-4.5 h-4.5 rounded-full flex items-center justify-center ${
                             isSelected
@@ -463,7 +514,7 @@ export default function VoiceConfiguratorPage() {
                 >
                   {languages.map((lang) => (
                     <option key={lang.code} value={lang.code} className="bg-black">
-                      {lang.name}
+                      {locale.startsWith('zh') ? lang.zhName : lang.name}
                     </option>
                   ))}
                 </select>
@@ -521,7 +572,7 @@ export default function VoiceConfiguratorPage() {
             <div className="space-y-6">
               <div>
                 <label className="block text-lg font-bold text-white mb-3">
-                  {t('projectName')} <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+                    {t('projectName')} <span className="text-gray-500 text-sm font-normal">({t('optional')})</span>
                 </label>
                 <input
                   type="text"
@@ -529,7 +580,7 @@ export default function VoiceConfiguratorPage() {
                   onChange={(e) => {
                     setConfig({ ...config, projectName: e.target.value });
                   }}
-                  placeholder="(Optional) e.g., Commercial for XYZ Brand"
+                    placeholder={t('placeholderProjectName')}
                   className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors"
                 />
               </div>
@@ -545,7 +596,7 @@ export default function VoiceConfiguratorPage() {
                     setErrors({ ...errors, scriptText: undefined });
                   }}
                   rows={8}
-                  placeholder="Paste your script here..."
+                  placeholder={t('placeholderScript')}
                   className={`w-full px-6 py-4 rounded-xl bg-white/5 border ${
                     errors.scriptText ? 'border-red-500/50' : 'border-white/10'
                   } text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors resize-none`}
@@ -562,7 +613,7 @@ export default function VoiceConfiguratorPage() {
                     </div>
                     {rightsAddon > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">{t('rightsAddon')} ({VOICE_RIGHTS_LABELS[rightsLevel].name})</span>
+                        <span className="text-gray-400">{t('rightsAddon')} ({isZhLocale ? rightsLevelLabel : VOICE_RIGHTS_LABELS[rightsLevel].name})</span>
                         <span className="text-blue-300 font-mono font-bold">+US${rightsAddon}</span>
                       </div>
                     )}
@@ -627,7 +678,7 @@ export default function VoiceConfiguratorPage() {
                   type="url"
                   value={config.sourceLink}
                   onChange={(e) => setConfig({ ...config, sourceLink: e.target.value })}
-                  placeholder="https://youtube.com/... or any cloud link"
+                  placeholder={t('placeholderReferenceLink')}
                   className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors"
                 />
               </div>
@@ -648,6 +699,16 @@ export default function VoiceConfiguratorPage() {
               <div className="space-y-3">
                 {(Object.keys(VOICE_RIGHTS_LABELS) as VoiceRightsLevel[]).map((level) => {
                   const label = VOICE_RIGHTS_LABELS[level];
+                  const localizedName = level === 'standard'
+                    ? t('rightsStandardName')
+                    : level === 'broadcast'
+                      ? t('rightsBroadcastName')
+                      : t('rightsGlobalName');
+                  const localizedDesc = level === 'standard'
+                    ? t('rightsStandardDesc')
+                    : level === 'broadcast'
+                      ? t('rightsBroadcastDesc')
+                      : t('rightsGlobalDesc');
                   const addonPrice = getVoiceRightsAddonPrice(config.baseTier, level);
                   const isSelected = rightsLevel === level;
                   const isIncluded = addonPrice === 0;
@@ -673,8 +734,8 @@ export default function VoiceConfiguratorPage() {
                             )}
                           </div>
                           <div>
-                            <div className="text-white font-semibold text-lg">{label.name}</div>
-                            <div className="text-gray-400 text-sm mt-0.5">{label.description}</div>
+                            <div className="text-white font-semibold text-lg">{isZhLocale ? localizedName : label.name}</div>
+                            <div className="text-gray-400 text-sm mt-0.5">{isZhLocale ? localizedDesc : label.description}</div>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0 ml-4">
@@ -713,8 +774,8 @@ export default function VoiceConfiguratorPage() {
                 <div className="flex items-center gap-4 flex-wrap">
                   {selectedTier && (
                     <div className="flex items-center gap-2">
-                      <span className="text-white font-semibold">{selectedTier.name}</span>
-                      <span className="text-gray-400">US${selectedTier.price}/min</span>
+                      <span className="text-white font-semibold">{selectedTierLabel}</span>
+                      <span className="text-gray-400">{selectedTierPriceLabel}</span>
                     </div>
                   )}
                   {config.voiceSelection && (
@@ -726,13 +787,13 @@ export default function VoiceConfiguratorPage() {
                   {estimatedMinutes > 0 && selectedTier && !isCustomTier && (
                     <div className="flex items-center gap-2">
                       <span className="text-gray-400">•</span>
-                      <span className="text-gray-300">~{estimatedMinutes} min</span>
+                      <span className="text-gray-300">~{estimatedMinutes} {t('minuteUnitShort')}</span>
                     </div>
                   )}
                   {rightsLevel !== 'standard' && (
                     <div className="flex items-center gap-2">
                       <span className="text-gray-400">•</span>
-                      <span className="text-cyan-300 font-medium">{VOICE_RIGHTS_LABELS[rightsLevel].name}</span>
+                      <span className="text-cyan-300 font-medium">{isZhLocale ? rightsLevelLabel : VOICE_RIGHTS_LABELS[rightsLevel].name}</span>
                       {rightsAddon > 0 && <span className="text-gray-400 text-sm">(+${rightsAddon})</span>}
                     </div>
                   )}
