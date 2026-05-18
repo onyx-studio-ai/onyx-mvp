@@ -280,7 +280,6 @@
       "tier1Feature4": "Minor script updates allowed",
       "tier1Feature5": "24-hour fast delivery",
       "tier1Feature6": "WAV + MP3 high-quality delivery",
-
       "tier1Deliverable1": "WAV + MP3 high-quality delivery",
       "tier1Deliverable2": "Online dashboard for order status & file delivery — not unlimited self-serve AI generation",
       "tier1Deliverable3": "Custom delivery formats & stems",
@@ -1632,19 +1631,16 @@
     "successTitle": "Application Received",
     "successMessage": "Thank you for applying to join the Onyx Studios talent roster.",
     "backToOnyxStudios": "Back to Onyx Studios",
-
     "featureAITitle": "100% Artist-Authorized AI",
     "featureAIDesc": "Your voice, your rules. We create a secure, legal digital twin.",
     "featureEarnTitle": "Earn While You Sleep",
     "featureEarnDesc": "Get a fair revenue share every time a client uses your AI voice.",
     "featureGigsTitle": "Premium Live Gigs",
     "featureGigsDesc": "Stay in the loop for high-ticket, 100% live recording contracts.",
-
     "step1Title": "What is your role?",
     "step1Subtitle": "Select your primary talent type.",
     "roleVODesc": "Narration, commercial, character, IVR, e-learning",
     "roleSingerDesc": "Pop, jazz, classical, R&B, rock, and beyond",
-
     "step2Title": "Basic Information",
     "step2Subtitle": "Tell us who you are.",
     "labelFullName": "Full Name",
@@ -1669,7 +1665,6 @@
     "accentHintFree": "Describe your native accent or dialect in your own words.",
     "genderMale": "Male",
     "genderFemale": "Female",
-
     "step3TitleVO": "Voice Profile",
     "step3SubtitleVO": "Help us understand your vocal range and style.",
     "labelVoiceQuality": "Voice Quality / Tone *",
@@ -1680,7 +1675,6 @@
     "placeholderNotableClientsVO": "e.g. Toyota, NHK, NetEase",
     "labelBio": "Short Bio (Optional)",
     "placeholderBio": "A brief professional background...",
-
     "step3TitleSinger": "Vocal Profile",
     "step3SubtitleSinger": "Help us understand your singing voice and style.",
     "labelVocalRange": "Voice Type (Vocal Range) *",
@@ -1692,7 +1686,6 @@
     "labelNotableCredits": "Notable Credits or Labels (Optional)",
     "placeholderNotableCreditsSinger": "e.g. Universal Music, Warner, Spotify Original",
     "hintNotableCredits": "Any notable releases, labels, or projects you've sung for?",
-
     "step4Title": "Recording Setup",
     "step4Subtitle": "We require dry, unprocessed audio. Tell us about your current setup.",
     "labelHomeStudio": "Home Recording Studio",
@@ -1709,7 +1702,6 @@
     "labelDryAudio": "Can deliver 100% Dry / RAW audio",
     "hintDryAudio": "No reverb, no compression, no BGM — pure dry signal",
     "dryAudioWarning": "Onyx requires 100% dry audio for all talent submissions. Applications without dry audio capability will not be reviewed.",
-
     "step5TitleVO": "Expected Rates & AI Revenue Share",
     "step5SubtitleVO": "Review the terms below to proceed. All monetary values are in USD.",
     "aiTwinTitle": "Official AI Digital Twin & Service Agreement",
@@ -1719,7 +1711,6 @@
     "labelMinLiveGig": "Minimum Budget for Custom Live Gig (USD)",
     "placeholderMinLiveGig": "e.g. 200",
     "hintMinLiveGig": "What's the absolute minimum budget you'd consider for a 100% custom live recording session? We'll only pitch you 100% Live Studio projects at or above this rate.",
-
     "step5TitleSinger": "Expected Rates & Licensing Preferences",
     "step5SubtitleSinger": "We recruit singers for both AI vocal training and traditional live recording. Select your preferences below. All rates in USD.",
     "pathALabel": "Path A",
@@ -1740,7 +1731,6 @@
     "hintHookChorus": "Minimum budget for a short hook/chorus section with full commercial buyout.",
     "labelAdditionalNotes": "Additional Notes (Optional)",
     "placeholderAdditionalNotes": "Any specific studio gear, revision limits, or project preferences?",
-
     "step6Title": "Demo Submission",
     "readBeforeUpload": "Read before uploading:",
     "uploadRule1": "ONE single .WAV file only (max 2 minutes)",
@@ -1755,7 +1745,6 @@
     "clickToReplace": "Click to replace",
     "fileErrorFormat": "Only .WAV files are accepted. Please convert your audio and re-upload.",
     "fileErrorSize": "File exceeds the 50MB limit. Please trim your recording.",
-
     "step7Title": "Consent & Declaration",
     "step7Subtitle": "Please read and confirm the following before submitting.",
     "consentDataTitle": "Evaluation & Data Processing Consent",
@@ -1769,7 +1758,6 @@
     "consentVoiceIDDesc": "I agree to provide a 10-second \"Voice ID\" recording as part of my final delivery for any project. This recording serves as a biological digital signature confirming my identity and the lawful transfer of rights, which will be linked to the License Certificate issued to the client.",
     "consentAgeTitle": "Age Verification & Capacity",
     "consentAgeDesc": "I confirm that I am 18 years of age or older and possess the legal capacity to enter into binding licensing agreements.",
-
     "btnBack": "Back",
     "btnContinue": "Continue",
     "btnSubmit": "Submit Application",
@@ -2239,13 +2227,13 @@
       "s2Title": "2. Data Collection &amp; Minimization",
       "s2Body": "<p>We adhere to the principle of Data Minimization. We only collect:</p>\n<ul>\n<li><strong>Personal Identity Information:</strong> Email address (via Magic Link authentication). No passwords required.</li>\n<li><strong>Transaction Data:</strong> Purchase history, invoice numbers, and payment timestamps.</li>\n<li><strong>Input Data:</strong> Text scripts (for Voiceover), MIDI files, and Musical Scores (PDF, MusicXML) provided by you for audio generation or live recording services.</li>\n<li><strong>Technical Data:</strong> IP address, browser type, and operating system for security and fraud prevention.</li>\n</ul>",
       "s3Title": "3. Payment Information (Secure &amp; Tokenized)",
-      "s3Body": "<div class=\"card\">\n<p class=\"callout\">WE DO NOT STORE CREDIT CARD NUMBERS.</p>\n</div>\n<ul>\n<li><strong>Processor:</strong> All payments are processed by <strong>Paddle.com Market Limited (Paddle)</strong>, acting as our Merchant of Record.</li>\n<li><strong>Security:</strong> Payment data is encrypted and tokenized using PCI-DSS compliant standards. Onyx only receives a transaction status and the last 4 digits of the card for identification purposes.</li>\n</ul>",
+      "s3Body": "<div class=\"card\">\n<p class=\"callout\">WE DO NOT STORE CREDIT CARD NUMBERS.</p>\n</div>\n<ul>\n<li><strong>Processor:</strong> All payments are processed by <strong>Paddle.com Market Limited (UK)</strong> and <strong>Paddle.com Inc. (USA)</strong>, acting as our Merchant of Record.</li>\n<li><strong>Security:</strong> Payment data is encrypted and tokenized using PCI-DSS compliant standards. Onyx only receives a transaction status and the last 4 digits of the card for identification purposes.</li>\n</ul>",
       "s4Title": "4. How We Use Your Information",
       "s4Body": "<p>We use the collected data for the following specific purposes:</p>\n<ul>\n<li><strong>Service Fulfillment:</strong> To generate audio files (Voiceover/Music) or coordinate live recording sessions (Live Strings) via our studio teams.</li>\n<li><strong>No AI Training:</strong> <strong>Onyx does not use your provided scripts, lyrics, or musical scores to train or fine-tune our public AI models.</strong> Your creative inputs remain your confidential property.</li>\n<li><strong>Legal Compliance:</strong> To maintain financial records for tax authorities (retained for 5 years).</li>\n<li><strong>Communication:</strong> To send order confirmations, invoices, and critical project updates.</li>\n</ul>",
       "s5Title": "5. Voice &amp; Biometric Data",
       "s5Body": "<p>Onyx Studios prioritizes the protection of vocal identity. As an AI audio production company, we recognize that voice data may be classified as biometric information under certain jurisdictions (including the EU GDPR and the Illinois Biometric Information Privacy Act). While Onyx does not perform biometric analysis, extraction, or comparison on voice files, we store and handle all voice recordings with the same level of care required for biometric data.</p>\n<ul>\n<li><strong>Talent Voice Data:</strong> All voice samples from our Global Talent Network are collected with explicit, informed consent under formal Talent Engagement Agreements. These samples are stored in encrypted environments and are used exclusively for Onyx’s proprietary model training.</li>\n<li><strong>Client-Uploaded Audio:</strong> Any voice samples or reference audio uploaded by Clients for custom projects are treated as highly confidential. These files are encrypted at rest and in transit. We never share raw voice samples with third parties without explicit, project-specific consent.</li>\n<li><strong>No Unauthorized Cloning:</strong> Onyx does not use Client-uploaded voice data to create voice clones or derivative models for use outside the scope of the contracted project.</li>\n</ul>",
       "s6Title": "6. Data Sharing &amp; Infrastructure",
-      "s6Body": "<p>We strictly share data only with the following infrastructure partners necessary to operate the service:</p>\n<ul>\n<li><strong>Vercel Inc. (USA):</strong> Web hosting and edge deployment.</li>\n<li><strong>Supabase Inc. (USA/Singapore):</strong> Database management, authentication, and secure storage.</li>\n<li><strong>Paddle (USA/UK):</strong> Payment gateway and Merchant of Record services.</li>\n</ul>\n<p class=\"note\">We do not sell, rent, or trade your personal data to any third party for marketing or advertising purposes.</p>",
+      "s6Body": "<p>We strictly share data only with the following infrastructure partners necessary to operate the service:</p>\n<ul>\n<li><strong>Vercel Inc. (USA):</strong> Web hosting and edge deployment.</li>\n<li><strong>Supabase Inc. (USA/Singapore):</strong> Database management, authentication, and secure storage.</li>\n<li><strong>Paddle.com Market Limited (UK) and Paddle.com Inc. (USA):</strong> Payment processing and merchant-of-record services.</li>\n</ul>\n<p class=\"note\">We do not sell, rent, or trade your personal data to any third party for marketing or advertising purposes.</p>",
       "s7Title": "7. International Data Transfer",
       "s7Body": "<p>As we utilize global infrastructure providers (Vercel, Supabase), your data may be transferred to and processed in the United States or Singapore. We ensure that such transfers are protected by appropriate legal safeguards:</p>\n<ul>\n<li><strong>Standard Contractual Clauses (SCCs):</strong> For data transfers from the EU/EEA, we rely on European Commission-approved Standard Contractual Clauses to ensure an equivalent level of data protection.</li>\n<li><strong>Encryption:</strong> All data in transit is encrypted using TLS 1.2 or higher. Data at rest is encrypted using AES-256 or equivalent standards.</li>\n<li><strong>Data Processing Agreements:</strong> We maintain Data Processing Agreements (DPAs) with all infrastructure partners, ensuring they are contractually bound to protect your data in accordance with GDPR and applicable privacy laws.</li>\n</ul>",
       "s8Title": "8. Confidentiality of Processing",

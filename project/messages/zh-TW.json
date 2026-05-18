@@ -256,7 +256,6 @@
       "featureWavMp3": "WAV + MP3 高品質交付",
       "featureCustomFormats": "客製化交付格式與分軌",
       "featureSelfServe": "線上專案控制台（訂單／進度／下載）",
-
       "featureDedicatedPM": "專屬製作經理",
       "featureMultiLang": "多語言專案統籌",
       "featureStandardRights": "標準商業使用權",
@@ -281,7 +280,6 @@
       "tier1Feature4": "允許小幅腳本修改",
       "tier1Feature5": "24 小時快速交付",
       "tier1Feature6": "WAV + MP3 高品質交付",
-
       "tier1Deliverable1": "WAV + MP3 高品質交付",
       "tier1Deliverable2": "線上專案控制台（查進度、下載檔，非自行無限生成）",
       "tier1Deliverable3": "自訂交付格式與分軌",
@@ -1633,19 +1631,16 @@
     "successTitle": "申請已收到",
     "successMessage": "感謝您申請加入 Onyx Studios 聲優陣容。",
     "backToOnyxStudios": "返回 Onyx Studios",
-
     "featureAITitle": "100% 藝人授權 AI",
     "featureAIDesc": "您的聲音，由您做主。我們為您打造安全、合法的數位分身。",
     "featureEarnTitle": "睡覺也能賺錢",
     "featureEarnDesc": "每當客戶使用您的 AI 語音，您都能獲得合理的分潤。",
     "featureGigsTitle": "高端現場案件",
     "featureGigsDesc": "持續為您媒合高價位、100% 真人錄音的合作機會。",
-
     "step1Title": "您的角色是？",
     "step1Subtitle": "請選擇您的主要專長類型。",
     "roleVODesc": "旁白、廣告、角色配音、IVR、數位學習",
     "roleSingerDesc": "流行、爵士、古典、R&B、搖滾及更多",
-
     "step2Title": "基本資料",
     "step2Subtitle": "請告訴我們您是誰。",
     "labelFullName": "全名",
@@ -1670,7 +1665,6 @@
     "accentHintFree": "請用您自己的話描述您的母語口音或方言。",
     "genderMale": "男性",
     "genderFemale": "女性",
-
     "step3TitleVO": "聲音檔案",
     "step3SubtitleVO": "幫助我們了解您的音域與風格。",
     "labelVoiceQuality": "聲音質感 / 音色 *",
@@ -1681,7 +1675,6 @@
     "placeholderNotableClientsVO": "例如：Toyota、NHK、網易",
     "labelBio": "簡短自我介紹（選填）",
     "placeholderBio": "簡述您的專業背景...",
-
     "step3TitleSinger": "歌聲檔案",
     "step3SubtitleSinger": "幫助我們了解您的歌聲與風格。",
     "labelVocalRange": "聲部類型（音域）*",
@@ -1693,7 +1686,6 @@
     "labelNotableCredits": "知名作品或唱片公司（選填）",
     "placeholderNotableCreditsSinger": "例如：環球音樂、華納、Spotify Original",
     "hintNotableCredits": "您參與過哪些知名發行、唱片公司或專案？",
-
     "step4Title": "錄音設備",
     "step4Subtitle": "我們要求乾淨、未經處理的音檔。請告訴我們您目前的錄音環境。",
     "labelHomeStudio": "家用錄音室",
@@ -1710,7 +1702,6 @@
     "labelDryAudio": "可提供 100% 乾聲 / RAW 音檔",
     "hintDryAudio": "無殘響、無壓縮、無背景音樂 — 純淨乾聲",
     "dryAudioWarning": "Onyx 要求所有人才提交 100% 乾聲音檔。無法提供乾聲的申請將不予審核。",
-
     "step5TitleVO": "期望費率與 AI 分潤",
     "step5SubtitleVO": "請檢視以下條款以繼續。所有金額以美元計。",
     "aiTwinTitle": "官方 AI 數位分身與服務合約",
@@ -1720,7 +1711,6 @@
     "labelMinLiveGig": "自訂現場錄音最低預算（美元）",
     "placeholderMinLiveGig": "例如：200",
     "hintMinLiveGig": "您願意接受 100% 自訂現場錄音的最低預算是多少？我們只會為您媒合達到或超過此費率的 100% 現場錄音專案。",
-
     "step5TitleSinger": "期望費率與授權偏好",
     "step5SubtitleSinger": "我們同時招募歌手參與 AI 聲音訓練及傳統現場錄音。請在下方選擇您的偏好。所有費率以美元計。",
     "pathALabel": "方案 A",
@@ -1741,7 +1731,6 @@
     "hintHookChorus": "短副歌/合唱段落含完全商業買斷的最低預算。",
     "labelAdditionalNotes": "補充說明（選填）",
     "placeholderAdditionalNotes": "任何特殊錄音設備需求、修改次數限制或專案偏好？",
-
     "step6Title": "作品提交",
     "readBeforeUpload": "上傳前請詳閱：",
     "uploadRule1": "僅限上傳一個 .WAV 檔案（最長 2 分鐘）",
@@ -1756,7 +1745,6 @@
     "clickToReplace": "點擊以替換",
     "fileErrorFormat": "僅接受 .WAV 檔案。請轉換您的音檔後重新上傳。",
     "fileErrorSize": "檔案超過 50MB 限制。請裁剪您的錄音。",
-
     "step7Title": "同意聲明",
     "step7Subtitle": "提交前請詳閱並確認以下內容。",
     "consentDataTitle": "評估與資料處理同意",
@@ -1770,7 +1758,6 @@
     "consentVoiceIDDesc": "我同意在每個專案的最終交付中提供一段 10 秒的「聲紋辨識」錄音。此錄音將作為生物數位簽章，確認我的身分及合法權利轉讓，並將連結至發給客戶的授權證書。",
     "consentAgeTitle": "年齡驗證與行為能力",
     "consentAgeDesc": "我確認本人已年滿 18 歲，且具有簽訂具約束力之授權合約的法律行為能力。",
-
     "btnBack": "上一步",
     "btnContinue": "繼續",
     "btnSubmit": "提交申請",
@@ -2240,13 +2227,13 @@
       "s2Title": "2. Data Collection &amp; Minimization",
       "s2Body": "<p>本公司遵循資料最小化原則，僅蒲集以下資料：</p>\n<ul>\n<li><strong>個人身分資訊：</strong>電子郵件地址（透過 Magic Link 認證）。無需密碼。</li>\n<li><strong>交易資料：</strong>購買記錄、發票號碼及付款時間戳記。</li>\n<li><strong>輸入資料：</strong>您為音訊生成或現場錄音服務所提供之文字腳本（用於配音）、MIDI 檔案及樂譜（PDF、MusicXML）。</li>\n<li><strong>技術資料：</strong>IP 位址、瀏覽器類型及作業系統，用於安全及防詐騙目的。</li>\n</ul>",
       "s3Title": "3. Payment Information (Secure &amp; Tokenized)",
-      "s3Body": "<div class=\"card\">\n<p class=\"callout\">本公司不儲存信用卡號碼。</p>\n</div>\n<ul>\n<li><strong>處理機構：</strong>所有付款由 <strong>Paddle.com Market Limited（Paddle）</strong>作為本公司之記錄商家（Merchant of Record）處理。</li>\n<li><strong>安全性：</strong>付款資料使用符合 PCI-DSS 標準之加密及代碼化技術處理。Onyx 僅接收交易狀態及卡號末四碼作為識別之用。</li>\n</ul>",
+      "s3Body": "<div class=\"card\">\n<p class=\"callout\">本公司不儲存信用卡號碼。</p>\n</div>\n<ul>\n<li><strong>處理機構：</strong>所有付款由 <strong>Paddle.com Market Limited（英國）</strong>及<strong>Paddle.com Inc.（美國）</strong>作為我們指定之 Merchant of Record 處理。</li>\n<li><strong>安全性：</strong>付款資料使用符合 PCI-DSS 標準之加密及代碼化技術處理。Onyx 僅接收交易狀態及卡號末四碼作為識別之用。</li>\n</ul>",
       "s4Title": "4. How We Use Your Information",
       "s4Body": "<p>本公司將所蒲集之資料用於以下特定目的：</p>\n<ul>\n<li><strong>服務履行：</strong>生成音訊檔案（配音/音樂）或透過本公司錄音團隊協調現場錄音作業（Live Strings）。</li>\n<li><strong>禁止 AI 訓練：</strong><strong>Onyx 不會使用您提供之腳本、歌詞或樂譜來訓練或微調本公司之公開 AI 模型。</strong>您的創意輸入內容仍為您的機密財產。</li>\n<li><strong>法律合規：</strong>為稅務機關維護財務紀錄（保留 5 年）。</li>\n<li><strong>通訊：</strong>發送訂單確認、發票及重要專案更新。</li>\n</ul>",
       "s5Title": "5. Voice &amp; Biometric Data",
       "s5Body": "<p>Onyx Studios 重視聲音身分之保護。作為一家 AI 音訊製作公司，本公司認知到聲音資料在特定司法管轄區（包括歐盟 GDPR 及伊利諾州生物辨識資訊隱私法）下可能被歸類為生物辨識資訊。雖然 Onyx 不對聲音檔案進行生物辨識分析、擷取或比對，但本公司以處理生物辨識資料所要求之同等謹慎程度儲存及處理所有聲音錄音。</p>\n<ul>\n<li><strong>聲音人才資料：</strong>來自本公司全球人才網絡之所有聲音樣本均在正式人才合作協議下，經明確、知情同意後蒲集。該等樣本儲存於加密環境中，僅供 Onyx 專有模型訓練使用。</li>\n<li><strong>客戶上傳音訊：</strong>客戶為自訂專案所上傳之任何聲音樣本或參考音訊均被視為高度機密。該等檔案在靜態及傳輸過程中均予加密。未經明確之專案特定同意，本公司絕不與第三方分享原始聲音樣本。</li>\n<li><strong>禁止未經授權之複製：</strong>Onyx 不會使用客戶上傳之聲音資料，在合約專案範圍外創建聲音複製品或衍生模型。</li>\n</ul>",
       "s6Title": "6. Data Sharing &amp; Infrastructure",
-      "s6Body": "<p>本公司僅與運營服務所必要之以下基礎設施合作夥伴嚴格共享資料：</p>\n<ul>\n<li><strong>Vercel Inc.（美國）：</strong>網站託管及邊緣部署。</li>\n<li><strong>Supabase Inc.（美國/新加坡）：</strong>資料庫管理、認證及安全儲存。</li>\n<li><strong>Paddle（美國/英國）：</strong>付款閘道及記錄商家服務。</li>\n</ul>\n<p class=\"note\">本公司不會為行銷或廣告目的，向任何第三方出售、出租或交易您的個人資料。</p>",
+      "s6Body": "<p>本公司僅與運營服務所必要之以下基礎設施合作夥伴嚴格共享資料：</p>\n<ul>\n<li><strong>Vercel Inc.（美國）：</strong>網站託管及邊緣部署。</li>\n<li><strong>Supabase Inc.（美國/新加坡）：</strong>資料庫管理、認證及安全儲存。</li>\n<li><strong>Paddle.com Market Limited（英國）及 Paddle.com Inc.（美國）：</strong>付款處理與 Merchant of Record 服務。</li>\n</ul>\n<p class=\"note\">本公司不會為行銷或廣告目的，向任何第三方出售、出租或交易您的個人資料。</p>",
       "s7Title": "7. International Data Transfer",
       "s7Body": "<p>由於本公司使用全球基礎設施提供商（Vercel、Supabase），您的資料可能被傳輸至美國或新加坡並在當地處理。本公司確保該等傳輸受到適當法律保障之保護：</p>\n<ul>\n<li><strong>標準合約條款（SCCs）：</strong>對於自歐盟/歐洲經濟區之資料傳輸，本公司依據歐盟執委會核准之標準合約條款，以確保同等水準之資料保護。</li>\n<li><strong>加密：</strong>所有傳輸中之資料均使用 TLS 1.2 或更高版本加密。靜態資料使用 AES-256 或同等標準加密。</li>\n<li><strong>資料處理協議：</strong>本公司與所有基礎設施合作夥伴均維持資料處理協議（DPAs），確保其在合約上受約束，依據 GDPR 及適用隱私法律保護您的資料。</li>\n</ul>",
       "s8Title": "8. Confidentiality of Processing",
