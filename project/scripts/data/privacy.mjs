@@ -23,7 +23,7 @@ export const en = {
 <p class="callout">WE DO NOT STORE CREDIT CARD NUMBERS.</p>
 </div>
 <ul>
-<li><strong>Processor:</strong> All payments are processed by <strong>TapPay (Cherri Tech, Inc.)</strong> and <strong>Cathay United Bank</strong>.</li>
+<li><strong>Processor:</strong> All payments are processed by <strong>Paddle.com Market Limited (UK)</strong> and <strong>Paddle.com Inc. (USA)</strong>, acting as our Merchant of Record.</li>
 <li><strong>Security:</strong> Payment data is encrypted and tokenized using PCI-DSS compliant standards. Onyx only receives a transaction status and the last 4 digits of the card for identification purposes.</li>
 </ul>`,
 
@@ -49,7 +49,7 @@ export const en = {
 <ul>
 <li><strong>Vercel Inc. (USA):</strong> Web hosting and edge deployment.</li>
 <li><strong>Supabase Inc. (USA/Singapore):</strong> Database management, authentication, and secure storage.</li>
-<li><strong>TapPay (Taiwan):</strong> Payment gateway services.</li>
+<li><strong>Paddle.com Market Limited (UK) and Paddle.com Inc. (USA):</strong> Payment processing and merchant-of-record services.</li>
 </ul>
 <p class="note">We do not sell, rent, or trade your personal data to any third party for marketing or advertising purposes.</p>`,
 
@@ -184,7 +184,7 @@ export const zhTW = {
 <p class="callout">\u672C\u516C\u53F8\u4E0D\u5132\u5B58\u4FE1\u7528\u5361\u865F\u78BC\u3002</p>
 </div>
 <ul>
-<li><strong>\u8655\u7406\u6A5F\u69CB\uFF1A</strong>\u6240\u6709\u4ED8\u6B3E\u7531 <strong>TapPay\uFF08Cherri Tech, Inc.\uFF09</strong>\u53CA<strong>\u570B\u6CF0\u4E16\u83EF\u9280\u884C</strong>\u8655\u7406\u3002</li>
+<li><strong>\u8655\u7406\u6A5F\u69CB\uFF1A</strong>\u6240\u6709\u4ED8\u6B3E\u7531 <strong>Paddle.com Market Limited\uFF08\u82F1\u570B\uFF09</strong>\u53CA<strong>Paddle.com Inc.\uFF08\u7F8E\u570B\uFF09</strong>\u4F5C\u70BA\u6211\u5011\u6307\u5B9A\u4E4B Merchant of Record \u8655\u7406\u3002</li>
 <li><strong>\u5B89\u5168\u6027\uFF1A</strong>\u4ED8\u6B3E\u8CC7\u6599\u4F7F\u7528\u7B26\u5408 PCI-DSS \u6A19\u6E96\u4E4B\u52A0\u5BC6\u53CA\u4EE3\u78BC\u5316\u6280\u8853\u8655\u7406\u3002Onyx \u50C5\u63A5\u6536\u4EA4\u6613\u72C0\u614B\u53CA\u5361\u865F\u672B\u56DB\u78BC\u4F5C\u70BA\u8B58\u5225\u4E4B\u7528\u3002</li>
 </ul>`,
 
@@ -210,7 +210,7 @@ export const zhTW = {
 <ul>
 <li><strong>Vercel Inc.\uFF08\u7F8E\u570B\uFF09\uFF1A</strong>\u7DB2\u7AD9\u8A17\u7BA1\u53CA\u908A\u7DE3\u90E8\u7F72\u3002</li>
 <li><strong>Supabase Inc.\uFF08\u7F8E\u570B/\u65B0\u52A0\u5761\uFF09\uFF1A</strong>\u8CC7\u6599\u5EAB\u7BA1\u7406\u3001\u8A8D\u8B49\u53CA\u5B89\u5168\u5132\u5B58\u3002</li>
-<li><strong>TapPay\uFF08\u81FA\u7063\uFF09\uFF1A</strong>\u4ED8\u6B3E\u9598\u9053\u670D\u52D9\u3002</li>
+<li><strong>Paddle.com Market Limited\uFF08\u82F1\u570B\uFF09\u53CA Paddle.com Inc.\uFF08\u7F8E\u570B\uFF09\uFF1A</strong>\u4ED8\u6B3E\u8655\u7406\u8207 Merchant of Record \u670D\u52D9\u3002</li>
 </ul>
 <p class="note">\u672C\u516C\u53F8\u4E0D\u6703\u70BA\u884C\u92B7\u6216\u5EE3\u544A\u76EE\u7684\uFF0C\u5411\u4EFB\u4F55\u7B2C\u4E09\u65B9\u51FA\u552E\u3001\u51FA\u79DF\u6216\u4EA4\u6613\u60A8\u7684\u500B\u4EBA\u8CC7\u6599\u3002</p>`,
 
@@ -345,7 +345,7 @@ export const zhCN = {
 <p class="callout">\u672C\u516C\u53F8\u4E0D\u5B58\u50A8\u4FE1\u7528\u5361\u53F7\u7801\u3002</p>
 </div>
 <ul>
-<li><strong>\u5904\u7406\u673A\u6784\uFF1A</strong>\u6240\u6709\u4ED8\u6B3E\u7531 <strong>TapPay\uFF08Cherri Tech, Inc.\uFF09</strong>\u53CA<strong>\u56FD\u6CF0\u4E16\u534E\u94F6\u884C</strong>\u5904\u7406\u3002</li>
+<li><strong>\u5904\u7406\u673A\u6784\uFF1A</strong>\u6240\u6709\u4ED8\u6B3E\u7531 <strong>Paddle.com Market Limited\uFF08\u82F1\u56FD\uFF09</strong>\u53CA<strong>Paddle.com Inc.\uFF08\u7F8E\u56FD\uFF09</strong>\u4F5C\u4E3A\u6211\u4EEC\u6307\u5B9A\u4E4B Merchant of Record \u5904\u7406\u3002</li>
 <li><strong>\u5B89\u5168\u6027\uFF1A</strong>\u4ED8\u6B3E\u6570\u636E\u4F7F\u7528\u7B26\u5408 PCI-DSS \u6807\u51C6\u7684\u52A0\u5BC6\u53CA\u4EE4\u724C\u5316\u6280\u672F\u5904\u7406\u3002Onyx \u4EC5\u63A5\u6536\u4EA4\u6613\u72B6\u6001\u53CA\u5361\u53F7\u672B\u56DB\u4F4D\u4F5C\u4E3A\u8BC6\u522B\u4E4B\u7528\u3002</li>
 </ul>`,
 
@@ -371,7 +371,7 @@ export const zhCN = {
 <ul>
 <li><strong>Vercel Inc.\uFF08\u7F8E\u56FD\uFF09\uFF1A</strong>\u7F51\u7AD9\u6258\u7BA1\u53CA\u8FB9\u7F18\u90E8\u7F72\u3002</li>
 <li><strong>Supabase Inc.\uFF08\u7F8E\u56FD/\u65B0\u52A0\u5761\uFF09\uFF1A</strong>\u6570\u636E\u5E93\u7BA1\u7406\u3001\u8BA4\u8BC1\u53CA\u5B89\u5168\u5B58\u50A8\u3002</li>
-<li><strong>TapPay\uFF08\u53F0\u6E7E\uFF09\uFF1A</strong>\u4ED8\u6B3E\u7F51\u5173\u670D\u52A1\u3002</li>
+<li><strong>Paddle.com Market Limited\uFF08\u82F1\u56FD\uFF09\u53CA Paddle.com Inc.\uFF08\u7F8E\u56FD\uFF09\uFF1A</strong>\u4ED8\u6B3E\u5904\u7406\u4E0E Merchant of Record \u670D\u52A1\u3002</li>
 </ul>
 <p class="note">\u672C\u516C\u53F8\u4E0D\u4F1A\u4E3A\u8425\u9500\u6216\u5E7F\u544A\u76EE\u7684\uFF0C\u5411\u4EFB\u4F55\u7B2C\u4E09\u65B9\u51FA\u552E\u3001\u51FA\u79DF\u6216\u4EA4\u6613\u60A8\u7684\u4E2A\u4EBA\u6570\u636E\u3002</p>`,
 
