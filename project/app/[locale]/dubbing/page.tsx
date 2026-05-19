@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Languages, ShieldCheck, Mic2, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Footer from '@/components/landing/Footer';
 
 type Locale = 'en' | 'zh-TW' | 'zh-CN';
@@ -102,13 +102,13 @@ export default async function DubbingPage({
       <section className="px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { Icon: Languages, title: t.langTitle, desc: t.langDesc },
-            { Icon: ShieldCheck, title: t.qualityTitle, desc: t.qualityDesc },
-            { Icon: Mic2, title: t.scaleTitle, desc: t.scaleDesc },
-          ].map(({ Icon, title, desc }) => (
-            <div key={title} className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-6 md:p-7">
-              <Icon className="w-7 h-7 text-blue-300 mb-4" aria-hidden="true" />
-              <h2 className="text-lg md:text-xl font-bold text-white mb-2">{title}</h2>
+            { num: '01', title: t.langTitle, desc: t.langDesc },
+            { num: '02', title: t.qualityTitle, desc: t.qualityDesc },
+            { num: '03', title: t.scaleTitle, desc: t.scaleDesc },
+          ].map(({ num, title, desc }) => (
+            <div key={title} className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-7 md:p-8">
+              <div className="font-mono text-xs tracking-[0.25em] text-blue-300/70 mb-5">{num}</div>
+              <h2 className="text-lg md:text-xl font-bold text-white mb-2 tracking-tight">{title}</h2>
               <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
             </div>
           ))}
