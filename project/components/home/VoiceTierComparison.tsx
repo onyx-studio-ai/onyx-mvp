@@ -20,9 +20,9 @@ const TIER_STYLES: Record<TierType, { color: string; waveColor: string; glowColo
 export default function VoiceTierComparison() {
   const t = useTranslations('home.tierComparison');
   const DEFAULT_TIERS = [
-    { id: 'standard' as TierType, name: t('tierStandardName'), subtitle: t('tierStandardSubtitle'), audioSrc: '', description: t('tierStandardDescription') },
-    { id: 'onyx' as TierType, name: t('tierOnyxName'), subtitle: t('tierOnyxSubtitle'), audioSrc: '', description: t('tierOnyxDescription') },
-    { id: 'human' as TierType, name: t('tierHumanName'), subtitle: t('tierHumanSubtitle'), audioSrc: '', description: t('tierHumanDescription') },
+    { id: 'standard' as TierType, name: t('tierStandardName'), subtitle: t('tierStandardSubtitle'), audioSrc: '/audio/sample-raw.mp3',   description: t('tierStandardDescription') },
+    { id: 'onyx'     as TierType, name: t('tierOnyxName'),     subtitle: t('tierOnyxSubtitle'),     audioSrc: '/audio/sample-onyx.mp3',  description: t('tierOnyxDescription') },
+    { id: 'human'    as TierType, name: t('tierHumanName'),    subtitle: t('tierHumanSubtitle'),    audioSrc: '/audio/sample-human.mp3', description: t('tierHumanDescription') },
   ];
   const [playingTier, setPlayingTier] = useState<TierType | null>(null);
   const [loadingTier, setLoadingTier] = useState<TierType | null>(null);
