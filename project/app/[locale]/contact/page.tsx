@@ -1,6 +1,10 @@
 import { useTranslations } from 'next-intl';
+import { use } from 'react';
 import Footer from '@/components/landing/Footer';
+import ContactInquiryForm from '@/components/ContactInquiryForm';
 import { Mail, Building2, Globe } from 'lucide-react';
+
+type SupportedLocale = 'en' | 'zh-TW' | 'zh-CN';
 
 const DEPARTMENTS = [
   { labelKey: 'deptGeneralLabel', email: 'hello@onyxstudios.ai', descKey: 'deptGeneralDesc', accent: 'emerald' },
@@ -18,8 +22,15 @@ const ACCENT_STYLES: Record<string, { border: string; text: string }> = {
   rose:    { border: 'border-rose-500/20 hover:border-rose-500/40',       text: 'text-rose-400' },
 };
 
-export default function ContactPage() {
+export default function ContactPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const t = useTranslations('contactPage');
+  const { locale: rawLocale } = use(params);
+  const locale: SupportedLocale =
+    rawLocale === 'zh-TW' || rawLocale === 'zh-CN' ? rawLocale : 'en';
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-20">
       <div className="relative py-20 px-4">
@@ -115,18 +126,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <div className="mt-20 text-center p-12 rounded-3xl bg-gradient-to-br from-blue-950/30 to-cyan-950/30 border border-blue-500/20 max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-4">{t('ctaTitle')}</h2>
-            <p className="text-gray-300 mb-8 text-lg">
-              {t('ctaDesc')}
-            </p>
-            <a
-              href="/pricing"
-              className="inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-lg"
-            >
-              {t('ctaButton')}
-            </a>
-          </div>
+          <ContactInquiryForm locale={locale} />
         </div>
       </div>
       <Footer />
