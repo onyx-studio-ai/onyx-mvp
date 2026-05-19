@@ -665,7 +665,7 @@ function EmptyState({ type }: { type: Exclude<Tab, 'licenses'> }) {
       titleKey: 'emptyMusicTitle',
       descKey: 'emptyMusicDesc',
       ctaKey: 'emptyMusicCta',
-      href: '/music/create',
+      href: '/contact?source=music-project',
       color: 'text-emerald-400',
     },
     orchestra: {

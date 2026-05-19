@@ -64,7 +64,7 @@ export default function Navbar() {
 
     if (isMusicContext) {
       return [
-        { href: '/music/catalog', label: t('catalog') },
+        { href: '/music/talents', label: t('catalog') },
         { href: '/music/pricing', label: t('pricing') },
         { href: '/music/orchestra', label: t('liveStrings') },
       ];

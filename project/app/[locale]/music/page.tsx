@@ -160,7 +160,7 @@ export default function MusicPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
-              <Link href="/music/catalog">
+              <Link href="/music/talents">
                 <Button className="group h-16 px-10 text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300">
                   <Library className="mr-2 w-5 h-5" />
                   {t('browseCatalog')}
@@ -379,7 +379,7 @@ export default function MusicPage() {
             <p className="text-gray-500 mb-6">
               {t('readyMoreStyles')}
             </p>
-            <Link href="/music/catalog">
+            <Link href="/music/talents">
               <Button className="h-14 px-10 text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300">
                 <Library className="mr-2 w-5 h-5" />
                 {t('exploreFullCatalog')}
@@ -546,7 +546,7 @@ export default function MusicPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
-                <Link href="/music/catalog">
+                <Link href="/music/talents">
                   <Button className="h-16 px-10 text-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300">
                     <Library className="mr-2 w-5 h-5" />
                     {t('browseStyles')}
