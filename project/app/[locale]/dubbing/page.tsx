@@ -1,5 +1,9 @@
+'use client';
+
+import { use } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Footer from '@/components/landing/Footer';
 
 type Locale = 'en' | 'zh-TW' | 'zh-CN';
@@ -66,12 +70,12 @@ const COPY: Record<Locale, {
   },
 };
 
-export default async function DubbingPage({
+export default function DubbingPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale: rawLocale } = await params;
+  const { locale: rawLocale } = use(params);
   const locale: Locale = rawLocale in COPY ? (rawLocale as Locale) : 'en';
   const t = COPY[locale];
   const contactPath = locale === 'en' ? '/contact?source=dubbing-project' : `/${locale}/contact?source=dubbing-project`;
@@ -80,9 +84,14 @@ export default async function DubbingPage({
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-28">
       <section className="relative px-4 sm:px-6 lg:px-8 pb-16">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 via-transparent to-transparent pointer-events-none" />
-        <div className="relative max-w-5xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="relative max-w-5xl mx-auto"
+        >
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-blue-300/25 bg-blue-500/[0.08] px-5 py-2">
-            <span className="w-2 h-2 rounded-full bg-blue-300" />
+            <span className="w-2 h-2 rounded-full bg-blue-300 animate-pulse" />
             <span className="text-sm tracking-wide text-gray-100 font-medium">{t.badge}</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] tracking-tight">
@@ -96,7 +105,7 @@ export default async function DubbingPage({
           <p className="text-base md:text-lg text-gray-400 max-w-3xl leading-relaxed">
             {t.lead}
           </p>
-        </div>
+        </motion.div>
       </section>
 
       <section className="px-4 sm:px-6 lg:px-8 py-16">
@@ -105,18 +114,31 @@ export default async function DubbingPage({
             { num: '01', title: t.langTitle, desc: t.langDesc },
             { num: '02', title: t.qualityTitle, desc: t.qualityDesc },
             { num: '03', title: t.scaleTitle, desc: t.scaleDesc },
-          ].map(({ num, title, desc }) => (
-            <div key={title} className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-7 md:p-8">
+          ].map(({ num, title, desc }, index) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.5, delay: index * 0.12, ease: 'easeOut' }}
+              className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-7 md:p-8"
+            >
               <div className="font-mono text-xs tracking-[0.25em] text-blue-300/70 mb-5">{num}</div>
               <h2 className="text-lg md:text-xl font-bold text-white mb-2 tracking-tight">{title}</h2>
               <p className="text-sm text-gray-400 leading-relaxed">{desc}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
       <section className="px-4 sm:px-6 lg:px-8 py-20">
-        <div className="max-w-3xl mx-auto rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent border border-blue-400/20 p-10 md:p-12 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="max-w-3xl mx-auto rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent border border-blue-400/20 p-10 md:p-12 text-center"
+        >
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">{t.ctaTitle}</h2>
           <p className="text-gray-300 mb-8 leading-relaxed">{t.ctaDesc}</p>
           <Link
@@ -126,7 +148,7 @@ export default async function DubbingPage({
             {t.ctaButton}
             <ArrowRight className="w-5 h-5" aria-hidden="true" />
           </Link>
-        </div>
+        </motion.div>
       </section>
 
       <Footer />
