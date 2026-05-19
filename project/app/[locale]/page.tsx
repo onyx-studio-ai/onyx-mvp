@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, Mic, Music, Video, Database } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Footer from '@/components/landing/Footer';
 import ContactModal from '@/components/ContactModal';
@@ -14,46 +14,50 @@ export default function LobbyPage() {
   const products = [
     {
       id: 'voice',
+      number: '01',
       title: t('voiceTitle'),
       description: t('voiceDesc'),
-      icon: Mic,
       href: '/voice',
       type: 'link' as const,
       gradient: 'from-blue-600/20 to-cyan-600/20',
       borderGradient: 'from-blue-500 to-cyan-500',
+      numberColor: 'text-blue-300/70',
       featured: true,
     },
     {
       id: 'music',
+      number: '02',
       title: t('musicTitle'),
       description: t('musicDesc'),
-      icon: Music,
       href: '/music',
       type: 'link' as const,
       gradient: 'from-purple-600/20 to-pink-600/20',
       borderGradient: 'from-purple-500 to-pink-500',
+      numberColor: 'text-purple-300/70',
       featured: false,
     },
     {
       id: 'video',
+      number: '03',
       title: t('videoTitle'),
       description: t('videoDesc'),
-      icon: Video,
       href: '/dubbing',
       type: 'link' as const,
       gradient: 'from-emerald-600/20 to-teal-600/20',
       borderGradient: 'from-emerald-500 to-teal-500',
+      numberColor: 'text-emerald-300/70',
       featured: false,
     },
     {
       id: 'data',
+      number: '04',
       title: t('dataTitle'),
       description: t('dataDesc'),
-      icon: Database,
       href: '#',
       type: 'contact' as const,
       gradient: 'from-orange-600/20 to-red-600/20',
       borderGradient: 'from-orange-500 to-red-500',
+      numberColor: 'text-orange-300/70',
       featured: false,
     },
   ];
@@ -92,7 +96,6 @@ export default function LobbyPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {products.map((product, index) => {
-              const Icon = product.icon;
               const CardContent = (
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
@@ -107,9 +110,9 @@ export default function LobbyPage() {
 
                   <div className="relative h-full p-7 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className={`p-3 rounded-xl bg-gradient-to-br ${product.gradient} border border-white/20`}>
-                          <Icon className="w-8 h-8" />
+                      <div className="flex items-start justify-between mb-6">
+                        <div className={`font-mono text-xs tracking-[0.3em] ${product.numberColor}`}>
+                          {product.number}
                         </div>
                         {product.featured && (
                           <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">

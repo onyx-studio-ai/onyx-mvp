@@ -1,21 +1,21 @@
 import { useTranslations } from 'next-intl';
 import Footer from '@/components/landing/Footer';
-import { Mail, MapPin, Building2, Globe, Headphones, CreditCard, Shield, Sparkles } from 'lucide-react';
+import { Mail, Building2, Globe } from 'lucide-react';
 
 const DEPARTMENTS = [
-  { labelKey: 'deptGeneralLabel', email: 'hello@onyxstudios.ai', descKey: 'deptGeneralDesc', icon: Sparkles, accent: 'emerald' },
-  { labelKey: 'deptSupportLabel', email: 'support@onyxstudios.ai', descKey: 'deptSupportDesc', icon: Headphones, accent: 'blue' },
-  { labelKey: 'deptProductionLabel', email: 'produce@onyxstudios.ai', descKey: 'deptProductionDesc', icon: Mail, accent: 'amber' },
-  { labelKey: 'deptBillingLabel', email: 'billing@onyxstudios.ai', descKey: 'deptBillingDesc', icon: CreditCard, accent: 'purple' },
-  { labelKey: 'deptAdminLabel', email: 'admin@onyxstudios.ai', descKey: 'deptAdminDesc', icon: Shield, accent: 'rose' },
+  { labelKey: 'deptGeneralLabel', email: 'hello@onyxstudios.ai', descKey: 'deptGeneralDesc', accent: 'emerald' },
+  { labelKey: 'deptSupportLabel', email: 'support@onyxstudios.ai', descKey: 'deptSupportDesc', accent: 'blue' },
+  { labelKey: 'deptProductionLabel', email: 'produce@onyxstudios.ai', descKey: 'deptProductionDesc', accent: 'amber' },
+  { labelKey: 'deptBillingLabel', email: 'billing@onyxstudios.ai', descKey: 'deptBillingDesc', accent: 'purple' },
+  { labelKey: 'deptAdminLabel', email: 'admin@onyxstudios.ai', descKey: 'deptAdminDesc', accent: 'rose' },
 ];
 
-const ACCENT_STYLES: Record<string, { bg: string; border: string; icon: string; text: string }> = {
-  emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20 hover:border-emerald-500/40', icon: 'text-emerald-400', text: 'text-emerald-400' },
-  blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/20 hover:border-blue-500/40', icon: 'text-blue-400', text: 'text-blue-400' },
-  amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/20 hover:border-amber-500/40', icon: 'text-amber-400', text: 'text-amber-400' },
-  purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/20 hover:border-purple-500/40', icon: 'text-purple-400', text: 'text-purple-400' },
-  rose: { bg: 'bg-rose-500/10', border: 'border-rose-500/20 hover:border-rose-500/40', icon: 'text-rose-400', text: 'text-rose-400' },
+const ACCENT_STYLES: Record<string, { border: string; text: string }> = {
+  emerald: { border: 'border-emerald-500/20 hover:border-emerald-500/40', text: 'text-emerald-400' },
+  blue:    { border: 'border-blue-500/20 hover:border-blue-500/40',       text: 'text-blue-400' },
+  amber:   { border: 'border-amber-500/20 hover:border-amber-500/40',     text: 'text-amber-400' },
+  purple:  { border: 'border-purple-500/20 hover:border-purple-500/40',   text: 'text-purple-400' },
+  rose:    { border: 'border-rose-500/20 hover:border-rose-500/40',       text: 'text-rose-400' },
 };
 
 export default function ContactPage() {
@@ -46,24 +46,18 @@ export default function ContactPage() {
               <div className="space-y-3">
                 {DEPARTMENTS.map((dept) => {
                   const style = ACCENT_STYLES[dept.accent];
-                  const Icon = dept.icon;
                   return (
                     <a
                       key={dept.email}
                       href={`mailto:${dept.email}`}
-                      className={`group flex items-start gap-4 px-5 py-4 rounded-xl bg-white/[0.03] border ${style.border} transition-all duration-200`}
+                      className={`group block px-5 py-4 rounded-xl bg-white/[0.03] border ${style.border} transition-all duration-200`}
                     >
-                      <div className={`w-10 h-10 rounded-lg ${style.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                        <Icon className={`w-5 h-5 ${style.icon}`} />
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-sm font-semibold text-white">{t(dept.labelKey)}</p>
+                        <Mail className="w-3.5 h-3.5 text-gray-600 group-hover:text-gray-400 transition-colors flex-shrink-0" aria-hidden="true" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <p className="text-sm font-semibold text-white">{t(dept.labelKey)}</p>
-                          <Mail className="w-3.5 h-3.5 text-gray-600 group-hover:text-gray-400 transition-colors flex-shrink-0" />
-                        </div>
-                        <p className={`text-sm font-mono ${style.text} mb-1`}>{dept.email}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{t(dept.descKey)}</p>
-                      </div>
+                      <p className={`text-sm font-mono ${style.text} mb-1`}>{dept.email}</p>
+                      <p className="text-xs text-gray-500 leading-relaxed">{t(dept.descKey)}</p>
                     </a>
                   );
                 })}
