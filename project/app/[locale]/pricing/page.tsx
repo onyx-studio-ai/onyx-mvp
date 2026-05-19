@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
-import { CheckCircle2, XCircle, ArrowRight, Clock, Repeat, FileAudio, Users, Download, Shield, Mic } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/landing/Footer';
@@ -17,13 +17,6 @@ import {
 } from '@/components/ui/accordion';
 import { PRICING_TIERS, VOICE_DURATION_PRICING } from '@/lib/config/pricing.config';
 import { Link } from '@/i18n/navigation';
-
-const STAT_ICONS: Record<string, React.ReactNode> = {
-  clock: <Clock className="w-5 h-5" />,
-  repeat: <Repeat className="w-5 h-5" />,
-  audio: <FileAudio className="w-5 h-5" />,
-  users: <Users className="w-5 h-5" />,
-};
 
 type TierValue = boolean | string;
 
@@ -191,12 +184,6 @@ export default function PricingPage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border border-blue-500/30">
-                <Mic className="w-10 h-10 text-blue-400" />
-              </div>
-            </div>
-
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-200 via-cyan-200 to-blue-400 bg-clip-text text-transparent">
               {t('pageTitle')}
             </h1>
@@ -270,10 +257,7 @@ export default function PricingPage() {
                     </Button>
 
                     <div className="mb-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Download className="w-5 h-5 text-blue-400" />
-                        <h4 className="font-bold text-white">{t('deliverablesHeader')}</h4>
-                      </div>
+                      <h4 className="font-bold text-white mb-4">{t('deliverablesHeader')}</h4>
                       <div className="space-y-3">
                         {plan.deliverables.map((item, idx) => (
                           <div key={idx} className="flex items-start gap-3">
@@ -291,10 +275,7 @@ export default function PricingPage() {
                     </div>
 
                     <div className="mb-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Shield className="w-5 h-5 text-blue-400" />
-                        <h4 className="font-bold text-white">{t('rightsHeader')}</h4>
-                      </div>
+                      <h4 className="font-bold text-white mb-4">{t('rightsHeader')}</h4>
                       <div className="space-y-3">
                         {plan.rights.map((item, idx) => (
                           <div key={idx} className="flex items-start gap-3">
@@ -312,12 +293,11 @@ export default function PricingPage() {
                     </div>
 
                     <div className="pt-6 border-t border-white/10">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                         {plan.quickStats.map((stat, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <div className="text-blue-400">{STAT_ICONS[stat.icon]}</div>
-                            <span className="text-sm text-gray-400">{stat.text}</span>
-                          </div>
+                          <span key={idx} className="text-sm text-gray-400">
+                            {stat.text}
+                          </span>
                         ))}
                       </div>
                     </div>

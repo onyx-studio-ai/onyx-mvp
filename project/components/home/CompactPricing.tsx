@@ -1,16 +1,10 @@
 'use client';
 
-import { Zap, Star, Crown, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from '@/i18n/navigation';
 import { PRICING_TIERS } from '@/lib/config/pricing.config';
 import { useTranslations } from 'next-intl';
-
-const TIER_ICONS: Record<string, React.ReactNode> = {
-  'tier-1': <Zap className="w-6 h-6" />,
-  'tier-2': <Star className="w-6 h-6" />,
-  'tier-3': <Crown className="w-6 h-6" />,
-};
 
 export default function CompactPricing() {
   const t = useTranslations('home.pricing');
@@ -85,10 +79,6 @@ export default function CompactPricing() {
                   ? 'border-blue-500/50 shadow-lg shadow-blue-500/10'
                   : 'border-white/10 hover:border-white/20'
               }`}>
-                <div className={`inline-flex p-2.5 rounded-xl bg-gradient-to-br ${plan.gradient} mb-4`}>
-                  {TIER_ICONS[plan.id]}
-                </div>
-
                 <h3 className="text-2xl font-bold text-white mb-1">{plan.title}</h3>
                 <p className="text-blue-400 text-sm font-medium mb-4">{plan.tagline}</p>
 
