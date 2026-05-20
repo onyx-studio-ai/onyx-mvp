@@ -9,10 +9,6 @@ const nextConfig = {
   },
   outputFileTracingRoot: __dirname,
   poweredByHeader: false,
-  // Ship browser source maps to production temporarily so the
-  // dashboard React #310 error stack points to real files/lines.
-  // TODO: turn off once the dashboard hooks-order bug is fixed.
-  productionBrowserSourceMaps: true,
   typescript: {
     // TODO: flip to false after we've held 0 TS errors for a week.
     // We're at 0 errors today (2026-05-18) but this still allows
