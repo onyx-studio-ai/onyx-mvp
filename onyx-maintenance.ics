@@ -1,0 +1,223 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Onyx Studios//Maintenance//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Onyx Studios — 維運提醒
+X-WR-CALDESC:Onyx Platform 每日/每週/每月/每季/每年維運提醒。所有時間為 floating local time（你在哪個時區就是哪個時區的當地時間）。
+X-WR-TIMEZONE:Asia/Taipei
+
+BEGIN:VEVENT
+UID:onyx-daily-inbox@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260521T090000
+DTEND:20260521T091000
+SUMMARY:📧 收信巡視（5 分鐘）
+DESCRIPTION:看 3 個信箱有無新詢價：\nhello@onyxstudios.ai (一般)\nproduce@onyxstudios.ai (製作)\nsupport@onyxstudios.ai (技術)\n\n超過 2 小時內未回需在系統內標記。
+RRULE:FREQ=DAILY
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+DESCRIPTION:Onyx — 收信巡視
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-daily-paddle@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260521T180000
+DTEND:20260521T180500
+SUMMARY:💳 Paddle 失敗付款檢查（2 分鐘）
+DESCRIPTION:登入 Paddle dashboard 看有沒有 failed payments / refund requests。\nhttps://vendors.paddle.com/
+RRULE:FREQ=DAILY
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+DESCRIPTION:Onyx — Paddle 對帳
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-weekly-supabase-backup@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260524T100000
+DTEND:20260524T101500
+SUMMARY:💾 Supabase 資料備份（每週）
+DESCRIPTION:手動跑 db dump 並存到 SSD（升 Pro 之前必做）：\n\ncd "/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/onyx-platform/project"\nmkdir -p backups\nsupabase db dump --data-only > backups/$(date +%Y%m%d)-data.sql\nsupabase db dump --schema-only > backups/$(date +%Y%m%d)-schema.sql\n\n升 Pro 後可以每月一次或更少。
+RRULE:FREQ=WEEKLY;BYDAY=SU
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Onyx — 跑 Supabase 備份
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-weekly-vercel-check@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260524T110000
+DTEND:20260524T111000
+SUMMARY:🚀 Vercel 部署 log 檢查（每週）
+DESCRIPTION:打開 https://vercel.com/dashboard 看：\n1. 過去 7 天有沒有 failed 部署\n2. 流量 trend（看是否接近 free tier 上限）\n3. function execution 是否有頻繁的 5xx
+RRULE:FREQ=WEEKLY;BYDAY=SU
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-weekly-smoke@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260524T113000
+DTEND:20260524T114500
+SUMMARY:🧪 主流程 smoke test（每週）
+DESCRIPTION:用瀏覽器跑一次完整客戶旅程：\n1. https://www.onyxstudios.ai/ → 點服務卡 → 進服務頁\n2. /pricing → 看 3 個 tier 卡有正常\n3. /contact → 送一個 dummy 詢價（用自己 email）→ 確認有收到 confirmation\n4. /apply → 開頭幾頁不要 submit 看流程\n5. 換語系（en / zh-TW / zh-CN）各看一輪
+RRULE:FREQ=WEEKLY;BYDAY=SU
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-monthly-deps-audit@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260601T100000
+DTEND:20260601T103000
+SUMMARY:📦 npm audit + outdated（每月）
+DESCRIPTION:cd project && npm audit\n\n看 high/critical CVE → 看是否需要 npm audit fix\n\ncd project && npm outdated\n\n看哪些套件有新版，計畫升級（避免一年沒升大幅 bump）。
+RRULE:FREQ=MONTHLY;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-monthly-resend@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260601T110000
+DTEND:20260601T110500
+SUMMARY:✉️ Resend bounce rate 檢查（每月）
+DESCRIPTION:https://resend.com/emails\n\n看 bounce rate：\n- < 2% → 健康\n- 2-5% → 注意，可能 DNS / SPF / DKIM 有問題\n- > 5% → 危險，email reputation 受損\n\n同時看是否接近 free tier 上限（3000 信/月）。
+RRULE:FREQ=MONTHLY;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-PT5M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-monthly-paddle-recon@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260601T140000
+DTEND:20260601T143000
+SUMMARY:💰 Paddle ↔ 銀行對帳（每月）
+DESCRIPTION:把當月 Paddle 入帳跟 Fine Entertainment 銀行帳戶對：\n- 有無漏入帳\n- 退款處理\n- 手續費比例（5% + 0.5/筆）是否符合預期
+RRULE:FREQ=MONTHLY;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-monthly-snapshot@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260601T160000
+DTEND:20260601T161500
+SUMMARY:📀 整體快照（每月）
+DESCRIPTION:即使升了 Supabase Pro 也別只信雲端：\n1. 把整個 repo 壓縮一份存到 SSD（含 git history）\n2. 把當月 supabase db dump 也跟壓縮包放一起\n3. 命名 onyx-snapshot-YYYY-MM.zip\n\n萬一 GitHub / Supabase / Vercel 任一掛，你還有完整副本可重建。
+RRULE:FREQ=MONTHLY;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-quarterly-deadcode@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260701T100000
+DTEND:20260701T120000
+SUMMARY:🧹 死碼 / 未用套件清理（每季）
+DESCRIPTION:跟前次清理（2026-05）類似的程序：\n1. orphan pages / components audit\n2. unused npm packages (npm-check / depcheck)\n3. TS error 歸零\n4. console.log / commented code 清掉\n5. 圖片 / 音檔資產 audit
+RRULE:FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-quarterly-pricing@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260701T140000
+DTEND:20260701T150000
+SUMMARY:💵 定價 / 客戶詢問統計（每季）
+DESCRIPTION:看當季數據：\n- 哪些語系詢問最多？\n- 哪個檔位（AI 即時 / 聲音導演 / 真人）成交率最高？\n- 平均報價金額\n- 流失點：客戶在哪個步驟跑掉\n\n根據數據調整定價策略 / 文案。
+RRULE:FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-quarterly-legal@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20260701T160000
+DTEND:20260701T163000
+SUMMARY:⚖️ 法律文件審查（每季）
+DESCRIPTION:看 /legal/terms /legal/privacy /legal/aup /legal/refund：\n- 跟現在實際服務內容對得上嗎？\n- 定價有沒有跟 ToS §3 對得上？\n- Paddle 實體有沒有改？\n- 個資處理範圍有沒有變？
+RRULE:FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-annual-domain@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20270115T100000
+DTEND:20270115T101500
+SUMMARY:🌐 Domain 續費確認（每年）
+DESCRIPTION:確認 onyxstudios.ai：\n- Auto-renew 是 ON\n- 信用卡沒過期\n- 對應的 email 還能收信（不然續費通知會錯過）\n\n如果想換 registrar 也是這時候動。
+RRULE:FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=15
+BEGIN:VALARM
+TRIGGER:-P7D
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-annual-framework@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20270201T100000
+DTEND:20270201T160000
+SUMMARY:🔧 大版本升級（每年）
+DESCRIPTION:評估升級：\n- Next.js (現在 16) → 看是否該到 17/18\n- React (現在 19) → 看新版\n- next-intl / 主要 deps\n- Tailwind / Radix\n\n參考 npm outdated 全清單，做 1-2 天的測試 + 升級。
+RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+UID:onyx-annual-roi@onyxstudios.ai
+DTSTAMP:20260520T060000Z
+DTSTART:20270301T100000
+DTEND:20270301T120000
+SUMMARY:📊 整年 ROI 檢討（每年）
+DESCRIPTION:把整年攤開來看：\n\n收入：\n- Paddle 總入帳\n- TTS 大案（凡音文化）\n- 配音傳統案（LINE/Fiverr/Upwork）\n\n支出：\n- Supabase / Vercel / Resend / Paddle 手續費\n- 配音員分潤\n- 錄音室成本\n\nROI by service tier：哪個檔最賺？\n方向決策：明年要 push 哪一塊？
+RRULE:FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=1
+BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+
+END:VCALENDAR
