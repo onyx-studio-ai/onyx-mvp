@@ -46,8 +46,6 @@ export default function Navbar() {
   const isDubbingContext = pathname?.startsWith('/dubbing');
   const isLobby = pathname === '/';
 
-  if (isDashboard) return null;
-
   const visibleModules = [
     { href: '/voice' as const, label: t('voiceStudio') },
     { href: '/music' as const, label: t('musicStudio') },
@@ -91,6 +89,13 @@ export default function Navbar() {
       document.body.style.overflow = '';
     };
   }, [mobileMenuOpen]);
+
+  // Early return AFTER all hooks are declared (Rules of Hooks).
+  // The dashboard / admin areas have their own headers and don't want
+  // the public navbar — but we must keep hook order consistent across
+  // every route, otherwise React #310 fires when the user navigates
+  // between public pages (8 hooks) and dashboard pages (would be 7).
+  if (isDashboard) return null;
 
   return (
     <>
