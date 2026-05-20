@@ -11,8 +11,8 @@ export default function AdminPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-gray-400">Redirecting...</div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-gray-600">Redirecting...</div>
     </div>
   );
 }

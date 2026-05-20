@@ -100,7 +100,7 @@ function AudioPlayer({ url, fileName }: { url: string; fileName: string }) {
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-zinc-900 rounded-lg border border-zinc-700">
+    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-300">
       <audio
         ref={audioRef}
         src={url}
@@ -118,8 +118,8 @@ function AudioPlayer({ url, fileName }: { url: string; fileName: string }) {
         {playing ? <Pause className="w-4 h-4 text-black" /> : <Play className="w-4 h-4 text-black ml-0.5" />}
       </button>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-300 truncate font-mono">{fileName}</p>
-        <div className="mt-1.5 h-1 bg-zinc-700 rounded-full overflow-hidden">
+        <p className="text-xs text-gray-700 truncate font-mono">{fileName}</p>
+        <div className="mt-1.5 h-1 bg-gray-200 rounded-full overflow-hidden">
           <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
         </div>
         {duration > 0 && <p className="text-xs text-gray-500 mt-1">{Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, '0')}</p>}
@@ -127,7 +127,7 @@ function AudioPlayer({ url, fileName }: { url: string; fileName: string }) {
       <a
         href={url}
         download={fileName}
-        className="flex-shrink-0 p-2 text-gray-400 hover:text-white hover:bg-zinc-700 rounded-lg transition-colors"
+        className="flex-shrink-0 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
         title="Download"
       >
         <Download className="w-4 h-4" />
@@ -194,10 +194,10 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
   };
 
   return (
-    <div className="border border-zinc-800 rounded-xl overflow-hidden">
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
       {/* Row Header */}
       <div
-        className="flex items-center gap-4 px-5 py-4 hover:bg-zinc-900/50 cursor-pointer transition-colors"
+        className="flex items-center gap-4 px-5 py-4 hover:bg-white/50 cursor-pointer transition-colors"
         onClick={() => setExpanded(e => !e)}
       >
         <div className="flex-shrink-0">
@@ -212,10 +212,10 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-white">{app.full_name}</p>
+            <p className="font-semibold text-gray-900">{app.full_name}</p>
             <span className="text-xs text-gray-500 font-mono">{app.application_number}</span>
           </div>
-          <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400 flex-wrap">
+          <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-600 flex-wrap">
             <span>{app.email}</span>
             <span>·</span>
             <span>{app.country}</span>
@@ -242,13 +242,13 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
             </a>
           )}
           <span className="text-xs text-gray-500 hidden sm:block">{timeAgo(app.created_at)}</span>
-          {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          {expanded ? <ChevronUp className="w-4 h-4 text-gray-600" /> : <ChevronDown className="w-4 h-4 text-gray-600" />}
         </div>
       </div>
 
       {/* Expanded Detail */}
       {expanded && (
-        <div className="border-t border-zinc-800 px-5 py-6 space-y-6 bg-zinc-950/50">
+        <div className="border-t border-gray-200 px-5 py-6 space-y-6 bg-white/50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Left Column */}
@@ -259,21 +259,21 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   <User className="w-3.5 h-3.5" /> Basic Info
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-gray-700">
                     <Mail className="w-4 h-4 text-gray-500" />
-                    <a href={`mailto:${app.email}`} className="hover:text-white transition-colors">{app.email}</a>
+                    <a href={`mailto:${app.email}`} className="hover:text-gray-900 transition-colors">{app.email}</a>
                   </div>
                   {app.phone && (
-                    <div className="flex items-center gap-2 text-gray-300">
+                    <div className="flex items-center gap-2 text-gray-700">
                       <Phone className="w-4 h-4 text-gray-500" />
                       {app.phone}
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-gray-700">
                     <Globe className="w-4 h-4 text-gray-500" />
                     {app.country} · {app.gender} · Age {app.age_range}
                   </div>
-                  <div className="flex items-center gap-2 text-gray-300">
+                  <div className="flex items-center gap-2 text-gray-700">
                     <Calendar className="w-4 h-4 text-gray-500" />
                     {new Date(app.created_at).toLocaleString()}
                   </div>
@@ -311,7 +311,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   {app.bio && (
                     <div>
                       <span className="text-gray-500 block mb-1">Bio:</span>
-                      <p className="text-gray-300 text-xs leading-relaxed">{app.bio}</p>
+                      <p className="text-gray-700 text-xs leading-relaxed">{app.bio}</p>
                     </div>
                   )}
                 </div>
@@ -377,7 +377,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   {!app.rate_lead_vocal && !app.expected_rate_voice && !app.rate_hook_chorus && !app.expected_rate_music && (
                     <p className="text-gray-500">Not specified</p>
                   )}
-                  {app.rate_notes && <p className="text-gray-300 text-xs mt-1">{app.rate_notes}</p>}
+                  {app.rate_notes && <p className="text-gray-700 text-xs mt-1">{app.rate_notes}</p>}
                 </div>
               </div>
 
@@ -389,7 +389,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   onChange={e => setNotes(e.target.value)}
                   rows={3}
                   placeholder="Internal notes about this applicant..."
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-amber-500/60 focus:outline-none transition-colors resize-none"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-500/60 focus:outline-none transition-colors resize-none"
                 />
                 <button
                   onClick={saveNotes}
@@ -406,19 +406,19 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5" /> Linked Talent
                   </h4>
-                  <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-700 space-y-2 text-sm">
+                  <div className="p-3 bg-white rounded-lg border border-gray-300 space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Name</span>
-                      <span className="text-white font-medium">{app.talents.name}</span>
+                      <span className="text-gray-600">Name</span>
+                      <span className="text-gray-900 font-medium">{app.talents.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Active</span>
+                      <span className="text-gray-600">Active</span>
                       <span className={app.talents.is_active ? 'text-green-400' : 'text-gray-500'}>
                         {app.talents.is_active ? 'Yes' : 'No'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Voice ID</span>
+                      <span className="text-gray-600">Voice ID</span>
                       <span className={
                         app.talents.voice_id_status === 'verified' ? 'text-green-400' :
                         app.talents.voice_id_status === 'submitted' ? 'text-blue-400' :
@@ -449,7 +449,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all disabled:cursor-not-allowed ${
                         app.status === s
                           ? `${STATUS_CONFIG[s].color} opacity-100 cursor-default`
-                          : 'bg-zinc-800 border-zinc-600 text-gray-200 hover:border-zinc-500 hover:text-white opacity-80 hover:opacity-100'
+                          : 'bg-gray-100 border-gray-300 text-gray-700 hover:border-gray-500 hover:text-gray-900 opacity-80 hover:opacity-100'
                       }`}
                     >
                       {app.status === s && <Check className="inline w-3 h-3 mr-1" />}
@@ -512,12 +512,12 @@ export default function AdminApplicationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Talent Applications</h1>
-          <p className="text-gray-400 text-sm mt-1">Review and manage incoming talent submissions</p>
+          <h1 className="text-2xl font-bold text-gray-900">Talent Applications</h1>
+          <p className="text-gray-600 text-sm mt-1">Review and manage incoming talent submissions</p>
         </div>
         <button
           onClick={fetchApplications}
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-white text-sm rounded-lg transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -535,7 +535,7 @@ export default function AdminApplicationsPage() {
           { label: 'Singers', value: counts.singers, color: 'text-blue-300' },
           { label: 'Voice Actors', value: counts.vo, color: 'text-amber-400' },
         ].map(s => (
-          <div key={s.label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-center">
+          <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
           </div>
@@ -551,14 +551,14 @@ export default function AdminApplicationsPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by name, email, or application number..."
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-amber-500/60 focus:outline-none"
+            className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-500/60 focus:outline-none"
           />
         </div>
         <div className="flex gap-2">
           <select
             value={roleFilter}
             onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:border-amber-500/60 focus:outline-none"
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-500/60 focus:outline-none"
           >
             <option value="all">All Roles</option>
             <option value="VO">Voice Actors</option>
@@ -567,7 +567,7 @@ export default function AdminApplicationsPage() {
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:border-amber-500/60 focus:outline-none"
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-500/60 focus:outline-none"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -585,11 +585,11 @@ export default function AdminApplicationsPage() {
           <p className="text-gray-500">Loading applications...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 border border-zinc-800 rounded-xl">
-          <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mx-auto mb-4">
+        <div className="text-center py-16 border border-gray-200 rounded-xl">
+          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mx-auto mb-4">
             <Filter className="w-8 h-8 text-gray-600" />
           </div>
-          <p className="text-gray-400 font-medium">No applications found</p>
+          <p className="text-gray-600 font-medium">No applications found</p>
           <p className="text-gray-600 text-sm mt-1">
             {applications.length === 0 ? 'Applications will appear here once submitted via /apply' : 'Try adjusting your filters'}
           </p>

@@ -15,11 +15,11 @@ export default function AdminError({
         <div className="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto">
           <AlertTriangle className="w-7 h-7 text-red-400" />
         </div>
-        <h2 className="text-xl font-bold text-white">Admin Error</h2>
-        <p className="text-gray-400 text-sm">Failed to load this section. Please try again.</p>
+        <h2 className="text-xl font-bold text-gray-900">Admin Error</h2>
+        <p className="text-gray-600 text-sm">Failed to load this section. Please try again.</p>
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white text-sm font-medium rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
         >
           Try Again
         </button>

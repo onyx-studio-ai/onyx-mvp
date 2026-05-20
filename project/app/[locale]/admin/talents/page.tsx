@@ -162,11 +162,11 @@ function SearchableMultiSelect({
 
   return (
     <div className="space-y-2">
-      <Label className="text-gray-300">{label}</Label>
+      <Label className="text-gray-700">{label}</Label>
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           {selected.map(item => (
-            <Badge key={item} className="bg-zinc-700 text-gray-200 border-zinc-600 hover:bg-zinc-600 text-xs gap-1 pr-1">
+            <Badge key={item} className="bg-gray-200 text-gray-200 border-gray-400 hover:bg-gray-300 text-xs gap-1 pr-1">
               {item}
               <button type="button" onClick={() => onChange(selected.filter(s => s !== item))} className="ml-0.5 hover:text-red-400">
                 <X className="w-3 h-3" />
@@ -183,11 +183,11 @@ function SearchableMultiSelect({
             onChange={e => { setSearch(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600 pl-9 h-9 text-sm"
+            className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 pl-9 h-9 text-sm"
           />
         </div>
         {open && (
-          <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl">
+          <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg bg-white border border-gray-300 shadow-xl">
             {filtered.length === 0 ? (
               <p className="text-sm text-gray-500 p-3">No results</p>
             ) : (
@@ -200,14 +200,14 @@ function SearchableMultiSelect({
                     onClick={() => {
                       onChange(isSelected ? selected.filter(s => s !== item) : [...selected, item]);
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-zinc-800 flex items-center gap-2 transition-colors ${
-                      isSelected ? "text-emerald-400" : "text-gray-300"
+                    className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors ${
+                      isSelected ? "text-emerald-400" : "text-gray-700"
                     }`}
                   >
                     <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${
-                      isSelected ? "bg-emerald-500 border-emerald-500" : "border-zinc-600"
+                      isSelected ? "bg-emerald-500 border-emerald-500" : "border-gray-400"
                     }`}>
-                      {isSelected && <CheckCircle className="w-2.5 h-2.5 text-white" />}
+                      {isSelected && <CheckCircle className="w-2.5 h-2.5 text-gray-900" />}
                     </div>
                     {item}
                   </button>
@@ -253,10 +253,10 @@ function SearchableSelect({
 
   return (
     <div className="space-y-2">
-      <Label className="text-gray-300">{label}</Label>
+      <Label className="text-gray-700">{label}</Label>
       {value && (
         <div className="flex items-center gap-1.5 mb-1">
-          <Badge className="bg-zinc-700 text-gray-200 border-zinc-600 text-xs gap-1 pr-1">
+          <Badge className="bg-gray-200 text-gray-200 border-gray-400 text-xs gap-1 pr-1">
             {value}
             <button type="button" onClick={() => onChange("")} className="ml-0.5 hover:text-red-400">
               <X className="w-3 h-3" />
@@ -272,11 +272,11 @@ function SearchableSelect({
             onChange={e => { setSearch(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600 pl-9 h-9 text-sm"
+            className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 pl-9 h-9 text-sm"
           />
         </div>
         {open && (
-          <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl">
+          <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg bg-white border border-gray-300 shadow-xl">
             {filtered.length === 0 ? (
               <p className="text-sm text-gray-500 p-3">No results</p>
             ) : (
@@ -285,8 +285,8 @@ function SearchableSelect({
                   key={item}
                   type="button"
                   onClick={() => { onChange(item); setOpen(false); setSearch(""); }}
-                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-zinc-800 transition-colors ${
-                    value === item ? "text-emerald-400" : "text-gray-300"
+                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 transition-colors ${
+                    value === item ? "text-emerald-400" : "text-gray-700"
                   }`}
                 >
                   {item}
@@ -624,10 +624,10 @@ export default function AdminTalentsPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 text-white">
+    <div className="p-6 md:p-10 text-gray-900">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Talent Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Talent Management</h1>
           <p className="text-gray-500 text-sm mt-1">{talents.length} talents registered</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -637,9 +637,9 @@ export default function AdminTalentsPage() {
               Add Talent
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-950 border-zinc-800 text-white">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
             <DialogHeader>
-              <DialogTitle className="text-white text-lg">
+              <DialogTitle className="text-gray-900 text-lg">
                 {editingTalent ? "Edit Talent" : "Add New Talent"}
               </DialogTitle>
             </DialogHeader>
@@ -647,39 +647,39 @@ export default function AdminTalentsPage() {
               {/* Row 1: Type, Name, Email */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Type *</Label>
+                  <Label className="text-gray-700">Type *</Label>
                   <Select
                     value={formData.type}
                     onValueChange={v => setFormData({ ...formData, type: v })}
                   >
-                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-gray-900">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
-                      <SelectItem value="VO" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Voice Actor (VO)</SelectItem>
-                      <SelectItem value="Singer" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Singer</SelectItem>
+                    <SelectContent className="bg-white border-gray-300 text-gray-900">
+                      <SelectItem value="VO" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Voice Actor (VO)</SelectItem>
+                      <SelectItem value="Singer" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Singer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Name *</Label>
+                  <Label className="text-gray-700">Name *</Label>
                   <Input
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="e.g. Alex Chen"
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Email *</Label>
+                  <Label className="text-gray-700">Email *</Label>
                   <Input
                     type="email"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                     required
                     placeholder="talent@email.com"
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                   />
                   <p className="text-[11px] text-gray-500">Required for Voice ID & contract</p>
                 </div>
@@ -688,45 +688,45 @@ export default function AdminTalentsPage() {
               {/* Row 2: Gender, Category */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Gender *</Label>
+                  <Label className="text-gray-700">Gender *</Label>
                   <Select
                     value={formData.gender}
                     onValueChange={v => setFormData({ ...formData, gender: v })}
                   >
-                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-gray-900">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
-                      <SelectItem value="Male" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Male</SelectItem>
-                      <SelectItem value="Female" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Female</SelectItem>
-                      <SelectItem value="Non-binary" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Non-binary</SelectItem>
+                    <SelectContent className="bg-white border-gray-300 text-gray-900">
+                      <SelectItem value="Male" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Male</SelectItem>
+                      <SelectItem value="Female" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Female</SelectItem>
+                      <SelectItem value="Non-binary" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Non-binary</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Category</Label>
+                  <Label className="text-gray-700">Category</Label>
                   <Select
                     value={formData.category}
                     onValueChange={v => setFormData({ ...formData, category: v })}
                   >
-                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-gray-900">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 text-white">
-                      <SelectItem value="in_house" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">In-house</SelectItem>
-                      <SelectItem value="featured" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Featured</SelectItem>
+                    <SelectContent className="bg-white border-gray-300 text-gray-900">
+                      <SelectItem value="in_house" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">In-house</SelectItem>
+                      <SelectItem value="featured" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Featured</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Internal Cost (USD)</Label>
+                  <Label className="text-gray-700">Internal Cost (USD)</Label>
                   <Input
                     type="number"
                     step="0.01"
                     min="0"
                     value={formData.internal_cost}
                     onChange={e => setFormData({ ...formData, internal_cost: parseFloat(e.target.value) || 0 })}
-                    className="bg-zinc-900 border-zinc-700 text-white"
+                    className="bg-white border-gray-300 text-gray-900"
                   />
                   <p className="text-[11px] text-gray-500">Client sees: flat $499</p>
                 </div>
@@ -735,26 +735,26 @@ export default function AdminTalentsPage() {
               {/* Sort Order */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Sort Order</Label>
+                  <Label className="text-gray-700">Sort Order</Label>
                   <Input
                     type="number"
                     value={formData.sort_order}
                     onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                    className="bg-zinc-900 border-zinc-700 text-white"
+                    className="bg-white border-gray-300 text-gray-900"
                   />
                 </div>
               </div>
 
               {/* Headshot Upload */}
               <div className="space-y-2">
-                <Label className="text-gray-300">Headshot Photo</Label>
+                <Label className="text-gray-700">Headshot Photo</Label>
                 <div className="flex items-start gap-4">
                   {formData.headshot_url ? (
                     <div className="relative group">
                       <img
                         src={formData.headshot_url}
                         alt="Headshot"
-                        className="w-24 h-24 object-cover rounded-xl border border-zinc-700"
+                        className="w-24 h-24 object-cover rounded-xl border border-gray-300"
                       />
                       <button
                         type="button"
@@ -765,8 +765,8 @@ export default function AdminTalentsPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-zinc-700 flex items-center justify-center bg-zinc-900">
-                      <User className="w-8 h-8 text-zinc-600" />
+                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-white">
+                      <User className="w-8 h-8 text-gray-400" />
                     </div>
                   )}
                   <div className="flex-1 space-y-2">
@@ -783,7 +783,7 @@ export default function AdminTalentsPage() {
                       size="sm"
                       onClick={() => headshotRef.current?.click()}
                       disabled={uploadingHeadshot}
-                      className="border-zinc-700 text-gray-300 hover:bg-zinc-800 gap-2"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-100 gap-2"
                     >
                       {uploadingHeadshot ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...</>
@@ -816,16 +816,16 @@ export default function AdminTalentsPage() {
 
               {/* Tags */}
               <div className="space-y-2">
-                <Label className="text-gray-300">Tags & Characteristics</Label>
-                <div className="grid grid-cols-4 gap-x-4 gap-y-2 p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+                <Label className="text-gray-700">Tags & Characteristics</Label>
+                <div className="grid grid-cols-4 gap-x-4 gap-y-2 p-3 rounded-lg bg-white border border-gray-200">
                   {AVAILABLE_TAGS.map(tag => (
                     <div key={tag} className="flex items-center space-x-2">
                       <Checkbox
                         checked={formData.tags.includes(tag)}
                         onCheckedChange={() => toggleTag(tag)}
-                        className="border-zinc-600 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                        className="border-gray-400 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                       />
-                      <label className="text-sm text-gray-300 cursor-pointer" onClick={() => toggleTag(tag)}>{tag}</label>
+                      <label className="text-sm text-gray-700 cursor-pointer" onClick={() => toggleTag(tag)}>{tag}</label>
                     </div>
                   ))}
                 </div>
@@ -833,33 +833,33 @@ export default function AdminTalentsPage() {
 
               {/* Biography */}
               <div className="space-y-2">
-                <Label className="text-gray-300">Biography</Label>
+                <Label className="text-gray-700">Biography</Label>
                 <Textarea
                   value={formData.bio}
                   onChange={e => setFormData({ ...formData, bio: e.target.value })}
                   rows={3}
                   placeholder="Short bio or description of the talent..."
-                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600 resize-y"
+                  className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 resize-y"
                 />
               </div>
 
               {/* Audio Demos */}
               <div className="space-y-3">
-                <Label className="text-gray-300">Audio Demos</Label>
+                <Label className="text-gray-700">Audio Demos</Label>
 
                 {formData.demo_urls.length > 0 && (
                   <div className="space-y-2">
                     {formData.demo_urls.map((demo, index) => (
-                      <div key={index} className="flex items-center gap-3 p-2.5 rounded-lg bg-zinc-900 border border-zinc-800">
+                      <div key={index} className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-gray-200">
                         <Music className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{demo.name}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{demo.name}</p>
                           <p className="text-[11px] text-gray-500 truncate">{demo.url}</p>
                         </div>
                         <a href={demo.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">
                           Preview
                         </a>
-                        <button type="button" onClick={() => removeDemo(index)} className="text-zinc-500 hover:text-red-400 p-1 flex-shrink-0">
+                        <button type="button" onClick={() => removeDemo(index)} className="text-gray-500 hover:text-red-400 p-1 flex-shrink-0">
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -875,7 +875,7 @@ export default function AdminTalentsPage() {
                       value={newDemoName}
                       onChange={e => setNewDemoName(e.target.value)}
                       placeholder="e.g. Pop Demo, Corporate Reel"
-                      className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600 h-9 text-sm"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
                     />
                   </div>
                   <div>
@@ -892,7 +892,7 @@ export default function AdminTalentsPage() {
                       size="sm"
                       onClick={() => demoRef.current?.click()}
                       disabled={uploadingDemo}
-                      className="border-zinc-700 text-gray-300 hover:bg-zinc-800 gap-2 h-9"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-100 gap-2 h-9"
                     >
                       {uploadingDemo ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...</>
@@ -906,34 +906,34 @@ export default function AdminTalentsPage() {
               </div>
 
               {/* Payment Info */}
-              <div className="space-y-3 pt-3 border-t border-zinc-800">
-                <Label className="text-gray-300 font-semibold text-sm">Payment Information</Label>
+              <div className="space-y-3 pt-3 border-t border-gray-200">
+                <Label className="text-gray-700 font-semibold text-sm">Payment Information</Label>
                 <div className="space-y-2">
-                  <Label className="text-gray-400 text-xs">Payment Method</Label>
+                  <Label className="text-gray-600 text-xs">Payment Method</Label>
                   <Select
                     value={formData.payment_method || "none"}
                     onValueChange={v => setFormData({ ...formData, payment_method: v === "none" ? "" : v })}
                   >
-                    <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white">
+                    <SelectTrigger className="bg-white border-gray-300 text-gray-900">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700">
-                      <SelectItem value="none" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Not Set</SelectItem>
-                      <SelectItem value="paypal" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">PayPal</SelectItem>
-                      <SelectItem value="bank_transfer" className="text-white hover:bg-zinc-800 focus:bg-zinc-800 focus:text-white">Bank Transfer</SelectItem>
+                    <SelectContent className="bg-white border-gray-300">
+                      <SelectItem value="none" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Not Set</SelectItem>
+                      <SelectItem value="paypal" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">PayPal</SelectItem>
+                      <SelectItem value="bank_transfer" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Bank Transfer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {formData.payment_method === "paypal" && (
                   <div className="space-y-2">
-                    <Label className="text-gray-400 text-xs">PayPal Email</Label>
+                    <Label className="text-gray-600 text-xs">PayPal Email</Label>
                     <Input
                       type="email"
                       placeholder="talent@example.com"
                       value={formData.payment_details.paypal_email}
                       onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, paypal_email: e.target.value } })}
-                      className="bg-zinc-900 border-zinc-700 text-white"
+                      className="bg-white border-gray-300 text-gray-900"
                     />
                   </div>
                 )}
@@ -942,52 +942,52 @@ export default function AdminTalentsPage() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-gray-400 text-xs">Bank Name</Label>
+                        <Label className="text-gray-600 text-xs">Bank Name</Label>
                         <Input
                           placeholder="e.g. 中國信託、HSBC"
                           value={formData.payment_details.bank_name}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, bank_name: e.target.value } })}
-                          className="bg-zinc-900 border-zinc-700 text-white"
+                          className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-gray-400 text-xs">Bank Code / Branch</Label>
+                        <Label className="text-gray-600 text-xs">Bank Code / Branch</Label>
                         <Input
                           placeholder="e.g. 822 / SWIFT"
                           value={formData.payment_details.bank_code}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, bank_code: e.target.value } })}
-                          className="bg-zinc-900 border-zinc-700 text-white"
+                          className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-gray-400 text-xs">Account Name</Label>
+                        <Label className="text-gray-600 text-xs">Account Name</Label>
                         <Input
                           placeholder="Account holder name"
                           value={formData.payment_details.account_name}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, account_name: e.target.value } })}
-                          className="bg-zinc-900 border-zinc-700 text-white"
+                          className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-gray-400 text-xs">Account Number</Label>
+                        <Label className="text-gray-600 text-xs">Account Number</Label>
                         <Input
                           placeholder="Account number"
                           value={formData.payment_details.account_number}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, account_number: e.target.value } })}
-                          className="bg-zinc-900 border-zinc-700 text-white"
+                          className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-gray-400 text-xs">SWIFT Code (international)</Label>
+                        <Label className="text-gray-600 text-xs">SWIFT Code (international)</Label>
                         <Input
                           placeholder="e.g. CTCBTWTP"
                           value={formData.payment_details.swift_code}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, swift_code: e.target.value } })}
-                          className="bg-zinc-900 border-zinc-700 text-white"
+                          className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                     </div>
@@ -996,30 +996,30 @@ export default function AdminTalentsPage() {
 
                 {formData.payment_method && (
                   <div className="space-y-1">
-                    <Label className="text-gray-400 text-xs">Notes</Label>
+                    <Label className="text-gray-600 text-xs">Notes</Label>
                     <Input
                       placeholder="Any special instructions..."
                       value={formData.payment_details.notes}
                       onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, notes: e.target.value } })}
-                      className="bg-zinc-900 border-zinc-700 text-white"
+                      className="bg-white border-gray-300 text-gray-900"
                     />
                   </div>
                 )}
               </div>
 
               {/* Active Toggle */}
-              <div className="flex items-center space-x-3 pt-2 border-t border-zinc-800">
+              <div className="flex items-center space-x-3 pt-2 border-t border-gray-200">
                 <Checkbox
                   checked={formData.is_active}
                   onCheckedChange={checked => setFormData({ ...formData, is_active: checked as boolean })}
-                  className="border-zinc-600 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                  className="border-gray-400 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                 />
-                <Label className="text-gray-300">Active — visible in talent catalog</Label>
+                <Label className="text-gray-700">Active — visible in talent catalog</Label>
               </div>
 
               {/* Submit */}
               <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-zinc-700 text-gray-300 hover:bg-zinc-800">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-gray-300 text-gray-700 hover:bg-gray-100">
                   Cancel
                 </Button>
                 <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 min-w-[120px]">
@@ -1031,37 +1031,37 @@ export default function AdminTalentsPage() {
         </Dialog>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="text-gray-400 font-semibold">Name</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Type</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Source</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Languages</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Price</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Earnings</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Voice ID</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Status</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Actions</TableHead>
+            <TableRow className="border-gray-200 hover:bg-transparent">
+              <TableHead className="text-gray-600 font-semibold">Name</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Type</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Source</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Languages</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Price</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Earnings</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Voice ID</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Status</TableHead>
+              <TableHead className="text-gray-600 font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {talents.map((talent) => (
-              <TableRow key={talent.id} className="border-zinc-800 hover:bg-zinc-800/50">
+              <TableRow key={talent.id} className="border-gray-200 hover:bg-gray-100/50">
                 <TableCell>
                   <div className="flex items-center gap-3">
                     {talent.headshot_url ? (
-                      <img src={talent.headshot_url} alt="" className="w-8 h-8 rounded-full object-cover border border-zinc-700" />
+                      <img src={talent.headshot_url} alt="" className="w-8 h-8 rounded-full object-cover border border-gray-300" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-                        <User className="w-4 h-4 text-zinc-500" />
+                      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center">
+                        <User className="w-4 h-4 text-gray-500" />
                       </div>
                     )}
-                    <span className="font-medium text-white">{talent.name || 'N/A'}</span>
+                    <span className="font-medium text-gray-900">{talent.name || 'N/A'}</span>
                   </div>
                 </TableCell>
-                <TableCell className="capitalize text-gray-300">
+                <TableCell className="capitalize text-gray-700">
                   {talent.type === 'Singer' || talent.type === 'singer' ? 'Singer' : talent.type === 'VO' || talent.type === 'voice_actor' ? 'Voice Actor' : talent.type?.replace("_", " ") || 'N/A'}
                 </TableCell>
                 <TableCell>
@@ -1075,7 +1075,7 @@ export default function AdminTalentsPage() {
                       <ArrowUpRight className="w-2.5 h-2.5" />
                     </a>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-700/50 text-gray-400 border border-zinc-600/50">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-200/50 text-gray-600 border border-gray-400/50">
                       Manual
                     </span>
                   )}
@@ -1085,10 +1085,10 @@ export default function AdminTalentsPage() {
                     {talent.languages && talent.languages.length > 0 ? (
                       <>
                         {talent.languages.slice(0, 2).map(lang => (
-                          <Badge key={lang} className="bg-zinc-700 text-gray-200 border-zinc-600 hover:bg-zinc-600 text-[11px]">{lang}</Badge>
+                          <Badge key={lang} className="bg-gray-200 text-gray-200 border-gray-400 hover:bg-gray-300 text-[11px]">{lang}</Badge>
                         ))}
                         {talent.languages.length > 2 && (
-                          <Badge className="bg-zinc-700 text-gray-200 border-zinc-600 text-[11px]">+{talent.languages.length - 2}</Badge>
+                          <Badge className="bg-gray-200 text-gray-200 border-gray-400 text-[11px]">+{talent.languages.length - 2}</Badge>
                         )}
                       </>
                     ) : (
@@ -1097,7 +1097,7 @@ export default function AdminTalentsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-white font-semibold">$499</span>
+                  <span className="text-gray-900 font-semibold">$499</span>
                   <span className="text-xs text-gray-500 block">(Cost: ${(talent.internal_cost || 0).toFixed(0)})</span>
                 </TableCell>
                 <TableCell>
@@ -1116,7 +1116,7 @@ export default function AdminTalentsPage() {
                             <span className="text-gray-500"> pending</span>
                           </div>
                         )}
-                        <span className="text-[10px] text-gray-600 group-hover:text-gray-400">{es.count} orders</span>
+                        <span className="text-[10px] text-gray-600 group-hover:text-gray-600">{es.count} orders</span>
                       </a>
                     );
                   })()}
@@ -1204,13 +1204,13 @@ export default function AdminTalentsPage() {
                   })()}
                 </TableCell>
                 <TableCell>
-                  <Badge className={talent.is_active ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-zinc-700 text-gray-400 border border-zinc-600"}>
+                  <Badge className={talent.is_active ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-gray-200 text-gray-600 border border-gray-400"}>
                     {talent.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} className="h-8 px-3 border-zinc-600 text-gray-200 hover:bg-zinc-700 hover:text-white">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900">
                       <Edit className="w-3.5 h-3.5 mr-1" /> Edit
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handleDelete(talent.id)} className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400">

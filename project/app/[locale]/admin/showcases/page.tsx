@@ -218,9 +218,9 @@ function SlotEditor({
   };
 
   return (
-    <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 space-y-4">
+    <div className="p-4 rounded-xl bg-white border border-gray-200 space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+        <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
           <Music className="w-4 h-4 text-cyan-400" />
           {slotConfig.label}
         </h4>
@@ -230,40 +230,40 @@ function SlotEditor({
       {slotConfig.editable && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-gray-400 text-xs">Name</Label>
+            <Label className="text-gray-600 text-xs">Name</Label>
             <Input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder="e.g. Onyx Alpha"
-              className="bg-zinc-950 border-zinc-700 text-white placeholder:text-gray-600 h-9 text-sm"
+              className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-gray-400 text-xs">Subtitle</Label>
+            <Label className="text-gray-600 text-xs">Subtitle</Label>
             <Input
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="e.g. The Authority"
-              className="bg-zinc-950 border-zinc-700 text-white placeholder:text-gray-600 h-9 text-sm"
+              className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
             />
           </div>
           <div className="space-y-1.5 col-span-2">
-            <Label className="text-gray-400 text-xs">Tags (comma-separated)</Label>
+            <Label className="text-gray-600 text-xs">Tags (comma-separated)</Label>
             <Input
               value={tagsStr}
               onChange={(e) => setTagsStr(e.target.value)}
               placeholder="e.g. News, Corporate, Deep"
-              className="bg-zinc-950 border-zinc-700 text-white placeholder:text-gray-600 h-9 text-sm"
+              className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
             />
           </div>
           <div className="space-y-1.5 col-span-2">
-            <Label className="text-gray-400 text-xs">Description</Label>
+            <Label className="text-gray-600 text-xs">Description</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Short description..."
               rows={2}
-              className="bg-zinc-950 border-zinc-700 text-white placeholder:text-gray-600 text-sm resize-none"
+              className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm resize-none"
             />
           </div>
         </div>
@@ -283,7 +283,7 @@ function SlotEditor({
           size="sm"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="border-zinc-600 text-gray-200 hover:bg-zinc-800 hover:text-white gap-2 h-8"
+          className="border-gray-400 text-gray-200 hover:bg-gray-100 hover:text-gray-900 gap-2 h-8"
         >
           {uploading ? (
             <>
@@ -409,7 +409,7 @@ export default function AdminShowcasesPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 text-white">
+    <div className="p-6 md:p-10 text-gray-900">
       {loadError && (
         <div className="mb-6 rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
           <p className="font-medium text-red-100 mb-1">無法載入資料</p>
@@ -426,7 +426,7 @@ export default function AdminShowcasesPage() {
         </div>
       )}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
           <Volume2 className="w-6 h-6 text-cyan-400" />
           Audio Showcases
         </h1>
@@ -445,20 +445,20 @@ export default function AdminShowcasesPage() {
           return (
             <div
               key={section.key}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden"
+              className="rounded-xl border border-gray-200 bg-white/50 overflow-hidden"
             >
               <button
                 onClick={() => toggleSection(section.key)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
+                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-100/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   {isExpanded ? (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className="w-5 h-5 text-gray-600" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
                   )}
                   <div className="text-left">
-                    <h3 className="text-base font-semibold text-white">
+                    <h3 className="text-base font-semibold text-gray-900">
                       {section.title}
                     </h3>
                     <p className="text-xs text-gray-500 mt-0.5">
@@ -473,7 +473,7 @@ export default function AdminShowcasesPage() {
                         ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                         : filledCount > 0
                         ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                        : "bg-zinc-700 text-gray-400 border border-zinc-600"
+                        : "bg-gray-200 text-gray-600 border border-gray-400"
                     }`}
                   >
                     {filledCount}/{section.slots.length} audio

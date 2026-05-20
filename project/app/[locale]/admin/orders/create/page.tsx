@@ -104,8 +104,8 @@ export default function CreateTier3OrderPage() {
           <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle className="w-8 h-8 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Order Created</h2>
-          <p className="text-gray-400">
+          <h2 className="text-2xl font-bold text-gray-900">Order Created</h2>
+          <p className="text-gray-600">
             <span className="font-mono text-emerald-400">{success.orderNumber}</span>
           </p>
           <p className="text-gray-500 text-sm">
@@ -126,7 +126,7 @@ export default function CreateTier3OrderPage() {
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => router.push('/admin/orders')}
-              className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-white text-sm font-medium rounded-lg transition-colors"
             >
               View All Orders
             </button>
@@ -144,13 +144,13 @@ export default function CreateTier3OrderPage() {
 
   return (
     <div className="p-6 md:p-10 max-w-3xl mx-auto">
-      <Link href="/admin/orders" className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
+      <Link href="/admin/orders" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" />
         Back to Orders
       </Link>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
           <Mic className="w-7 h-7 text-amber-400" />
           New 100% Live Studio Order
         </h1>
@@ -163,13 +163,13 @@ export default function CreateTier3OrderPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Client Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Client Email *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Client Email *</label>
           <input
             type="email"
             value={form.email}
             onChange={e => update('email', e.target.value)}
             placeholder="client@company.com"
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500 focus:outline-none"
+            className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:outline-none"
             required
           />
         </div>
@@ -177,17 +177,17 @@ export default function CreateTier3OrderPage() {
         {/* Project Name + Price */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Project Name (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Project Name (Optional)</label>
             <input
               type="text"
               value={form.projectName}
               onChange={e => update('projectName', e.target.value)}
               placeholder="e.g. Brand Campaign 2026"
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500 focus:outline-none"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Price (USD) *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Price (USD) *</label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
@@ -197,7 +197,7 @@ export default function CreateTier3OrderPage() {
                 value={form.price}
                 onChange={e => update('price', e.target.value)}
                 placeholder="Custom price"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-9 pr-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500 focus:outline-none"
+                className="w-full bg-white border border-gray-300 rounded-lg pl-9 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:outline-none"
                 required
               />
             </div>
@@ -207,11 +207,11 @@ export default function CreateTier3OrderPage() {
         {/* Language + Use Case */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Language *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Language *</label>
             <select
               value={form.language}
               onChange={e => update('language', e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:border-amber-500 focus:outline-none"
             >
               {LANGUAGES.map(lang => (
                 <option key={lang} value={lang}>{lang}</option>
@@ -219,11 +219,11 @@ export default function CreateTier3OrderPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Use Case</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Use Case</label>
             <select
               value={form.useCase}
               onChange={e => update('useCase', e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:border-amber-500 focus:outline-none"
             >
               {USE_CASES.map(uc => (
                 <option key={uc} value={uc}>{uc}</option>
@@ -235,21 +235,21 @@ export default function CreateTier3OrderPage() {
         {/* Tone + Talent */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tone / Style (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tone / Style (Optional)</label>
             <input
               type="text"
               value={form.toneStyle}
               onChange={e => update('toneStyle', e.target.value)}
               placeholder="e.g. Warm, Authoritative"
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500 focus:outline-none"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Assign Talent (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Assign Talent (Optional)</label>
             <select
               value={form.talentId}
               onChange={e => update('talentId', e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:border-amber-500 focus:outline-none"
             >
               <option value="">— Assign later —</option>
               {talents.map(t => (
@@ -261,20 +261,20 @@ export default function CreateTier3OrderPage() {
 
         {/* Script */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Script *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Script *</label>
           <textarea
             value={form.scriptText}
             onChange={e => update('scriptText', e.target.value)}
             placeholder="Paste the full script here..."
             rows={6}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-600 focus:border-amber-500 focus:outline-none resize-y"
+            className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-amber-500 focus:outline-none resize-y"
             required
           />
         </div>
 
         {/* Payment Method */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-3">Payment Method *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Payment Method *</label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <button
               type="button"
@@ -282,12 +282,12 @@ export default function CreateTier3OrderPage() {
               className={`p-4 rounded-xl border-2 text-left transition-all ${
                 form.paymentMethod === 'send_invoice'
                   ? 'border-blue-500/50 bg-blue-500/10'
-                  : 'border-zinc-700 hover:border-zinc-500'
+                  : 'border-gray-300 hover:border-gray-500'
               }`}
             >
               <div className="flex items-center gap-3 mb-1.5">
                 <Send className={`w-4 h-4 ${form.paymentMethod === 'send_invoice' ? 'text-blue-400' : 'text-gray-500'}`} />
-                <span className="text-white font-semibold text-sm">Send Invoice</span>
+                <span className="text-gray-900 font-semibold text-sm">Send Invoice</span>
               </div>
               <p className="text-gray-500 text-xs">Client pays online via Dashboard. Email notification sent.</p>
             </button>
@@ -297,12 +297,12 @@ export default function CreateTier3OrderPage() {
               className={`p-4 rounded-xl border-2 text-left transition-all ${
                 form.paymentMethod === 'already_paid'
                   ? 'border-emerald-500/50 bg-emerald-500/10'
-                  : 'border-zinc-700 hover:border-zinc-500'
+                  : 'border-gray-300 hover:border-gray-500'
               }`}
             >
               <div className="flex items-center gap-3 mb-1.5">
                 <CheckCircle className={`w-4 h-4 ${form.paymentMethod === 'already_paid' ? 'text-emerald-400' : 'text-gray-500'}`} />
-                <span className="text-white font-semibold text-sm">Already Paid</span>
+                <span className="text-gray-900 font-semibold text-sm">Already Paid</span>
               </div>
               <p className="text-gray-500 text-xs">Payment received offline. Order enters production immediately.</p>
             </button>

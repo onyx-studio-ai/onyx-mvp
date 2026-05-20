@@ -18,7 +18,7 @@ interface MetricCardProps {
 }
 
 export const MetricCard = ({ title, value, trend, trendValue, icon, color, bgColor, borderColor }: MetricCardProps) => (
-  <Card className={`bg-[#0a0a0a] border ${borderColor}`}>
+  <Card className={`bg-white border ${borderColor}`}>
     <CardContent className="p-6">
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-xl ${bgColor}`}>
@@ -42,8 +42,8 @@ export const MetricCard = ({ title, value, trend, trendValue, icon, color, bgCol
         )}
       </div>
       <div>
-        <p className="text-gray-400 text-sm mb-1">{title}</p>
-        <p className="text-3xl font-bold text-white">{value}</p>
+        <p className="text-gray-600 text-sm mb-1">{title}</p>
+        <p className="text-3xl font-bold text-gray-900">{value}</p>
       </div>
     </CardContent>
   </Card>
@@ -58,10 +58,10 @@ interface TrafficChartProps {
 }
 
 export const TrafficChart = ({ data }: TrafficChartProps) => (
-  <Card className="bg-[#0a0a0a] border-white/10">
+  <Card className="bg-white border-gray-200">
     <CardHeader>
-      <CardTitle className="text-white text-lg">Daily Orders (7 days)</CardTitle>
-      <p className="text-gray-400 text-xs">Paid orders per day</p>
+      <CardTitle className="text-gray-900 text-lg">Daily Orders (7 days)</CardTitle>
+      <p className="text-gray-600 text-xs">Paid orders per day</p>
     </CardHeader>
     <CardContent>
       <ResponsiveContainer width="100%" height={300}>
@@ -100,10 +100,10 @@ interface VoiceBarChartProps {
 }
 
 export const VoiceBarChart = ({ data }: VoiceBarChartProps) => (
-  <Card className="bg-[#0a0a0a] border-white/10">
+  <Card className="bg-white border-gray-200">
     <CardHeader>
-      <CardTitle className="text-white text-lg">Top Voices</CardTitle>
-      <p className="text-gray-400 text-xs">Order distribution</p>
+      <CardTitle className="text-gray-900 text-lg">Top Voices</CardTitle>
+      <p className="text-gray-600 text-xs">Order distribution</p>
     </CardHeader>
     <CardContent>
       <ResponsiveContainer width="100%" height={300}>
@@ -141,12 +141,12 @@ export const AIInsightPanel = ({ message, onReviewAudio, onCreatePromo }: AIInsi
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-bold text-white">AI Analyst</h3>
+            <h3 className="text-lg font-bold text-gray-900">AI Analyst</h3>
             <span className="text-xs text-blue-400 font-medium px-2 py-0.5 rounded-full bg-blue-500/10">
               Auto-generated
             </span>
           </div>
-          <p className="text-gray-300 leading-relaxed">
+          <p className="text-gray-700 leading-relaxed">
             {message}
           </p>
           <div className="mt-4 flex gap-3">
@@ -159,7 +159,7 @@ export const AIInsightPanel = ({ message, onReviewAudio, onCreatePromo }: AIInsi
             <Button
               onClick={onCreatePromo}
               variant="outline"
-              className="bg-white/5 hover:bg-white/10 text-white border-white/10"
+              className="bg-gray-50 hover:bg-gray-100 text-gray-900 border-gray-200"
             >
               Create Promo
             </Button>

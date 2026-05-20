@@ -107,11 +107,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isChecking, setIsChecking] = useState(true);
   const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0 });
 
+  // Admin panel uses a light theme — explicitly ensure dark class is not set
+  // (it may linger from public dark pages on client-side navigation).
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-    return () => {
-      document.documentElement.classList.remove('dark');
-    };
+    document.documentElement.classList.remove('dark');
   }, []);
 
   useEffect(() => {
@@ -185,31 +184,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isChecking) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-gray-400">{tr('loading')}</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">{tr('loading')}</div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
             <div className="flex justify-center mb-6">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 flex items-center justify-center">
                 <Shield className="w-8 h-8 text-red-400" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-center text-white mb-2">
+            <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
               {tr('authRequired')}
             </h1>
-            <p className="text-gray-400 text-center text-sm mb-6">
+            <p className="text-gray-600 text-center text-sm mb-6">
               {tr('authHint')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="admin-code" className="block text-sm font-medium text-gray-400 mb-2">
+                <label htmlFor="admin-code" className="block text-sm font-medium text-gray-600 mb-2">
                   {tr('adminCode')}
                 </label>
                 <div className="relative">
@@ -222,7 +221,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       setInputCode(e.target.value);
                       setError('');
                     }}
-                    className="w-full bg-black border border-zinc-700 rounded-lg pl-11 pr-4 py-3 text-white placeholder:text-gray-600 focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-white border border-gray-300 rounded-lg pl-11 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
                     placeholder={tr('adminCodePlaceholder')}
                     autoFocus
                   />
@@ -238,10 +237,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {tr('unlockPanel')}
               </button>
             </form>
-            <div className="mt-6 pt-6 border-t border-zinc-800">
+            <div className="mt-6 pt-6 border-t border-gray-200">
               <button
                 onClick={() => window.location.href = '/'}
-                className="w-full text-sm text-gray-400 hover:text-white transition-colors"
+                className="w-full text-sm text-gray-600 hover:text-gray-900 transition-colors"
               >
                 {tr('backHome')}
               </button>
@@ -253,13 +252,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="dark min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-zinc-950 border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-bold">{tr('adminPanel')}</h1>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
           {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -268,14 +267,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full bg-zinc-950 border-r border-zinc-800 z-40 transition-transform duration-300 flex flex-col",
+          "fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-40 transition-transform duration-300 flex flex-col",
           "lg:translate-x-0 w-64",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo/Brand */}
-        <div className="p-6 border-b border-zinc-800">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-xl font-bold text-gray-900">
             Onyx Admin
           </h1>
           <p className="text-xs text-gray-500 mt-1">{tr('commandCenter')}</p>
@@ -320,8 +319,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       className={cn(
                         "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200",
                         isActive
-                          ? "bg-zinc-800 text-white shadow-lg"
-                          : "text-gray-400 hover:bg-zinc-900 hover:text-white"
+                          ? "bg-gray-900 text-white shadow-sm"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       )}
                     >
                       <Icon size={18} />
@@ -345,14 +344,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Bottom Actions */}
-        <div className="p-4 border-t border-zinc-800">
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={async () => {
               await fetch('/api/admin/auth', { method: 'DELETE' }).catch(() => {});
               localStorage.removeItem('onyx_admin_auth');
               window.location.href = '/';
             }}
-            className="flex items-center gap-3 px-4 py-3 w-full text-gray-400 hover:bg-zinc-900 hover:text-white rounded-lg transition-all duration-200"
+            className="flex items-center gap-3 px-4 py-3 w-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-200"
           >
             <LogOut size={20} />
             <span className="font-medium">{tr('exitAdmin')}</span>
@@ -363,7 +362,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-gray-900/30 z-30"
           onClick={() => setSidebarOpen(false)}
         />
       )}

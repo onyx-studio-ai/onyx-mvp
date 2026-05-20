@@ -175,9 +175,9 @@ export default function AdminPromosPage() {
   };
 
   return (
-    <div className="p-8 min-h-screen text-white">
+    <div className="p-8 min-h-screen text-gray-900">
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-zinc-800 border border-zinc-700 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-gray-100 border border-gray-300 text-gray-900 px-4 py-3 rounded-lg shadow-xl flex items-center gap-2">
           <Check size={16} className="text-green-400" />
           {toast}
         </div>
@@ -186,13 +186,13 @@ export default function AdminPromosPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Promo Code Management</h1>
-          <p className="text-gray-400">Create and manage discount codes</p>
+          <p className="text-gray-600">Create and manage discount codes</p>
         </div>
         <Button
           variant="outline"
           onClick={fetchPromos}
           disabled={loading}
-          className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-gray-200"
+          className="bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-200"
         >
           <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -200,20 +200,20 @@ export default function AdminPromosPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Total Promos</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Total Promos</p>
           <p className="text-2xl font-bold mt-1">{totalPromos}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Active Promos</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Active Promos</p>
           <p className="text-2xl font-bold text-green-400 mt-1">{activePromos}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Total Redemptions</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Total Redemptions</p>
           <p className="text-2xl font-bold text-blue-400 mt-1">{totalUsage}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Avg. Uses per Code</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Avg. Uses per Code</p>
           <p className="text-2xl font-bold text-amber-400 mt-1">
             {totalPromos > 0 ? Math.round(totalUsage / totalPromos) : 0}
           </p>
@@ -222,12 +222,12 @@ export default function AdminPromosPage() {
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" size={20} />
           <Input
             placeholder="Search by promo code..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+            className="pl-10 bg-white border-gray-200 text-gray-900"
           />
         </div>
         <div className="flex gap-2">
@@ -236,7 +236,7 @@ export default function AdminPromosPage() {
               key={f}
               variant={filterStatus === f ? 'default' : 'outline'}
               onClick={() => setFilterStatus(f)}
-              className="bg-zinc-800 hover:bg-zinc-700 text-gray-200 capitalize"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-200 capitalize"
             >
               {f}
             </Button>
@@ -251,31 +251,31 @@ export default function AdminPromosPage() {
         </Button>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading promos...</div>
+          <div className="text-center py-16 text-gray-600">Loading promos...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-zinc-950 border-b border-zinc-800">
+              <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Code</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Type</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Value</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Used</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Max Uses</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Expires</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Actions</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Code</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Type</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Value</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Used</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Max Uses</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Expires</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800">
+              <tbody className="divide-y divide-gray-200">
                 {filteredPromos.map((promo) => (
-                  <tr key={promo.id} className="hover:bg-zinc-800/50 transition-colors">
+                  <tr key={promo.id} className="hover:bg-gray-100/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Tag size={15} className="text-gray-400" />
-                        <span className="font-bold tracking-wide text-white">{promo.code}</span>
+                        <Tag size={15} className="text-gray-600" />
+                        <span className="font-bold tracking-wide text-gray-900">{promo.code}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -292,22 +292,22 @@ export default function AdminPromosPage() {
                       <span className="text-sm font-semibold">{promo.usage_count}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-400">{promo.max_uses ?? '∞'}</span>
+                      <span className="text-sm text-gray-600">{promo.max_uses ?? '∞'}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant="outline" className={promo.status === 'active' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-gray-500/10 text-gray-400 border-gray-500/20'}>
+                      <Badge variant="outline" className={promo.status === 'active' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-gray-500/10 text-gray-600 border-gray-500/20'}>
                         {promo.status === 'active' ? 'Active' : 'Expired'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-400">{formatExpiry(promo.expires_at)}</span>
+                      <span className="text-sm text-gray-600">{formatExpiry(promo.expires_at)}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 px-3 bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-gray-200"
+                          className="h-8 px-3 bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-200"
                           onClick={() => openEdit(promo)}
                         >
                           <Pencil size={13} className="mr-1" />
@@ -328,7 +328,7 @@ export default function AdminPromosPage() {
               </tbody>
             </table>
             {filteredPromos.length === 0 && (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12 text-gray-600">
                 {promos.length === 0 ? 'No promo codes yet. Create one above.' : 'No promos match your filter.'}
               </div>
             )}
@@ -337,70 +337,70 @@ export default function AdminPromosPage() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md">
+        <DialogContent className="bg-white border-gray-200 text-gray-900 max-w-md">
           <DialogHeader>
             <DialogTitle>{editingPromo ? 'Edit Promo Code' : 'Create Promo Code'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">Code *</label>
+              <label className="text-sm text-gray-600 mb-1 block">Code *</label>
               <Input
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                 placeholder="e.g. WELCOME20"
-                className="bg-black border-zinc-700 text-white uppercase"
+                className="bg-gray-50 border-gray-300 text-gray-900 uppercase"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Type</label>
+                <label className="text-sm text-gray-600 mb-1 block">Type</label>
                 <select
                   value={form.discount_type}
                   onChange={(e) => setForm({ ...form, discount_type: e.target.value as 'percentage' | 'fixed' })}
-                  className="w-full bg-black border border-zinc-700 rounded-md px-3 py-2 text-white text-sm"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-900 text-sm"
                 >
                   <option value="percentage">Percentage (%)</option>
                   <option value="fixed">Fixed ($)</option>
                 </select>
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Value *</label>
+                <label className="text-sm text-gray-600 mb-1 block">Value *</label>
                 <Input
                   type="number"
                   value={form.value}
                   onChange={(e) => setForm({ ...form, value: e.target.value })}
                   placeholder={form.discount_type === 'percentage' ? '10' : '100'}
-                  className="bg-black border-zinc-700 text-white"
+                  className="bg-gray-50 border-gray-300 text-gray-900"
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Max Uses (optional)</label>
+                <label className="text-sm text-gray-600 mb-1 block">Max Uses (optional)</label>
                 <Input
                   type="number"
                   value={form.max_uses}
                   onChange={(e) => setForm({ ...form, max_uses: e.target.value })}
                   placeholder="Unlimited"
-                  className="bg-black border-zinc-700 text-white"
+                  className="bg-gray-50 border-gray-300 text-gray-900"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Expires (optional)</label>
+                <label className="text-sm text-gray-600 mb-1 block">Expires (optional)</label>
                 <Input
                   type="date"
                   value={form.expires_at}
                   onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
-                  className="bg-black border-zinc-700 text-white"
+                  className="bg-gray-50 border-gray-300 text-gray-900"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">Status</label>
+              <label className="text-sm text-gray-600 mb-1 block">Status</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as 'active' | 'expired' })}
-                className="w-full bg-black border border-zinc-700 rounded-md px-3 py-2 text-white text-sm"
+                className="w-full bg-gray-50 border border-gray-300 rounded-md px-3 py-2 text-gray-900 text-sm"
               >
                 <option value="active">Active</option>
                 <option value="expired">Expired</option>
@@ -409,7 +409,7 @@ export default function AdminPromosPage() {
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
-                className="flex-1 bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-gray-200"
+                className="flex-1 bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-200"
                 onClick={() => setDialogOpen(false)}
               >
                 <X size={16} className="mr-2" />
@@ -428,15 +428,15 @@ export default function AdminPromosPage() {
       </Dialog>
 
       <AlertDialog open={!!deletePromo} onOpenChange={() => setDeletePromo(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+        <AlertDialogContent className="bg-white border-gray-200 text-gray-900">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Promo Code</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
-              Delete <span className="font-bold text-white">{deletePromo?.code}</span>? This cannot be undone.
+            <AlertDialogDescription className="text-gray-600">
+              Delete <span className="font-bold text-gray-900">{deletePromo?.code}</span>? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-gray-200">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-200">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

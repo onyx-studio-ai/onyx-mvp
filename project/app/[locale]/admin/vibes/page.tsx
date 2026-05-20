@@ -244,20 +244,20 @@ export default function AdminVibesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-gray-600" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-10 text-white">
+    <div className="p-6 md:p-10 text-gray-900">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Music className="w-6 h-6 text-cyan-400" />
             Vibes Management
           </h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-600 text-sm mt-1">
             {vibes.length} instrumental vibes in catalog
           </p>
         </div>
@@ -271,16 +271,16 @@ export default function AdminVibesPage() {
               Add Vibe
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-950 border-zinc-800">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200">
             <DialogHeader>
-              <DialogTitle className="text-white text-lg">
+              <DialogTitle className="text-gray-900 text-lg">
                 {editingVibe ? "Edit Vibe" : "Add New Vibe"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-gray-300">Title *</Label>
+                  <Label className="text-gray-700">Title *</Label>
                   <Input
                     value={formData.title}
                     onChange={(e) =>
@@ -288,11 +288,11 @@ export default function AdminVibesPage() {
                     }
                     required
                     placeholder="e.g. Corporate / Uplifting"
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-gray-300">Genre *</Label>
+                  <Label className="text-gray-700">Genre *</Label>
                   <Input
                     value={formData.genre}
                     onChange={(e) =>
@@ -300,13 +300,13 @@ export default function AdminVibesPage() {
                     }
                     required
                     placeholder="e.g. BGM, Cinematic, Folk"
-                    className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-gray-300">Description</Label>
+                <Label className="text-gray-700">Description</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) =>
@@ -314,20 +314,20 @@ export default function AdminVibesPage() {
                   }
                   rows={2}
                   placeholder="Short description of this vibe..."
-                  className="bg-zinc-900 border-zinc-700 text-white placeholder:text-gray-600 resize-none"
+                  className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 resize-none"
                 />
               </div>
 
               {/* Cover Image */}
               <div className="space-y-2">
-                <Label className="text-gray-300">Cover Image</Label>
+                <Label className="text-gray-700">Cover Image</Label>
                 <div className="flex items-start gap-4">
                   {formData.image_url ? (
                     <div className="relative group">
                       <img
                         src={formData.image_url}
                         alt="Cover"
-                        className="w-24 h-24 object-cover rounded-xl border border-zinc-700"
+                        className="w-24 h-24 object-cover rounded-xl border border-gray-300"
                       />
                       <button
                         type="button"
@@ -340,8 +340,8 @@ export default function AdminVibesPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-zinc-700 flex items-center justify-center bg-zinc-900">
-                      <ImagePlus className="w-8 h-8 text-zinc-600" />
+                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-white">
+                      <ImagePlus className="w-8 h-8 text-gray-400" />
                     </div>
                   )}
                   <div className="flex-1 space-y-2">
@@ -358,7 +358,7 @@ export default function AdminVibesPage() {
                       size="sm"
                       onClick={() => imageRef.current?.click()}
                       disabled={uploadingImage}
-                      className="bg-zinc-800 border-zinc-700 text-gray-300 hover:bg-zinc-700 gap-2"
+                      className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 gap-2"
                     >
                       {uploadingImage ? (
                         <>
@@ -371,7 +371,7 @@ export default function AdminVibesPage() {
                         </>
                       )}
                     </Button>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-[11px] text-gray-600">
                       JPG, PNG, WebP. Max 10 MB.
                     </p>
                   </div>
@@ -380,12 +380,12 @@ export default function AdminVibesPage() {
 
               {/* Audio File */}
               <div className="space-y-2">
-                <Label className="text-gray-300">Audio File</Label>
+                <Label className="text-gray-700">Audio File</Label>
                 <div className="flex items-center gap-3">
                   {formData.audio_url && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200">
                       <Music className="w-4 h-4 text-cyan-400" />
-                      <span className="text-xs text-gray-300 truncate max-w-[180px]">
+                      <span className="text-xs text-gray-700 truncate max-w-[180px]">
                         {formData.audio_url.split("/").pop()}
                       </span>
                       <button
@@ -393,7 +393,7 @@ export default function AdminVibesPage() {
                         onClick={() =>
                           setFormData((prev) => ({ ...prev, audio_url: "" }))
                         }
-                        className="text-zinc-500 hover:text-red-400"
+                        className="text-gray-500 hover:text-red-400"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -412,7 +412,7 @@ export default function AdminVibesPage() {
                     size="sm"
                     onClick={() => audioRef.current?.click()}
                     disabled={uploadingAudio}
-                    className="bg-zinc-800 border-zinc-700 text-gray-300 hover:bg-zinc-700 gap-2"
+                    className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 gap-2"
                   >
                     {uploadingAudio ? (
                       <>
@@ -427,7 +427,7 @@ export default function AdminVibesPage() {
                     )}
                   </Button>
                 </div>
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[11px] text-gray-600">
                   MP3, WAV, AIFF, FLAC. Max 50 MB.
                 </p>
               </div>
@@ -437,7 +437,7 @@ export default function AdminVibesPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
-                  className="bg-zinc-800 border-zinc-700 text-gray-300 hover:bg-zinc-700"
+                  className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
                 >
                   Cancel
                 </Button>
@@ -462,27 +462,27 @@ export default function AdminVibesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
-          <p className="text-2xl font-bold text-white">{vibes.length}</p>
-          <p className="text-xs text-gray-400 mt-1">Total Vibes</p>
+        <div className="p-4 rounded-xl bg-white border border-gray-200">
+          <p className="text-2xl font-bold text-gray-900">{vibes.length}</p>
+          <p className="text-xs text-gray-600 mt-1">Total Vibes</p>
         </div>
-        <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
+        <div className="p-4 rounded-xl bg-white border border-gray-200">
           <p className="text-2xl font-bold text-emerald-400">
             {vibes.filter((v) => v.audio_url).length}
           </p>
-          <p className="text-xs text-gray-400 mt-1">With Audio</p>
+          <p className="text-xs text-gray-600 mt-1">With Audio</p>
         </div>
-        <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
+        <div className="p-4 rounded-xl bg-white border border-gray-200">
           <p className="text-2xl font-bold text-cyan-400">
             {new Set(vibes.map((v) => v.genre)).size}
           </p>
-          <p className="text-xs text-gray-400 mt-1">Genres</p>
+          <p className="text-xs text-gray-600 mt-1">Genres</p>
         </div>
-        <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
+        <div className="p-4 rounded-xl bg-white border border-gray-200">
           <p className="text-2xl font-bold text-amber-400">
             {vibes.filter((v) => v.image_url).length}
           </p>
-          <p className="text-xs text-gray-400 mt-1">With Cover</p>
+          <p className="text-xs text-gray-600 mt-1">With Cover</p>
         </div>
       </div>
 
@@ -491,9 +491,9 @@ export default function AdminVibesPage() {
         {vibes.map((vibe) => (
           <div
             key={vibe.id}
-            className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden group"
+            className="rounded-xl border border-gray-200 bg-white overflow-hidden group"
           >
-            <div className="relative h-40 bg-zinc-800">
+            <div className="relative h-40 bg-gray-100">
               {vibe.image_url ? (
                 <img
                   src={vibe.image_url}
@@ -502,7 +502,7 @@ export default function AdminVibesPage() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Music className="w-12 h-12 text-zinc-600" />
+                  <Music className="w-12 h-12 text-gray-400" />
                 </div>
               )}
               {vibe.audio_url && (
@@ -514,7 +514,7 @@ export default function AdminVibesPage() {
             <div className="p-4 space-y-2">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-white">{vibe.title}</h3>
+                  <h3 className="font-semibold text-gray-900">{vibe.title}</h3>
                   <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] mt-1">
                     {vibe.genre}
                   </Badge>
@@ -524,7 +524,7 @@ export default function AdminVibesPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleEdit(vibe)}
-                    className="text-gray-400 hover:text-white hover:bg-zinc-700 h-8 w-8 p-0"
+                    className="text-gray-600 hover:text-gray-900 hover:bg-gray-200 h-8 w-8 p-0"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -532,14 +532,14 @@ export default function AdminVibesPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDelete(vibe.id)}
-                    className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 h-8 w-8 p-0"
+                    className="text-gray-600 hover:text-red-400 hover:bg-red-500/10 h-8 w-8 p-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
               {vibe.description && (
-                <p className="text-xs text-gray-400 line-clamp-2">
+                <p className="text-xs text-gray-600 line-clamp-2">
                   {vibe.description}
                 </p>
               )}
@@ -547,7 +547,7 @@ export default function AdminVibesPage() {
           </div>
         ))}
         {vibes.length === 0 && (
-          <div className="col-span-full text-center py-16 text-gray-400">
+          <div className="col-span-full text-center py-16 text-gray-600">
             No vibes yet. Click &ldquo;Add Vibe&rdquo; to get started.
           </div>
         )}

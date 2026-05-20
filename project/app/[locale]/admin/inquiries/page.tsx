@@ -34,7 +34,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof
   new: { label: 'New', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: Mail },
   read: { label: 'Read', color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: Eye },
   replied: { label: 'Replied', color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: CheckCircle },
-  closed: { label: 'Closed', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: X },
+  closed: { label: 'Closed', color: 'bg-gray-500/20 text-gray-600 border-gray-500/30', icon: X },
 };
 
 const DEPT_CONFIG: Record<string, { label: string; color: string }> = {
@@ -213,8 +213,8 @@ export default function InquiriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">Inquiries</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <h1 className="text-3xl font-bold text-gray-900">Inquiries</h1>
+          <p className="text-gray-600 text-sm mt-1">
             {newCount > 0 ? (
               <span className="text-blue-400 font-medium">{newCount} new</span>
             ) : (
@@ -225,7 +225,7 @@ export default function InquiriesPage() {
         </div>
         <button
           onClick={fetchInquiries}
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -235,22 +235,22 @@ export default function InquiriesPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name, email, reference..."
-            className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
           />
         </div>
         <div className="flex gap-3">
           <div className="relative">
-            <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="pl-9 pr-8 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-white appearance-none cursor-pointer focus:border-blue-500 focus:outline-none"
+              className="pl-9 pr-8 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 appearance-none cursor-pointer focus:border-blue-500 focus:outline-none"
             >
               <option value="all">All Status</option>
               <option value="new">New</option>
@@ -262,7 +262,7 @@ export default function InquiriesPage() {
           <select
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
-            className="px-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-white appearance-none cursor-pointer focus:border-blue-500 focus:outline-none"
+            className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 appearance-none cursor-pointer focus:border-blue-500 focus:outline-none"
           >
             <option value="all">All Departments</option>
             <option value="HELLO">Hello</option>
@@ -276,12 +276,12 @@ export default function InquiriesPage() {
 
       {/* Inquiry List */}
       {loading ? (
-        <div className="text-center py-20 text-gray-400">Loading inquiries...</div>
+        <div className="text-center py-20 text-gray-600">Loading inquiries...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <MessageSquare size={48} className="mx-auto text-gray-600 mb-4" />
-          <p className="text-gray-400 text-lg font-medium">No inquiries found</p>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-600 text-lg font-medium">No inquiries found</p>
+          <p className="text-gray-600 text-sm mt-1">
             {searchTerm ? 'Try a different search term.' : 'Inquiries will appear here when customers reach out.'}
           </p>
         </div>
@@ -292,10 +292,10 @@ export default function InquiriesPage() {
             return (
               <div
                 key={inq.id}
-                className={`bg-zinc-900/50 border rounded-xl transition-all duration-200 ${
+                className={`bg-white/50 border rounded-xl transition-all duration-200 ${
                   inq.status === 'new'
                     ? 'border-blue-500/30 bg-blue-500/[0.03]'
-                    : 'border-zinc-800 hover:border-zinc-700'
+                    : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
                 {/* Summary Row */}
@@ -305,43 +305,43 @@ export default function InquiriesPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="text-xs font-mono text-gray-400">{inq.inquiry_number}</span>
+                      <span className="text-xs font-mono text-gray-600">{inq.inquiry_number}</span>
                       <StatusBadge status={inq.status} />
                       <DeptBadge department={inq.department} />
                     </div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-white truncate">{inq.name}</span>
-                      <span className="text-xs text-gray-400">&lt;{inq.email}&gt;</span>
+                      <span className="text-sm font-semibold text-gray-900 truncate">{inq.name}</span>
+                      <span className="text-xs text-gray-600">&lt;{inq.email}&gt;</span>
                     </div>
-                    <p className="text-sm text-gray-400 truncate">{inq.message}</p>
+                    <p className="text-sm text-gray-600 truncate">{inq.message}</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-xs text-gray-400">{timeAgo(inq.created_at)}</span>
+                    <span className="text-xs text-gray-600">{timeAgo(inq.created_at)}</span>
                     {inq.replies && inq.replies.length > 0 && (
                       <span className="text-xs text-green-400 flex items-center gap-1">
                         <Send size={10} /> {inq.replies.length}
                       </span>
                     )}
-                    {isExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                    {isExpanded ? <ChevronUp size={16} className="text-gray-600" /> : <ChevronDown size={16} className="text-gray-600" />}
                   </div>
                 </button>
 
                 {/* Expanded Detail */}
                 {isExpanded && (
-                  <div className="border-t border-zinc-800 p-5 space-y-5">
+                  <div className="border-t border-gray-200 p-5 space-y-5">
                     {/* Info Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Reference</p>
+                        <p className="text-xs text-gray-600 mb-1">Reference</p>
                         <p className="text-sm font-mono text-emerald-400">{inq.inquiry_number}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Source</p>
-                        <p className="text-sm text-white capitalize">{inq.source.replace(/-/g, ' ')}</p>
+                        <p className="text-xs text-gray-600 mb-1">Source</p>
+                        <p className="text-sm text-gray-900 capitalize">{inq.source.replace(/-/g, ' ')}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Submitted</p>
-                        <p className="text-sm text-white">
+                        <p className="text-xs text-gray-600 mb-1">Submitted</p>
+                        <p className="text-sm text-gray-900">
                           {new Date(inq.created_at).toLocaleString('en-US', {
                             month: 'short', day: 'numeric', year: 'numeric',
                             hour: '2-digit', minute: '2-digit',
@@ -349,11 +349,11 @@ export default function InquiriesPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400 mb-1">Status</p>
+                        <p className="text-xs text-gray-600 mb-1">Status</p>
                         <select
                           value={inq.status}
                           onChange={(e) => handleStatusChange(inq.id, e.target.value)}
-                          className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-white focus:outline-none"
+                          className="bg-gray-100 border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 focus:outline-none"
                         >
                           <option value="new">New</option>
                           <option value="read">Read</option>
@@ -365,10 +365,10 @@ export default function InquiriesPage() {
 
                     {/* Client Message */}
                     <div>
-                      <p className="text-xs text-gray-400 mb-2 flex items-center gap-1.5">
+                      <p className="text-xs text-gray-600 mb-2 flex items-center gap-1.5">
                         <User size={12} /> Client Message
                       </p>
-                      <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
+                      <div className="bg-gray-100/50 border border-gray-300 rounded-lg p-4">
                         <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">{inq.message}</p>
                       </div>
                     </div>
@@ -376,7 +376,7 @@ export default function InquiriesPage() {
                     {/* Previous Replies */}
                     {inq.replies && inq.replies.length > 0 && (
                       <div>
-                        <p className="text-xs text-gray-400 mb-2 flex items-center gap-1.5">
+                        <p className="text-xs text-gray-600 mb-2 flex items-center gap-1.5">
                           <Send size={12} /> Reply History ({inq.replies.length})
                         </p>
                         <div className="space-y-2">
@@ -384,7 +384,7 @@ export default function InquiriesPage() {
                             <div key={idx} className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs text-emerald-400 font-medium">Sent by team</span>
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-gray-600">
                                   {new Date(reply.sentAt).toLocaleString('en-US', {
                                     month: 'short', day: 'numeric',
                                     hour: '2-digit', minute: '2-digit',
@@ -400,19 +400,19 @@ export default function InquiriesPage() {
 
                     {/* Reply Composer */}
                     <div>
-                      <p className="text-xs text-gray-400 mb-2 flex items-center gap-1.5">
+                      <p className="text-xs text-gray-600 mb-2 flex items-center gap-1.5">
                         <ArrowRight size={12} /> Reply to {inq.name}
                       </p>
                       <textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder={`Write your reply to ${inq.name}...`}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none resize-none min-h-[120px]"
+                        className="w-full bg-gray-100 border border-gray-300 rounded-lg p-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none resize-none min-h-[120px]"
                         disabled={replying}
                       />
                       <div className="flex items-center justify-between mt-3">
-                        <p className="text-xs text-gray-400">
-                          Will be sent from <span className="text-gray-400">{DEPT_CONFIG[inq.department]?.label || inq.department}</span> as a branded Onyx email
+                        <p className="text-xs text-gray-600">
+                          Will be sent from <span className="text-gray-600">{DEPT_CONFIG[inq.department]?.label || inq.department}</span> as a branded Onyx email
                         </p>
                         <button
                           onClick={() => handleReply(inq)}
@@ -430,17 +430,17 @@ export default function InquiriesPage() {
                     </div>
 
                     {/* Internal Notes */}
-                    <div className="border-t border-zinc-800 pt-4">
-                      <p className="text-xs text-gray-400 mb-2">Internal Notes (not visible to client)</p>
+                    <div className="border-t border-gray-200 pt-4">
+                      <p className="text-xs text-gray-600 mb-2">Internal Notes (not visible to client)</p>
                       <textarea
                         value={internalNotes[inq.id] || ''}
                         onChange={(e) => setInternalNotes({ ...internalNotes, [inq.id]: e.target.value })}
                         placeholder="Add internal notes..."
-                        className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-3 text-sm text-gray-300 placeholder:text-gray-600 focus:border-zinc-600 focus:outline-none resize-none min-h-[60px]"
+                        className="w-full bg-gray-100/50 border border-gray-300/50 rounded-lg p-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none resize-none min-h-[60px]"
                       />
                       <button
                         onClick={() => handleSaveNotes(inq.id)}
-                        className="mt-2 px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded text-xs font-medium text-gray-300 transition-colors"
+                        className="mt-2 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-xs font-medium text-gray-700 transition-colors"
                       >
                         Save Notes
                       </button>

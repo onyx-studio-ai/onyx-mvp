@@ -37,8 +37,8 @@ function CollapsibleText({ text, label, mono }: { text: string; label: string; m
           </button>
         )}
       </div>
-      <div className={`relative bg-zinc-900 rounded-lg px-4 py-3 ${!expanded && needsCollapse ? 'max-h-[7.5rem] overflow-hidden' : ''}`}>
-        <p className={`text-gray-300 text-sm leading-relaxed whitespace-pre-wrap break-words ${mono ? 'font-mono' : ''}`}>
+      <div className={`relative bg-white rounded-lg px-4 py-3 ${!expanded && needsCollapse ? 'max-h-[7.5rem] overflow-hidden' : ''}`}>
+        <p className={`text-gray-700 text-sm leading-relaxed whitespace-pre-wrap break-words ${mono ? 'font-mono' : ''}`}>
           {text}
         </p>
         {!expanded && needsCollapse && (
@@ -141,9 +141,9 @@ function getStatusBadge(status: string) {
     case 'completed':
       return <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 whitespace-nowrap">Complete</Badge>;
     case 'pending_payment':
-      return <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 whitespace-nowrap">Pending Payment</Badge>;
+      return <Badge variant="outline" className="bg-gray-400/10 text-gray-500 border-gray-300 whitespace-nowrap">Pending Payment</Badge>;
     default:
-      return <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 whitespace-nowrap">{status}</Badge>;
+      return <Badge variant="outline" className="bg-gray-400/10 text-gray-500 border-gray-300 whitespace-nowrap">{status}</Badge>;
   }
 }
 
@@ -268,11 +268,11 @@ function CertificateSection({ order }: { order: AnyOrder }) {
           <p className="text-gray-500 text-xs">Certificate issued</p>
         </div>
         <a href={cert.pdf_url} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-gray-300 rounded-lg text-xs transition-colors">
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs transition-colors">
           <Download className="w-3 h-3" /> PDF
         </a>
         <a href={`/verify/${cert.license_id}`} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-gray-300 rounded-lg text-xs transition-colors">
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs transition-colors">
           <ExternalLink className="w-3 h-3" /> Verify
         </a>
       </div>
@@ -280,8 +280,8 @@ function CertificateSection({ order }: { order: AnyOrder }) {
   }
 
   return (
-    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-3">
-      <div className="flex items-center gap-2 text-sm text-gray-400">
+    <div className="p-4 bg-white/50 border border-gray-200 rounded-xl space-y-3">
+      <div className="flex items-center gap-2 text-sm text-gray-600">
         <Award className="w-4 h-4" />
         <span className="font-medium">Generate License Certificate</span>
       </div>
@@ -293,22 +293,22 @@ function CertificateSection({ order }: { order: AnyOrder }) {
             value={projectName}
             onChange={e => setProjectName(e.target.value)}
             placeholder={`Order #${order.order_number}`}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-zinc-500"
+            className="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-500"
           />
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Rights Level (Auto)</label>
-          <div className={`w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm font-medium ${
-            autoRights === 'global' ? 'text-emerald-400' : autoRights === 'broadcast' ? 'text-blue-400' : 'text-gray-300'
+          <div className={`w-full bg-gray-100/50 border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium ${
+            autoRights === 'global' ? 'text-emerald-400' : autoRights === 'broadcast' ? 'text-blue-400' : 'text-gray-700'
           }`}>
             {rightsLevelLabel(autoRights)}
           </div>
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+        <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
           <input type="checkbox" checked={sendToClient} onChange={e => setSendToClient(e.target.checked)}
-            className="rounded border-zinc-600" />
+            className="rounded border-gray-400" />
           Email certificate to client
         </label>
         <button
@@ -403,17 +403,17 @@ export default function AdminOrdersPage() {
   const completedCount = allOrders.filter(o => o.status === 'completed').length;
 
   return (
-    <div className="p-8 min-h-screen text-white">
+    <div className="p-8 min-h-screen text-gray-900">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-1">Order Management</h1>
-          <p className="text-gray-400">Manage and deliver all voice, music, and strings orders</p>
+          <p className="text-gray-600">Manage and deliver all voice, music, and strings orders</p>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={fetchOrders}
-          className="gap-2 border-zinc-600 text-gray-200 hover:text-white hover:bg-zinc-800"
+          className="gap-2 border-gray-400 text-gray-200 hover:text-gray-900 hover:bg-gray-100"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -421,36 +421,36 @@ export default function AdminOrdersPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Total Orders</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-gray-600 text-sm">Total Orders</p>
           <p className="text-2xl font-bold mt-1">{allOrders.length}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">In Queue</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-gray-600 text-sm">In Queue</p>
           <p className="text-2xl font-bold text-yellow-400 mt-1">{queueCount}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">In Production</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-gray-600 text-sm">In Production</p>
           <p className="text-2xl font-bold text-orange-400 mt-1">{productionCount}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Completed</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <p className="text-gray-600 text-sm">Completed</p>
           <p className="text-2xl font-bold text-green-400 mt-1">{completedCount}</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-3 mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 w-4 h-4" />
           <Input
             placeholder="Search by email or order number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-500"
+            className="pl-9 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1.5 bg-zinc-900 border border-zinc-700 rounded-lg p-1">
+          <div className="flex gap-1.5 bg-white border border-gray-300 rounded-lg p-1">
             {(['all', 'voice', 'music', 'strings'] as const).map(t => (
               <button
                 key={t}
@@ -463,18 +463,18 @@ export default function AdminOrdersPage() {
                       ? 'bg-emerald-600 text-white'
                       : t === 'strings'
                       ? 'bg-amber-600 text-white'
-                      : 'bg-zinc-600 text-white'
-                    : 'text-zinc-400 hover:text-white'
+                      : 'bg-gray-300 text-white'
+                    : 'text-gray-500 hover:text-white'
                 }`}
               >
                 {t === 'all' ? 'All Types' : t === 'voice' ? 'Voice' : t === 'music' ? 'Music' : 'Strings'}
               </button>
             ))}
           </div>
-          <div className="w-px h-5 bg-zinc-700" />
+          <div className="w-px h-5 bg-gray-200" />
           <div className="flex gap-1.5 flex-wrap">
             {([
-              { val: 'all', label: 'All', color: 'bg-zinc-600' },
+              { val: 'all', label: 'All', color: 'bg-gray-300' },
               { val: 'paid', label: 'In Queue', color: 'bg-yellow-600' },
               { val: 'awaiting_files', label: 'Awaiting Files', color: 'bg-amber-700' },
               { val: 'in_production', label: 'In Production', color: 'bg-orange-600' },
@@ -482,7 +482,7 @@ export default function AdminOrdersPage() {
               { val: 'delivered', label: 'Delivered', color: 'bg-purple-600' },
               { val: 'revising', label: 'Revising', color: 'bg-amber-600' },
               { val: 'completed', label: 'Complete', color: 'bg-green-600' },
-              { val: 'pending_payment', label: 'Pending', color: 'bg-zinc-500' },
+              { val: 'pending_payment', label: 'Pending', color: 'bg-gray-400' },
             ] as { val: StatusFilter; label: string; color: string }[]).map(({ val, label, color }) => (
               <button
                 key={val}
@@ -490,7 +490,7 @@ export default function AdminOrdersPage() {
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-all border ${
                   filterStatus === val
                     ? `${color} text-white border-transparent`
-                    : 'border-zinc-600 text-zinc-300 hover:text-white hover:border-zinc-500'
+                    : 'border-gray-400 text-gray-700 hover:text-gray-900 hover:border-gray-500'
                 }`}
               >
                 {label}
@@ -508,9 +508,9 @@ export default function AdminOrdersPage() {
 
       <div className="space-y-3">
         {loading ? (
-          <div className="text-center py-16 text-gray-400 bg-zinc-900 border border-zinc-800 rounded-xl">Loading orders...</div>
+          <div className="text-center py-16 text-gray-600 bg-white border border-gray-200 rounded-xl">Loading orders...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 bg-zinc-900 border border-zinc-800 rounded-xl">No orders found.</div>
+          <div className="text-center py-16 text-gray-600 bg-white border border-gray-200 rounded-xl">No orders found.</div>
         ) : (
           filtered.map(order => {
             const isExpanded = expandedId === order.id;
@@ -522,7 +522,7 @@ export default function AdminOrdersPage() {
             const so = isStrings ? (order as StringsOrder) : null;
 
             return (
-              <div key={`${order.type}-${order.id}`} className={`border rounded-xl overflow-hidden transition-colors ${isExpanded ? 'bg-zinc-900 border-zinc-600' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'}`}>
+              <div key={`${order.type}-${order.id}`} className={`border rounded-xl overflow-hidden transition-colors ${isExpanded ? 'bg-white border-gray-400' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
                 <div
                   className="flex items-center gap-3 px-4 py-3.5 cursor-pointer"
                   onClick={() => setExpandedId(isExpanded ? null : order.id)}
@@ -535,22 +535,22 @@ export default function AdminOrdersPage() {
 
                   {/* Order # + email stacked */}
                   <div className="flex flex-col min-w-0 w-48 flex-shrink-0">
-                    <span className="font-mono text-sm font-semibold text-white leading-tight">#{order.order_number}</span>
-                    <span className="text-xs text-zinc-400 truncate leading-tight mt-0.5">{order.email}</span>
+                    <span className="font-mono text-sm font-semibold text-gray-900 leading-tight">#{order.order_number}</span>
+                    <span className="text-xs text-gray-500 truncate leading-tight mt-0.5">{order.email}</span>
                   </div>
 
                   {/* Plan / Vibe */}
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-sm text-white font-medium truncate leading-tight">
+                    <span className="text-sm text-gray-900 font-medium truncate leading-tight">
                       {isVoice ? (vo?.project_name || vo?.voice_selection || '—') : isStrings ? (so?.project_name || '—') : (mo?.vibe || '—')}
                     </span>
-                    <span className="text-xs text-zinc-500 truncate leading-tight mt-0.5">
+                    <span className="text-xs text-gray-500 truncate leading-tight mt-0.5">
                       {isVoice ? getVoiceTierLabel(order.tier) : isStrings ? `${so?.tier_name || '—'} · ${so?.duration_minutes}min` : getMusicTierLabel(order.tier)}
                     </span>
                   </div>
 
                   {/* Price */}
-                  <span className="text-sm font-bold text-white flex-shrink-0 w-20 text-right">
+                  <span className="text-sm font-bold text-gray-900 flex-shrink-0 w-20 text-right">
                     ${Number(order.price).toLocaleString()}
                   </span>
 
@@ -560,15 +560,15 @@ export default function AdminOrdersPage() {
                   </div>
 
                   {/* Date */}
-                  <span className="text-xs text-zinc-500 hidden lg:block flex-shrink-0 w-20 text-right">
+                  <span className="text-xs text-gray-500 hidden lg:block flex-shrink-0 w-20 text-right">
                     {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
 
-                  <ChevronRight className={`w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                  <ChevronRight className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                 </div>
 
                 {isExpanded && (
-                  <div className="border-t border-zinc-800 px-5 py-5 space-y-5 bg-zinc-950/50">
+                  <div className="border-t border-gray-200 px-5 py-5 space-y-5 bg-white/50">
                     {isVoice && vo && (
                       <>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

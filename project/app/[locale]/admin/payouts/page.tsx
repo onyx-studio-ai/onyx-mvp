@@ -229,17 +229,17 @@ export default function PayoutsPage() {
   };
 
   const renderEarningsTable = (earningsList: Earning[], showCheckbox: boolean) => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-800 text-left text-gray-400 text-xs uppercase tracking-wider">
+          <tr className="border-b border-gray-200 text-left text-gray-600 text-xs uppercase tracking-wider">
             {showCheckbox && (
               <th className="px-3 py-3 w-10">
                 <input
                   type="checkbox"
                   checked={selectedPending.length === pendingEarnings.length && pendingEarnings.length > 0}
                   onChange={toggleSelectAll}
-                  className="rounded bg-zinc-800 border-zinc-600"
+                  className="rounded bg-gray-100 border-gray-400"
                 />
               </th>
             )}
@@ -256,7 +256,7 @@ export default function PayoutsPage() {
         </thead>
         <tbody>
           {earningsList.map(e => (
-            <tr key={e.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+            <tr key={e.id} className="border-b border-gray-200/50 hover:bg-gray-100/30">
               {showCheckbox && (
                 <td className="px-3 py-3">
                   <input
@@ -264,19 +264,19 @@ export default function PayoutsPage() {
                     checked={selected.has(e.id)}
                     onChange={() => toggleSelect(e.id)}
                     disabled={e.status === 'paid'}
-                    className="rounded bg-zinc-800 border-zinc-600 disabled:opacity-30"
+                    className="rounded bg-gray-100 border-gray-400 disabled:opacity-30"
                   />
                 </td>
               )}
-              <td className="px-5 py-3 font-mono text-gray-300 text-xs">#{e.order_number}</td>
-              {!activeTalent && <td className="px-5 py-3 text-white">{e.talents?.name || '—'}</td>}
+              <td className="px-5 py-3 font-mono text-gray-700 text-xs">#{e.order_number}</td>
+              {!activeTalent && <td className="px-5 py-3 text-gray-900">{e.talents?.name || '—'}</td>}
               <td className="px-5 py-3">
                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                   {e.order_type} / {e.tier}
                 </span>
               </td>
-              <td className="px-5 py-3 text-gray-300">US${Number(e.order_total).toFixed(2)}</td>
-              <td className="px-5 py-3 text-gray-400">{(e.commission_rate * 100).toFixed(0)}%</td>
+              <td className="px-5 py-3 text-gray-700">US${Number(e.order_total).toFixed(2)}</td>
+              <td className="px-5 py-3 text-gray-600">{(e.commission_rate * 100).toFixed(0)}%</td>
               <td className="px-5 py-3 text-emerald-400 font-medium">US${Number(e.commission_amount).toFixed(2)}</td>
               <td className="px-5 py-3">
                 {e.status === 'paid' ? (
@@ -289,7 +289,7 @@ export default function PayoutsPage() {
                   </span>
                 )}
               </td>
-              <td className="px-5 py-3 text-gray-400 text-xs">
+              <td className="px-5 py-3 text-gray-600 text-xs">
                 {new Date(e.created_at).toLocaleDateString()}
               </td>
               {!showCheckbox && (
@@ -318,35 +318,35 @@ export default function PayoutsPage() {
         <div>
           {view === 'talent' && activeTalent ? (
             <div>
-              <button onClick={backToSummary} className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white text-sm mb-2 transition-colors">
+              <button onClick={backToSummary} className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm mb-2 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Back to Summary
               </button>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <User className="w-7 h-7 text-emerald-400" />
                 {activeTalent.name}
               </h1>
-              <p className="text-gray-400 text-sm mt-1">{activeTalent.email} · {activeTalent.orderCount} orders</p>
+              <p className="text-gray-600 text-sm mt-1">{activeTalent.email} · {activeTalent.orderCount} orders</p>
             </div>
           ) : (
             <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                 <DollarSign className="w-7 h-7 text-emerald-400" />
                 Talent Payouts
               </h1>
-              <p className="text-gray-400 text-sm mt-1">Track commissions and manage talent payments</p>
+              <p className="text-gray-600 text-sm mt-1">Track commissions and manage talent payments</p>
             </div>
           )}
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={fetchEarnings}
-            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-gray-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={exportCSV}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -365,21 +365,21 @@ export default function PayoutsPage() {
             </p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">
                 {monthFilter !== 'all' ? 'Period Pending' : 'Total Pending'}
               </p>
               <p className="text-2xl font-bold text-amber-400">US${totalPending.toFixed(2)}</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">
                 {monthFilter !== 'all' ? 'Period Paid' : 'Total Paid'}
               </p>
               <p className="text-2xl font-bold text-emerald-400">US${totalPaid.toFixed(2)}</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Active Talents</p>
-              <p className="text-2xl font-bold text-white">{summaries.length}</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Active Talents</p>
+              <p className="text-2xl font-bold text-gray-900">{summaries.length}</p>
             </div>
           </div>
         </div>
@@ -389,20 +389,20 @@ export default function PayoutsPage() {
       {view === 'talent' && activeTalent && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Pending</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Pending</p>
               <p className="text-xl font-bold text-amber-400">US${activeTalent.pendingEarnings.toFixed(2)}</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Paid</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Paid</p>
               <p className="text-xl font-bold text-emerald-400">US${activeTalent.paidEarnings.toFixed(2)}</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Total</p>
-              <p className="text-xl font-bold text-white">US${activeTalent.totalEarnings.toFixed(2)}</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Total</p>
+              <p className="text-xl font-bold text-gray-900">US${activeTalent.totalEarnings.toFixed(2)}</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Commission Rate</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Commission Rate</p>
               <p className="text-xl font-bold text-cyan-400">
                 {activeTalent.earnings[0] ? (activeTalent.earnings[0].commission_rate * 100).toFixed(0) + '%' : '—'}
               </p>
@@ -410,24 +410,24 @@ export default function PayoutsPage() {
           </div>
 
           {/* Payment Info Card */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Payment Account</p>
+                <p className="text-gray-600 text-xs uppercase tracking-wider mb-2">Payment Account</p>
                 <PaymentBadge method={activeTalent.paymentMethod} details={activeTalent.paymentDetails} />
                 {activeTalent.paymentMethod === 'bank_transfer' && activeTalent.paymentDetails && (
                   <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     {activeTalent.paymentDetails.account_name && (
-                      <div><span className="text-gray-500">Name:</span> <span className="text-gray-300">{activeTalent.paymentDetails.account_name}</span></div>
+                      <div><span className="text-gray-500">Name:</span> <span className="text-gray-700">{activeTalent.paymentDetails.account_name}</span></div>
                     )}
                     {activeTalent.paymentDetails.account_number && (
-                      <div><span className="text-gray-500">Account:</span> <span className="text-gray-300">{activeTalent.paymentDetails.account_number}</span></div>
+                      <div><span className="text-gray-500">Account:</span> <span className="text-gray-700">{activeTalent.paymentDetails.account_number}</span></div>
                     )}
                     {activeTalent.paymentDetails.bank_code && (
-                      <div><span className="text-gray-500">Code:</span> <span className="text-gray-300">{activeTalent.paymentDetails.bank_code}</span></div>
+                      <div><span className="text-gray-500">Code:</span> <span className="text-gray-700">{activeTalent.paymentDetails.bank_code}</span></div>
                     )}
                     {activeTalent.paymentDetails.swift_code && (
-                      <div><span className="text-gray-500">SWIFT:</span> <span className="text-gray-300">{activeTalent.paymentDetails.swift_code}</span></div>
+                      <div><span className="text-gray-500">SWIFT:</span> <span className="text-gray-700">{activeTalent.paymentDetails.swift_code}</span></div>
                     )}
                   </div>
                 )}
@@ -448,11 +448,11 @@ export default function PayoutsPage() {
       {/* Controls */}
       {view !== 'talent' && (
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+          <div className="flex bg-white rounded-lg p-1 border border-gray-200">
             <button
               onClick={() => { setView('summary'); setSelected(new Set()); }}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                view === 'summary' ? 'bg-zinc-700 text-white' : 'text-gray-400 hover:text-white'
+                view === 'summary' ? 'bg-gray-200 text-white' : 'text-gray-600 hover:text-white'
               }`}
             >
               <User className="w-3.5 h-3.5 inline mr-1.5" />
@@ -461,7 +461,7 @@ export default function PayoutsPage() {
             <button
               onClick={() => { setView('detail'); setSelected(new Set()); }}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                view === 'detail' ? 'bg-zinc-700 text-white' : 'text-gray-400 hover:text-white'
+                view === 'detail' ? 'bg-gray-200 text-white' : 'text-gray-600 hover:text-white'
               }`}
             >
               <Filter className="w-3.5 h-3.5 inline mr-1.5" />
@@ -471,7 +471,7 @@ export default function PayoutsPage() {
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="bg-zinc-900 border border-zinc-800 text-white text-sm rounded-lg px-3 py-2"
+            className="bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -482,7 +482,7 @@ export default function PayoutsPage() {
             <select
               value={monthFilter}
               onChange={e => setMonthFilter(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 text-white text-sm rounded-lg px-3 py-2"
+              className="bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2"
             >
               {monthOptions.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -519,18 +519,18 @@ export default function PayoutsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading earnings...</div>
+        <div className="text-center py-12 text-gray-600">Loading earnings...</div>
       ) : earnings.length === 0 ? (
         <div className="text-center py-16">
           <DollarSign className="w-10 h-10 text-gray-700 mx-auto mb-3" />
-          <p className="text-gray-400">No earnings recorded yet</p>
+          <p className="text-gray-600">No earnings recorded yet</p>
           <p className="text-gray-600 text-sm mt-1">Commissions appear here when orders are completed</p>
         </div>
       ) : view === 'summary' ? (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-800 text-left text-gray-400 text-xs uppercase tracking-wider">
+              <tr className="border-b border-gray-200 text-left text-gray-600 text-xs uppercase tracking-wider">
                 <th className="px-5 py-3">Talent</th>
                 <th className="px-5 py-3">Payment</th>
                 <th className="px-5 py-3">Orders</th>
@@ -542,15 +542,15 @@ export default function PayoutsPage() {
             </thead>
             <tbody>
               {summaries.map(s => (
-                <tr key={s.talentId} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 group">
+                <tr key={s.talentId} className="border-b border-gray-200/50 hover:bg-gray-100/30 group">
                   <td className="px-5 py-3">
-                    <p className="text-white font-medium">{s.name}</p>
+                    <p className="text-gray-900 font-medium">{s.name}</p>
                     <p className="text-gray-500 text-xs">{s.email}</p>
                   </td>
                   <td className="px-5 py-3">
                     <PaymentBadge method={s.paymentMethod} details={s.paymentDetails} />
                   </td>
-                  <td className="px-5 py-3 text-gray-300">{s.orderCount}</td>
+                  <td className="px-5 py-3 text-gray-700">{s.orderCount}</td>
                   <td className="px-5 py-3">
                     {s.pendingEarnings > 0 ? (
                       <span className="text-amber-400 font-medium">US${s.pendingEarnings.toFixed(2)}</span>
@@ -559,12 +559,12 @@ export default function PayoutsPage() {
                     )}
                   </td>
                   <td className="px-5 py-3 text-emerald-400">US${s.paidEarnings.toFixed(2)}</td>
-                  <td className="px-5 py-3 text-white font-semibold">US${s.totalEarnings.toFixed(2)}</td>
+                  <td className="px-5 py-3 text-gray-900 font-semibold">US${s.totalEarnings.toFixed(2)}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openTalentDetail(s)}
-                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-md bg-zinc-800 text-gray-300 hover:text-white hover:bg-zinc-700 border border-zinc-700 transition-colors"
+                        className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200 border border-gray-300 transition-colors"
                       >
                         View <ChevronRight className="w-3 h-3" />
                       </button>

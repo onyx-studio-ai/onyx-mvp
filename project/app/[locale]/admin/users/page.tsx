@@ -219,17 +219,17 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="p-8 min-h-screen text-white">
+    <div className="p-8 min-h-screen text-gray-900">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">User Management</h1>
-          <p className="text-gray-400">Real customer accounts from your database</p>
+          <p className="text-gray-600">Real customer accounts from your database</p>
         </div>
         <Button
           variant="outline"
           onClick={fetchUsers}
           disabled={loading}
-          className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-gray-200"
+          className="bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-200"
         >
           <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -237,32 +237,32 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Total Users</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Total Users</p>
           <p className="text-2xl font-bold mt-1">{totalUsers}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Active Users</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Active Users</p>
           <p className="text-2xl font-bold text-green-400 mt-1">{activeUsers}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Banned Users</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Banned Users</p>
           <p className="text-2xl font-bold text-red-400 mt-1">{bannedUsers}</p>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-gray-400 text-sm">Total Revenue</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-gray-600 text-sm">Total Revenue</p>
           <p className="text-2xl font-bold text-blue-400 mt-1">{formatCurrency(totalRevenue)}</p>
         </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" size={20} />
           <Input
             placeholder="Search by email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+            className="pl-10 bg-white border-gray-200 text-gray-900"
           />
         </div>
         <div className="flex gap-2">
@@ -271,7 +271,7 @@ export default function AdminUsersPage() {
               key={f}
               variant={filterStatus === f ? 'default' : 'outline'}
               onClick={() => setFilterStatus(f)}
-              className="bg-zinc-800 hover:bg-zinc-700 text-gray-200 capitalize"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-200 capitalize"
             >
               {f}
             </Button>
@@ -279,37 +279,37 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading users...</div>
+          <div className="text-center py-16 text-gray-600">Loading users...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-zinc-950 border-b border-zinc-800">
+              <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Email</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Voice Orders</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Music Orders</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Total Spend</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Last Active</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-300">Actions</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Email</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Voice Orders</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Music Orders</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Total Spend</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Last Active</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800">
+              <tbody className="divide-y divide-gray-200">
                 {filteredUsers.map((user) => {
                   const banned = isBanned(user);
                   const totalSpend = user.voice_spend + user.music_spend;
                   return (
-                    <tr key={user.id} className="hover:bg-zinc-800/50 transition-colors">
+                    <tr key={user.id} className="hover:bg-gray-100/50 transition-colors">
                       <td className="px-6 py-4">
-                        <span className="text-sm font-medium text-white">{user.email}</span>
+                        <span className="text-sm font-medium text-gray-900">{user.email}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-300">{user.voice_order_count}</span>
+                        <span className="text-sm text-gray-700">{user.voice_order_count}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-300">{user.music_order_count}</span>
+                        <span className="text-sm text-gray-700">{user.music_order_count}</span>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm font-semibold text-green-400">{formatCurrency(totalSpend)}</span>
@@ -326,14 +326,14 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-gray-400">{formatDate(user.last_sign_in_at)}</span>
+                        <span className="text-sm text-gray-600">{formatDate(user.last_sign_in_at)}</span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2 flex-wrap">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 border-zinc-600 text-gray-200 hover:bg-zinc-700 hover:text-white"
+                            className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900"
                             onClick={() => router.push(`/admin/orders?search=${encodeURIComponent(user.email)}`)}
                           >
                             <ShoppingCart size={14} className="mr-1" />
@@ -342,7 +342,7 @@ export default function AdminUsersPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 border-zinc-600 text-gray-200 hover:bg-zinc-700 hover:text-white"
+                            className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900"
                             onClick={() => {
                               setEmailDialogUser(user);
                               setEmailSubject('');
@@ -399,19 +399,19 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
             {filteredUsers.length === 0 && (
-              <div className="text-center py-12 text-gray-400">No users found.</div>
+              <div className="text-center py-12 text-gray-600">No users found.</div>
             )}
           </div>
         )}
       </div>
 
       <AlertDialog open={!!actionUser} onOpenChange={() => setActionUser(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+        <AlertDialogContent className="bg-white border-gray-200 text-gray-900">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {actionType === 'delete' ? 'Delete User' : actionType === 'ban' ? 'Ban User' : 'Unban User'}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
+            <AlertDialogDescription className="text-gray-600">
               {actionType === 'delete'
                 ? `Permanently delete ${actionUser?.email}? This action cannot be undone.`
                 : actionType === 'ban'
@@ -420,7 +420,7 @@ export default function AdminUsersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 border-zinc-700">
+            <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200 border-gray-300">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -436,7 +436,7 @@ export default function AdminUsersPage() {
 
       {/* Send Email Dialog */}
       <AlertDialog open={!!emailDialogUser} onOpenChange={() => setEmailDialogUser(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-lg">
+        <AlertDialogContent className="bg-white border-gray-200 text-gray-900 max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Mail size={18} /> Send Email to {emailDialogUser?.email}
@@ -447,18 +447,18 @@ export default function AdminUsersPage() {
               placeholder="Subject"
               value={emailSubject}
               onChange={(e) => setEmailSubject(e.target.value)}
-              className="bg-zinc-800 border-zinc-700 text-white"
+              className="bg-gray-100 border-gray-300 text-gray-900"
             />
             <textarea
               placeholder="Message body..."
               value={emailBody}
               onChange={(e) => setEmailBody(e.target.value)}
               rows={5}
-              className="w-full rounded-md bg-zinc-800 border border-zinc-700 text-white px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-zinc-600"
+              className="w-full rounded-md bg-gray-100 border border-gray-300 text-gray-900 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-zinc-600"
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-800 hover:bg-zinc-700 border-zinc-700">
+            <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200 border-gray-300">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
