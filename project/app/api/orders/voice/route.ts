@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { estimateAudioMinutes, calculatePrice } from '@/lib/estimateAudio';
 import { getVoiceRightsAddonPrice, type VoiceRightsLevel } from '@/lib/config/pricing.config';
+import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-function getSupabaseClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-  return createClient(SUPABASE_URL, key, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  });
-}
+const getSupabaseClient = () => getSupabaseServiceClient();
 
 const USE_CASE_CODES: Record<string, string> = {
   'Social Media': 'SM',
@@ -78,8 +70,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err) {
+    return supabaseErrorResponse(err, 'api/orders/voice GET');
   }
 }
 
@@ -181,9 +173,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ id: data?.id, order_number: data?.order_number });
-  } catch (error) {
-    console.error('Voice order API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err) {
+    return supabaseErrorResponse(err, 'api/orders/voice POST');
   }
 }
 
@@ -209,8 +200,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Voice order update API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err) {
+    return supabaseErrorResponse(err, 'api/orders/voice PATCH');
   }
 }

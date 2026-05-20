@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-function getSupabaseClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-  return createClient(SUPABASE_URL, key, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  });
-}
-
-const supabase = getSupabaseClient();
+import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('📥 [Draft API] Received draft save request');
+    const supabase = getSupabaseServiceClient();
     const body = await request.json();
     const {
       email,
@@ -101,11 +90,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ [Draft API] Music draft created successfully:', data?.id);
       return NextResponse.json({ orderId: data?.id, created: true });
     }
-  } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (err) {
+    return supabaseErrorResponse(err, 'api/orders/draft');
   }
 }

@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
-
-function getSupabaseClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  return createClient(SUPABASE_URL, key, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  });
-}
+import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const typeParam = searchParams.get('type') || 'singer';
 
-    const db = getSupabaseClient();
+    const db = getSupabaseServiceClient();
 
     let query = db
       .from('talents')
@@ -35,7 +26,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching talents:', error);
+      console.error('[talents] DB error:', error);
       return NextResponse.json({ error: 'Failed to fetch talents' }, { status: 500 });
     }
 
@@ -48,8 +39,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(talents);
-  } catch (error) {
-    console.error('Talents API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err) {
+    return supabaseErrorResponse(err, 'api/talents');
   }
 }

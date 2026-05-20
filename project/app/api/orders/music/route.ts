@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hnblwckpnapsdladcjql.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-function getSupabaseClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-  return createClient(SUPABASE_URL, key, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  });
-}
+const getSupabaseClient = () => getSupabaseServiceClient();
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,8 +24,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err) {
+    return supabaseErrorResponse(err, 'api/orders/music GET');
   }
 }
 
@@ -117,11 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ id: data.id, order_number: data.order_number });
-  } catch (error) {
-    console.error('Music order API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (err) {
+    return supabaseErrorResponse(err, 'api/orders/music POST');
   }
 }
