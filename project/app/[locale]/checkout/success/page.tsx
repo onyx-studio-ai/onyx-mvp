@@ -39,6 +39,9 @@ function CheckoutSuccessContent() {
   useEffect(() => {
     if (orderId) {
       loadOrder();
+    } else {
+      // No orderId in URL — don't spin forever. Show the not-found view immediately.
+      setLoading(false);
     }
   }, [orderId]);
 

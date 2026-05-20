@@ -131,12 +131,12 @@ export default function ResetPasswordPage() {
             </CardTitle>
             <p className="text-gray-400 text-sm text-center mt-1">
               {pageState === 'success'
-                ? 'Redirecting you to your dashboard...'
+                ? t('redirectingToDashboard')
                 : pageState === 'invalid'
-                ? 'This link is invalid or has expired.'
+                ? t('linkInvalid')
                 : pageState === 'loading'
-                ? 'Verifying your link...'
-                : 'Choose a strong password for your account.'}
+                ? t('verifyingLink')
+                : t('choosePassword')}
             </p>
           </CardHeader>
 
@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
             {pageState === 'loading' && (
               <div className="py-10 flex flex-col items-center gap-4">
                 <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                <p className="text-gray-500 text-sm">Verifying your link...</p>
+                <p className="text-gray-500 text-sm">{t('verifyingLink')}</p>
               </div>
             )}
 
@@ -155,15 +155,14 @@ export default function ResetPasswordPage() {
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    This password reset link is invalid or has expired.<br />
-                    Please request a new one.
+                    {t('linkInvalidLong')}
                   </p>
                 </div>
                 <Link
                   href="/auth"
                   className="inline-block text-blue-400 hover:text-blue-300 text-sm transition-colors"
                 >
-                  Back to Sign In
+                  {t('backToSignIn')}
                 </Link>
               </div>
             )}
@@ -181,7 +180,7 @@ export default function ResetPasswordPage() {
                 </div>
                 <div className="flex items-center justify-center gap-1.5 text-gray-600 text-xs">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Taking you to your dashboard...
+                  {t('takingToDashboard')}
                 </div>
               </div>
             )}
@@ -196,7 +195,7 @@ export default function ResetPasswordPage() {
                     <Input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Min. 8 characters"
+                      placeholder={t('passwordPlaceholder')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -222,7 +221,7 @@ export default function ResetPasswordPage() {
                         ))}
                       </div>
                       <p className="text-xs text-gray-500">
-                        Strength: <span className="text-gray-300">{strengthLabel}</span>
+                        {t('strengthLabel')}: <span className="text-gray-300">{strengthLabel}</span>
                       </p>
                     </div>
                   )}
@@ -236,7 +235,7 @@ export default function ResetPasswordPage() {
                     <Input
                       id="confirmPassword"
                       type={showConfirm ? 'text' : 'password'}
-                      placeholder="Re-enter your password"
+                      placeholder={t('confirmPlaceholder')}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required

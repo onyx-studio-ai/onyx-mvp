@@ -1090,7 +1090,17 @@
     "buttonUpdatePassword": "更新密碼",
     "errorMinLength": "密碼長度至少需 8 個字元。",
     "errorMismatch": "密碼不一致。",
-    "successMessage": "您現在可以使用新密碼登入。"
+    "successMessage": "您現在可以使用新密碼登入。",
+    "redirectingToDashboard": "正在將您導向後台…",
+    "linkInvalid": "此連結無效或已過期。",
+    "verifyingLink": "正在驗證連結…",
+    "choosePassword": "請為您的帳號設定一組強密碼。",
+    "linkInvalidLong": "此密碼重設連結無效或已過期，請重新申請。",
+    "backToSignIn": "返回登入頁",
+    "passwordPlaceholder": "至少 8 個字元",
+    "confirmPlaceholder": "請再次輸入密碼",
+    "strengthLabel": "強度",
+    "takingToDashboard": "正在將您導向後台…"
   },
   "checkout": {
     "secureCheckout": "安全結帳",

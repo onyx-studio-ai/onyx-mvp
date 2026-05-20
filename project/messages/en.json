@@ -1090,7 +1090,17 @@
     "buttonUpdatePassword": "Update Password",
     "errorMinLength": "Password must be at least 8 characters.",
     "errorMismatch": "Passwords do not match.",
-    "successMessage": "You can now sign in with your new password."
+    "successMessage": "You can now sign in with your new password.",
+    "redirectingToDashboard": "Redirecting you to your dashboard...",
+    "linkInvalid": "This link is invalid or has expired.",
+    "verifyingLink": "Verifying your link...",
+    "choosePassword": "Choose a strong password for your account.",
+    "linkInvalidLong": "This password reset link is invalid or has expired. Please request a new one.",
+    "backToSignIn": "Back to Sign In",
+    "passwordPlaceholder": "Min. 8 characters",
+    "confirmPlaceholder": "Re-enter your password",
+    "strengthLabel": "Strength",
+    "takingToDashboard": "Taking you to your dashboard..."
   },
   "checkout": {
     "secureCheckout": "Secure Checkout",
