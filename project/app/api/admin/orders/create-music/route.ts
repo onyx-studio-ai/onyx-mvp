@@ -8,43 +8,15 @@ import { isValidPaymentMethod, OFFLINE_PAYMENT_METHODS } from '@/lib/payments/me
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-const USE_CASE_CODES: Record<string, string> = {
-  'Social Media': 'SM',
-  'Advertisement': 'AD',
-  'Corporate': 'CO',
-  'Broadcast': 'BR',
-  'E-Learning': 'EL',
-  'Podcast': 'PD',
-  'Audiobook': 'AB',
-  'IVR': 'IV',
-};
-
 function getAdminClient() {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
 
-async function generateOrderNumber(db: ReturnType<typeof getAdminClient>, useCase: string): Promise<string> {
-  const now = new Date();
-  const yy = String(now.getFullYear()).slice(2);
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const ucCode = USE_CASE_CODES[useCase] || useCase.substring(0, 2).toUpperCase();
-
-  const dayStart = new Date(now);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(now);
-  dayEnd.setHours(23, 59, 59, 999);
-
-  const { count } = await db
-    .from('voice_orders')
-    .select('id', { count: 'exact', head: true })
-    .gte('created_at', dayStart.toISOString())
-    .lte('created_at', dayEnd.toISOString());
-
-  const seq = String((count ?? 0) + 1).padStart(3, '0');
-  return `VO-${yy}${mm}${dd}T3${ucCode}YI${seq}`;
+function generateOrderNumber(): string {
+  // Mirror existing music order_number pattern: MO-<unix ms>
+  return `MO-${Date.now()}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -56,30 +28,27 @@ export async function POST(request: NextRequest) {
     const {
       email,
       projectName,
-      language,
-      scriptText,
+      vibe,
+      usageType,
+      description,
+      referenceLink,
+      tier,
       price,
       talentId,
-      toneStyle,
-      useCase,
-      paymentMethod,
-      paymentChannel,
+      paymentMethod,        // 'send_invoice' | 'already_paid'
+      paymentChannel,       // PaymentMethod enum if already_paid
       paymentReference,
       paymentNotes,
     } = body;
 
-    if (!email || !scriptText || !language || price == null || price <= 0) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!email || price == null || price <= 0) {
+      return NextResponse.json({ error: 'Missing required fields (email, price)' }, { status: 400 });
     }
 
     const db = getAdminClient();
-    const resolvedUseCase = useCase || 'Advertisement';
-    const orderNumber = await generateOrderNumber(db, resolvedUseCase);
+    const orderNumber = generateOrderNumber();
     const isPaid = paymentMethod === 'already_paid';
 
-    // For paid manual orders we require a payment channel + reference so
-    // finance can reconcile against bank/Alipay/etc. Default legacy
-    // already_paid (no channel supplied) → admin_manual for backward compat.
     let resolvedPaymentChannel: string | null = null;
     if (isPaid) {
       const channel = (typeof paymentChannel === 'string' && paymentChannel.length > 0)
@@ -88,10 +57,9 @@ export async function POST(request: NextRequest) {
       if (!isValidPaymentMethod(channel)) {
         return NextResponse.json({ error: `Invalid paymentChannel: ${channel}` }, { status: 400 });
       }
-      // Offline channels MUST carry a reference for reconciliation.
       if (OFFLINE_PAYMENT_METHODS.includes(channel) && !paymentReference?.toString().trim()) {
         return NextResponse.json(
-          { error: 'Offline payments require a payment reference (bank tx ID, Alipay ID, etc.)' },
+          { error: 'Offline payments require a payment reference' },
           { status: 400 },
         );
       }
@@ -101,16 +69,13 @@ export async function POST(request: NextRequest) {
     const orderData = {
       order_number: orderNumber,
       email: email.trim().toLowerCase(),
-      language,
-      voice_selection: '',
-      script_text: scriptText.trim(),
-      tone_style: toneStyle || 'Professional',
-      use_case: resolvedUseCase,
-      broadcast_rights: true,
-      tier: 'tier-3',
-      duration: 0,
+      vibe: vibe || null,
+      usage_type: usageType || 'Other',
+      description: description || '',
+      reference_link: referenceLink || '',
+      tier: tier || 'human-curator',
       price,
-      project_name: projectName || '',
+      project_name: projectName || null,
       talent_id: talentId || null,
       talent_price: 0,
       billing_details: null,
@@ -120,19 +85,21 @@ export async function POST(request: NextRequest) {
       payment_method: resolvedPaymentChannel,
       payment_reference: isPaid && paymentReference ? String(paymentReference).trim() : null,
       payment_notes: isPaid && paymentNotes ? String(paymentNotes).trim() : null,
-      revision_count: 0,
-      max_revisions: 1,
-      rights_level: 'global',
+      production_notes: '',
+      client_feedback: '',
+      awaiting_final_upload: false,
+      version_count: 0,
+      max_versions: 2,
     };
 
     const { data, error } = await db
-      .from('voice_orders')
+      .from('music_orders')
       .insert(orderData)
       .select('id, order_number')
       .single();
 
     if (error) {
-      console.error('[Admin Create Order] Insert error:', error);
+      console.error('[Admin Create Music Order] Insert error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -143,7 +110,7 @@ export async function POST(request: NextRequest) {
     try {
       const { data: existingUsers } = await db.auth.admin.listUsers();
       const userExists = existingUsers?.users?.find(
-        (u: { email?: string }) => u.email === orderData.email
+        (u: { email?: string }) => u.email === orderData.email,
       );
       if (!userExists) {
         await db.auth.admin.createUser({
@@ -160,25 +127,25 @@ export async function POST(request: NextRequest) {
         dashboardLink = linkData.properties.action_link;
       }
     } catch (authErr) {
-      console.error('[Admin Create Order] Auth error:', authErr);
+      console.error('[Admin Create Music Order] Auth error:', authErr);
     }
 
     try {
       const emailResult = orderConfirmationEmail({
         orderNumber,
         email: orderData.email,
-        orderType: 'voice',
+        orderType: 'music',
         amount: price,
         currency: 'USD',
         transactionId: isPaid ? `ADMIN-${orderNumber}` : 'PENDING',
         dashboardLink,
         orderDetails: {
-          projectName: projectName || 'Live Studio Order',
-          tier: '100% Live Studio',
+          projectName: projectName || 'Music Production',
+          tier: tier || 'Music Order',
         },
       });
       const subject = isPaid
-        ? `Your 100% Live Studio Order Is Confirmed — #${orderNumber}`
+        ? `Your Music Order Is Confirmed — #${orderNumber}`
         : `Action Required: Complete Payment for Order #${orderNumber}`;
       const result = await sendEmail({
         category: isPaid ? 'PRODUCTION' : 'BILLING',
@@ -188,7 +155,7 @@ export async function POST(request: NextRequest) {
       });
       emailSent = result?.success ?? true;
     } catch (mailErr) {
-      console.error('[Admin Create Order] Email error:', mailErr);
+      console.error('[Admin Create Music Order] Email error:', mailErr);
       emailError = mailErr instanceof Error ? mailErr.message : 'Email failed';
     }
 
@@ -200,7 +167,7 @@ export async function POST(request: NextRequest) {
       emailError,
     });
   } catch (err) {
-    console.error('[Admin Create Order] Error:', err);
+    console.error('[Admin Create Music Order] Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
