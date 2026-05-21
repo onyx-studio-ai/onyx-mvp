@@ -105,12 +105,12 @@ function AudioPreview({ url }: { url: string }) {
       <button
         type="button"
         onClick={toggle}
-        className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center hover:bg-cyan-500/30 transition-colors"
+        className="w-8 h-8 rounded-full bg-cyan-50 border border-cyan-200 flex items-center justify-center hover:bg-cyan-50 transition-colors"
       >
         {playing ? (
-          <Pause className="w-3.5 h-3.5 text-cyan-400" />
+          <Pause className="w-3.5 h-3.5 text-cyan-700" />
         ) : (
-          <Play className="w-3.5 h-3.5 text-cyan-400 ml-0.5" />
+          <Play className="w-3.5 h-3.5 text-cyan-700 ml-0.5" />
         )}
       </button>
       <span className="text-xs text-gray-500 truncate max-w-[200px]">
@@ -221,7 +221,7 @@ function SlotEditor({
     <div className="p-4 rounded-xl bg-white border border-gray-200 space-y-4">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <Music className="w-4 h-4 text-cyan-400" />
+          <Music className="w-4 h-4 text-cyan-700" />
           {slotConfig.label}
         </h4>
         {audioUrl && <AudioPreview url={audioUrl} />}
@@ -411,15 +411,15 @@ export default function AdminShowcasesPage() {
   return (
     <div className="p-6 md:p-10 text-gray-900">
       {loadError && (
-        <div className="mb-6 rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-950/40 px-4 py-3 text-sm text-red-700">
           <p className="font-medium text-red-100 mb-1">無法載入資料</p>
-          <p className="text-red-200/90 mb-3">{loadError}</p>
+          <p className="text-red-700/90 mb-3">{loadError}</p>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => fetchShowcases()}
-            className="border-red-400/50 text-red-100 hover:bg-red-900/50"
+            className="border-red-300 text-red-100 hover:bg-red-900/50"
           >
             重試
           </Button>
@@ -427,7 +427,7 @@ export default function AdminShowcasesPage() {
       )}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-          <Volume2 className="w-6 h-6 text-cyan-400" />
+          <Volume2 className="w-6 h-6 text-cyan-700" />
           Audio Showcases
         </h1>
         <p className="text-gray-500 text-sm mt-1">
@@ -470,9 +470,9 @@ export default function AdminShowcasesPage() {
                   <span
                     className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                       filledCount === section.slots.length
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                         : filledCount > 0
-                        ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
                         : "bg-gray-200 text-gray-600 border border-gray-400"
                     }`}
                   >

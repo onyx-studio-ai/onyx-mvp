@@ -178,7 +178,7 @@ export default function AdminPromosPage() {
     <div className="p-8 min-h-screen text-gray-900">
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-gray-100 border border-gray-300 text-gray-900 px-4 py-3 rounded-lg shadow-xl flex items-center gap-2">
-          <Check size={16} className="text-green-400" />
+          <Check size={16} className="text-green-700" />
           {toast}
         </div>
       )}
@@ -206,15 +206,15 @@ export default function AdminPromosPage() {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-gray-600 text-sm">Active Promos</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{activePromos}</p>
+          <p className="text-2xl font-bold text-green-700 mt-1">{activePromos}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-gray-600 text-sm">Total Redemptions</p>
-          <p className="text-2xl font-bold text-blue-400 mt-1">{totalUsage}</p>
+          <p className="text-2xl font-bold text-blue-700 mt-1">{totalUsage}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-gray-600 text-sm">Avg. Uses per Code</p>
-          <p className="text-2xl font-bold text-amber-400 mt-1">
+          <p className="text-2xl font-bold text-amber-700 mt-1">
             {totalPromos > 0 ? Math.round(totalUsage / totalPromos) : 0}
           </p>
         </div>
@@ -279,12 +279,12 @@ export default function AdminPromosPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant="outline" className={promo.discount_type === 'percentage' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}>
+                      <Badge variant="outline" className={promo.discount_type === 'percentage' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'}>
                         {promo.discount_type === 'percentage' ? 'Percentage' : 'Fixed'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-lg font-bold text-green-400">
+                      <span className="text-lg font-bold text-green-700">
                         {promo.discount_type === 'percentage' ? `${promo.value}%` : `US$${promo.value}`}
                       </span>
                     </td>
@@ -295,7 +295,7 @@ export default function AdminPromosPage() {
                       <span className="text-sm text-gray-600">{promo.max_uses ?? '∞'}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant="outline" className={promo.status === 'active' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-gray-500/10 text-gray-600 border-gray-500/20'}>
+                      <Badge variant="outline" className={promo.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-500/10 text-gray-600 border-gray-500/20'}>
                         {promo.status === 'active' ? 'Active' : 'Expired'}
                       </Badge>
                     </td>
@@ -316,7 +316,7 @@ export default function AdminPromosPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400"
+                          className="h-8 px-3 bg-red-50 hover:bg-red-50 border-red-200 text-red-700"
                           onClick={() => setDeletePromo(promo)}
                         >
                           <Trash2 size={13} />

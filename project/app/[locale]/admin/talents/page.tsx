@@ -168,7 +168,7 @@ function SearchableMultiSelect({
           {selected.map(item => (
             <Badge key={item} className="bg-gray-200 text-gray-200 border-gray-400 hover:bg-gray-300 text-xs gap-1 pr-1">
               {item}
-              <button type="button" onClick={() => onChange(selected.filter(s => s !== item))} className="ml-0.5 hover:text-red-400">
+              <button type="button" onClick={() => onChange(selected.filter(s => s !== item))} className="ml-0.5 hover:text-red-700">
                 <X className="w-3 h-3" />
               </button>
             </Badge>
@@ -201,7 +201,7 @@ function SearchableMultiSelect({
                       onChange(isSelected ? selected.filter(s => s !== item) : [...selected, item]);
                     }}
                     className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors ${
-                      isSelected ? "text-emerald-400" : "text-gray-700"
+                      isSelected ? "text-emerald-700" : "text-gray-700"
                     }`}
                   >
                     <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${
@@ -258,7 +258,7 @@ function SearchableSelect({
         <div className="flex items-center gap-1.5 mb-1">
           <Badge className="bg-gray-200 text-gray-200 border-gray-400 text-xs gap-1 pr-1">
             {value}
-            <button type="button" onClick={() => onChange("")} className="ml-0.5 hover:text-red-400">
+            <button type="button" onClick={() => onChange("")} className="ml-0.5 hover:text-red-700">
               <X className="w-3 h-3" />
             </button>
           </Badge>
@@ -286,7 +286,7 @@ function SearchableSelect({
                   type="button"
                   onClick={() => { onChange(item); setOpen(false); setSearch(""); }}
                   className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 transition-colors ${
-                    value === item ? "text-emerald-400" : "text-gray-700"
+                    value === item ? "text-emerald-700" : "text-gray-700"
                   }`}
                 >
                   {item}
@@ -851,15 +851,15 @@ export default function AdminTalentsPage() {
                   <div className="space-y-2">
                     {formData.demo_urls.map((demo, index) => (
                       <div key={index} className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-gray-200">
-                        <Music className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                        <Music className="w-4 h-4 text-cyan-700 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">{demo.name}</p>
                           <p className="text-[11px] text-gray-500 truncate">{demo.url}</p>
                         </div>
-                        <a href={demo.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">
+                        <a href={demo.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:text-blue-700 flex-shrink-0">
                           Preview
                         </a>
-                        <button type="button" onClick={() => removeDemo(index)} className="text-gray-500 hover:text-red-400 p-1 flex-shrink-0">
+                        <button type="button" onClick={() => removeDemo(index)} className="text-gray-500 hover:text-red-700 p-1 flex-shrink-0">
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -1068,7 +1068,7 @@ export default function AdminTalentsPage() {
                   {(talent as any).application_id ? (
                     <a
                       href="/admin/applications"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
                     >
                       <FileText className="w-3 h-3" />
                       Application
@@ -1107,12 +1107,12 @@ export default function AdminTalentsPage() {
                     return (
                       <a href={`/admin/payouts?talent=${talent.id}`} className="group space-y-0.5">
                         <div className="text-xs">
-                          <span className="text-green-400 font-medium">US${es.paid.toFixed(0)}</span>
+                          <span className="text-green-700 font-medium">US${es.paid.toFixed(0)}</span>
                           <span className="text-gray-500"> paid</span>
                         </div>
                         {es.pending > 0 && (
                           <div className="text-xs">
-                            <span className="text-amber-400 font-medium">US${es.pending.toFixed(0)}</span>
+                            <span className="text-amber-700 font-medium">US${es.pending.toFixed(0)}</span>
                             <span className="text-gray-500"> pending</span>
                           </div>
                         )}
@@ -1128,17 +1128,17 @@ export default function AdminTalentsPage() {
                     if (status === 'verified') return (
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle className="w-3.5 h-3.5 text-green-400" />
-                          <span className="text-green-400 text-xs font-medium">{vid.voice_id_number}</span>
+                          <CheckCircle className="w-3.5 h-3.5 text-green-700" />
+                          <span className="text-green-700 text-xs font-medium">{vid.voice_id_number}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           {vid.voice_id_file_url && (
-                            <a href={vid.voice_id_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded px-2 py-0.5">
+                            <a href={vid.voice_id_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
                               <Music className="w-3 h-3" /> Play
                             </a>
                           )}
                           {vid.voice_id_signature_url && (
-                            <a href={vid.voice_id_signature_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 rounded px-2 py-0.5">
+                            <a href={vid.voice_id_signature_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
                               <ExternalLink className="w-3 h-3" /> Signature
                             </a>
                           )}
@@ -1148,17 +1148,17 @@ export default function AdminTalentsPage() {
                     if (status === 'submitted') return (
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5">
-                          <Shield className="w-3.5 h-3.5 text-blue-400" />
-                          <span className="text-blue-400 text-xs font-medium">Submitted — Review</span>
+                          <Shield className="w-3.5 h-3.5 text-blue-700" />
+                          <span className="text-blue-700 text-xs font-medium">Submitted — Review</span>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           {vid.voice_id_file_url && (
-                            <a href={vid.voice_id_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded px-2 py-0.5">
+                            <a href={vid.voice_id_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
                               <Music className="w-3 h-3" /> Play
                             </a>
                           )}
                           {vid.voice_id_signature_url && (
-                            <a href={vid.voice_id_signature_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 rounded px-2 py-0.5">
+                            <a href={vid.voice_id_signature_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
                               <ExternalLink className="w-3 h-3" /> Signature
                             </a>
                           )}
@@ -1167,7 +1167,7 @@ export default function AdminTalentsPage() {
                             size="sm"
                             onClick={() => handleVerifyVoiceId(talent.id)}
                             disabled={verifyingVoiceId === talent.id}
-                            className="text-green-400 hover:text-green-300 hover:bg-green-500/10 h-6 px-2 text-[11px]"
+                            className="text-green-700 hover:text-green-700 hover:bg-green-50 h-6 px-2 text-[11px]"
                           >
                             {verifyingVoiceId === talent.id ? (
                               <Loader2 className="w-3 h-3 animate-spin mr-1" />
@@ -1181,8 +1181,8 @@ export default function AdminTalentsPage() {
                     );
                     if (status === 'requested') return (
                       <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="text-amber-400 text-xs font-medium">Requested</span>
+                        <Clock className="w-3.5 h-3.5 text-amber-700" />
+                        <span className="text-amber-700 text-xs font-medium">Requested</span>
                       </div>
                     );
                     return (
@@ -1191,7 +1191,7 @@ export default function AdminTalentsPage() {
                         size="sm"
                         onClick={() => handleSendVoiceIdRequest(talent.id)}
                         disabled={sendingVoiceId === talent.id}
-                        className="text-gray-500 hover:text-green-400 hover:bg-green-500/10 h-7 px-2 text-xs"
+                        className="text-gray-500 hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs"
                       >
                         {sendingVoiceId === talent.id ? (
                           <Loader2 className="w-3 h-3 animate-spin mr-1" />
@@ -1204,7 +1204,7 @@ export default function AdminTalentsPage() {
                   })()}
                 </TableCell>
                 <TableCell>
-                  <Badge className={talent.is_active ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-gray-200 text-gray-600 border border-gray-400"}>
+                  <Badge className={talent.is_active ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-200 text-gray-600 border border-gray-400"}>
                     {talent.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
@@ -1213,7 +1213,7 @@ export default function AdminTalentsPage() {
                     <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900">
                       <Edit className="w-3.5 h-3.5 mr-1" /> Edit
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(talent.id)} className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400">
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(talent.id)} className="h-8 px-3 bg-red-50 hover:bg-red-50 border-red-200 text-red-700">
                       <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
                     </Button>
                   </div>

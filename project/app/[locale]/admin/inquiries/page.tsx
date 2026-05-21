@@ -31,18 +31,18 @@ interface Inquiry {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  new: { label: 'New', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: Mail },
-  read: { label: 'Read', color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: Eye },
-  replied: { label: 'Replied', color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: CheckCircle },
+  new: { label: 'New', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Mail },
+  read: { label: 'Read', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', icon: Eye },
+  replied: { label: 'Replied', color: 'bg-green-50 text-green-700 border-green-200', icon: CheckCircle },
   closed: { label: 'Closed', color: 'bg-gray-500/20 text-gray-600 border-gray-500/30', icon: X },
 };
 
 const DEPT_CONFIG: Record<string, { label: string; color: string }> = {
-  HELLO: { label: 'Hello', color: 'text-emerald-400' },
-  PRODUCTION: { label: 'Production', color: 'text-cyan-400' },
-  SUPPORT: { label: 'Support', color: 'text-amber-400' },
-  BILLING: { label: 'Billing', color: 'text-purple-400' },
-  ADMIN: { label: 'Admin', color: 'text-red-400' },
+  HELLO: { label: 'Hello', color: 'text-emerald-700' },
+  PRODUCTION: { label: 'Production', color: 'text-cyan-700' },
+  SUPPORT: { label: 'Support', color: 'text-amber-700' },
+  BILLING: { label: 'Billing', color: 'text-purple-700' },
+  ADMIN: { label: 'Admin', color: 'text-red-700' },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -216,7 +216,7 @@ export default function InquiriesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Inquiries</h1>
           <p className="text-gray-600 text-sm mt-1">
             {newCount > 0 ? (
-              <span className="text-blue-400 font-medium">{newCount} new</span>
+              <span className="text-blue-700 font-medium">{newCount} new</span>
             ) : (
               'All caught up'
             )}
@@ -294,7 +294,7 @@ export default function InquiriesPage() {
                 key={inq.id}
                 className={`bg-white/50 border rounded-xl transition-all duration-200 ${
                   inq.status === 'new'
-                    ? 'border-blue-500/30 bg-blue-500/[0.03]'
+                    ? 'border-blue-200 bg-blue-500/[0.03]'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -318,7 +318,7 @@ export default function InquiriesPage() {
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span className="text-xs text-gray-600">{timeAgo(inq.created_at)}</span>
                     {inq.replies && inq.replies.length > 0 && (
-                      <span className="text-xs text-green-400 flex items-center gap-1">
+                      <span className="text-xs text-green-700 flex items-center gap-1">
                         <Send size={10} /> {inq.replies.length}
                       </span>
                     )}
@@ -333,7 +333,7 @@ export default function InquiriesPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Reference</p>
-                        <p className="text-sm font-mono text-emerald-400">{inq.inquiry_number}</p>
+                        <p className="text-sm font-mono text-emerald-700">{inq.inquiry_number}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 mb-1">Source</p>
@@ -381,9 +381,9 @@ export default function InquiriesPage() {
                         </p>
                         <div className="space-y-2">
                           {inq.replies.map((reply, idx) => (
-                            <div key={idx} className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                            <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-emerald-400 font-medium">Sent by team</span>
+                                <span className="text-xs text-emerald-700 font-medium">Sent by team</span>
                                 <span className="text-xs text-gray-600">
                                   {new Date(reply.sentAt).toLocaleString('en-US', {
                                     month: 'short', day: 'numeric',

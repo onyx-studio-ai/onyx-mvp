@@ -53,14 +53,14 @@ function PaymentBadge({ method, details }: { method?: string | null; details?: R
   if (!method) return <span className="text-xs text-gray-600">Not set</span>;
   if (method === 'paypal') {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
         <Wallet className="w-3 h-3" /> PayPal{details?.paypal_email ? ` · ${details.paypal_email}` : ''}
       </span>
     );
   }
   if (method === 'bank_transfer') {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
         <CreditCard className="w-3 h-3" /> Bank{details?.bank_name ? ` · ${details.bank_name}` : ''}
       </span>
     );
@@ -271,20 +271,20 @@ export default function PayoutsPage() {
               <td className="px-5 py-3 font-mono text-gray-700 text-xs">#{e.order_number}</td>
               {!activeTalent && <td className="px-5 py-3 text-gray-900">{e.talents?.name || '—'}</td>}
               <td className="px-5 py-3">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                   {e.order_type} / {e.tier}
                 </span>
               </td>
               <td className="px-5 py-3 text-gray-700">US${Number(e.order_total).toFixed(2)}</td>
               <td className="px-5 py-3 text-gray-600">{(e.commission_rate * 100).toFixed(0)}%</td>
-              <td className="px-5 py-3 text-emerald-400 font-medium">US${Number(e.commission_amount).toFixed(2)}</td>
+              <td className="px-5 py-3 text-emerald-700 font-medium">US${Number(e.commission_amount).toFixed(2)}</td>
               <td className="px-5 py-3">
                 {e.status === 'paid' ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                  <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
                     <CheckCircle className="w-3 h-3" /> Paid
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-xs text-amber-400">
+                  <span className="inline-flex items-center gap-1 text-xs text-amber-700">
                     <Clock className="w-3 h-3" /> Pending
                   </span>
                 )}
@@ -298,7 +298,7 @@ export default function PayoutsPage() {
                     <button
                       onClick={() => handleMarkPaid([e.id])}
                       disabled={marking}
-                      className="text-xs px-3 py-1 rounded-md bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/40 disabled:opacity-50 transition-colors"
+                      className="text-xs px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 transition-colors"
                     >
                       Mark Paid
                     </button>
@@ -322,7 +322,7 @@ export default function PayoutsPage() {
                 <ArrowLeft className="w-4 h-4" /> Back to Summary
               </button>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <User className="w-7 h-7 text-emerald-400" />
+                <User className="w-7 h-7 text-emerald-700" />
                 {activeTalent.name}
               </h1>
               <p className="text-gray-600 text-sm mt-1">{activeTalent.email} · {activeTalent.orderCount} orders</p>
@@ -330,7 +330,7 @@ export default function PayoutsPage() {
           ) : (
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <DollarSign className="w-7 h-7 text-emerald-400" />
+                <DollarSign className="w-7 h-7 text-emerald-700" />
                 Talent Payouts
               </h1>
               <p className="text-gray-600 text-sm mt-1">Track commissions and manage talent payments</p>
@@ -358,7 +358,7 @@ export default function PayoutsPage() {
       {view !== 'talent' && (
         <div>
           {monthFilter !== 'all' && (
-            <p className="text-sm text-cyan-400 mb-3 flex items-center gap-2">
+            <p className="text-sm text-cyan-700 mb-3 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Period: {monthOptions.find(o => o.value === monthFilter)?.label}
               {' '}· {filteredEarnings.length} records
@@ -369,13 +369,13 @@ export default function PayoutsPage() {
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">
                 {monthFilter !== 'all' ? 'Period Pending' : 'Total Pending'}
               </p>
-              <p className="text-2xl font-bold text-amber-400">US${totalPending.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-amber-700">US${totalPending.toFixed(2)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">
                 {monthFilter !== 'all' ? 'Period Paid' : 'Total Paid'}
               </p>
-              <p className="text-2xl font-bold text-emerald-400">US${totalPaid.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-emerald-700">US${totalPaid.toFixed(2)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Active Talents</p>
@@ -391,11 +391,11 @@ export default function PayoutsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Pending</p>
-              <p className="text-xl font-bold text-amber-400">US${activeTalent.pendingEarnings.toFixed(2)}</p>
+              <p className="text-xl font-bold text-amber-700">US${activeTalent.pendingEarnings.toFixed(2)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Paid</p>
-              <p className="text-xl font-bold text-emerald-400">US${activeTalent.paidEarnings.toFixed(2)}</p>
+              <p className="text-xl font-bold text-emerald-700">US${activeTalent.paidEarnings.toFixed(2)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Total</p>
@@ -403,7 +403,7 @@ export default function PayoutsPage() {
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Commission Rate</p>
-              <p className="text-xl font-bold text-cyan-400">
+              <p className="text-xl font-bold text-cyan-700">
                 {activeTalent.earnings[0] ? (activeTalent.earnings[0].commission_rate * 100).toFixed(0) + '%' : '—'}
               </p>
             </div>
@@ -436,7 +436,7 @@ export default function PayoutsPage() {
                 )}
               </div>
               {!activeTalent.paymentMethod && (
-                <a href="/admin/talents" className="text-xs text-cyan-400 hover:text-cyan-300 underline">
+                <a href="/admin/talents" className="text-xs text-cyan-700 hover:text-cyan-700 underline">
                   Set in Talent Management
                 </a>
               )}
@@ -553,12 +553,12 @@ export default function PayoutsPage() {
                   <td className="px-5 py-3 text-gray-700">{s.orderCount}</td>
                   <td className="px-5 py-3">
                     {s.pendingEarnings > 0 ? (
-                      <span className="text-amber-400 font-medium">US${s.pendingEarnings.toFixed(2)}</span>
+                      <span className="text-amber-700 font-medium">US${s.pendingEarnings.toFixed(2)}</span>
                     ) : (
                       <span className="text-gray-600">US$0.00</span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-emerald-400">US${s.paidEarnings.toFixed(2)}</td>
+                  <td className="px-5 py-3 text-emerald-700">US${s.paidEarnings.toFixed(2)}</td>
                   <td className="px-5 py-3 text-gray-900 font-semibold">US${s.totalEarnings.toFixed(2)}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
@@ -572,7 +572,7 @@ export default function PayoutsPage() {
                         <button
                           onClick={() => handleMarkPaid(s.earnings.filter(e => e.status === 'pending').map(e => e.id))}
                           disabled={marking}
-                          className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-md bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/40 disabled:opacity-50 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 transition-colors"
                         >
                           <CreditCard className="w-3 h-3" /> Pay
                         </button>

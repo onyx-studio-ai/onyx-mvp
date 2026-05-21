@@ -25,17 +25,17 @@ export const MetricCard = ({ title, value, trend, trendValue, icon, color, bgCol
           {icon}
         </div>
         {trend === 'up' ? (
-          <div className="flex items-center gap-1 text-green-400 text-xs font-medium">
+          <div className="flex items-center gap-1 text-green-700 text-xs font-medium">
             <ArrowUpRight className="w-4 h-4" />
             {trendValue}
           </div>
         ) : trend === 'down' ? (
-          <div className="flex items-center gap-1 text-red-400 text-xs font-medium">
+          <div className="flex items-center gap-1 text-red-700 text-xs font-medium">
             <ArrowDownRight className="w-4 h-4" />
             {trendValue}
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-yellow-400 text-xs font-medium">
+          <div className="flex items-center gap-1 text-yellow-700 text-xs font-medium">
             <Minus className="w-4 h-4" />
             {trendValue}
           </div>
@@ -133,16 +133,16 @@ interface AIInsightPanelProps {
 }
 
 export const AIInsightPanel = ({ message, onReviewAudio, onCreatePromo }: AIInsightPanelProps) => (
-  <Card className="bg-gradient-to-br from-[#0a0a0a] to-blue-950/20 border-blue-500/20">
+  <Card className="bg-gradient-to-br from-[#0a0a0a] to-blue-950/20 border-blue-200">
     <CardContent className="p-6">
       <div className="flex items-start gap-4">
-        <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-          <Bot className="w-8 h-8 text-blue-400" />
+        <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+          <Bot className="w-8 h-8 text-blue-700" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-lg font-bold text-gray-900">AI Analyst</h3>
-            <span className="text-xs text-blue-400 font-medium px-2 py-0.5 rounded-full bg-blue-500/10">
+            <span className="text-xs text-blue-700 font-medium px-2 py-0.5 rounded-full bg-blue-50">
               Auto-generated
             </span>
           </div>

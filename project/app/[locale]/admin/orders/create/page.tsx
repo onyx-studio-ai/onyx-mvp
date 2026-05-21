@@ -101,12 +101,12 @@ export default function CreateTier3OrderPage() {
     return (
       <div className="p-6 md:p-10 flex items-center justify-center min-h-[60vh]">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-emerald-400" />
+          <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-emerald-700" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">Order Created</h2>
           <p className="text-gray-600">
-            <span className="font-mono text-emerald-400">{success.orderNumber}</span>
+            <span className="font-mono text-emerald-700">{success.orderNumber}</span>
           </p>
           <p className="text-gray-500 text-sm">
             {form.paymentMethod === 'already_paid'
@@ -114,12 +114,12 @@ export default function CreateTier3OrderPage() {
               : 'Invoice sent to client. Awaiting payment.'}
           </p>
           {success.emailSent === false && (
-            <p className="text-amber-400 text-xs mt-1">
+            <p className="text-amber-700 text-xs mt-1">
               Warning: Email could not be sent to client. {success.emailError || 'Check server logs for details.'}
             </p>
           )}
           {success.emailSent === true && (
-            <p className="text-emerald-400 text-xs mt-1">
+            <p className="text-emerald-700 text-xs mt-1">
               Notification email sent to client successfully.
             </p>
           )}
@@ -151,11 +151,11 @@ export default function CreateTier3OrderPage() {
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-          <Mic className="w-7 h-7 text-amber-400" />
+          <Mic className="w-7 h-7 text-amber-700" />
           New 100% Live Studio Order
         </h1>
         <p className="text-gray-500 text-sm mt-1">Create a Tier 3 voice order with custom pricing</p>
-        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium">
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
           Global TV & Game Rights — Full IP Buyout (Locked)
         </div>
       </div>
@@ -281,12 +281,12 @@ export default function CreateTier3OrderPage() {
               onClick={() => update('paymentMethod', 'send_invoice')}
               className={`p-4 rounded-xl border-2 text-left transition-all ${
                 form.paymentMethod === 'send_invoice'
-                  ? 'border-blue-500/50 bg-blue-500/10'
+                  ? 'border-blue-300 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-500'
               }`}
             >
               <div className="flex items-center gap-3 mb-1.5">
-                <Send className={`w-4 h-4 ${form.paymentMethod === 'send_invoice' ? 'text-blue-400' : 'text-gray-500'}`} />
+                <Send className={`w-4 h-4 ${form.paymentMethod === 'send_invoice' ? 'text-blue-700' : 'text-gray-500'}`} />
                 <span className="text-gray-900 font-semibold text-sm">Send Invoice</span>
               </div>
               <p className="text-gray-500 text-xs">Client pays online via Dashboard. Email notification sent.</p>
@@ -296,12 +296,12 @@ export default function CreateTier3OrderPage() {
               onClick={() => update('paymentMethod', 'already_paid')}
               className={`p-4 rounded-xl border-2 text-left transition-all ${
                 form.paymentMethod === 'already_paid'
-                  ? 'border-emerald-500/50 bg-emerald-500/10'
+                  ? 'border-emerald-300 bg-emerald-50'
                   : 'border-gray-300 hover:border-gray-500'
               }`}
             >
               <div className="flex items-center gap-3 mb-1.5">
-                <CheckCircle className={`w-4 h-4 ${form.paymentMethod === 'already_paid' ? 'text-emerald-400' : 'text-gray-500'}`} />
+                <CheckCircle className={`w-4 h-4 ${form.paymentMethod === 'already_paid' ? 'text-emerald-700' : 'text-gray-500'}`} />
                 <span className="text-gray-900 font-semibold text-sm">Already Paid</span>
               </div>
               <p className="text-gray-500 text-xs">Payment received offline. Order enters production immediately.</p>
@@ -310,7 +310,7 @@ export default function CreateTier3OrderPage() {
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
             {error}
           </div>
         )}

@@ -196,8 +196,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="w-full max-w-md">
           <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl">
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 flex items-center justify-center">
-                <Shield className="w-8 h-8 text-red-400" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-200 flex items-center justify-center">
+                <Shield className="w-8 h-8 text-red-700" />
               </div>
             </div>
             <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
@@ -227,7 +227,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   />
                 </div>
                 {error && (
-                  <p className="mt-2 text-sm text-red-400">{error}</p>
+                  <p className="mt-2 text-sm text-red-700">{error}</p>
                 )}
               </div>
               <button
@@ -288,8 +288,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className={cn(
               "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
               pathname === '/admin/orders/create'
-                ? "bg-amber-600/20 text-amber-400 border border-amber-500/30"
-                : "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/20"
+                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                : "bg-amber-50 text-amber-700 hover:bg-amber-50 border border-amber-200"
             )}
           >
             <PlusCircle size={20} />

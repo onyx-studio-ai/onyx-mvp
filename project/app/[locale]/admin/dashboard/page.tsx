@@ -197,9 +197,9 @@ export default function AdminDashboardPage() {
                 <RefreshCw size={14} />
                 Refresh
               </button>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-200">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-400 text-sm font-medium">Live</span>
+                <span className="text-green-700 text-sm font-medium">Live</span>
               </div>
             </div>
           </div>
@@ -213,31 +213,31 @@ export default function AdminDashboardPage() {
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-600 text-sm">Total Revenue</span>
-                <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
                   <DollarSign className="w-5 h-5 text-green-500" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-green-400">{formatCurrency(s.totalRevenue)}</p>
+              <p className="text-2xl font-bold text-green-700">{formatCurrency(s.totalRevenue)}</p>
               <p className="text-xs text-gray-600 mt-1">All time paid orders</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-600 text-sm">Voice Revenue</span>
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                  <Mic className="w-5 h-5 text-blue-400" />
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <Mic className="w-5 h-5 text-blue-700" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-blue-400">{formatCurrency(s.voiceRevenue)}</p>
+              <p className="text-2xl font-bold text-blue-700">{formatCurrency(s.voiceRevenue)}</p>
               <p className="text-xs text-gray-600 mt-1">{s.paidOrders > 0 ? Math.round((s.voiceRevenue / s.totalRevenue) * 100) : 0}% of total</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-gray-600 text-sm">Music Revenue</span>
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Music className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <Music className="w-5 h-5 text-amber-700" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-amber-400">{formatCurrency(s.musicRevenue)}</p>
+              <p className="text-2xl font-bold text-amber-700">{formatCurrency(s.musicRevenue)}</p>
               <p className="text-xs text-gray-600 mt-1">{s.totalRevenue > 0 ? Math.round((s.musicRevenue / s.totalRevenue) * 100) : 0}% of total</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
@@ -295,14 +295,14 @@ export default function AdminDashboardPage() {
                         <td className="px-6 py-4">
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                             tx.type === 'voice'
-                              ? 'bg-blue-500/10 text-blue-400'
-                              : 'bg-amber-500/10 text-amber-400'
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'bg-amber-50 text-amber-700'
                           }`}>
                             {tx.type === 'voice' ? 'Voice' : 'Music'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">{timeAgo(tx.created_at)}</td>
-                        <td className="px-6 py-4 text-sm text-right font-semibold text-green-400">
+                        <td className="px-6 py-4 text-sm text-right font-semibold text-green-700">
                           +{formatCurrency(tx.amount)}
                         </td>
                       </tr>
@@ -314,7 +314,7 @@ export default function AdminDashboardPage() {
             <div className="px-6 py-4 border-t border-gray-200 bg-white/30">
               <Link
                 href="/admin/orders"
-                className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors group"
+                className="inline-flex items-center gap-2 text-sm text-blue-700 hover:text-blue-700 transition-colors group"
               >
                 <span>View All Orders</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -331,17 +331,17 @@ export default function AdminDashboardPage() {
               <p className="text-gray-600 text-sm mt-1">Paid Orders</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-amber-400">{s.pendingOrders}</p>
+              <p className="text-3xl font-bold text-amber-700">{s.pendingOrders}</p>
               <p className="text-gray-600 text-sm mt-1">Awaiting Payment</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-blue-400">
+              <p className="text-3xl font-bold text-blue-700">
                 {s.totalOrders > 0 ? Math.round((s.paidOrders / s.totalOrders) * 100) : 0}%
               </p>
               <p className="text-gray-600 text-sm mt-1">Conversion Rate</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-green-400">
+              <p className="text-3xl font-bold text-green-700">
                 {s.paidOrders > 0 ? formatCurrency(s.totalRevenue / s.paidOrders) : 'US$0'}
               </p>
               <p className="text-gray-600 text-sm mt-1">Avg. Order Value</p>

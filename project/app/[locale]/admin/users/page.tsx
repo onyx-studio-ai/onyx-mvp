@@ -243,15 +243,15 @@ export default function AdminUsersPage() {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-gray-600 text-sm">Active Users</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{activeUsers}</p>
+          <p className="text-2xl font-bold text-green-700 mt-1">{activeUsers}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-gray-600 text-sm">Banned Users</p>
-          <p className="text-2xl font-bold text-red-400 mt-1">{bannedUsers}</p>
+          <p className="text-2xl font-bold text-red-700 mt-1">{bannedUsers}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-gray-600 text-sm">Total Revenue</p>
-          <p className="text-2xl font-bold text-blue-400 mt-1">{formatCurrency(totalRevenue)}</p>
+          <p className="text-2xl font-bold text-blue-700 mt-1">{formatCurrency(totalRevenue)}</p>
         </div>
       </div>
 
@@ -312,15 +312,15 @@ export default function AdminUsersPage() {
                         <span className="text-sm text-gray-700">{user.music_order_count}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm font-semibold text-green-400">{formatCurrency(totalSpend)}</span>
+                        <span className="text-sm font-semibold text-green-700">{formatCurrency(totalSpend)}</span>
                       </td>
                       <td className="px-6 py-4">
                         {banned ? (
-                          <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/20">
+                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
                             Banned
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             Active
                           </Badge>
                         )}
@@ -356,7 +356,7 @@ export default function AdminUsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 px-3 bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-400"
+                              className="h-8 px-3 bg-green-50 hover:bg-green-50 border-green-200 text-green-700"
                               onClick={() => {
                                 setActionUser(user);
                                 setActionType('unban');
@@ -369,7 +369,7 @@ export default function AdminUsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400"
+                              className="h-8 px-3 bg-red-50 hover:bg-red-50 border-red-200 text-red-700"
                               onClick={() => {
                                 setActionUser(user);
                                 setActionType('ban');
@@ -382,7 +382,7 @@ export default function AdminUsersPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-3 bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400"
+                            className="h-8 px-3 bg-red-50 hover:bg-red-50 border-red-200 text-red-700"
                             onClick={() => {
                               setActionUser(user);
                               setActionType('delete');

@@ -28,9 +28,9 @@ interface Certificate {
 }
 
 const RIGHTS_COLORS: Record<string, string> = {
-  standard: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  broadcast: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-  global: 'bg-green-500/20 text-green-300 border-green-500/30',
+  standard: 'bg-blue-50 text-blue-700 border-blue-200',
+  broadcast: 'bg-amber-50 text-amber-700 border-amber-200',
+  global: 'bg-green-50 text-green-700 border-green-200',
 };
 
 export default function AdminCertificatesPage() {
@@ -136,7 +136,7 @@ export default function AdminCertificatesPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Award className="w-6 h-6 text-green-400" />
+            <Award className="w-6 h-6 text-green-700" />
             {ui.pageTitle}
           </h1>
           <p className="text-gray-600 text-sm mt-1">{certificates.length} {ui.issuedCount}</p>
@@ -193,7 +193,7 @@ export default function AdminCertificatesPage() {
                 {filtered.map(cert => (
                   <tr key={cert.id} className="border-b border-gray-200/50 hover:bg-gray-100/30 transition-colors">
                     <td className="px-5 py-3.5">
-                      <span className="text-green-400 font-mono text-sm font-medium">#{cert.license_id}</span>
+                      <span className="text-green-700 font-mono text-sm font-medium">#{cert.license_id}</span>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className="text-gray-900 text-sm">#{cert.order_number}</span>
@@ -236,7 +236,7 @@ export default function AdminCertificatesPage() {
                           href={`/verify/${cert.license_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 text-gray-600 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                          className="p-1.5 text-gray-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                           title={ui.titleViewPublic}
                         >
                           <ExternalLink className="w-4 h-4" />

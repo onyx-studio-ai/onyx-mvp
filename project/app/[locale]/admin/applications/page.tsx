@@ -56,10 +56,10 @@ interface Application {
 }
 
 const STATUS_CONFIG = {
-  pending: { label: 'Pending', color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' },
-  under_review: { label: 'Under Review', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-  approved: { label: 'Approved', color: 'bg-green-500/20 text-green-300 border-green-500/30' },
-  rejected: { label: 'Rejected', color: 'bg-red-500/20 text-red-300 border-red-500/30' },
+  pending: { label: 'Pending', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  under_review: { label: 'Under Review', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  approved: { label: 'Approved', color: 'bg-green-50 text-green-700 border-green-200' },
+  rejected: { label: 'Rejected', color: 'bg-red-50 text-red-700 border-red-200' },
 };
 
 function StatusBadge({ status }: { status: Application['status'] }) {
@@ -202,11 +202,11 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
       >
         <div className="flex-shrink-0">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            app.role_type === 'Singer' ? 'bg-blue-500/20' : 'bg-amber-500/20'
+            app.role_type === 'Singer' ? 'bg-blue-50' : 'bg-amber-50'
           }`}>
             {app.role_type === 'Singer'
-              ? <Music className="w-5 h-5 text-blue-400" />
-              : <Mic className="w-5 h-5 text-amber-400" />
+              ? <Music className="w-5 h-5 text-blue-700" />
+              : <Mic className="w-5 h-5 text-amber-700" />
             }
           </div>
         </div>
@@ -229,7 +229,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
             <a
               href={`/admin/talents?highlight=${app.talents.id}`}
               onClick={e => e.stopPropagation()}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 hover:bg-cyan-500/25 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-cyan-50 text-cyan-700 border border-cyan-500/25 hover:bg-cyan-500/25 transition-colors"
               title={`Voice ID: ${app.talents.voice_id_status || 'none'} | Active: ${app.talents.is_active ? 'Yes' : 'No'}`}
             >
               <Eye className="w-3 h-3" />
@@ -325,13 +325,13 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500">Home Studio:</span>
-                    <span className={app.has_home_studio ? 'text-green-400' : 'text-red-400'}>
+                    <span className={app.has_home_studio ? 'text-green-700' : 'text-red-700'}>
                       {app.has_home_studio ? 'Yes' : 'No'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500">Dry Audio:</span>
-                    <span className={app.can_deliver_dry_audio ? 'text-green-400' : 'text-red-400'}>
+                    <span className={app.can_deliver_dry_audio ? 'text-green-700' : 'text-red-700'}>
                       {app.can_deliver_dry_audio ? 'Yes' : 'No'}
                     </span>
                   </div>
@@ -389,7 +389,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   onChange={e => setNotes(e.target.value)}
                   rows={3}
                   placeholder="Internal notes about this applicant..."
-                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-500/60 focus:outline-none transition-colors resize-none"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none transition-colors resize-none"
                 />
                 <button
                   onClick={saveNotes}
@@ -413,23 +413,23 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Active</span>
-                      <span className={app.talents.is_active ? 'text-green-400' : 'text-gray-500'}>
+                      <span className={app.talents.is_active ? 'text-green-700' : 'text-gray-500'}>
                         {app.talents.is_active ? 'Yes' : 'No'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Voice ID</span>
                       <span className={
-                        app.talents.voice_id_status === 'verified' ? 'text-green-400' :
-                        app.talents.voice_id_status === 'submitted' ? 'text-blue-400' :
-                        app.talents.voice_id_status === 'requested' ? 'text-amber-400' : 'text-gray-500'
+                        app.talents.voice_id_status === 'verified' ? 'text-green-700' :
+                        app.talents.voice_id_status === 'submitted' ? 'text-blue-700' :
+                        app.talents.voice_id_status === 'requested' ? 'text-amber-700' : 'text-gray-500'
                       }>
                         {app.talents.voice_id_status || 'None'}
                       </span>
                     </div>
                     <a
                       href={`/admin/talents?highlight=${app.talents.id}`}
-                      className="block mt-2 text-center text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-lg py-2 transition-colors"
+                      className="block mt-2 text-center text-xs text-cyan-700 hover:text-cyan-700 bg-cyan-50 hover:bg-cyan-50 rounded-lg py-2 transition-colors"
                     >
                       View in Talent Management →
                     </a>
@@ -528,12 +528,12 @@ export default function AdminApplicationsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         {[
           { label: 'Total', value: counts.total, color: 'text-white' },
-          { label: 'Pending', value: counts.pending, color: 'text-yellow-400' },
-          { label: 'Reviewing', value: counts.under_review, color: 'text-blue-400' },
-          { label: 'Approved', value: counts.approved, color: 'text-green-400' },
-          { label: 'Rejected', value: counts.rejected, color: 'text-red-400' },
-          { label: 'Singers', value: counts.singers, color: 'text-blue-300' },
-          { label: 'Voice Actors', value: counts.vo, color: 'text-amber-400' },
+          { label: 'Pending', value: counts.pending, color: 'text-yellow-700' },
+          { label: 'Reviewing', value: counts.under_review, color: 'text-blue-700' },
+          { label: 'Approved', value: counts.approved, color: 'text-green-700' },
+          { label: 'Rejected', value: counts.rejected, color: 'text-red-700' },
+          { label: 'Singers', value: counts.singers, color: 'text-blue-700' },
+          { label: 'Voice Actors', value: counts.vo, color: 'text-amber-700' },
         ].map(s => (
           <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -551,14 +551,14 @@ export default function AdminApplicationsPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by name, email, or application number..."
-            className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-500/60 focus:outline-none"
+            className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none"
           />
         </div>
         <div className="flex gap-2">
           <select
             value={roleFilter}
             onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
-            className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-500/60 focus:outline-none"
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-300 focus:outline-none"
           >
             <option value="all">All Roles</option>
             <option value="VO">Voice Actors</option>
@@ -567,7 +567,7 @@ export default function AdminApplicationsPage() {
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-500/60 focus:outline-none"
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-300 focus:outline-none"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>

@@ -27,7 +27,7 @@ function CollapsibleText({ text, label, mono }: { text: string; label: string; m
         {needsCollapse && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-700 transition-colors"
           >
             {expanded ? (
               <><ChevronUp className="w-3.5 h-3.5" /> Collapse</>
@@ -124,22 +124,22 @@ type StatusFilter = 'all' | 'paid' | 'processing' | 'completed' | 'pending_payme
 function getStatusBadge(status: string) {
   switch (status) {
     case 'paid':
-      return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20 whitespace-nowrap">In Queue</Badge>;
+      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 whitespace-nowrap">In Queue</Badge>;
     case 'processing':
     case 'in_production':
-      return <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 whitespace-nowrap">In Production</Badge>;
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 whitespace-nowrap">In Production</Badge>;
     case 'demo_ready':
-      return <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20 whitespace-nowrap">Demo Ready</Badge>;
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">Demo Ready</Badge>;
     case 'client_reviewing':
-      return <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20 whitespace-nowrap">Client Reviewing</Badge>;
+      return <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200 whitespace-nowrap">Client Reviewing</Badge>;
     case 'revising':
-      return <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 whitespace-nowrap">Revising</Badge>;
+      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 whitespace-nowrap">Revising</Badge>;
     case 'delivered':
-      return <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/20 whitespace-nowrap">Delivered</Badge>;
+      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 whitespace-nowrap">Delivered</Badge>;
     case 'awaiting_final':
-      return <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 whitespace-nowrap">Awaiting Final</Badge>;
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 whitespace-nowrap">Awaiting Final</Badge>;
     case 'completed':
-      return <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 whitespace-nowrap">Complete</Badge>;
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 whitespace-nowrap">Complete</Badge>;
     case 'pending_payment':
       return <Badge variant="outline" className="bg-gray-400/10 text-gray-500 border-gray-300 whitespace-nowrap">Pending Payment</Badge>;
     default:
@@ -261,10 +261,10 @@ function CertificateSection({ order }: { order: AnyOrder }) {
 
   if (certState === 'exists' && cert) {
     return (
-      <div className="flex items-center gap-3 p-3 bg-green-500/5 border border-green-500/20 rounded-xl">
-        <Award className="w-5 h-5 text-green-400 flex-shrink-0" />
+      <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+        <Award className="w-5 h-5 text-green-700 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-green-400 font-mono text-sm font-medium">#{cert.license_id}</p>
+          <p className="text-green-700 font-mono text-sm font-medium">#{cert.license_id}</p>
           <p className="text-gray-500 text-xs">Certificate issued</p>
         </div>
         <a href={cert.pdf_url} target="_blank" rel="noopener noreferrer"
@@ -299,7 +299,7 @@ function CertificateSection({ order }: { order: AnyOrder }) {
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Rights Level (Auto)</label>
           <div className={`w-full bg-gray-100/50 border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium ${
-            autoRights === 'global' ? 'text-emerald-400' : autoRights === 'broadcast' ? 'text-blue-400' : 'text-gray-700'
+            autoRights === 'global' ? 'text-emerald-700' : autoRights === 'broadcast' ? 'text-blue-700' : 'text-gray-700'
           }`}>
             {rightsLevelLabel(autoRights)}
           </div>
@@ -427,15 +427,15 @@ export default function AdminOrdersPage() {
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-gray-600 text-sm">In Queue</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{queueCount}</p>
+          <p className="text-2xl font-bold text-yellow-700 mt-1">{queueCount}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-gray-600 text-sm">In Production</p>
-          <p className="text-2xl font-bold text-orange-400 mt-1">{productionCount}</p>
+          <p className="text-2xl font-bold text-orange-700 mt-1">{productionCount}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-gray-600 text-sm">Completed</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{completedCount}</p>
+          <p className="text-2xl font-bold text-green-700 mt-1">{completedCount}</p>
         </div>
       </div>
 
@@ -501,7 +501,7 @@ export default function AdminOrdersPage() {
       </div>
 
       {updateError && (
-        <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
           {updateError}
         </div>
       )}
@@ -528,7 +528,7 @@ export default function AdminOrdersPage() {
                   onClick={() => setExpandedId(isExpanded ? null : order.id)}
                 >
                   {/* Type pill */}
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${isVoice ? 'bg-cyan-500/15 text-cyan-400' : isStrings ? 'bg-amber-500/15 text-amber-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${isVoice ? 'bg-cyan-50 text-cyan-700' : isStrings ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
                     {isVoice ? <Mic className="w-3 h-3" /> : isStrings ? <Music2 className="w-3 h-3" /> : <Music className="w-3 h-3" />}
                     {isVoice ? 'Voice' : isStrings ? 'Strings' : 'Music'}
                   </span>
@@ -618,14 +618,14 @@ export default function AdminOrdersPage() {
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Rights Level</p>
                             <p className={`font-medium ${
-                              mo.tier === 'masterpiece' ? 'text-emerald-400' :
-                              mo.tier === 'pro-arrangement' ? 'text-blue-400' : 'text-gray-200'
+                              mo.tier === 'masterpiece' ? 'text-emerald-700' :
+                              mo.tier === 'pro-arrangement' ? 'text-blue-700' : 'text-gray-200'
                             }`}>{rightsLevelLabel(deriveRightsLevel(mo as unknown as AnyOrder))}</p>
                           </div>
                           {mo.talent_name && (
                             <div className="col-span-2 md:col-span-4">
                               <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Singer / Talent</p>
-                              <p className="text-emerald-300 font-medium">{mo.talent_name}</p>
+                              <p className="text-emerald-700 font-medium">{mo.talent_name}</p>
                             </div>
                           )}
                         </div>
@@ -641,7 +641,7 @@ export default function AdminOrdersPage() {
                               href={mo.reference_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 transition-colors break-all"
+                              className="inline-flex items-center gap-1.5 text-sm text-blue-700 hover:text-blue-700 transition-colors break-all"
                             >
                               <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
                               {mo.reference_link}
