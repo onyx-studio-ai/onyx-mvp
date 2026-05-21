@@ -264,7 +264,11 @@ export default function MusicPage() {
         </div>
       </section>
 
-      {/* SECTION 3: HEAR THE DIFFERENCE */}
+      {/* SECTION 3: HEAR THE DIFFERENCE — only renders when both A and B
+          comparison tracks have real audio_url. Previously the section
+          rendered with rawUrl/onyxUrl='' which disabled the play buttons
+          (opacity-50) but left the heading visible — looked broken. */}
+      {rawUrl && onyxUrl && (
       <section className="relative py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent via-purple-900/5 to-transparent">
         <div className="max-w-5xl mx-auto">
           <motion.div
@@ -389,6 +393,7 @@ export default function MusicPage() {
           </motion.div>
         </div>
       </section>
+      )}
 
       {/* SECTION 4: LIVE STRINGS FEATURE */}
       <section className="relative py-32 px-4 sm:px-6 lg:px-8">

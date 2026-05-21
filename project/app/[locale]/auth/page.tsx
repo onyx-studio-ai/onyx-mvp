@@ -70,17 +70,11 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred.';
-
-      if (errorMessage.includes('Invalid API key') || errorMessage.includes('API key') || errorMessage.includes('Failed to fetch')) {
-        if (mode !== 'forgot') {
-          toast.success('Demo Mode: Logged in visually');
-          setTimeout(() => router.push('/dashboard'), 500);
-        } else {
-          setResetEmailSent(true);
-        }
-      } else {
-        setError(errorMessage);
-      }
+      // Surface the real error to the user. Previous code silently routed
+      // Supabase-API-key failures to /dashboard with a fake "Demo Mode: Logged
+      // in visually" toast — dangerous after Paddle went live because a real
+      // outage would push paying customers into a broken auth state.
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

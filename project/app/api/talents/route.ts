@@ -8,10 +8,18 @@ export async function GET(request: NextRequest) {
 
     const db = getSupabaseServiceClient();
 
+    // PUBLIC endpoint — only return talents that have completed Voice ID
+    // verification. Otherwise placeholder/unverified talents leak onto the
+    // public catalogue (the homepage /voices wall, /music/talents singer
+    // grid, etc.) where customers can click into a non-deliverable order.
+    // To intentionally surface unverified talents (for admin tools), use a
+    // service-role query against the `talents` table directly instead of
+    // calling this endpoint.
     let query = db
       .from('talents')
       .select('*')
       .eq('is_active', true)
+      .eq('voice_id_status', 'verified')
       .order('sort_order', { ascending: true });
 
     if (typeParam.toLowerCase() === 'all') {

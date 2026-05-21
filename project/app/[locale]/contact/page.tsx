@@ -103,25 +103,12 @@ export default function ContactPage({
                   </div>
                 </div>
 
-                <div className="relative p-6 rounded-xl bg-white/5 border border-white/10">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                      <Globe className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold mb-1">{t('londonTitle')}</h3>
-                      <p className="text-sm text-gray-500 mb-3">{t('londonRole')}</p>
-                      <p className="text-gray-400 text-sm leading-relaxed mb-3">
-                        {t('remoteHub')}
-                      </p>
-                      
-                      <div className="flex items-center gap-1.5 mt-3 px-2 py-1 bg-emerald-500/10 rounded-full w-fit">
-                        <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                        <span className="text-emerald-400 text-xs font-medium">{t('londonStatus')}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* LOCKED — "London Studio" hub card removed pending Wing's
+                    confirmation of a real UK presence. The previous card
+                    rendered an "Online / Active (GMT)" animated green dot
+                    suggesting a live London office; Onyx's actual studio is
+                    SONICNEST in Taipei Nangang (see CLAUDE.md). To re-enable,
+                    confirm UK entity / address / contact and uncomment. */}
               </div>
             </div>
           </div>

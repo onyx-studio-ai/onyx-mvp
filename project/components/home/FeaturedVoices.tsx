@@ -16,15 +16,22 @@ const CARD_STYLES: { badge: string; gradientColors: [string, string] }[] = [
 
 export default function FeaturedVoices() {
   const t = useTranslations('home.featuredVoices');
-  const fallbackVoices = [
-    { id: 'slot_1', name: t('voice1Name'), archetype: t('voice1Archetype'), tags: [t('voice1Tag1'), t('voice1Tag2'), t('voice1Tag3')], description: t('voice1Description'), audioPreviewUrl: '' },
-    { id: 'slot_2', name: t('voice2Name'), archetype: t('voice2Archetype'), tags: [t('voice2Tag1'), t('voice2Tag2'), t('voice2Tag3')], description: t('voice2Description'), audioPreviewUrl: '' },
-    { id: 'slot_3', name: t('voice3Name'), archetype: t('voice3Archetype'), tags: [t('voice3Tag1'), t('voice3Tag2'), t('voice3Tag3')], description: t('voice3Description'), audioPreviewUrl: '' },
-  ];
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
-  const [voices, setVoices] = useState(fallbackVoices);
+  // Only show voices that actually have a real audio_url. Previously the
+  // component rendered placeholder cards ("Onyx Alpha" / "Onyx Titan" / etc.)
+  // with empty audio_url, which left a non-functional play button on the
+  // homepage hero. Until real audio is uploaded to audio_showcases the section
+  // hides itself entirely.
+  const [voices, setVoices] = useState<Array<{
+    id: string;
+    name: string;
+    archetype: string;
+    tags: string[];
+    description: string;
+    audioPreviewUrl: string;
+  }>>([]);
 
   useEffect(() => {
     supabase
@@ -33,19 +40,23 @@ export default function FeaturedVoices() {
       .eq('section', 'featured_voices')
       .order('sort_order', { ascending: true })
       .then(({ data }) => {
-        if (data && data.length > 0) {
-          setVoices(
-            data.map((s: AudioShowcase, i: number) => ({
-              ...fallbackVoices[i],
-              id: s.slot_key,
-              name: s.label || fallbackVoices[i]?.name || '',
-              audioPreviewUrl: s.audio_url || '',
-            }))
-          );
-        }
+        if (!data || data.length === 0) return;
+        const ready = data
+          .filter((s: AudioShowcase) => Boolean(s.audio_url))
+          .map((s: AudioShowcase) => ({
+            id: s.slot_key,
+            name: s.label || '',
+            archetype: s.subtitle || '',
+            tags: Array.isArray(s.tags) ? s.tags : [],
+            description: s.description || '',
+            audioPreviewUrl: s.audio_url || '',
+          }));
+        setVoices(ready);
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Section is empty until at least one voice has real audio — hide entirely.
+  if (voices.length === 0) return null;
 
   const handlePlayAudio = (voiceId: string, audioUrl: string) => {
     if (!audioUrl) return;

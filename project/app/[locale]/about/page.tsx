@@ -23,17 +23,24 @@ export default function AboutPage() {
             </p>
           </div>
 
+          {/* Stats replaced with verifiable numbers (Founded 2008 → 17 years;
+              1,500+ voice talents per CLAUDE.md). Previous version showed
+              "7,900+ projects delivered" and "100% broadcast quality" with no
+              source — risky claims for a customer-facing page. Wing: update
+              i18n labels in messages/{en,zh-TW,zh-CN}.json if you want the
+              labels themselves to read "Voice Talents" / "Languages" instead
+              of the original "Projects Delivered" / "Broadcast Quality". */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-5xl mx-auto">
             <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-blue-950/30 to-transparent border border-blue-500/20">
               <div className="text-5xl font-bold text-blue-400 mb-2">17+</div>
               <div className="text-gray-300 font-medium">{t('statYearsExperience')}</div>
             </div>
             <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-cyan-950/30 to-transparent border border-cyan-500/20">
-              <div className="text-5xl font-bold text-cyan-400 mb-2">7,900+</div>
+              <div className="text-5xl font-bold text-cyan-400 mb-2">1,500+</div>
               <div className="text-gray-300 font-medium">{t('statProjectsDelivered')}</div>
             </div>
             <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-emerald-950/30 to-transparent border border-emerald-500/20">
-              <div className="text-5xl font-bold text-emerald-400 mb-2">100%</div>
+              <div className="text-5xl font-bold text-emerald-400 mb-2">28</div>
               <div className="text-gray-300 font-medium">{t('statBroadcastQuality')}</div>
             </div>
           </div>

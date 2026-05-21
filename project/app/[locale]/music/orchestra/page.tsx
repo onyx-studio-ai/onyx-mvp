@@ -33,8 +33,13 @@ const TIER_DISPLAY = {
 export default function OrchestraPage() {
   const t = useTranslations('orchestra.landing');
   const tc = useTranslations('common');
-  const [rawSrc, setRawSrc] = useState('/audio/sample-raw.mp3');
-  const [liveSrc, setLiveSrc] = useState('/audio/sample-human.mp3');
+  // Orchestra A/B comparison audio. Default to empty strings (component will
+  // gate the player on truthy URL). Old code defaulted to /audio/sample-raw.mp3
+  // and /audio/sample-human.mp3 — both are voice samples (rough male voice + a
+  // refined male voice), NOT strings recordings. Playing those on an orchestra
+  // page misleads the customer about what they're paying for.
+  const [rawSrc, setRawSrc] = useState('');
+  const [liveSrc, setLiveSrc] = useState('');
 
   useEffect(() => {
     supabase
@@ -219,7 +224,12 @@ export default function OrchestraPage() {
         </div>
       </section>
 
-      {/* A/B COMPARISON SECTION */}
+      {/* A/B COMPARISON SECTION — only renders when both AI raw and live
+          strings audio URLs exist in audio_showcases (section='orchestra_comparison').
+          The previous fallbacks pointed to /audio/sample-{raw,human}.mp3 which
+          are voice samples, not strings — playing them on this page misleads
+          customers about what they're paying for. */}
+      {rawSrc && liveSrc && (
       <section className="relative py-20 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-y-0 left-0 right-0 bg-gradient-to-b from-transparent via-emerald-950/10 to-transparent" />
@@ -270,6 +280,7 @@ export default function OrchestraPage() {
           </motion.p>
         </div>
       </section>
+      )}
 
       {/* SECTION 3: THREE CORE ADVANTAGES */}
       <section className="relative py-24 px-4 sm:px-6 lg:px-8">

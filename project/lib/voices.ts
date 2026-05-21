@@ -1,3 +1,22 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// LOCKED — hardcoded fictional voice catalogue has been removed.
+//
+// Prior to Paddle going live this file shipped ~20 hand-written fictional voice
+// entries (Adam, Eric Voice, Sophia, Min-ho, Hans, …) keyed by language. Those
+// were placeholders the marketing site rendered alongside real database
+// talents, which conflated trained/available voices with mockups. After
+// payment went live a customer browsing /voices could click a fictional voice
+// that had no underlying model and no fulfillment path — destroying trust.
+//
+// Public pages now source voices exclusively from the `talents` table via
+// /api/talents, which itself filters to `voice_id_status='verified'`. This
+// keeps the catalogue honest at the cost of looking sparse until more real
+// talents are onboarded.
+//
+// Type definitions are preserved because other files import them.
+// `voicesByLanguage` and `featuredVoices` are intentionally empty.
+// ─────────────────────────────────────────────────────────────────────────────
+
 export type Voice = {
   id: string;
   name: string;
@@ -46,158 +65,8 @@ export const languages = [
   { code: 'fi', name: 'Finnish', zhName: '芬蘭語' },
 ];
 
-export const voicesByLanguage: VoicesByLanguage = {
-  'zh': [
-    {
-      id: 'zh_male_1',
-      name: 'Adam (Deep / Trailer)',
-      gender: 'male',
-      description: 'Deep, powerful voice perfect for trailers and dramatic content',
-      audioPreviewUrl: '/demos/zh_male_1.mp3',
-    },
-    {
-      id: 'zh_male_2',
-      name: 'Eric (Ad / Energy)',
-      gender: 'male',
-      description: 'Energetic and dynamic, ideal for advertisements',
-      audioPreviewUrl: '/demos/zh_male_2.mp3',
-    },
-    {
-      id: 'zh_female_1',
-      name: 'Li (Warm / Audiobook)',
-      gender: 'female',
-      description: 'Warm and soothing, perfect for audiobooks and narration',
-      audioPreviewUrl: '/demos/zh_female_1.mp3',
-    },
-    {
-      id: 'zh_female_2',
-      name: 'Yaya (Promo / Vibrant)',
-      gender: 'female',
-      description: 'Vibrant and engaging, ideal for promotional content',
-      audioPreviewUrl: '/demos/zh_female_2.mp3',
-    },
-  ],
-  'en': [
-    {
-      id: 'en_male_1',
-      name: 'James (Deep / Authority)',
-      gender: 'male',
-      description: 'Deep, authoritative voice for professional content',
-      audioPreviewUrl: '/demos/en_male_1.mp3',
-    },
-    {
-      id: 'en_male_2',
-      name: 'Ryan (Casual / Conversational)',
-      gender: 'male',
-      description: 'Casual and conversational, perfect for storytelling',
-      audioPreviewUrl: '/demos/en_male_2.mp3',
-    },
-    {
-      id: 'en_female_1',
-      name: 'Sophia (Soothing / Soft)',
-      gender: 'female',
-      description: 'Soothing and soft, ideal for meditation and wellness',
-      audioPreviewUrl: '/demos/en_female_1.mp3',
-    },
-    {
-      id: 'en_female_2',
-      name: 'Emma (Corporate / Pro)',
-      gender: 'female',
-      description: 'Professional and polished, perfect for corporate content',
-      audioPreviewUrl: '/demos/en_female_2.mp3',
-    },
-  ],
-  'ja': [
-    {
-      id: 'ja_male_1',
-      name: 'Ken (Artisan / Deep)',
-      gender: 'male',
-      description: 'Deep and refined, perfect for craftsmanship content',
-      audioPreviewUrl: '/demos/ja_male_1.mp3',
-    },
-    {
-      id: 'ja_male_2',
-      name: 'Hiro (Anime / Energy)',
-      gender: 'male',
-      description: 'Energetic anime-style voice, great for dynamic content',
-      audioPreviewUrl: '/demos/ja_male_2.mp3',
-    },
-    {
-      id: 'ja_female_1',
-      name: 'Sakura (Narration / Soft)',
-      gender: 'female',
-      description: 'Soft and gentle, perfect for narration',
-      audioPreviewUrl: '/demos/ja_female_1.mp3',
-    },
-    {
-      id: 'ja_female_2',
-      name: 'Aiko (Idol / Cute)',
-      gender: 'female',
-      description: 'Cute and cheerful, ideal for upbeat content',
-      audioPreviewUrl: '/demos/ja_female_2.mp3',
-    },
-  ],
-  'ko': [
-    {
-      id: 'ko_male_1',
-      name: 'Min-ho (K-Drama / Deep)',
-      gender: 'male',
-      description: 'Deep and dramatic, perfect for K-Drama style content',
-      audioPreviewUrl: '/demos/ko_male_1.mp3',
-    },
-    {
-      id: 'ko_male_2',
-      name: 'Joon (Variety / Fast)',
-      gender: 'male',
-      description: 'Fast-paced and energetic, great for variety shows',
-      audioPreviewUrl: '/demos/ko_male_2.mp3',
-    },
-    {
-      id: 'ko_female_1',
-      name: 'Ji-oo (News / Intellectual)',
-      gender: 'female',
-      description: 'Clear and intellectual, perfect for news and educational content',
-      audioPreviewUrl: '/demos/ko_female_1.mp3',
-    },
-    {
-      id: 'ko_female_2',
-      name: 'Hana (Vlog / Lively)',
-      gender: 'female',
-      description: 'Lively and engaging, ideal for vlogs and social media',
-      audioPreviewUrl: '/demos/ko_female_2.mp3',
-    },
-  ],
-  'de': [
-    {
-      id: 'de_male_1',
-      name: 'Hans (Authority / Auto)',
-      gender: 'male',
-      description: 'Authoritative and precise, perfect for automotive and technical content',
-      audioPreviewUrl: '/demos/de_male_1.mp3',
-    },
-    {
-      id: 'de_male_2',
-      name: 'Lukas (Tech / Young)',
-      gender: 'male',
-      description: 'Young and tech-savvy, great for modern content',
-      audioPreviewUrl: '/demos/de_male_2.mp3',
-    },
-    {
-      id: 'de_female_1',
-      name: 'Greta (Docu / Calm)',
-      gender: 'female',
-      description: 'Calm and measured, perfect for documentaries',
-      audioPreviewUrl: '/demos/de_female_1.mp3',
-    },
-    {
-      id: 'de_female_2',
-      name: 'Lena (Guide / Friendly)',
-      gender: 'female',
-      description: 'Friendly and approachable, ideal for guides and tutorials',
-      audioPreviewUrl: '/demos/de_female_2.mp3',
-    },
-  ],
-};
+// LOCKED — empty until real voices are linked here.
+export const voicesByLanguage: VoicesByLanguage = {};
 
 export const getVoicesForLanguage = (languageCode: string): Voice[] => {
   return voicesByLanguage[languageCode] || [];
@@ -205,49 +74,14 @@ export const getVoicesForLanguage = (languageCode: string): Voice[] => {
 
 export const findLanguageByVoiceName = (voiceName: string): string | null => {
   for (const [langCode, voices] of Object.entries(voicesByLanguage)) {
-    if (voices.some(v => v.name === voiceName)) return langCode;
+    if (voices.some((v) => v.name === voiceName)) return langCode;
   }
   return null;
 };
 
-export const featuredVoices: Voice[] = [
-  {
-    id: 'onyx_alpha',
-    name: 'Onyx Alpha',
-    gender: 'male',
-    description: 'Deep, commanding presence for high-stakes narration',
-    audioPreviewUrl: '/demos/en_male_1.mp3',
-    archetype: 'The Authority',
-    tags: ['News', 'Corporate', 'Deep'],
-    badge: '✨ ONYX EXCLUSIVE',
-    gradientColors: ['#1e3a8a', '#7c3aed'],
-    isFeatured: true,
-  },
-  {
-    id: 'onyx_nova',
-    name: 'Onyx Nova',
-    gender: 'female',
-    description: 'Crystalline clarity with sophisticated warmth',
-    audioPreviewUrl: '/demos/en_female_2.mp3',
-    archetype: 'The Visionary',
-    tags: ['Tech', 'Premium', 'Elegant'],
-    badge: '✨ ONYX EXCLUSIVE',
-    gradientColors: ['#06b6d4', '#8b5cf6'],
-    isFeatured: true,
-  },
-  {
-    id: 'onyx_titan',
-    name: 'Onyx Titan',
-    gender: 'male',
-    description: 'Bold, dynamic energy for impactful storytelling',
-    audioPreviewUrl: '/demos/en_male_2.mp3',
-    archetype: 'The Catalyst',
-    tags: ['Trailer', 'Action', 'Power'],
-    badge: '✨ ONYX EXCLUSIVE',
-    gradientColors: ['#dc2626', '#f97316'],
-    isFeatured: true,
-  },
-];
+// LOCKED — featured voices are sourced from `audio_showcases` table where
+// section='featured_voices' AND audio_url IS NOT NULL. See FeaturedVoices.tsx.
+export const featuredVoices: Voice[] = [];
 
 export const getFeaturedVoices = (): Voice[] => {
   return featuredVoices;
