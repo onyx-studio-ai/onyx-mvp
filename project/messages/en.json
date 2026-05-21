@@ -1190,6 +1190,7 @@
     "emailLabel": "Email",
     "statusLabel": "Status",
     "paid": "Paid",
+    "processingPayment": "Processing Payment...",
     "magicLinkMessage": "We have created an account for you and sent a magic link to {email}",
     "magicLinkClickPrompt": "Click the link in the email to access your dashboard and track your order.",
     "orchestraStep1": "Upload your MIDI or score file through your dashboard",

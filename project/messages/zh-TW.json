@@ -1190,6 +1190,7 @@
     "emailLabel": "Email",
     "statusLabel": "狀態",
     "paid": "已付款",
+    "processingPayment": "付款處理中…",
     "magicLinkMessage": "我們已為您建立帳號，並將 Magic Link 寄送至 {email}",
     "magicLinkClickPrompt": "請點擊 Email 中的連結，前往控制台追蹤您的訂單。",
     "orchestraStep1": "透過控制台上傳您的 MIDI 或樂譜檔案",
