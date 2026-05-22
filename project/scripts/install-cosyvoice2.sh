@@ -128,43 +128,68 @@ git submodule update --init --recursive 2>&1 | tail -3 || true
 # ─────────────────────────────────────────────────────────────────────────────
 # Step 2: Python venv
 # ─────────────────────────────────────────────────────────────────────────────
-if [ ! -d "/workspace/CosyVoice/venv" ]; then
-  echo "▶ Step 2: Creating Python venv..."
-  python -m venv venv
-elif [ ! -f "/workspace/CosyVoice/venv/bin/python" ]; then
-  echo "▶ Step 2: Broken venv detected, rebuilding..."
+# CosyVoice 2 depends on `pynini` (Tensorflow textgrid lib) which CANNOT be
+# pip-installed reliably — it has C++ dependencies that only conda's binary
+# packages provide. So we abandon the venv approach and install miniconda,
+# then create a conda env exactly like CosyVoice 2's official README does.
+#
+# Image already has system PyTorch 2.9.0 + CUDA 12.8 but we make a fresh
+# conda env (Python 3.10) to match upstream's tested combination.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Remove any old broken venv from previous attempts
+if [ -d "/workspace/CosyVoice/venv" ]; then
+  echo "▶ Step 2a: Removing old (broken) venv from previous attempt..."
   rm -rf /workspace/CosyVoice/venv
-  python -m venv venv
-else
-  echo "▶ Step 2: venv exists, reusing."
 fi
 
-source /workspace/CosyVoice/venv/bin/activate
+# Install miniconda into /workspace (persists across pod restarts)
+CONDA_DIR="/workspace/miniconda3"
+if [ ! -d "$CONDA_DIR" ]; then
+  echo "▶ Step 2b: Installing Miniconda..."
+  wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh
+  bash /tmp/miniconda.sh -b -p "$CONDA_DIR"
+  rm -f /tmp/miniconda.sh
+else
+  echo "▶ Step 2b: Miniconda exists at $CONDA_DIR, reusing."
+fi
+
+# Source conda
+source "$CONDA_DIR/etc/profile.d/conda.sh"
+
+# Create conda env for CosyVoice (idempotent)
+if ! conda env list | grep -q "^cosyvoice "; then
+  echo "▶ Step 2c: Creating conda env 'cosyvoice' (Python 3.10)..."
+  conda create -n cosyvoice -y python=3.10
+else
+  echo "▶ Step 2c: conda env 'cosyvoice' exists, reusing."
+fi
+
+conda activate cosyvoice
 echo "  Active Python: $(which python) ($(python --version 2>&1))"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Step 3: Install dependencies (5-10 min first run)
+# Step 3: Install dependencies (10-15 min first run)
 #
-# Pin setuptools <70 — versions 70+ removed pkg_resources internals that
-# grpcio's setup.py still depends on. Result is `ModuleNotFoundError: No
-# module named 'pkg_resources'` when building grpcio from source.
-#
-# Force grpcio to use a precompiled wheel via --only-binary so we never even
-# try to build from source (which takes 10+ min and often fails).
+# Order matters:
+#   3a. pynini via conda (no pip equivalent exists for the C++ build)
+#   3b. Pin setuptools<70 so anything that DOES build from source can import
+#       pkg_resources
+#   3c. CosyVoice requirements.txt (most packages have wheels)
+#   3d. Extras for the API server
 # ─────────────────────────────────────────────────────────────────────────────
-echo "▶ Step 3: Installing Python dependencies (this is the long part — go grab coffee)..."
+echo "▶ Step 3a: Installing pynini via conda (only conda has the wheels)..."
+conda install -y -c conda-forge pynini==2.1.5 2>&1 | tail -5
 
-# Pin pip and setuptools to versions known to work with grpcio + CosyVoice
+echo "▶ Step 3b: Pinning pip and setuptools for compatibility..."
 pip install -U 'pip<25' wheel 'setuptools<70' 2>&1 | tail -3
 
-# Force-install grpcio from precompiled wheels FIRST so requirements.txt
-# doesn't try to build from source
-pip install --only-binary=:all: grpcio grpcio-tools 2>&1 | tail -3
-
-# CosyVoice 2 requirements (grpcio already satisfied → won't rebuild)
+echo "▶ Step 3c: Installing CosyVoice requirements (this is the long part)..."
+# Prefer binary wheels to avoid source builds (some packages don't have wheels
+# for Python 3.10 — they'll fall back to source which usually works fine)
 pip install -r /workspace/CosyVoice/requirements.txt 2>&1 | tail -15
 
-# Extra deps for API server + model download
+echo "▶ Step 3d: Installing extras for FastAPI server..."
 pip install fastapi 'uvicorn[standard]' python-multipart huggingface_hub modelscope 2>&1 | tail -3
 
 echo "▶ Verifying PyTorch + CUDA..."
@@ -345,7 +370,7 @@ echo "▶ Step 6: Starting CosyVoice 2 API server in tmux..."
 tmux kill-session -t cosyvoice 2>/dev/null || true
 
 # Start fresh tmux session
-tmux new-session -d -s cosyvoice "cd /workspace/CosyVoice && source venv/bin/activate && python server.py 2>&1 | tee /workspace/cosyvoice-server.log"
+tmux new-session -d -s cosyvoice "cd /workspace/CosyVoice && source /workspace/miniconda3/etc/profile.d/conda.sh && conda activate cosyvoice && python server.py 2>&1 | tee /workspace/cosyvoice-server.log"
 
 sleep 5
 
