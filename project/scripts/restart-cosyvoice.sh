@@ -32,6 +32,14 @@ if [ ! -f /workspace/cloudflared ]; then
   chmod +x /workspace/cloudflared
 fi
 
+# After Pod Stop+Start (or Auto Migrate), the container is fresh and system
+# packages from the image are gone. tmux was added by the original installer
+# via apt-get but doesn't persist on the network volume — re-install here.
+if ! command -v tmux &> /dev/null; then
+  echo "▶ Installing tmux (fresh container after pod restart)..."
+  apt-get update -qq > /dev/null 2>&1 && apt-get install -y -qq tmux > /dev/null 2>&1
+fi
+
 # Kill any existing sessions cleanly
 tmux kill-session -t cosyvoice 2>/dev/null || true
 tmux kill-session -t tunnel 2>/dev/null || true
