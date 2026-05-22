@@ -180,7 +180,10 @@
       "description": "We are more than just engineers. Backed by 17 years of studio experience, our team of vocal directors ensures that every AI-generated voice sounds natural, emotional, and professionally mastered.",
       "labelMainControl": "Main Control",
       "labelIsoBooth": "Iso Booth A",
-      "labelAnalogChain": "Analog Chain"
+      "labelAnalogChain": "Analog Chain",
+      "altStudioMain": "SONICNEST studio main control room — Onyx Studios production facility",
+      "altStudioBooth": "Recording booth with professional vocal mic — SONICNEST",
+      "altStudioDaw": "DAW workstation and analog signal chain — SONICNEST control room"
     },
     "brandMarquee": {
       "sectionTitle": "Trusted by Global Industry Leaders"

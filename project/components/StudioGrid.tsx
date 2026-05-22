@@ -21,7 +21,7 @@ export const StudioGrid = () => {
           <div className="md:col-span-2 h-64 md:h-[350px] relative overflow-hidden rounded-2xl group border border-white/5">
             <img
               src="/studio-main.jpg"
-              alt=""
+              alt={t('altStudioMain')}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
               style={{ objectPosition: 'center 60%' }}
             />
@@ -30,7 +30,7 @@ export const StudioGrid = () => {
           <div className="h-64 relative overflow-hidden rounded-2xl group border border-white/5">
             <img
               src="/studio-booth.jpg"
-              alt=""
+              alt={t('altStudioBooth')}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
             />
           </div>
@@ -38,7 +38,7 @@ export const StudioGrid = () => {
           <div className="h-64 relative overflow-hidden rounded-2xl group border border-white/5">
             <img
               src="/studio-daw.jpg"
-              alt=""
+              alt={t('altStudioDaw')}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
             />
           </div>

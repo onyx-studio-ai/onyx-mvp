@@ -180,7 +180,10 @@
       "description": "我们不只是工程师。凭借 17 年录音棚经验，我们的声音导演团队确保每一段 AI 生成的语音听起来自然、富有情感，并达到专业母带级水准。",
       "labelMainControl": "主控室",
       "labelIsoBooth": "隔音录音室 A",
-      "labelAnalogChain": "模拟信号链"
+      "labelAnalogChain": "模拟信号链",
+      "altStudioMain": "SONICNEST 录音棚主控室 — Onyx Studios 自有制作基地",
+      "altStudioBooth": "专业人声录音舱 — SONICNEST 自有录音棚",
+      "altStudioDaw": "DAW 数字音频工作站与模拟信号链 — SONICNEST 控制室"
     },
     "brandMarquee": {
       "sectionTitle": "深受全球行业领袖信赖"

@@ -17,7 +17,19 @@ const TIER_STYLES: Record<TierType, { color: string; waveColor: string; glowColo
   human: { color: 'from-blue-500 to-blue-600', waveColor: '#3B82F6', glowColor: 'rgba(59, 130, 246, 0.3)' },
 };
 
+// LOCKED — VoiceTierComparison hidden pending real comparison clips.
+// The three default samples in /public/audio (sample-raw.mp3,
+// sample-onyx.mp3, sample-human.mp3) have wildly mismatched lengths
+// (9.4s / 13.3s / 43.7s) and bitrates (128/128/320 kbps), so playing
+// them under a "same sample script" comparison header is obviously
+// fake to any customer who plays more than one. Wing will re-record
+// matched clips later, then we restore the section.
 export default function VoiceTierComparison() {
+  return null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _VoiceTierComparisonLocked() {
   const t = useTranslations('home.tierComparison');
   const DEFAULT_TIERS = [
     { id: 'standard' as TierType, name: t('tierStandardName'), subtitle: t('tierStandardSubtitle'), audioSrc: '/audio/sample-raw.mp3',   description: t('tierStandardDescription') },

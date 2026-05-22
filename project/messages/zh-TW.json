@@ -180,7 +180,10 @@
       "description": "我們不只是工程師。憑藉 17 年錄音室經驗，我們的聲音導演團隊確保每一段 AI 生成的語音聽起來自然、富有情感，並達到專業母帶級水準。",
       "labelMainControl": "主控室",
       "labelIsoBooth": "隔音錄音室 A",
-      "labelAnalogChain": "類比訊號鏈"
+      "labelAnalogChain": "類比訊號鏈",
+      "altStudioMain": "SONICNEST 錄音棚主控室 — Onyx Studios 自有製作基地",
+      "altStudioBooth": "專業人聲錄音艙 — SONICNEST 自有錄音棚",
+      "altStudioDaw": "DAW 數位音訊工作站與類比訊號鏈 — SONICNEST 控制室"
     },
     "brandMarquee": {
       "sectionTitle": "深受全球產業領袖信賴"
