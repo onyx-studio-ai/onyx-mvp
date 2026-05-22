@@ -1,30 +1,77 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Onyx CosyVoice 2 — RunPod auto-installer
+# Onyx CosyVoice 2 — RunPod auto-installer (v2 — tmux-wrapped, setuptools-pinned)
 #
 # What it does (idempotent — safe to re-run):
-#   1. Clone CosyVoice 2 to /workspace/CosyVoice (if not already)
-#   2. Create venv + install Python dependencies (5-10 min first run)
-#   3. Download CosyVoice2-0.5B base model from HuggingFace (3-4 GB, 5-10 min)
-#   4. Write a small FastAPI server (server.py)
-#   5. Start server inside tmux session (survives terminal close)
-#   6. Print the public URL Claude should integrate against
+#   0. Re-spawn itself inside a tmux session if not already inside one
+#      (so it survives web terminal disconnect)
+#   1. Clone CosyVoice 2 to /workspace/CosyVoice
+#   2. Create venv with pinned setuptools<70 (newer breaks grpcio)
+#   3. Install dependencies — grpcio forced to use binary wheel
+#   4. Download CosyVoice2-0.5B base model (3-4 GB)
+#   5. Write FastAPI server (server.py)
+#   6. Start server inside a SECOND tmux session
+#   7. Print public URL
 #
-# Usage (run from any RunPod web terminal):
+# Usage (run from RunPod web terminal):
 #   curl -sL https://raw.githubusercontent.com/onyx-studio-ai/onyx-mvp/main/project/scripts/install-cosyvoice2.sh | bash
 #
-# After it finishes you'll see:
-#   ✅ Server running on https://<POD_ID>-8080.proxy.runpod.net
-#   Send that URL to Claude. He'll integrate it into Onyx.
-#
-# To check progress:
-#   tail -f /workspace/cosyvoice-install.log
-#
-# To re-attach to running server:
-#   tmux attach -t cosyvoice
-#
-# To stop the server:
-#   tmux kill-session -t cosyvoice
+# After running, you can SAFELY close the web terminal.
+# Reattach to install progress:    tmux attach -t cosyvoice-install
+# Reattach to running API server:  tmux attach -t cosyvoice
+# Tail install log:                tail -f /workspace/cosyvoice-install.log
+# Tail server log:                 tail -f /workspace/cosyvoice-server.log
+# Stop server:                     tmux kill-session -t cosyvoice
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 0a: Re-spawn inside tmux if not already there
+# ─────────────────────────────────────────────────────────────────────────────
+SCRIPT_URL="https://raw.githubusercontent.com/onyx-studio-ai/onyx-mvp/main/project/scripts/install-cosyvoice2.sh"
+SESSION="cosyvoice-install"
+
+if [ -z "$TMUX" ] && [ -z "$ONYX_INSTALL_RESPAWNED" ]; then
+  # Make sure tmux is available
+  if ! command -v tmux &> /dev/null; then
+    echo "Installing tmux..."
+    apt-get update -qq > /dev/null 2>&1 && apt-get install -y -qq tmux > /dev/null 2>&1
+  fi
+
+  # Download script to /tmp (so tmux session has a stable file to source)
+  curl -sL "$SCRIPT_URL" -o /tmp/install-cosyvoice2.sh
+  chmod +x /tmp/install-cosyvoice2.sh
+
+  # Kill any existing install session (in case of re-run)
+  tmux kill-session -t "$SESSION" 2>/dev/null || true
+
+  # Spawn new tmux session running this script (with respawn flag set)
+  tmux new-session -d -s "$SESSION" \
+    "ONYX_INSTALL_RESPAWNED=1 /tmp/install-cosyvoice2.sh; echo ''; echo 'Install finished. Press Ctrl+B then D to detach.'; exec bash"
+
+  echo ""
+  echo "═══════════════════════════════════════════════════════════"
+  echo "  ✅ Install started in background (tmux session: $SESSION)"
+  echo "═══════════════════════════════════════════════════════════"
+  echo ""
+  echo "  📺 Watch progress LIVE:"
+  echo "       tmux attach -t $SESSION"
+  echo "       (then Ctrl+B then D to detach — install keeps running)"
+  echo ""
+  echo "  📜 Or just tail the log file:"
+  echo "       tail -f /workspace/cosyvoice-install.log"
+  echo ""
+  echo "  💡 You can SAFELY close this web terminal now."
+  echo "       The install will keep running. Re-open terminal anytime"
+  echo "       and tail the log to see progress."
+  echo ""
+  echo "  ⏱  Expected runtime: 15-25 min (pip install + 3-4 GB download)"
+  echo ""
+  echo "═══════════════════════════════════════════════════════════"
+  exit 0
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 0b: We're inside tmux now — proceed with install
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -e
@@ -34,7 +81,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "  Onyx CosyVoice 2 Auto-Installer"
+echo "  Onyx CosyVoice 2 Auto-Installer (running in tmux)"
 echo "  Started: $(date)"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
@@ -84,8 +131,12 @@ git submodule update --init --recursive 2>&1 | tail -3 || true
 if [ ! -d "/workspace/CosyVoice/venv" ]; then
   echo "▶ Step 2: Creating Python venv..."
   python -m venv venv
+elif [ ! -f "/workspace/CosyVoice/venv/bin/python" ]; then
+  echo "▶ Step 2: Broken venv detected, rebuilding..."
+  rm -rf /workspace/CosyVoice/venv
+  python -m venv venv
 else
-  echo "▶ Step 2: venv exists, skipping."
+  echo "▶ Step 2: venv exists, reusing."
 fi
 
 source /workspace/CosyVoice/venv/bin/activate
@@ -93,12 +144,25 @@ echo "  Active Python: $(which python) ($(python --version 2>&1))"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Step 3: Install dependencies (5-10 min first run)
+#
+# Pin setuptools <70 — versions 70+ removed pkg_resources internals that
+# grpcio's setup.py still depends on. Result is `ModuleNotFoundError: No
+# module named 'pkg_resources'` when building grpcio from source.
+#
+# Force grpcio to use a precompiled wheel via --only-binary so we never even
+# try to build from source (which takes 10+ min and often fails).
 # ─────────────────────────────────────────────────────────────────────────────
 echo "▶ Step 3: Installing Python dependencies (this is the long part — go grab coffee)..."
-pip install -U pip wheel setuptools 2>&1 | tail -3
 
-# CosyVoice 2 requirements
-pip install -r /workspace/CosyVoice/requirements.txt 2>&1 | tail -10
+# Pin pip and setuptools to versions known to work with grpcio + CosyVoice
+pip install -U 'pip<25' wheel 'setuptools<70' 2>&1 | tail -3
+
+# Force-install grpcio from precompiled wheels FIRST so requirements.txt
+# doesn't try to build from source
+pip install --only-binary=:all: grpcio grpcio-tools 2>&1 | tail -3
+
+# CosyVoice 2 requirements (grpcio already satisfied → won't rebuild)
+pip install -r /workspace/CosyVoice/requirements.txt 2>&1 | tail -15
 
 # Extra deps for API server + model download
 pip install fastapi 'uvicorn[standard]' python-multipart huggingface_hub modelscope 2>&1 | tail -3
