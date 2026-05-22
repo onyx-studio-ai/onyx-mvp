@@ -61,7 +61,7 @@
   },
   "footer": {
     "tagline": "AI 生成，赋予灵魂",
-    "locations": "英国 • 台湾",
+    "locations": "台湾 台北",
     "aboutUs": "关于我们",
     "pricing": "价格方案",
     "contact": "联系我们",
@@ -1621,8 +1621,8 @@
     "ecosystemItem3Title": "声音导演 AI 核心",
     "ecosystemItem3Desc": "通过与全球人才的深度合作，我们将超过 17 年的专业配音与音乐导演经验嵌入 AI 模型。这远非单纯的机器生成——每段输出都经过专业导演的情感校准与动态调整，确保 AI 音频承载真实的人类情感与灵魂。",
     "statYearsExperience": "年经验",
-    "statProjectsDelivered": "已完成项目",
-    "statBroadcastQuality": "广播级品质"
+    "statProjectsDelivered": "配音员人才库",
+    "statBroadcastQuality": "支持语言数"
   },
   "apply": {
     "badgeText": "正在招募",
@@ -1778,7 +1778,7 @@
   },
   "contactPage": {
     "pageTitle": "联系我们",
-    "pageSubtitle": "总部位于英国和台湾的全球配音与音乐制作工作室",
+    "pageSubtitle": "总部位于台湾台北的全球配音与音乐制作工作室",
     "getInTouch": "与我们联系",
     "getInTouchDesc": "直接联系相关团队。每一条咨询都将在两个工作日内回复。",
     "ourHubs": "我们的中心",

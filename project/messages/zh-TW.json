@@ -61,7 +61,7 @@
   },
   "footer": {
     "tagline": "AI 生成，賦予靈魂",
-    "locations": "英國 • 台灣",
+    "locations": "台灣 台北",
     "aboutUs": "關於我們",
     "pricing": "方案價格",
     "contact": "聯繫我們",
@@ -1621,8 +1621,8 @@
     "ecosystemItem3Title": "聲音導演 AI 核心",
     "ecosystemItem3Desc": "透過與全球人才的深度合作，我們將超過 17 年的專業配音與音樂導演經驗嵌入 AI 模型。這遠非單純的機器生成——每段輸出都經過專業導演的情感校準與動態調整，確保 AI 音訊承載真實的人類情感與靈魂。",
     "statYearsExperience": "年資歷",
-    "statProjectsDelivered": "已完成專案",
-    "statBroadcastQuality": "廣播級品質"
+    "statProjectsDelivered": "配音員人才庫",
+    "statBroadcastQuality": "支援語言數"
   },
   "apply": {
     "badgeText": "現正招募中",
@@ -1778,7 +1778,7 @@
   },
   "contactPage": {
     "pageTitle": "聯繫我們",
-    "pageSubtitle": "總部設於英國與台灣的全球配音及音樂製作工作室",
+    "pageSubtitle": "總部設於台灣台北的全球配音及音樂製作工作室",
     "getInTouch": "與我們聯繫",
     "getInTouchDesc": "直接聯繫對應團隊。每份詢問均在兩個工作天內回覆。",
     "ourHubs": "據點",

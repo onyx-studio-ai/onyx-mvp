@@ -61,7 +61,7 @@
   },
   "footer": {
     "tagline": "AI Generated. Human Perfected.",
-    "locations": "UK • Taiwan",
+    "locations": "Taipei, Taiwan",
     "aboutUs": "About Us",
     "pricing": "Pricing",
     "contact": "Contact",
@@ -1621,8 +1621,8 @@
     "ecosystemItem3Title": "Human-Directed AI Core",
     "ecosystemItem3Desc": "Through deep collaboration with global talent, we embed over 17 years of professional voice and music direction expertise into our AI models. This goes far beyond mere machine generation — every output undergoes emotional calibration and dynamic adjustment by professional directors, ensuring our AI audio carries genuine human emotion and soul.",
     "statYearsExperience": "Years Experience",
-    "statProjectsDelivered": "Projects Delivered",
-    "statBroadcastQuality": "Broadcast Quality"
+    "statProjectsDelivered": "Voice Talents",
+    "statBroadcastQuality": "Languages Supported"
   },
   "apply": {
     "badgeText": "Now Recruiting",
@@ -1778,7 +1778,7 @@
   },
   "contactPage": {
     "pageTitle": "Contact Us",
-    "pageSubtitle": "Global voice & music production studio based in the UK and Taiwan",
+    "pageSubtitle": "Global voice & music production studio based in Taipei, Taiwan",
     "getInTouch": "Get in Touch",
     "getInTouchDesc": "Reach the right team directly. Every inquiry is reviewed within two business days.",
     "ourHubs": "Our Hubs",
