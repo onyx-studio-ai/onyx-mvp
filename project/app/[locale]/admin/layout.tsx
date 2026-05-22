@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BadgeKey = 'orders' | 'inquiries' | 'applications';
@@ -36,6 +36,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/promos', labelKey: 'promos', icon: Tag },
       { href: '/admin/showcases', labelKey: 'audioShowcases', icon: Volume2 },
       { href: '/admin/vibes', labelKey: 'vibes', icon: Music },
+      { href: '/admin/voices', labelKey: 'voiceLibrary', icon: Waves },
     ],
   },
 ];
@@ -58,6 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     promos: '優惠碼',
     audioShowcases: '音訊作品',
     vibes: '音樂風格',
+    voiceLibrary: 'AI Voice 庫',
     invalidAdminCode: '管理員代碼無效',
     authFailed: '驗證失敗，請再試一次。',
     loading: '載入中...',
@@ -85,6 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     promos: 'Promos',
     audioShowcases: 'Audio Showcases',
     vibes: 'Vibes',
+    voiceLibrary: 'AI Voice Library',
     invalidAdminCode: 'Invalid admin code',
     authFailed: 'Authentication failed. Please try again.',
     loading: 'Loading...',
