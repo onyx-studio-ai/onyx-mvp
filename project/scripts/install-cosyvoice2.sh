@@ -193,6 +193,22 @@ conda install -y --override-channels -c conda-forge pynini==2.1.5 2>&1 | tail -5
 echo "▶ Step 3b: Pinning pip and setuptools for compatibility..."
 pip install -U 'pip<25' wheel 'setuptools<70' 2>&1 | tail -3
 
+# CRITICAL: pip's isolated build environments default to the LATEST setuptools
+# (currently 82+), even when the host venv has a pinned older version. Many
+# Python packages (grpcio, WeTextProcessing, others CosyVoice depends on) have
+# setup.py that imports pkg_resources, which setuptools removed in 70+. Result:
+# "ModuleNotFoundError: No module named 'pkg_resources'" mid-build.
+#
+# Fix: PIP_CONSTRAINT — pip honors it in build environments too, forcing
+# isolated build envs to use the same setuptools<70 as the host venv.
+echo "▶ Step 3b-fix: Pinning setuptools in pip's isolated build environments..."
+cat > /tmp/pip-build-constraints.txt <<'CONSTRAINTS'
+setuptools<70
+wheel<1
+CONSTRAINTS
+export PIP_CONSTRAINT=/tmp/pip-build-constraints.txt
+echo "  PIP_CONSTRAINT set: $PIP_CONSTRAINT"
+
 echo "▶ Step 3c: Installing CosyVoice requirements (this is the long part)..."
 # Prefer binary wheels to avoid source builds (some packages don't have wheels
 # for Python 3.10 — they'll fall back to source which usually works fine)
@@ -200,6 +216,9 @@ pip install -r /workspace/CosyVoice/requirements.txt 2>&1 | tail -15
 
 echo "▶ Step 3d: Installing extras for FastAPI server..."
 pip install fastapi 'uvicorn[standard]' python-multipart huggingface_hub modelscope 2>&1 | tail -3
+
+# Clear the constraint env var so it doesn't affect anything else in the script
+unset PIP_CONSTRAINT
 
 echo "▶ Verifying PyTorch + CUDA..."
 python -c "
