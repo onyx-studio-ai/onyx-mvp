@@ -157,12 +157,20 @@ fi
 # Source conda
 source "$CONDA_DIR/etc/profile.d/conda.sh"
 
+# Accept Anaconda Terms of Service for default channels — required since
+# Anaconda Inc. added this gate in 2024. Without these two accepts the very
+# first `conda install` blocks asking interactively, and our -y flag does NOT
+# answer it. Run upfront so the rest of the script doesn't trip on it.
+echo "▶ Step 2c: Accepting Anaconda Terms of Service..."
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+
 # Create conda env for CosyVoice (idempotent)
 if ! conda env list | grep -q "^cosyvoice "; then
-  echo "▶ Step 2c: Creating conda env 'cosyvoice' (Python 3.10)..."
+  echo "▶ Step 2d: Creating conda env 'cosyvoice' (Python 3.10)..."
   conda create -n cosyvoice -y python=3.10
 else
-  echo "▶ Step 2c: conda env 'cosyvoice' exists, reusing."
+  echo "▶ Step 2d: conda env 'cosyvoice' exists, reusing."
 fi
 
 conda activate cosyvoice
@@ -179,7 +187,8 @@ echo "  Active Python: $(which python) ($(python --version 2>&1))"
 #   3d. Extras for the API server
 # ─────────────────────────────────────────────────────────────────────────────
 echo "▶ Step 3a: Installing pynini via conda (only conda has the wheels)..."
-conda install -y -c conda-forge pynini==2.1.5 2>&1 | tail -5
+# --override-channels: only use conda-forge, skip default channels (avoids ToS prompt)
+conda install -y --override-channels -c conda-forge pynini==2.1.5 2>&1 | tail -5
 
 echo "▶ Step 3b: Pinning pip and setuptools for compatibility..."
 pip install -U 'pip<25' wheel 'setuptools<70' 2>&1 | tail -3
