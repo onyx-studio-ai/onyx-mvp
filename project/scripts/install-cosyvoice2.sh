@@ -1,0 +1,326 @@
+#!/bin/bash
+# ─────────────────────────────────────────────────────────────────────────────
+# Onyx CosyVoice 2 — RunPod auto-installer
+#
+# What it does (idempotent — safe to re-run):
+#   1. Clone CosyVoice 2 to /workspace/CosyVoice (if not already)
+#   2. Create venv + install Python dependencies (5-10 min first run)
+#   3. Download CosyVoice2-0.5B base model from HuggingFace (3-4 GB, 5-10 min)
+#   4. Write a small FastAPI server (server.py)
+#   5. Start server inside tmux session (survives terminal close)
+#   6. Print the public URL Claude should integrate against
+#
+# Usage (run from any RunPod web terminal):
+#   curl -sL https://raw.githubusercontent.com/onyx-studio-ai/onyx-mvp/main/project/scripts/install-cosyvoice2.sh | bash
+#
+# After it finishes you'll see:
+#   ✅ Server running on https://<POD_ID>-8080.proxy.runpod.net
+#   Send that URL to Claude. He'll integrate it into Onyx.
+#
+# To check progress:
+#   tail -f /workspace/cosyvoice-install.log
+#
+# To re-attach to running server:
+#   tmux attach -t cosyvoice
+#
+# To stop the server:
+#   tmux kill-session -t cosyvoice
+# ─────────────────────────────────────────────────────────────────────────────
+
+set -e
+
+LOG_FILE="/workspace/cosyvoice-install.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  Onyx CosyVoice 2 Auto-Installer"
+echo "  Started: $(date)"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 0: Sanity checks
+# ─────────────────────────────────────────────────────────────────────────────
+echo "▶ Step 0: Environment check"
+echo "  PWD: $(pwd)"
+echo "  Python: $(python --version 2>&1)"
+echo "  GPU: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo '(no GPU detected)')"
+echo "  Disk: $(df -h /workspace | tail -1)"
+echo ""
+
+# Required tools
+for cmd in git python pip nvidia-smi; do
+  if ! command -v $cmd &> /dev/null; then
+    echo "❌ Missing required command: $cmd"
+    exit 1
+  fi
+done
+
+# Install tmux if missing (so server survives terminal close)
+if ! command -v tmux &> /dev/null; then
+  echo "▶ Installing tmux..."
+  apt-get update -qq && apt-get install -y -qq tmux
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 1: Clone CosyVoice (idempotent)
+# ─────────────────────────────────────────────────────────────────────────────
+cd /workspace
+if [ ! -d "/workspace/CosyVoice" ]; then
+  echo "▶ Step 1: Cloning CosyVoice repo..."
+  git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git CosyVoice
+else
+  echo "▶ Step 1: CosyVoice already cloned, skipping."
+fi
+cd /workspace/CosyVoice
+
+# Ensure submodules pulled
+git submodule update --init --recursive 2>&1 | tail -3 || true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 2: Python venv
+# ─────────────────────────────────────────────────────────────────────────────
+if [ ! -d "/workspace/CosyVoice/venv" ]; then
+  echo "▶ Step 2: Creating Python venv..."
+  python -m venv venv
+else
+  echo "▶ Step 2: venv exists, skipping."
+fi
+
+source /workspace/CosyVoice/venv/bin/activate
+echo "  Active Python: $(which python) ($(python --version 2>&1))"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 3: Install dependencies (5-10 min first run)
+# ─────────────────────────────────────────────────────────────────────────────
+echo "▶ Step 3: Installing Python dependencies (this is the long part — go grab coffee)..."
+pip install -U pip wheel setuptools 2>&1 | tail -3
+
+# CosyVoice 2 requirements
+pip install -r /workspace/CosyVoice/requirements.txt 2>&1 | tail -10
+
+# Extra deps for API server + model download
+pip install fastapi 'uvicorn[standard]' python-multipart huggingface_hub modelscope 2>&1 | tail -3
+
+echo "▶ Verifying PyTorch + CUDA..."
+python -c "
+import torch
+print(f'PyTorch: {torch.__version__}')
+print(f'CUDA available: {torch.cuda.is_available()}')
+if torch.cuda.is_available():
+    print(f'GPU: {torch.cuda.get_device_name(0)}')
+    print(f'VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB')
+"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 4: Download CosyVoice2-0.5B base model (3-4 GB)
+# ─────────────────────────────────────────────────────────────────────────────
+mkdir -p pretrained_models
+if [ ! -d "/workspace/CosyVoice/pretrained_models/CosyVoice2-0.5B" ] || \
+   [ ! -f "/workspace/CosyVoice/pretrained_models/CosyVoice2-0.5B/llm.pt" ]; then
+  echo "▶ Step 4: Downloading CosyVoice2-0.5B model (3-4 GB)..."
+  huggingface-cli download FunAudioLLM/CosyVoice2-0.5B \
+    --local-dir /workspace/CosyVoice/pretrained_models/CosyVoice2-0.5B \
+    2>&1 | tail -10
+else
+  echo "▶ Step 4: Model already downloaded, skipping."
+fi
+
+echo "  Model files:"
+ls -lh /workspace/CosyVoice/pretrained_models/CosyVoice2-0.5B/ | head -10
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 5: Write FastAPI server (server.py)
+# ─────────────────────────────────────────────────────────────────────────────
+echo "▶ Step 5: Writing FastAPI server..."
+cat > /workspace/CosyVoice/server.py << 'PYEOF'
+"""
+Minimal FastAPI server exposing CosyVoice 2 for Onyx platform.
+
+Endpoints:
+  GET  /health              → liveness check
+  POST /synthesize          → generate audio (zero-shot voice cloning)
+  POST /upload_reference    → upload a new reference voice (returns voice_id)
+  GET  /voices              → list available reference voices
+
+Reference voices live in /workspace/CosyVoice/references/<voice_id>/
+  {voice_id}.wav  — the reference audio (5-30 sec)
+  {voice_id}.txt  — the exact transcript of the reference audio
+"""
+import os, sys, io, json, uuid, time
+from pathlib import Path
+
+sys.path.append('/workspace/CosyVoice/third_party/Matcha-TTS')
+
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import torch
+import torchaudio
+
+from cosyvoice.cli.cosyvoice import CosyVoice2
+from cosyvoice.utils.file_utils import load_wav
+
+REFS_DIR = Path('/workspace/CosyVoice/references')
+REFS_DIR.mkdir(exist_ok=True)
+
+print("Loading CosyVoice2-0.5B...")
+cosyvoice = CosyVoice2(
+    '/workspace/CosyVoice/pretrained_models/CosyVoice2-0.5B',
+    load_jit=False, load_trt=False, fp16=False,
+)
+SAMPLE_RATE = cosyvoice.sample_rate
+print(f"✅ CosyVoice2 ready (sample_rate={SAMPLE_RATE})")
+
+app = FastAPI(title="Onyx CosyVoice 2 API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class SynthRequest(BaseModel):
+    text: str
+    voice_id: str = "default"
+    instruction: str = ""   # optional emotion / style hint, e.g. "用興奮的語氣"
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "model": "CosyVoice2-0.5B",
+        "sample_rate": SAMPLE_RATE,
+        "voices": [p.stem for p in REFS_DIR.glob("*.wav")],
+    }
+
+
+@app.get("/voices")
+def list_voices():
+    voices = []
+    for wav in REFS_DIR.glob("*.wav"):
+        txt = wav.with_suffix(".txt")
+        voices.append({
+            "voice_id": wav.stem,
+            "audio_path": str(wav),
+            "has_transcript": txt.exists(),
+            "size_bytes": wav.stat().st_size,
+        })
+    return {"voices": voices}
+
+
+@app.post("/upload_reference")
+async def upload_reference(
+    voice_id: str = Form(...),
+    transcript: str = Form(...),
+    audio: UploadFile = File(...),
+):
+    """Upload a new reference voice.
+
+    Body (multipart/form-data):
+      voice_id   — short identifier, e.g. "eric_zh"
+      transcript — exact text in the audio (Chinese OK)
+      audio      — the .wav file (5-30 sec recommended)
+    """
+    voice_id = voice_id.strip().replace("/", "_").replace(" ", "_")
+    if not voice_id:
+        raise HTTPException(400, "voice_id is required")
+
+    wav_path = REFS_DIR / f"{voice_id}.wav"
+    txt_path = REFS_DIR / f"{voice_id}.txt"
+
+    with open(wav_path, "wb") as f:
+        f.write(await audio.read())
+    txt_path.write_text(transcript.strip(), encoding="utf-8")
+
+    return {"voice_id": voice_id, "wav": str(wav_path), "transcript_len": len(transcript)}
+
+
+@app.post("/synthesize")
+def synthesize(req: SynthRequest):
+    voice_id = req.voice_id
+    wav_path = REFS_DIR / f"{voice_id}.wav"
+    txt_path = REFS_DIR / f"{voice_id}.txt"
+
+    if not wav_path.exists():
+        raise HTTPException(404, f"Voice not found: {voice_id}. Upload via /upload_reference first.")
+    if not txt_path.exists():
+        raise HTTPException(500, f"Transcript missing for voice {voice_id}")
+
+    prompt_speech = load_wav(str(wav_path), 16000)
+    prompt_text = txt_path.read_text(encoding="utf-8").strip()
+
+    # Prepend instruction if supplied, e.g. "<興奮>今天是個好日子"
+    text = f"<{req.instruction}>{req.text}" if req.instruction.strip() else req.text
+
+    audio_buffer = io.BytesIO()
+    for result in cosyvoice.inference_zero_shot(text, prompt_text, prompt_speech, stream=False):
+        torchaudio.save(audio_buffer, result['tts_speech'], SAMPLE_RATE, format="wav")
+        break  # take first chunk
+
+    audio_buffer.seek(0)
+    return StreamingResponse(audio_buffer, media_type="audio/wav")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080, log_level="info")
+PYEOF
+echo "  ✅ /workspace/CosyVoice/server.py written"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 6: Start server in tmux (so it survives terminal close)
+# ─────────────────────────────────────────────────────────────────────────────
+echo "▶ Step 6: Starting CosyVoice 2 API server in tmux..."
+
+# Kill existing session if any
+tmux kill-session -t cosyvoice 2>/dev/null || true
+
+# Start fresh tmux session
+tmux new-session -d -s cosyvoice "cd /workspace/CosyVoice && source venv/bin/activate && python server.py 2>&1 | tee /workspace/cosyvoice-server.log"
+
+sleep 5
+
+# Health check
+echo "  Waiting for server to come up (model loading takes 30-60 sec)..."
+for i in $(seq 1 60); do
+  if curl -s -f http://localhost:8080/health > /dev/null 2>&1; then
+    echo "  ✅ Server responded (took ${i}s)"
+    break
+  fi
+  if [ $i -eq 60 ]; then
+    echo "  ⚠️  Server didn't respond in 60s. Check log: tail -f /workspace/cosyvoice-server.log"
+  fi
+  sleep 1
+done
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 7: Print URL for Claude to integrate
+# ─────────────────────────────────────────────────────────────────────────────
+POD_ID=$(echo "${RUNPOD_POD_ID:-}" | tr -d '\n')
+if [ -z "$POD_ID" ]; then
+  POD_ID=$(hostname | awk -F'-' '{print $1}')
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  ✅ ALL DONE"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+echo "  Public URL (send this to Claude):"
+echo ""
+echo "    https://${POD_ID}-8080.proxy.runpod.net"
+echo ""
+echo "  Verify it works (run on your laptop):"
+echo "    curl https://${POD_ID}-8080.proxy.runpod.net/health"
+echo ""
+echo "  Useful commands:"
+echo "    tail -f /workspace/cosyvoice-server.log    # live server log"
+echo "    tmux attach -t cosyvoice                   # attach to server session"
+echo "    tmux kill-session -t cosyvoice             # stop server"
+echo ""
+echo "═══════════════════════════════════════════════════════════"
