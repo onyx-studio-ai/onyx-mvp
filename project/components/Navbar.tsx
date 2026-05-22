@@ -61,8 +61,9 @@ export default function Navbar() {
     }
 
     if (isMusicContext) {
+      // 'Catalog' (Singer roster) removed pending real verified singers —
+      // see /music/talents/page.tsx for context. Re-add when ready.
       return [
-        { href: '/music/talents', label: t('catalog') },
         { href: '/music/pricing', label: t('pricing') },
         { href: '/music/orchestra', label: t('liveStrings') },
       ];

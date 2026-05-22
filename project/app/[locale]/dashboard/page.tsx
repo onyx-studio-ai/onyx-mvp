@@ -665,7 +665,10 @@ function EmptyState({ type }: { type: Exclude<Tab, 'licenses'> }) {
       titleKey: 'emptyMusicTitle',
       descKey: 'emptyMusicDesc',
       ctaKey: 'emptyMusicCta',
-      href: '/contact?source=music-project',
+      // Now points to self-service /music/create (simplified 4-field form)
+      // instead of the old /contact?source=music-project lead-capture path.
+      // Consistent with voice empty-state CTA → /voice/create.
+      href: '/music/create',
       color: 'text-emerald-400',
     },
     orchestra: {
