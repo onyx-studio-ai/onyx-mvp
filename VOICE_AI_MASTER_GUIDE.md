@@ -2,7 +2,52 @@
 
 > Onyx Studios 自用 — 寫給我自己,不再踩坑。
 > 涵蓋:**TTS 模型 / Voice Cloning / Voice Conversion(RVC)/ 多語言 / 中文方言 / Onyx 三 pod 架構 / 商用授權**。
-> 更新規則:每次學到新東西、踩到新坑都更新進來。
+
+## 📆 版本與更新規則
+
+| 項目 | 值 |
+|---|---|
+| **本版** | v1.0 |
+| **Last Updated** | 2026-05-23 |
+| **Next Mandatory Review** | **2026-08-23**(3 個月) |
+| **Maintainer** | Wing + Claude(Onyx Studios) |
+
+### 🔄 為什麼要每季更新
+- Voice AI 是 2024-2026 最快變化的 AI 領域之一
+- 大廠每 2-3 個月會出新版(CV3 2025/12 / GPT-SoVITS v4 2025 / Higgs v2 2025)
+- 學術圈每月都有 paper(F5-TTS 衍生、新 vocoder、新 sampler)
+- 老設定 / 老踩坑可能因為新版本不再有效,新坑會冒出來
+
+### ✅ 每季 Review Checklist(每 3 個月跑一次)
+- [ ] **FunAudioLLM/CosyVoice** GitHub 看是否有 CV4 或新版
+- [ ] **RVC-Boss/GPT-SoVITS** 看是否有 v5 或粵語/方言加強
+- [ ] **fishaudio/fish-speech** 看是否改授權成可商用
+- [ ] **boson-ai/higgs-audio** 看是否出 v3 / 新方言
+- [ ] **Resemble AI Chatterbox** 看是否加 Cantonese
+- [ ] **Hugging Face TTS Trending** 看當月排名前 5
+- [ ] **TTS Arena leaderboard**(https://huggingface.co/spaces/TTS-AGI/TTS-Arena) 看排名變化
+- [ ] **新興:Voxtral / VibeVoice / Step-Audio / Qwen3-TTS** 看是否上市
+- [ ] **ElevenLabs / Cartesia / Hume** 商業競品有新功能嗎
+- [ ] **PyTorch / transformers 版本** 跟 CV3/GPT-SoVITS 是否相容(新版可能破壞 attention)
+- [ ] **重跑「絕不再踩」清單** 確認每條還對
+
+### 📌 平日什麼時候要更新(隨時加,不用等季)
+- ✅ 踩到**新的坑** → 立刻加進「絕不再踩」清單
+- ✅ 學到**新引擎** → 加進「梯隊」表
+- ✅ 發現某引擎**改版** → 標註版本變化
+- ✅ 某模型**換授權** → 更新商用矩陣
+- ✅ 客戶要新功能(例:歌聲合成、即時轉換)→ 加新場景到決策矩陣
+- ✅ 跑通**新 setup** → 加到「最佳 stack」
+
+### 🔔 提醒機制
+- 每次開新對話,Claude 看到本文件就會檢查 "Next Mandatory Review" 日期
+- 過了 review 日期還沒更新 → Claude 會主動提醒做 quarterly review
+- Wing 或 Claude 任一方學到新東西 → 直接更新並 git commit,**不要等下次 review**
+
+### 📊 版本歷史
+| Version | Date | Changes |
+|---|---|---|
+| v1.0 | 2026-05-23 | 初版,涵蓋當天踩過所有坑 + 2026 業界全梯隊整理 |
 
 ---
 
@@ -401,3 +446,9 @@ Content-Type: application/json
 
 > **這份文件持續更新**。每次踩到新坑、發現新引擎、跑通新流程都加進來。
 > 目標:當我下次遇到「為什麼又出 bug」的問題時,先翻這份。
+
+---
+
+## ⏰ 下次強制 Review:**2026-08-23**
+
+如果今天日期已經超過上面那個 → 翻到本檔開頭 **「每季 Review Checklist」** 跑一遍,更新 Last Updated + 加 version history。
