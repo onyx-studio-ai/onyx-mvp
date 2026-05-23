@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mic, Upload, Play, Pause, Trash2, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 
+// Browser → RunPod direct (bypasses Vercel function 10s timeout on Hobby plan).
+// Server has CORS allow_origins=["*"], so direct fetch works.
+const COSYVOICE_URL = (process.env.NEXT_PUBLIC_COSYVOICE_API_URL || '').replace(/\/$/, '');
+
 interface VoiceInfo {
   voice_id: string;
   has_transcript: boolean;
@@ -41,8 +45,13 @@ export default function AdminVoicesPage() {
 
   async function loadHealth() {
     setHealthError('');
+    if (!COSYVOICE_URL) {
+      setHealthError('NEXT_PUBLIC_COSYVOICE_API_URL env var is not set');
+      setHealth(null);
+      return;
+    }
     try {
-      const res = await fetch('/api/voice/cosyvoice/health');
+      const res = await fetch(`${COSYVOICE_URL}/health`);
       const data = await res.json();
       if (!res.ok) {
         setHealthError(data.error || `HTTP ${res.status}`);
@@ -56,8 +65,9 @@ export default function AdminVoicesPage() {
   }
 
   async function loadVoices() {
+    if (!COSYVOICE_URL) return;
     try {
-      const res = await fetch('/api/voice/cosyvoice/voices');
+      const res = await fetch(`${COSYVOICE_URL}/voices`);
       const data = await res.json();
       setVoices(data.voices || []);
     } catch (err) {
@@ -86,7 +96,8 @@ export default function AdminVoicesPage() {
       formData.append('transcript', transcript.trim());
       formData.append('audio', audioFile, audioFile.name);
 
-      const res = await fetch('/api/voice/cosyvoice/upload-reference', {
+      if (!COSYVOICE_URL) throw new Error('NEXT_PUBLIC_COSYVOICE_API_URL env var is not set');
+      const res = await fetch(`${COSYVOICE_URL}/upload_reference`, {
         method: 'POST',
         body: formData,
       });
@@ -115,19 +126,20 @@ export default function AdminVoicesPage() {
     setTestAudioUrl('');
 
     try {
-      const res = await fetch('/api/voice/cosyvoice/synthesize', {
+      if (!COSYVOICE_URL) throw new Error('NEXT_PUBLIC_COSYVOICE_API_URL env var is not set');
+      const res = await fetch(`${COSYVOICE_URL}/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: testText,
-          voiceId: testVoice,
+          voice_id: testVoice,
           instruction: testInstruction,
         }),
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(errData.error || 'Synthesis failed');
+        const errText = await res.text().catch(() => `HTTP ${res.status}`);
+        throw new Error(errText.slice(0, 200) || 'Synthesis failed');
       }
 
       const audioBlob = await res.blob();

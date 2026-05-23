@@ -361,6 +361,92 @@ python cosyvoice/bin/train.py \
 
 ---
 
+## Known Issues + Fix
+
+### Issue 1：`/synthesize` 回 HTTP 500，traceback 結尾是 `TypeError: Invalid file: tensor([[-0.0027, ...]])`
+
+**症狀**
+- `/upload_reference` 200 OK、`/voices` 200 OK，但 `/synthesize` 一律 500。
+- Server log 最底一行：
+  ```
+  TypeError: Invalid file: tensor([[-0.0027, -0.0044, ...]])
+  ```
+  往上看 traceback 經過：
+  `server.py:124 → cosyvoice/cli/cosyvoice.py:96 → frontend.py:172 → frontend.py:121 → file_utils.py:45 → torchaudio/_backend/soundfile.py:27 → soundfile.py:1212`
+
+**根因**
+這個版本的 `cosyvoice/cli/frontend.py` 裡，`_extract_spk_embedding` 跟 `_extract_speech_feat` 都對 `prompt_wav` 直接呼叫 `load_wav(prompt_wav, 16000 or 24000)` — 也就是 **期待傳路徑字串**，而不是 tensor。
+
+但範本 server.py 寫成：
+```python
+prompt_speech = load_wav(str(wav_path), 16000)  # ← 先 load 成 tensor
+cosyvoice.inference_zero_shot(text, prompt_text, prompt_speech, stream=False)
+```
+tensor 傳進 frontend → frontend 再 `torchaudio.load(tensor)` → 炸。
+
+**修法（1 行）**
+`/workspace/CosyVoice/server.py` 的 `/synthesize`：
+- 刪掉 `prompt_speech = load_wav(str(wav_path), 16000)` 那行。
+- `inference_zero_shot` 第三個參數改傳 `str(wav_path)`：
+```python
+for result in cosyvoice.inference_zero_shot(
+    text, prompt_text, str(wav_path), stream=False
+):
+```
+
+**一鍵 patch（在 RunPod terminal）**
+```bash
+cd /workspace/CosyVoice
+cp server.py server.py.bak
+python3 - <<'EOF'
+import re
+p = open("server.py").read()
+p = re.sub(r'\s*prompt_speech = load_wav\(str\(wav_path\), 16000\)\n', '\n', p)
+p = p.replace(
+    "cosyvoice.inference_zero_shot(text, prompt_text, prompt_speech, stream=False)",
+    "cosyvoice.inference_zero_shot(text, prompt_text, str(wav_path), stream=False)",
+)
+open("server.py", "w").write(p)
+print("patched")
+EOF
+diff server.py.bak server.py
+```
+
+**重啟 server**
+```bash
+pkill -f "python.*server.py"
+cd /workspace/CosyVoice
+nohup /workspace/miniconda3/envs/cosyvoice/bin/python server.py \
+  > /workspace/cosyvoice-server.log 2>&1 &
+sleep 30 && tail -20 /workspace/cosyvoice-server.log
+```
+看到 `Uvicorn running on http://0.0.0.0:8080` 就是好了，回後台再點 Generate 測。
+
+---
+
+### Issue 2：`bash: conda: command not found`
+
+Pod 重開後 shell 沒 source conda init。兩個解法擇一：
+
+```bash
+# 解法 A：每次 terminal 開新的就先 source 一次
+source /workspace/miniconda3/etc/profile.d/conda.sh
+conda activate cosyvoice
+
+# 解法 B：直接用絕對路徑跑 python（最穩，腳本裡推薦）
+/workspace/miniconda3/envs/cosyvoice/bin/python server.py
+```
+
+---
+
+### Note：本文件範本 server.py vs 實際部署的差異
+
+階段 4 的 server.py 範本是**單 voice (Eric)** 早期版本。實際部署在 RunPod 上跑的是**多 voice 擴充版**，多了 `/upload_reference` 跟 `/voices` 兩個 endpoint，邏輯不同。
+
+重建環境時：**用 RunPod 上現有的 `/workspace/CosyVoice/server.py` 為準**，不要照本文件階段 4 抄。或先 `cp server.py server.py.fresh` 備好一份能用的版本到 repo 裡。
+
+---
+
 ## 卡關時找我
 
 任何 step 卡住 → 截圖或貼錯誤訊息給我，我立刻 debug。
