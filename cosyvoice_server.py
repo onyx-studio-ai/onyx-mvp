@@ -112,6 +112,28 @@ async def upload_reference(
     return {"voice_id": voice_id, "wav": str(wav_path), "transcript_len": len(transcript)}
 
 
+import re
+
+
+def split_into_sentences(text: str):
+    """Split Chinese/English text into sentences by punctuation.
+
+    Long-text TTS drift in CosyVoice is largely solved by feeding text one
+    sentence at a time (bi-streaming pattern shown in official example.py).
+    We split on Chinese full-stops, question/exclamation marks, semicolons,
+    and English equivalents, keeping the punctuation attached.
+    """
+    # Split on ., 。, !, ！, ?, ？, ;, ；  but keep the delimiter
+    parts = re.split(r'(?<=[。！？!?；;])', text.strip())
+    # Filter empty + strip whitespace
+    sentences = [s.strip() for s in parts if s.strip()]
+    # If no terminal punctuation found, fall back to comma-splits or whole text
+    if len(sentences) <= 1 and len(text) > 80:
+        # Long text without punctuation — split on commas as fallback
+        sentences = [s.strip() for s in re.split(r'(?<=[,，])', text.strip()) if s.strip()]
+    return sentences or [text]
+
+
 @app.post("/synthesize")
 def synthesize(req: SynthRequest):
     voice_id = req.voice_id
@@ -128,19 +150,35 @@ def synthesize(req: SynthRequest):
     prompt_text = "You are a helpful assistant.<|endofprompt|>" + txt_path.read_text(encoding="utf-8").strip()
 
     # Prepend instruction if supplied (CV2-style emotion control wrapper).
-    text = f"<{req.instruction}>{req.text}" if req.instruction.strip() else req.text
+    raw_text = f"<{req.instruction}>{req.text}" if req.instruction.strip() else req.text
 
-    audio_buffer = io.BytesIO()
+    # Split into sentences for stable long-text synthesis. Per official
+    # example.py bi-streaming pattern — feeding a generator that yields one
+    # sentence at a time dramatically reduces character drift on long inputs.
+    sentences = split_into_sentences(raw_text)
+
+    def text_generator():
+        for s in sentences:
+            yield s
+
+    # Concatenate audio from each sentence into one wav.
+    audio_chunks = []
     # text_frontend=False is REQUIRED — official README NOTE. Otherwise wetext
     # mangles Chinese characters causing the output to drift into Japanese/garbage.
     for result in cosyvoice.inference_zero_shot(
-        text, prompt_text, str(wav_path),
+        text_generator(), prompt_text, str(wav_path),
         stream=False,
         text_frontend=False,
     ):
-        torchaudio.save(audio_buffer, result['tts_speech'], SAMPLE_RATE, format="wav")
-        break  # take first chunk
+        audio_chunks.append(result['tts_speech'])
 
+    # Stitch all chunks together
+    if not audio_chunks:
+        raise HTTPException(500, "synthesis produced no audio")
+    combined = torch.cat(audio_chunks, dim=1) if len(audio_chunks) > 1 else audio_chunks[0]
+
+    audio_buffer = io.BytesIO()
+    torchaudio.save(audio_buffer, combined, SAMPLE_RATE, format="wav")
     audio_buffer.seek(0)
     return StreamingResponse(audio_buffer, media_type="audio/wav")
 
