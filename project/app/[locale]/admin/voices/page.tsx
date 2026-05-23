@@ -362,15 +362,48 @@ export default function AdminVoicesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Instruction (optional)
             </label>
+            {/* Quick presets — map to CV3 inference_instruct2 directives.
+                Filling these routes to inference_instruct2 (instead of
+                inference_zero_shot). Useful for Cantonese, emotion, speed. */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {[
+                { label: '清空', value: '' },
+                { label: '粵語', value: '请用广东话表达' },
+                { label: '四川話', value: '请用四川话表达' },
+                { label: '閩南話', value: '请用闽南话表达' },
+                { label: '上海話', value: '请用上海话表达' },
+                { label: '東北話', value: '请用东北话表达' },
+                { label: '興奮', value: '用兴奋的语气表达' },
+                { label: '溫柔', value: '用温柔的语气表达' },
+                { label: '嚴肅', value: '用严肃稳重的语气表达' },
+                { label: '快速', value: '请用尽可能快地语速说一句话' },
+                { label: '慢念', value: '请用较慢的语速朗读' },
+                { label: '大聲', value: 'Please say a sentence as loudly as possible.' },
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => setTestInstruction(preset.value)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                    testInstruction === preset.value
+                      ? 'bg-purple-100 border-purple-400 text-purple-800'
+                      : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
             <input
               type="text"
               value={testInstruction}
               onChange={(e) => setTestInstruction(e.target.value)}
-              placeholder="e.g. 興奮, 嘆息, 用粵語慢慢念, 加上呼吸聲"
+              placeholder="留空 = zero-shot 純複製語音。填內容 = CV3 instruct2 模式(粵語/情緒/語速控制)"
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none"
             />
             <p className="text-xs text-gray-500 mt-1.5">
-              CosyVoice 2 instruction-control prompt. Wrapped in angle brackets at inference time.
+              Auto-routes: empty → <code>inference_zero_shot</code>; non-empty → <code>inference_instruct2</code>{' '}
+              with prompt <code>You are a helpful assistant. {'{instruction}'}&lt;|endofprompt|&gt;</code>.
             </p>
           </div>
 

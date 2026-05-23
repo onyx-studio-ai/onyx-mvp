@@ -136,6 +136,16 @@ def split_into_sentences(text: str):
 
 @app.post("/synthesize")
 def synthesize(req: SynthRequest):
+    """Synthesize speech.
+
+    Two modes (auto-routed based on req.instruction):
+    -  Empty instruction → inference_zero_shot (best for "just clone the
+       voice and read this text" — same language as reference).
+    -  Non-empty instruction → inference_instruct2 (CV3 instruction-controlled;
+       use this for Cantonese, emotion, speed control, etc.)
+
+    Both modes use sentence-split (bi-streaming) for stable long-text synthesis.
+    """
     voice_id = req.voice_id
     wav_path = REFS_DIR / f"{voice_id}.wav"
     txt_path = REFS_DIR / f"{voice_id}.txt"
@@ -145,32 +155,41 @@ def synthesize(req: SynthRequest):
     if not txt_path.exists():
         raise HTTPException(500, f"Transcript missing for voice {voice_id}")
 
-    # CV3 standard prompt format — the "You are a helpful assistant.<|endofprompt|>"
-    # prefix is REQUIRED for proper language anchoring; without it output drifts.
-    prompt_text = "You are a helpful assistant.<|endofprompt|>" + txt_path.read_text(encoding="utf-8").strip()
-
-    # Prepend instruction if supplied (CV2-style emotion control wrapper).
-    raw_text = f"<{req.instruction}>{req.text}" if req.instruction.strip() else req.text
-
-    # Split into sentences for stable long-text synthesis. Per official
-    # example.py bi-streaming pattern — feeding a generator that yields one
-    # sentence at a time dramatically reduces character drift on long inputs.
-    sentences = split_into_sentences(raw_text)
+    # Split target text into sentences (official bi-streaming pattern — prevents
+    # long-text drift). Works for both zero_shot and instruct2.
+    sentences = split_into_sentences(req.text)
 
     def text_generator():
         for s in sentences:
             yield s
 
-    # Concatenate audio from each sentence into one wav.
+    instruction = req.instruction.strip()
+    use_instruct = bool(instruction)
+
     audio_chunks = []
-    # text_frontend=False is REQUIRED — official README NOTE. Otherwise wetext
-    # mangles Chinese characters causing the output to drift into Japanese/garbage.
-    for result in cosyvoice.inference_zero_shot(
-        text_generator(), prompt_text, str(wav_path),
-        stream=False,
-        text_frontend=False,
-    ):
-        audio_chunks.append(result['tts_speech'])
+
+    if use_instruct:
+        # CV3 instruction-controlled mode. Format from official example.py:
+        # "You are a helpful assistant. {natural-language directive}<|endofprompt|>"
+        # Used for: Cantonese ("请用广东话表达"), emotion, speed, etc.
+        instruct_text = f"You are a helpful assistant. {instruction}<|endofprompt|>"
+        for result in cosyvoice.inference_instruct2(
+            text_generator(), instruct_text, str(wav_path),
+            stream=False,
+            text_frontend=False,
+        ):
+            audio_chunks.append(result['tts_speech'])
+    else:
+        # Pure zero-shot clone. prompt_text = reference transcript with the
+        # mandatory "You are a helpful assistant.<|endofprompt|>" prefix that
+        # anchors language so output doesn't drift to other languages.
+        prompt_text = "You are a helpful assistant.<|endofprompt|>" + txt_path.read_text(encoding="utf-8").strip()
+        for result in cosyvoice.inference_zero_shot(
+            text_generator(), prompt_text, str(wav_path),
+            stream=False,
+            text_frontend=False,
+        ):
+            audio_chunks.append(result['tts_speech'])
 
     # Stitch all chunks together
     if not audio_chunks:
