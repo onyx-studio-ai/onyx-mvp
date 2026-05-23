@@ -195,7 +195,8 @@ export default function AdminVoicesPage() {
               <p className="font-semibold">CosyVoice server unreachable</p>
               <p className="text-xs mt-1">{healthError}</p>
               <p className="text-xs mt-2 text-gray-600">
-                Check <code>COSYVOICE_API_URL</code> env var in Vercel.
+                Check <code>NEXT_PUBLIC_COSYVOICE_API_URL</code> env var in Vercel
+                (must redeploy after adding/changing it, since it&apos;s baked into the client bundle at build time).
               </p>
             </div>
           </div>
