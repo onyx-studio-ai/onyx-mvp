@@ -15,7 +15,7 @@ export default function Footer() {
           <div className="flex items-center justify-center">
             <Link href="/">
               <img
-                src="/logo-onyx.png"
+                src="/logo-horizontal-white.svg"
                 alt="Onyx Studios"
                 className="h-10 w-auto opacity-90 hover:opacity-100 transition-opacity"
               />

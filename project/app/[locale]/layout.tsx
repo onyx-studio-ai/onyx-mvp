@@ -21,13 +21,21 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: {
       title: t('homeTitle'),
       description: t('homeDescription'),
-      images: [{ url: '/logo-onyx.png' }],
+      images: [{ url: '/logo-og.png' }],
     },
     twitter: {
       card: 'summary_large_image' as const,
       title: t('homeTitle'),
       description: t('homeDescription'),
-      images: [{ url: '/logo-onyx.png' }],
+      images: [{ url: '/logo-og.png' }],
+    },
+    icons: {
+      icon: [
+        { url: '/favicon.svg', type: 'image/svg+xml' },
+        { url: '/favicon-32.png', type: 'image/png', sizes: '32x32' },
+        { url: '/favicon-192.png', type: 'image/png', sizes: '192x192' },
+      ],
+      apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
     },
   };
 }
@@ -54,7 +62,7 @@ export default async function LocaleLayout({
     '@type': 'Organization',
     name: 'Onyx Studios',
     url: baseUrl,
-    logo: `${baseUrl}/logo-onyx.png`,
+    logo: `${baseUrl}/logo-og.png`,
   };
   const websiteJsonLd = {
     '@context': 'https://schema.org',

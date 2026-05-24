@@ -35,13 +35,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('voiceTitle'),
       description: t('voiceDescription'),
       url: canonicalPath,
-      images: [{ url: '/logo-onyx.png' }],
+      images: [{ url: '/logo-og.png' }],
     },
     twitter: {
       card: 'summary_large_image' as const,
       title: t('voiceTitle'),
       description: t('voiceDescription'),
-      images: [{ url: '/logo-onyx.png' }],
+      images: [{ url: '/logo-og.png' }],
     },
   };
 }

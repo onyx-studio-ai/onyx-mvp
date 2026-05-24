@@ -105,7 +105,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-24">
             <Link href="/" className="flex items-center">
               <img
-                src="/logo-onyx.png"
+                src="/logo-horizontal-white.svg"
                 alt="Onyx Studios"
                 className="h-[80px] w-auto"
               />

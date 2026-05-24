@@ -31,7 +31,7 @@ function DashboardHeader() {
     <header className="fixed top-0 left-0 right-0 h-16 bg-[#050505] border-b border-white/[0.06] z-40 flex items-center px-6">
       <Link href="/" className="flex items-center flex-shrink-0">
         <img
-          src="/logo-onyx.png"
+          src="/logo-horizontal-white.svg"
           alt="Onyx Studios"
           className="h-9 w-auto opacity-80 hover:opacity-100 transition-opacity"
         />
