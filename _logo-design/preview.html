@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<title>Onyx Studios — 10 Logo Variants Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    padding: 32px;
+    line-height: 1.5;
+  }
+  h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .lead {
+    color: #6e6e73;
+    margin-bottom: 32px;
+    max-width: 720px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    max-width: 1100px;
+  }
+  .card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+  }
+  .title {
+    padding: 18px 24px 4px;
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .desc {
+    padding: 0 24px 16px;
+    color: #6e6e73;
+    font-size: 14px;
+  }
+  .rows { display: grid; grid-template-columns: 1fr; }
+  .row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 1fr 1fr;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+  }
+  .row.light { background: #ffffff; border-top: 1px solid #f0f0f3; }
+  .row.dark { background: #0a0a0a; }
+  .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #999;
+    font-weight: 600;
+  }
+  .row.dark .label { color: #666; }
+  .sample {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sample.big svg { width: 120px; height: 120px; }
+  .sample.med svg { width:  60px; height:  60px; }
+  .sample.sm  svg { width:  32px; height:  32px; }
+  .sample.xs  svg { width:  16px; height:  16px; }
+  /* wordmark needs wider aspect */
+  .sample.big svg[viewBox="0 0 600 200"] { width: 240px; height: 80px; }
+  .sample.med svg[viewBox="0 0 600 200"] { width: 150px; height: 50px; }
+  .sample.sm  svg[viewBox="0 0 600 200"] { width:  90px; height: 30px; }
+  .sample.xs  svg[viewBox="0 0 600 200"] { width:  60px; height: 20px; }
+  .footer {
+    margin-top: 48px;
+    color: #6e6e73;
+    font-size: 13px;
+    max-width: 720px;
+  }
+  code {
+    background: #ececef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+  <h1>Onyx Studios — Logo Redesign · 10 Variants</h1>
+  <p class="lead">
+    全部都是 SVG（向量、無解析度問題、可放大縮小不失真）。每個版本都顯示在淺底/深底
+    各 4 個 size：120px (marketing) / 60px (header) / 32px (favicon) / 16px (browser tab) —
+    確認在最小尺寸還是看得清楚。挑一個（或請我做混合 V8 + V3 wordmark 之類的組合），
+    我就把它套到 navbar / footer / OG / favicon 全部換掉。
+  </p>
+
+  <div class="grid">
+    
+    <div class="card">
+      <div class="title">01 Equalizer O</div>
+      <div class="desc">Equalizer O — circle + 5 bars (audio levels inside a media-circle metaphor)</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#0a0a0a"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#0a0a0a"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#0a0a0a"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#0a0a0a"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#0a0a0a"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#0a0a0a"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#ffffff"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#ffffff"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#ffffff"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="10"/>
+  <rect x="64" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+  <rect x="82" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="100" y="62" width="10" height="76" rx="2" fill="#ffffff"/>
+  <rect x="118" y="74" width="10" height="52" rx="2" fill="#ffffff"/>
+  <rect x="136" y="86" width="10" height="28" rx="2" fill="#ffffff"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">02 Play Pulse</div>
+      <div class="desc">Play Pulse — flat play triangle + 2 sonar arcs projecting voice</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#0a0a0a"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#0a0a0a"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#0a0a0a"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#0a0a0a"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#ffffff"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#ffffff"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#ffffff"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 50 56 L 50 144 L 124 100 Z" fill="#ffffff"/>
+  <path d="M 138 68 Q 162 100 138 132" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 156 54 Q 190 100 156 146" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">03 Wordmark Onyx</div>
+      <div class="desc">ONYX Wordmark — premium typography, no symbol</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#0a0a0a">ONYX</text>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#0a0a0a">ONYX</text>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#0a0a0a">ONYX</text>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#0a0a0a">ONYX</text>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#ffffff">ONYX</text>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#ffffff">ONYX</text>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#ffffff">ONYX</text>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
+  <text x="300" y="138" text-anchor="middle" font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="128" letter-spacing="-2" fill="#ffffff">ONYX</text>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">04 Hex Gem</div>
+      <div class="desc">Hex Gem — hexagon (onyx gemstone) containing play triangle</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#0a0a0a"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#ffffff"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#ffffff"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#ffffff"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M 80 75 L 80 125 L 125 100 Z" fill="#ffffff"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">05 Wave Dots</div>
+      <div class="desc">Wave Dots — 5 circles forming an abstract waveform, minimal</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#0a0a0a"/>
+  <circle cx="65"  cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="100" cy="100" r="26" fill="#0a0a0a"/>
+  <circle cx="135" cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="170" cy="100" r="10" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#0a0a0a"/>
+  <circle cx="65"  cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="100" cy="100" r="26" fill="#0a0a0a"/>
+  <circle cx="135" cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="170" cy="100" r="10" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#0a0a0a"/>
+  <circle cx="65"  cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="100" cy="100" r="26" fill="#0a0a0a"/>
+  <circle cx="135" cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="170" cy="100" r="10" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#0a0a0a"/>
+  <circle cx="65"  cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="100" cy="100" r="26" fill="#0a0a0a"/>
+  <circle cx="135" cy="100" r="18" fill="#0a0a0a"/>
+  <circle cx="170" cy="100" r="10" fill="#0a0a0a"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#ffffff"/>
+  <circle cx="65"  cy="100" r="18" fill="#ffffff"/>
+  <circle cx="100" cy="100" r="26" fill="#ffffff"/>
+  <circle cx="135" cy="100" r="18" fill="#ffffff"/>
+  <circle cx="170" cy="100" r="10" fill="#ffffff"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#ffffff"/>
+  <circle cx="65"  cy="100" r="18" fill="#ffffff"/>
+  <circle cx="100" cy="100" r="26" fill="#ffffff"/>
+  <circle cx="135" cy="100" r="18" fill="#ffffff"/>
+  <circle cx="170" cy="100" r="10" fill="#ffffff"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#ffffff"/>
+  <circle cx="65"  cy="100" r="18" fill="#ffffff"/>
+  <circle cx="100" cy="100" r="26" fill="#ffffff"/>
+  <circle cx="135" cy="100" r="18" fill="#ffffff"/>
+  <circle cx="170" cy="100" r="10" fill="#ffffff"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="30"  cy="100" r="10" fill="#ffffff"/>
+  <circle cx="65"  cy="100" r="18" fill="#ffffff"/>
+  <circle cx="100" cy="100" r="26" fill="#ffffff"/>
+  <circle cx="135" cy="100" r="18" fill="#ffffff"/>
+  <circle cx="170" cy="100" r="10" fill="#ffffff"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">06 Neg Space Play</div>
+      <div class="desc">Negative Space Play — solid square with play cut-out (Stripe/Linear feel)</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#0a0a0a" fill-rule="evenodd"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#0a0a0a" fill-rule="evenodd"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#0a0a0a" fill-rule="evenodd"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#0a0a0a" fill-rule="evenodd"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#ffffff" fill-rule="evenodd"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#ffffff" fill-rule="evenodd"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#ffffff" fill-rule="evenodd"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <path d="M 30 30 H 170 V 170 H 30 Z M 78 64 L 78 136 L 138 100 Z" fill="#ffffff" fill-rule="evenodd"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">07 Sonar Rings</div>
+      <div class="desc">Sonar Rings — dot + 3 expanding arcs (voice broadcast metaphor)</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#0a0a0a"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#0a0a0a"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#0a0a0a"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#0a0a0a"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#ffffff"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#ffffff"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#ffffff"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="60" cy="100" r="12" fill="#ffffff"/>
+  <path d="M 90 60 A 50 50 0 0 1 90 140" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 110 40 A 80 80 0 0 1 110 160" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M 130 20 A 110 110 0 0 1 130 180" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">08 O Wave</div>
+      <div class="desc">O with Waveform — circle O containing sine wave</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#0a0a0a" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#0a0a0a" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="14"/>
+  <path d="M 36 100 Q 60 70 84 100 T 132 100 T 164 100" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">09 Ascending Bars</div>
+      <div class="desc">Ascending Bars — 5 bars rising (growth / signal / volume meter)</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#0a0a0a"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#0a0a0a"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#0a0a0a"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#0a0a0a"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#0a0a0a"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#0a0a0a"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#0a0a0a"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#0a0a0a"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#0a0a0a"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#0a0a0a"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#0a0a0a"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#0a0a0a"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#0a0a0a"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#0a0a0a"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#0a0a0a"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#0a0a0a"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#0a0a0a"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#0a0a0a"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#ffffff"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#ffffff"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#ffffff"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#ffffff"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#ffffff"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#ffffff"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#ffffff"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#ffffff"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#ffffff"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#ffffff"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#ffffff"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#ffffff"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#ffffff"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#ffffff"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#ffffff"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="22"  y="138" width="22" height="40"  rx="4" fill="#ffffff"/>
+  <rect x="56"  y="116" width="22" height="62"  rx="4" fill="#ffffff"/>
+  <rect x="90"  y="90"  width="22" height="88"  rx="4" fill="#ffffff"/>
+  <rect x="124" y="58"  width="22" height="120" rx="4" fill="#ffffff"/>
+  <rect x="158" y="22"  width="22" height="156" rx="4" fill="#ffffff"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="title">10 Monogram Os</div>
+      <div class="desc">Monogram OS — interlocking letterforms</div>
+      <div class="rows">
+        <div class="row light">
+          <div class="label">on light</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#0a0a0a" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#0a0a0a" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#0a0a0a" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#0a0a0a" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+        </div>
+        <div class="row dark">
+          <div class="label">on dark</div>
+          <div class="sample big"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#ffffff" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample med"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#ffffff" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample sm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#ffffff" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+          <div class="sample xs"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <circle cx="80" cy="100" r="62" fill="none" stroke="#ffffff" stroke-width="12"/>
+  <path d="M 154 72 Q 116 72 116 92 Q 116 110 142 110 Q 168 110 168 128 Q 168 148 130 148"
+        fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+</svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>檔案位置：<code>_logo-design/*.svg</code></p>
+    <p>挑好之後告訴我編號，我會幫你：</p>
+    <ol style="margin-left: 20px; margin-top: 6px;">
+      <li>用選中的版本替換 <code>public/logo-onyx.png</code>（建議改成 <code>logo-onyx.svg</code>）</li>
+      <li>更新 Navbar / Footer / dashboard layout 的 <code>&lt;img&gt;</code> 引用</li>
+      <li>更新 OpenGraph 跟 JSON-LD 的 logo URL</li>
+      <li>產一個 favicon set（16/32/48/180/512）</li>
+    </ol>
+  </div>
+</body>
+</html>
