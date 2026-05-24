@@ -1,8 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Onyx Studios - Mono #000000 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200">
-  <g transform="translate(50.0 50.0) scale(0.537109375)">
-    <g transform="translate(0.000000,2048.000000) scale(0.100000,-0.100000)" fill="#000000" stroke="none">
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="2048.000000pt" height="2048.000000pt" viewBox="0 0 2048.000000 2048.000000"
+ preserveAspectRatio="xMidYMid meet">
+<metadata>
+Created by potrace 1.16, written by Peter Selinger 2001-2019
+</metadata>
+<g transform="translate(0.000000,2048.000000) scale(0.100000,-0.100000)"
+fill="#000000" stroke="none">
 <path d="M7068 15200 c-261 -28 -551 -123 -768 -253 -366 -219 -654 -575 -843
 -1042 -170 -423 -267 -1009 -307 -1855 -36 -774 23 -1656 144 -2160 152 -634
 371 -1049 747 -1416 132 -128 193 -179 304 -256 370 -255 808 -418 1230 -459
@@ -247,6 +253,5 @@ c-30 -72 -43 -93 -61 -95 -12 -2 -22 -7 -22 -12 0 -5 -8 -11 -19 -15 -14 -4
 -72 -5 -11 0 -18 14 -22 24 -6 36 -36 62 -143 9 -41 21 -83 25 -92 10 -24 -13
 -23 -45 2 -39 30 -67 25 -91 -15 -21 -35 -42 -44 -54 -25 -5 9 8 222 21 338 5
 43 16 52 37 29z"/>
-    </g>
-  </g>
+</g>
 </svg>
