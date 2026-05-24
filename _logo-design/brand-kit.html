@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Onyx Studios — Brand Kit</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', 'PingFang TC', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+  header { padding: 60px 40px 40px; text-align: center; border-bottom: 1px solid #e5e5e7; background: #fff; }
+  header h1 { font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 36px; letter-spacing: 1.5px; margin-bottom: 8px; }
+  header p { color: #6e6e73; font-size: 15px; }
+  .container { max-width: 1300px; margin: 0 auto; padding: 40px; }
+  .section { margin-bottom: 60px; }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #6e6e73; margin-bottom: 20px; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+  .card { background: #fff; border-radius: 12px; padding: 32px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .card.dark { background: #1d1d1f; color: #fff; }
+  .card .label { font-size: 14px; font-weight: 700; }
+  .card.dark .label { color: #fff; }
+  .card .filename { font-family: SF Mono, Menlo, monospace; font-size: 11px; color: #6e6e73; background: #f5f5f7; padding: 4px 8px; border-radius: 4px; }
+  .card.dark .filename { background: #2c2c2e; color: #98989d; }
+  .preview-box { width: 100%; min-height: 220px; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .preview-box img { max-width: 100%; max-height: 240px; height: auto; }
+  .preview-box.wide img { max-height: 110px; }
+  .preview-box.icon img { max-height: 200px; }
+  .use-case { font-size: 12px; color: #86868b; text-align: center; line-height: 1.6; }
+  .card.dark .use-case { color: #98989d; }
+  .swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .swatch { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: flex-end; padding: 12px; font-size: 11px; font-family: SF Mono, Menlo, monospace; }
+  .footer-note { text-align: center; padding: 40px; color: #86868b; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Onyx Studios</h1>
+  <p>Brand Kit · 2026-05 · Hybrid (metallic icon trace + clean Quicksand wordmark)</p>
+</header>
+
+<div class="container">
+
+  <section class="section">
+    <h2 class="section-title">Primary · 主標誌(原 metallic + 乾淨字體)</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Primary</div>
+        <div class="preview-box"><img src="onyx-logo-primary.svg" alt="primary"></div>
+        <div class="filename">onyx-logo-primary.svg</div>
+        <div class="use-case">主版本 · 亮底使用</div>
+      </div>
+      <div class="card dark">
+        <div class="label">Primary on Dark</div>
+        <div class="preview-box"><img src="onyx-logo-primary-dark.svg" alt="primary dark"></div>
+        <div class="filename">onyx-logo-primary-dark.svg</div>
+        <div class="use-case">深色背景版</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Mono · 單色版(扁平化,印刷用)</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Mono Black</div>
+        <div class="preview-box"><img src="onyx-logo-mono-black.svg" alt="mono black"></div>
+        <div class="filename">onyx-logo-mono-black.svg</div>
+        <div class="use-case">純黑單色 · 印刷主用 / 名片 / 黑白印章</div>
+      </div>
+      <div class="card dark">
+        <div class="label">Mono White</div>
+        <div class="preview-box"><img src="onyx-logo-mono-white.svg" alt="mono white"></div>
+        <div class="filename">onyx-logo-mono-white.svg</div>
+        <div class="use-case">純白單色 · 深色背景 / 影片片頭 / 反白浮水印</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Horizontal · 橫式</h2>
+    <div class="grid">
+      <div class="card" style="grid-column: span 2;">
+        <div class="label">Horizontal · Primary</div>
+        <div class="preview-box wide"><img src="onyx-logo-horizontal.svg" alt="horizontal"></div>
+        <div class="filename">onyx-logo-horizontal.svg</div>
+        <div class="use-case">網站 Header / Email Signature / 名片橫排</div>
+      </div>
+      <div class="card" style="grid-column: span 2;">
+        <div class="label">Horizontal · Mono</div>
+        <div class="preview-box wide"><img src="onyx-logo-horizontal-mono.svg" alt="horizontal mono"></div>
+        <div class="filename">onyx-logo-horizontal-mono.svg</div>
+        <div class="use-case">橫式單色印刷</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Icon Only · 純圖示(無文字)</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Icon Metallic</div>
+        <div class="preview-box icon"><img src="onyx-logo-icon.svg" alt="icon"></div>
+        <div class="filename">onyx-logo-icon.svg</div>
+        <div class="use-case">App Icon / 社群頭像 · 保留 metallic</div>
+      </div>
+      <div class="card">
+        <div class="label">Icon Mono Black</div>
+        <div class="preview-box icon"><img src="onyx-logo-icon-mono-black.svg" alt="icon mono black"></div>
+        <div class="filename">onyx-logo-icon-mono-black.svg</div>
+        <div class="use-case">Favicon / 單色貼紙</div>
+      </div>
+      <div class="card dark">
+        <div class="label">Icon Mono White</div>
+        <div class="preview-box icon"><img src="onyx-logo-icon-mono-white.svg" alt="icon mono white"></div>
+        <div class="filename">onyx-logo-icon-mono-white.svg</div>
+        <div class="use-case">Favicon(暗模式)</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Wordmark · 純文字標</h2>
+    <div class="grid">
+      <div class="card" style="grid-column: span 2;">
+        <div class="label">Wordmark</div>
+        <div class="preview-box wide"><img src="onyx-logo-wordmark.svg" alt="wordmark"></div>
+        <div class="filename">onyx-logo-wordmark.svg</div>
+        <div class="use-case">純文字場景 / 段落內提及 / footer</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Color Palette · 色票</h2>
+    <div class="swatch-grid">
+      <div class="swatch" style="background: #000000; color: #fff;">#000000<br>Onyx Black</div>
+      <div class="swatch" style="background: #1d1d1f; color: #fff;">#1d1d1f<br>Soft Black</div>
+      <div class="swatch" style="background: #6e6e73; color: #fff;">#6e6e73<br>Mid Gray</div>
+      <div class="swatch" style="background: #ffffff; color: #000; border: 1px solid #e5e5e7;">#ffffff<br>White</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Typography · 字體</h2>
+    <div class="card" style="align-items: flex-start;">
+      <div class="label">Wordmark · Quicksand Bold</div>
+      <div style="font-family: 'Quicksand', sans-serif; font-weight: 700; font-size: 56px; letter-spacing: 2px;">Onyx Studios</div>
+      <div class="use-case" style="text-align: left;">圓潤無襯線 · Google Fonts 免費可商用 · fallback: Avenir Next / PingFang TC</div>
+    </div>
+  </section>
+
+</div>
+
+<div class="footer-note">
+  © Onyx Studios · 凡音文化 · Icon = original metallic auto-trace (7 grayscale layers). Wordmark = hand-set Quicksand Bold.
+</div>
+
+</body>
+</html>
