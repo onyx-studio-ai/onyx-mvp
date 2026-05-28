@@ -193,7 +193,7 @@ afplay /tmp/eric_test.wav   # 本機播放
 ssh root@7k8u5nzkzs9xpa.ssh.runpod.io -p <PORT> -i ~/.ssh/id_ed25519
 cd /workspace/CosyVoice
 ls pretrained_models/  # 期待 Fun-CosyVoice3-0.5B 在
-ls refs/                # 期待 Eric refs 在(zero-shot 用的)
+ls refs/                # 期待 Eric refs 在(fine-tuned llm 推論時的 voice prompt)
 df -h /dev/shm          # 確認 /dev/shm 夠大(>10 GB)
 ```
 
@@ -315,15 +315,14 @@ EOF
 ls -la /workspace/CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B/llm_wing.pt
 ```
 
-#### B-CV3.7 設 Wing voice + 重啟 server
-編輯 `cosyvoice_server.py`(在 onyx-platform repo 裡)讓它認 Wing voice。或更簡單,加 Wing ref audio 到 `refs/`:
-```bash
-# 用切片裡發音最乾淨的當 ref
-# 推薦從 sliced_ads 裡挑 wing_ads_0017.wav(預設,Cowork 可自行挑)
-cp /workspace/CosyVoice/data/wing_cantonese/wavs/wing_ads_0017.wav /workspace/CosyVoice/refs/wing_ref.wav
+#### B-CV3.7 設 Wing inference voice prompt + 重啟 server
+> ⚠️ **不是 zero-shot**。`llm_wing.pt` 已經把 Wing voice 學進 weights,這步只是 CV3 **架構需要在推論時帶一段 ref + text** 當 voice prompt seed。
+> 即使選任何 ref,fine-tuned llm 都會輸出 Wing 的聲音。
 
-# 找對應 transcript 加入 voice config
-grep wing_ads_0017 /workspace/CosyVoice/data/wing_cantonese/train.list
+加 Wing ref audio 到 `refs/`(任何發音清楚的切片都可以):
+```bash
+cp /workspace/CosyVoice/data/wing_cantonese/wavs/wing_ads_0017.wav /workspace/CosyVoice/refs/wing_ref.wav
+grep wing_ads_0017 /workspace/CosyVoice/data/wing_cantonese/train.list   # 抓對應 transcript 寫進 voice config
 ```
 
 重啟 CosyVoice server(用 `/workspace/CosyVoice/scripts/restart-cosyvoice.sh` 或 tmux 內手動):
@@ -451,16 +450,15 @@ cp /dev/shm/wing_training/gpt/e<N>.ckpt \
    /workspace/GPT-SoVITS/GPT_weights_v2Pro/wing_gpt_e<N>.ckpt
 ```
 
-#### B.4 選 Wing ref audio
-從 `/workspace/wing_data/wavs/` 挑一個**乾淨、3-10 秒、字正腔圓**的 wav 當 ref。建議:
-- 找 sliced_ads 裡發音清楚 + 沒有背景音樂干擾的
-- 對應 transcript 從 filelist 撈出來
+#### B.4 設 Wing inference-time voice prompt
+> ⚠️ **不是 zero-shot**。fine-tune 已經把 Wing voice 學進 weights,這步只是 GPT-SoVITS **架構需要在每次推論時帶一段 ref audio + ref text** 當 voice prompt seed(CV3 也一樣)。
+> 即使選爛的 ref,fine-tuned 模型也會輸出 Wing 的聲音 — ref 只影響 prosody/語調起點,不影響音色。
 
+從 `/workspace/wing_data/wavs/` 挑一個發音清楚、無背景音樂的 wav(任何一個都行,3-10 秒比較標準):
 ```bash
-# 假設挑了 wing_ads_0017.wav
+# 預設挑了 wing_ads_0017.wav,Cowork 可挑別的
 cp /workspace/wing_data/wavs/wing_ads_0017.wav /workspace/refs/wing_ref.wav
-# 找對應 transcript
-grep wing_ads_0017 /workspace/wing_data/wing_ads_sliced_training.txt
+grep wing_ads_0017 /workspace/wing_data/wing_ads_sliced_training.txt   # 抓對應 transcript
 ```
 
 #### B.5 更新 voice config 加 Wing
@@ -586,7 +584,7 @@ git push origin main
 Pod: 7k8u5nzkzs9xpa (gothic_plum_flea)
 URL: https://7k8u5nzkzs9xpa-8888.proxy.runpod.net (no auth)
 
-✅ Eric: 沿用原 zero-shot ref(不動)
+✅ Eric: 沿用原 fine-tuned llm + refs(Phase 1 已完成,不動)
 ✅ Wing (CV3 fine-tune, 粵語):
    - Trained: 1 epoch on 324 wav (34.2 min)
    - Best epoch: <N>(印證踩坑 #5 epoch 0/1 是 best)
