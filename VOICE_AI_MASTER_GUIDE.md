@@ -56,12 +56,48 @@
 | Pod | 用途 | 引擎 | 狀態 | URL |
 |---|---|---|---|---|
 | `7k8u5nzkzs9xpa` (gothic_plum_flea) | TTS - CV3 | **Fun-CosyVoice3-0.5B** + ttsfrd + Eric/Wing refs | 開發中,Stop 中 | `7k8u5nzkzs9xpa-8888.proxy.runpod.net` |
-| `a52pzfcunv6ov8` (injured_aquamarine_smelt) | TTS+RVC | **GPT-SoVITS + RVC**(omgpizzatnt voice-ai-platform)| Stopped | `a52pzfcunv6ov8-80.proxy.runpod.net` (Bearer `onyx-eric-key-2024`) |
-| `kwvwlvmso06q0z` (live_aquamarine_partridge) | 訓練專用 | GPT-SoVITS training | Stopped | SSH `kwvwlvmso06q0z-6441164b@ssh.runpod.io` |
+| ~~`a52pzfcunv6ov8` (injured_aquamarine_smelt)~~ | ~~TTS+RVC~~ | ~~GPT-SoVITS + RVC~~ | **❌ 2026-05-28 已消失**(RunPod 清掉/GPU shortage),Eric 權重備份在本機 `/Volumes/WingAI SSD/...onyx-platform/` 三個檔(見下) | 重建中 |
+| ~~`kwvwlvmso06q0z` (live_aquamarine_partridge)~~ | ~~訓練專用~~ | ~~GPT-SoVITS training~~ | **❌ 2026-05-28 已消失** | — |
 
 **戰略分工:**
 - CV3 Pod = **多語言 + 多方言 + 情緒控制**(粵語 / 普通話 / 英文 / 日文 / 韓文 / 18+ 方言)
 - GPT-SoVITS Pod = **聲音轉換(RVC)+ 高度針對性 voice cloning**(任何聲音 → Eric/Wing)
+
+---
+
+## 🗄️ 訓練資產永久位置(別再搞丟!)
+
+> 2026-05-28 教訓:RunPod pod 被砍 Eric GPT-SoVITS server 連帶消失。所幸權重 backup 在本機。**以後新訓練完一定要 rsync 一份到本機這個位置。**
+
+### Eric (GPT-SoVITS v2Pro,2026-04 訓的)
+位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/`**
+
+| 檔案 | 用途 | 大小 |
+|---|---|---|
+| `eric_gpt_e15.ckpt` | GPT 模組 epoch 15 | 148 MB |
+| `eric_sovits_e100_s5400.pth` | SoVITS 模組 epoch 100 step 5400(早期 checkpoint) | 81 MB |
+| `eric_sovits_v2pro_final.pth` | **SoVITS v2Pro 最終權重 → production 用這個** | 908 MB |
+| `eric_ref.wav` | TTS 推論用 reference audio | 1.3 MB |
+| `eric_ref_high.wav` | 高品質 reference(乾淨版) | 1.2 MB |
+| `eric_train_data/` (419 wav + `eric_filelist.txt`) | 原始訓練資料 | 424 MB |
+
+### Wing(訓練資料準備中,粵語)
+位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/wing_train_data/`** — 39 MB,等 transcript 校對完才能開訓。
+
+### Nova(身份待確認)
+位置:`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/nova_train_data/` + `nova_preprocess_final/`
+
+### CV3 Eric / Wing(現役 production)
+位置:RunPod pod `7k8u5nzkzs9xpa` 的 `/workspace/CosyVoice/refs/`(reference audio,zero-shot 用)
+**沒備份到本機過。每次 pod 重開後檢查 refs/ 是否還在。**
+
+### ⚠️ 訓練資產 rsync SOP(每次新訓練完馬上做)
+```bash
+# 從 RunPod 拉到本機
+rsync -avhP -e "ssh -p <PORT>" \
+  root@<POD>-ssh.runpod.io:/workspace/GPT-SoVITS/{GPT_weights,SoVITS_weights}/ \
+  "/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/<speaker>_backup_$(date +%Y%m%d)/"
+```
 - 訓練 Pod = 只在訓練時開,訓練完關
 
 ---
