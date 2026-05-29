@@ -55,9 +55,18 @@
 
 | Pod | 用途 | 引擎 | 狀態 | URL |
 |---|---|---|---|---|
-| `7k8u5nzkzs9xpa` (gothic_plum_flea) | TTS - CV3 | **Fun-CosyVoice3-0.5B** + ttsfrd + Eric/Wing refs | 開發中,Stop 中 | `7k8u5nzkzs9xpa-8888.proxy.runpod.net` |
-| ~~`a52pzfcunv6ov8` (injured_aquamarine_smelt)~~ | ~~TTS+RVC~~ | ~~GPT-SoVITS + RVC~~ | **❌ 2026-05-28 已消失**(RunPod 清掉/GPU shortage),Eric 權重備份在本機 `/Volumes/WingAI SSD/...onyx-platform/` 三個檔(見下) | 重建中 |
+| `u46xxo7nkayx80` (eric-wing-sovits) | TTS + RVC + 訓練 | **GPT-SoVITS v2Pro + RVC** (omgpizzatnt voice-ai-platform) | 2026-05-29 上線 | `https://u46xxo7nkayx80-80.proxy.runpod.net` (Bearer `onyx-eric-key-2024`) |
+| `7k8u5nzkzs9xpa` (gothic_plum_flea) | TTS - CV3 | **Fun-CosyVoice3-0.5B** + ttsfrd + Eric/Wing refs | Stopped(EU-RO-1 4090 缺貨 stuck)| `7k8u5nzkzs9xpa-8888.proxy.runpod.net` |
+| ~~`a52pzfcunv6ov8` (injured_aquamarine_smelt)~~ | ~~TTS+RVC~~ | ~~GPT-SoVITS + RVC~~ | **❌ 2026-05-28 已消失** | 重建為 `u46xxo7nkayx80` |
 | ~~`kwvwlvmso06q0z` (live_aquamarine_partridge)~~ | ~~訓練專用~~ | ~~GPT-SoVITS training~~ | **❌ 2026-05-28 已消失** | — |
+
+**GPT-SoVITS pod 機器規格:**
+- A40 48 GB VRAM, EU-SE-1, $0.455/hr
+- network volume: `0xx2d4ptz2` (implicit_tan_marsupial, 50GB) 掛在 `/workspace`
+- 全 voices 的 ckpt/pth/refs 都在 `/workspace/data/models/custom_voices/gptsovits/{voice_id}/`
+- voices 設定:`/workspace/data/configs/voices.yaml`(gateway auto-reload 每 5s)
+- api keys:`/workspace/data/configs/api_keys.yaml`(SHA256 hash 前 16 字)
+- supervisord 不自動跑,要手動 `supervisord -c /app/supervisord.conf` 或 `/app/deploy.sh`
 
 **戰略分工:**
 - CV3 Pod = **多語言 + 多方言 + 情緒控制**(粵語 / 普通話 / 英文 / 日文 / 韓文 / 18+ 方言)
@@ -81,8 +90,21 @@
 | `eric_ref_high.wav` | 高品質 reference(乾淨版) | 1.2 MB |
 | `eric_train_data/` (419 wav + `eric_filelist.txt`) | 原始訓練資料 | 424 MB |
 
-### Wing(訓練資料準備中,粵語)
-位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/wing_train_data/`** — 39 MB,等 transcript 校對完才能開訓。
+### Wing(GPT-SoVITS v2Pro,2026-05-29 訓的,粵語)
+位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/wing_sovits_backup_20260529/`**
+
+訓練資料來源:`/Volumes/WingAI SSD/Claude/Projects/工程部/訓練資料/Wing/transcripts/wing_ads_sliced/`(324 切片,34.2 分鐘 zh-hk Spotify 廣告)
+訓練 pod:`u46xxo7nkayx80` (A40 48GB, EU-SE-1) — 同台跑 Eric
+
+| 檔案 | 用途 | 大小 |
+|---|---|---|
+| `wing-e1.ckpt` ~ `wing-e8.ckpt` | GPT 模組 8 個 epoch(每個 148 MB) | 1.2 GB |
+| `wing_e1_s60.pth` ~ `wing_e8_s480.pth` | SoVITS 模組 8 個 epoch(每個 135 MB) | 1.1 GB |
+| `wing_ads_0004.wav` | inference ref audio(~4.7s)| 300 KB |
+
+**production 用 epoch 8**(`wing-e8.ckpt` + `wing_e8_s480.pth`),ref `wing_ads_0004.wav`,prompt_text="無間斷收聽音樂,全無限制。",prompt_lang=`yue`(粵語).
+
+⚠️ 已驗證 TTS 跑得起來,粵語腔。後續可以比較 epoch 4/6/8 哪個最好聽。
 
 ### Nova(身份待確認)
 位置:`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/nova_train_data/` + `nova_preprocess_final/`
