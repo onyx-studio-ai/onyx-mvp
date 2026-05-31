@@ -23,6 +23,8 @@ export type Voice = {
   gender: 'male' | 'female';
   description: string;
   audioPreviewUrl: string;
+  /** Optional: full list of language-tagged demos (for in-card switcher) */
+  demos?: Array<{ name?: string; url: string; label?: string }>;
   archetype?: string;
   tags?: string[];
   badge?: string;

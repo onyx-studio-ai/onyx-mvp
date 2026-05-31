@@ -51,13 +51,15 @@ function resolveLangCode(lang: string): string {
 
 function talentToVoice(talent: any): Voice & { langCodes: string[] } {
   const langCodes: string[] = (talent.languages || []).map((lang: string) => resolveLangCode(lang));
+  const demos = (talent.demo_urls || []) as Array<{ name?: string; url: string; label?: string }>;
 
   return {
     id: `db_${talent.id}`,
     name: talent.name,
     gender: (talent.gender || 'male').toLowerCase() as 'male' | 'female',
     description: talent.bio || talent.tags?.join(', ') || 'Professional voice talent',
-    audioPreviewUrl: talent.sample_url || talent.demo_urls?.[0]?.url || '',
+    audioPreviewUrl: talent.sample_url || demos[0]?.url || '',
+    demos,
     langCodes,
   };
 }
@@ -402,6 +404,39 @@ export default function VoicesPage() {
                   <p className="text-sm text-gray-400 leading-relaxed mb-4">
                     {voice.description}
                   </p>
+
+                  {voice.demos && voice.demos.length > 1 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500 mb-2">
+                        {isZh ? `${voice.demos.length} 個語言示範 · 點擊試聽` : `${voice.demos.length} language demos · click to preview`}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {voice.demos.map((demo, i) => {
+                          const langObj = languages.find(l => l.code === demo.label);
+                          const display = langObj ? langDisplayName(langObj) : (demo.label || `Demo ${i+1}`);
+                          const isActive = voice.audioPreviewUrl === demo.url;
+                          return (
+                            <button
+                              key={demo.url + i}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleAudioPreview({ ...voice, audioPreviewUrl: demo.url, id: `${voice.id}__${i}` }, e);
+                              }}
+                              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                isActive
+                                  ? 'bg-blue-600 border-blue-500 text-white'
+                                  : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20'
+                              }`}
+                              title={demo.name || display}
+                            >
+                              {display}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <Button
                     onClick={() => handleUseVoice(voice)}
