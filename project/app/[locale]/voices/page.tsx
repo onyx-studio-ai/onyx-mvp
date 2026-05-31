@@ -49,15 +49,29 @@ function resolveLangCode(lang: string): string {
   return lower;
 }
 
-function talentToVoice(talent: any): Voice & { langCodes: string[] } {
+function pickLocalizedBio(bio: string | null | undefined, locale: string): string {
+  if (!bio) return '';
+  // bio may be plain string OR JSON {en, zh-TW, zh-CN}
+  const trimmed = bio.trim();
+  if (!trimmed.startsWith('{')) return bio; // plain string
+  try {
+    const parsed = JSON.parse(trimmed) as Record<string, string>;
+    return parsed[locale] || parsed['en'] || Object.values(parsed)[0] || '';
+  } catch {
+    return bio;
+  }
+}
+
+function talentToVoice(talent: any, locale: string = 'en'): Voice & { langCodes: string[] } {
   const langCodes: string[] = (talent.languages || []).map((lang: string) => resolveLangCode(lang));
   const demos = (talent.demo_urls || []) as Array<{ name?: string; url: string; label?: string }>;
+  const bio = pickLocalizedBio(talent.bio, locale);
 
   return {
     id: `db_${talent.id}`,
     name: talent.name,
     gender: (talent.gender || 'male').toLowerCase() as 'male' | 'female',
-    description: talent.bio || talent.tags?.join(', ') || 'Professional voice talent',
+    description: bio || talent.tags?.join(', ') || 'Professional voice talent',
     audioPreviewUrl: talent.sample_url || demos[0]?.url || '',
     demos,
     langCodes,
@@ -88,7 +102,7 @@ export default function VoicesPage() {
       const talents = await res.json();
       const mapped: Record<string, Voice[]> = {};
       for (const t of talents) {
-        const baseV = talentToVoice(t);
+        const baseV = talentToVoice(t, locale);
         const demoUrls: Array<{ name?: string; url: string; label?: string }> = t.demo_urls || [];
         for (const code of baseV.langCodes) {
           if (!mapped[code]) mapped[code] = [];
