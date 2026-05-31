@@ -9,13 +9,16 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/landing/Footer';
 
-const POPULAR_CODES = ['en', 'zh', 'yue', 'ja', 'ko', 'th', 'es', 'fr'];
+const POPULAR_CODES = ['en', 'zh-CN', 'zh-TW', 'yue', 'ja', 'ko', 'th', 'es', 'fr'];
 const popularLanguages = languages.filter(l => POPULAR_CODES.includes(l.code));
 const moreLanguages = languages.filter(l => !POPULAR_CODES.includes(l.code));
 
 const LANG_CODE_MAP: Record<string, string> = {
-  'english': 'en', 'mandarin': 'zh', 'mandarin chinese': 'zh', 'chinese': 'zh',
-  'cantonese': 'yue', 'chinese (cantonese)': 'yue', 'chinese (mandarin)': 'zh',
+  'english': 'en',
+  'mandarin (simplified)': 'zh-CN', 'mandarin simplified': 'zh-CN', 'zh-cn': 'zh-CN', '普通話': 'zh-CN', '简体': 'zh-CN', '简中': 'zh-CN',
+  'mandarin (traditional)': 'zh-TW', 'mandarin traditional': 'zh-TW', 'zh-tw': 'zh-TW', '台灣繁體': 'zh-TW', '繁體': 'zh-TW', '台繁': 'zh-TW',
+  'mandarin': 'zh-TW', 'mandarin chinese': 'zh-TW', 'chinese': 'zh-TW', 'chinese (mandarin)': 'zh-TW',
+  'cantonese': 'yue', 'chinese (cantonese)': 'yue',
   'japanese': 'ja', 'korean': 'ko', 'thai': 'th',
   'vietnamese': 'vi', 'indonesian': 'id', 'malay': 'ms',
   'tagalog': 'tl', 'tagalog (filipino)': 'tl', 'filipino': 'tl',

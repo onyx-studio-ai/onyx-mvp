@@ -36,7 +36,8 @@ export type VoicesByLanguage = {
 
 export const languages = [
   { code: 'en', name: 'English', zhName: '英語' },
-  { code: 'zh', name: 'Mandarin Chinese', zhName: '國語' },
+  { code: 'zh-CN', name: 'Mandarin (Simplified)', zhName: '普通話' },
+  { code: 'zh-TW', name: 'Mandarin (Traditional)', zhName: '台灣繁體' },
   { code: 'yue', name: 'Cantonese', zhName: '粵語' },
   { code: 'ja', name: 'Japanese', zhName: '日語' },
   { code: 'ko', name: 'Korean', zhName: '韓語' },
