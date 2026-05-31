@@ -83,14 +83,20 @@ export default function VoicesPage() {
       const talents = await res.json();
       const mapped: Record<string, Voice[]> = {};
       for (const t of talents) {
-        const v = talentToVoice(t);
-        for (const code of v.langCodes) {
+        const baseV = talentToVoice(t);
+        const demoUrls: Array<{ name?: string; url: string; label?: string }> = t.demo_urls || [];
+        for (const code of baseV.langCodes) {
           if (!mapped[code]) mapped[code] = [];
-          mapped[code].push(v);
+          // 每種語言找對應的 demo (by label),用該 demo 當 preview;沒對應就 fallback baseV.audioPreviewUrl
+          const matching = demoUrls.find((d) => d.label === code);
+          const langSpecificV: Voice & { langCodes: string[] } = matching?.url
+            ? { ...baseV, audioPreviewUrl: matching.url }
+            : baseV;
+          mapped[code].push(langSpecificV);
         }
-        if (v.langCodes.length === 0) {
+        if (baseV.langCodes.length === 0) {
           if (!mapped['en']) mapped['en'] = [];
-          mapped['en'].push(v);
+          mapped['en'].push(baseV);
         }
       }
       setDbVoicesByLang(mapped);
