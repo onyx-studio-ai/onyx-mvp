@@ -7,15 +7,11 @@ import { Wand2, Upload, AlertCircle, CheckCircle2, Loader2, RefreshCw, Volume2, 
 const SOVITS_URL = (process.env.NEXT_PUBLIC_SOVITS_API_URL || '').replace(/\/$/, '');
 const SOVITS_KEY = process.env.NEXT_PUBLIC_SOVITS_API_KEY || '';
 
-const PRESET_VOICES = [
-  { id: 'eric_warm_slow', label: 'Eric · 溫暖慢念' },
-  { id: 'eric_warm_fast', label: 'Eric · 溫暖快念' },
-  { id: 'eric_serious', label: 'Eric · 嚴肅' },
-  { id: 'eric_friendly', label: 'Eric · 親切' },
-  { id: 'eric_news', label: 'Eric · 新聞主播' },
-  { id: 'eric_narration', label: 'Eric · 旁白' },
-  { id: 'eric_default', label: 'Eric · 預設' },
-];
+interface VoiceEntry {
+  voice_id: string;
+  name: string;
+  type: string;
+}
 
 interface HealthInfo {
   status: string;
@@ -31,8 +27,13 @@ export default function AdminSovitsPage() {
   const [healthError, setHealthError] = useState('');
   const [loadingHealth, setLoadingHealth] = useState(true);
 
+  // Dynamic voice list from gateway /v1/voices
+  const [allVoices, setAllVoices] = useState<VoiceEntry[]>([]);
+  const ttsVoices = allVoices.filter((v) => v.type === 'tts');
+  const rvcVoices = allVoices.filter((v) => v.type === 'rvc_pipeline');
+
   // TTS test form
-  const [ttsVoice, setTtsVoice] = useState(PRESET_VOICES[0].id);
+  const [ttsVoice, setTtsVoice] = useState('');
   const [ttsText, setTtsText] = useState('您好，我是 Onyx Studios 的 GPT-SoVITS 配音示範。');
   const [ttsSpeed, setTtsSpeed] = useState(1.0);
   const [ttsFormat, setTtsFormat] = useState<'wav' | 'mp3'>('wav');
@@ -41,7 +42,7 @@ export default function AdminSovitsPage() {
   const [ttsError, setTtsError] = useState('');
 
   // RVC convert form
-  const [rvcVoice, setRvcVoice] = useState(PRESET_VOICES[0].id);
+  const [rvcVoice, setRvcVoice] = useState('');
   const [rvcFile, setRvcFile] = useState<File | null>(null);
   const [rvcFormat, setRvcFormat] = useState<'wav' | 'mp3'>('wav');
   const [rvcBusy, setRvcBusy] = useState(false);
@@ -73,8 +74,26 @@ export default function AdminSovitsPage() {
     }
   }
 
+  async function loadVoices() {
+    if (!SOVITS_URL) return;
+    try {
+      const res = await fetch(`${SOVITS_URL}/v1/voices`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const data = (await res.json()) as { data: VoiceEntry[] };
+      setAllVoices(data.data || []);
+      // 初始化選項:第一個 tts / 第一個 rvc
+      const firstTts = data.data?.find((v) => v.type === 'tts');
+      const firstRvc = data.data?.find((v) => v.type === 'rvc_pipeline');
+      if (firstTts) setTtsVoice(firstTts.voice_id);
+      if (firstRvc) setRvcVoice(firstRvc.voice_id);
+    } catch (err) {
+      // 無聲失敗 — 健康檢查會反映 pod 狀態
+    }
+  }
+
   useEffect(() => {
     loadHealth();
+    loadVoices();
   }, []);
 
   async function handleTts() {
@@ -209,9 +228,10 @@ export default function AdminSovitsPage() {
               onChange={(e) => setTtsVoice(e.target.value)}
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900"
             >
-              {PRESET_VOICES.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.label}
+              {ttsVoices.length === 0 && <option value="">載入中…</option>}
+              {ttsVoices.map((v) => (
+                <option key={v.voice_id} value={v.voice_id}>
+                  {v.name} ({v.voice_id})
                 </option>
               ))}
             </select>
@@ -320,12 +340,16 @@ export default function AdminSovitsPage() {
               onChange={(e) => setRvcVoice(e.target.value)}
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900"
             >
-              {PRESET_VOICES.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.label}
+              {rvcVoices.length === 0 && <option value="">沒有可用的 RVC voice — 需在後台新增 rvc_pipeline 類型</option>}
+              {rvcVoices.map((v) => (
+                <option key={v.voice_id} value={v.voice_id}>
+                  {v.name} ({v.voice_id})
                 </option>
               ))}
             </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Auto-pitch:上傳音檔自動偵測 f0 並對齊目標 voice 音域(無需手動調 pitch)
+            </p>
           </div>
 
           <div>
