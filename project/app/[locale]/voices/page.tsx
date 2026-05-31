@@ -285,7 +285,7 @@ export default function VoicesPage() {
                   onClick={() => handleLanguageChange('en')}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]"
                 >
-                  {selectedLangObj.name}
+                  {'zhName' in selectedLangObj ? langDisplayName(selectedLangObj as typeof languages[number]) : selectedLangObj.name}
                   <X className="w-3.5 h-3.5 opacity-70" />
                 </button>
               )}
