@@ -414,14 +414,19 @@ export default function VoicesPage() {
                         {voice.demos.map((demo, i) => {
                           const langObj = languages.find(l => l.code === demo.label);
                           const display = langObj ? langDisplayName(langObj) : (demo.label || `Demo ${i+1}`);
-                          const isActive = voice.audioPreviewUrl === demo.url;
+                          const demoId = `${voice.id}__demo${i}`;
+                          const isActive = playingVoiceId === demoId;
                           return (
                             <button
                               key={demo.url + i}
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toggleAudioPreview({ ...voice, audioPreviewUrl: demo.url, id: `${voice.id}__${i}` }, e);
+                                // 切 demo 前先強制停掉當前音頻,避免兩段疊播
+                                stopCurrentAudio();
+                                if (isActive) return; // 同一個 chip 再點 = 停止
+                                // 用 synthetic id 給 toggleAudioPreview 追蹤
+                                toggleAudioPreview({ ...voice, audioPreviewUrl: demo.url, id: demoId }, e);
                               }}
                               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                                 isActive
