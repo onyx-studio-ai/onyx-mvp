@@ -161,7 +161,7 @@ export const VOICE_DURATION_PRICING: Record<VoiceTierId, { ranges: { maxMinutes:
       { maxMinutes: 2, price: 49 },
       { maxMinutes: 3, price: 57 },
     ],
-    overagePerMinute: 7,
+    overagePerMinute: 12,
   },
   'tier-2': {
     ranges: [
@@ -169,7 +169,7 @@ export const VOICE_DURATION_PRICING: Record<VoiceTierId, { ranges: { maxMinutes:
       { maxMinutes: 2, price: 119 },
       { maxMinutes: 3, price: 139 },
     ],
-    overagePerMinute: 18,
+    overagePerMinute: 40,
   },
   'tier-3': {
     ranges: [
@@ -177,7 +177,7 @@ export const VOICE_DURATION_PRICING: Record<VoiceTierId, { ranges: { maxMinutes:
       { maxMinutes: 2, price: 309 },
       { maxMinutes: 3, price: 369 },
     ],
-    overagePerMinute: 55,
+    overagePerMinute: 80,
   },
 };
 

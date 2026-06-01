@@ -45,6 +45,12 @@ export default function FeaturedVoices() {
           .filter((s: AudioShowcase) => Boolean(s.audio_url))
           .map((s: AudioShowcase) => ({
             id: s.slot_key,
+            // name/archetype/tags/description are resolved per-locale via
+            // i18n keys (voice1Name, voice1Archetype, voice1Tag1..5, ...) at
+            // render time using the slot's index. Supabase only supplies the
+            // raw English label/subtitle/tags as a fallback when no
+            // translation exists for that index — keeps the cards localized
+            // without round-tripping through the DB on every locale switch.
             name: s.label || '',
             archetype: s.subtitle || '',
             tags: Array.isArray(s.tags) ? s.tags : [],
@@ -54,6 +60,21 @@ export default function FeaturedVoices() {
         setVoices(ready);
       });
   }, []);
+
+  // Helper: try translation, fall back to provided default. next-intl logs a
+  // warning on missing keys but won't throw at runtime; t.has() is the
+  // recommended way to gate it.
+  const tt = (key: string, fallback: string): string => {
+    return t.has(key) ? t(key) : fallback;
+  };
+  const ttTags = (idx: number, fallback: string[]): string[] => {
+    const localized: string[] = [];
+    for (let n = 1; n <= 5; n++) {
+      const k = `voice${idx}Tag${n}`;
+      if (t.has(k)) localized.push(t(k));
+    }
+    return localized.length > 0 ? localized : fallback;
+  };
 
   // Section is empty until at least one voice has real audio — hide entirely.
   if (voices.length === 0) return null;
@@ -101,6 +122,11 @@ export default function FeaturedVoices() {
         <div className="grid md:grid-cols-3 gap-6">
           {voices.map((voice, i) => {
             const style = CARD_STYLES[i] || CARD_STYLES[0];
+            const idx = i + 1;
+            const localizedName = tt(`voice${idx}Name`, voice.name);
+            const localizedArchetype = tt(`voice${idx}Archetype`, voice.archetype);
+            const localizedDescription = tt(`voice${idx}Description`, voice.description);
+            const localizedTags = ttTags(idx, voice.tags);
             return (
               <div
                 key={voice.id}
@@ -138,16 +164,16 @@ export default function FeaturedVoices() {
                 <div className="p-6 space-y-4">
                   <div>
                     <h3 className="text-2xl font-bold text-white mb-1">
-                      {voice.name}
+                      {localizedName}
                     </h3>
                     <p className="text-sm text-gray-400 uppercase tracking-widest">
-                      {voice.archetype}
+                      {localizedArchetype}
                     </p>
                   </div>
 
-                  {voice.tags && voice.tags.length > 0 && (
+                  {localizedTags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {voice.tags.map((tag) => (
+                      {localizedTags.map((tag) => (
                         <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium bg-white/5 border border-white/10 text-gray-300">
                           {tag}
                         </span>
@@ -156,7 +182,7 @@ export default function FeaturedVoices() {
                   )}
 
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    {voice.description}
+                    {localizedDescription}
                   </p>
 
                   <Link
