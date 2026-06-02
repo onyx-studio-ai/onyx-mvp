@@ -10,7 +10,7 @@ import Footer from '@/components/landing/Footer';
 import { supabase } from '@/lib/supabase';
 import { VOICE_TIERS, VOICE_RIGHTS_LABELS, type VoiceRightsLevel, getVoiceRightsAddonPrice } from '@/lib/config/pricing.config';
 import { estimateAudioMinutes, calculatePrice } from '@/lib/estimateAudio';
-import { languages, getVoicesForLanguage, findLanguageByVoiceName } from '@/lib/voices';
+import { languages } from '@/lib/voices';
 import ContactModal from '@/components/ContactModal';
 
 interface ConfiguratorState {
@@ -79,16 +79,14 @@ export default function VoiceConfiguratorPage() {
     });
   }, []);
 
+  // Resolve initial language from URL params. Previously this consulted
+  // the (now empty) static voices catalogue to disambiguate; we keep the
+  // URL param trust path and skip the lookup — the talents catalogue is
+  // fetched async and the language defaults to 'en' if nothing else is set.
   const resolvedLang = useMemo(() => {
-    if (preLang && preLang !== 'all' && getVoicesForLanguage(preLang).some(v => v.name === preVoiceName)) {
-      return preLang;
-    }
-    if (preVoiceName) {
-      const found = findLanguageByVoiceName(preVoiceName);
-      if (found) return found;
-    }
-    return preLang && preLang !== 'all' ? preLang : 'en';
-  }, [preLang, preVoiceName]);
+    if (preLang && preLang !== 'all') return preLang;
+    return 'en';
+  }, [preLang]);
 
   const [config, setConfig] = useState<ConfiguratorState>({
     email: '',
@@ -106,6 +104,31 @@ export default function VoiceConfiguratorPage() {
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rightsLevel, setRightsLevel] = useState<VoiceRightsLevel>('standard');
+
+  // Live talent catalogue (Onyx Alpha / Bravo / Delta / future). Sourced
+  // from /api/talents — same endpoint that powers the /voices wall — so the
+  // configurator dropdown stays in sync with whatever is verified in
+  // Supabase. Previous version pulled from lib/voices.ts which was
+  // intentionally emptied of fictional voices and never re-wired to the DB,
+  // leaving the dropdown blank for every language.
+  const [talents, setTalents] = useState<Array<{
+    id: string;
+    name: string;
+    gender?: string;
+    accent?: string;
+    tags?: string[];
+    demo_urls?: Array<{ url: string; name?: string; label?: string }>;
+  }>>([]);
+
+  useEffect(() => {
+    fetch('/api/talents?type=VO')
+      .then(r => r.ok ? r.json() : { talents: [] })
+      .then(d => {
+        if (Array.isArray(d?.talents)) setTalents(d.talents);
+        else if (Array.isArray(d)) setTalents(d);
+      })
+      .catch(() => setTalents([]));
+  }, []);
 
   const selectedTier = VOICE_TIERS.find(t => t.id === config.baseTier);
   const isCustomTier = selectedTier?.isCustom ?? false;
@@ -144,21 +167,46 @@ export default function VoiceConfiguratorPage() {
   const rightsAddon = config.baseTier ? getVoiceRightsAddonPrice(config.baseTier, rightsLevel) : 0;
   const totalPrice = basePrice + rightsAddon;
 
-  const voicesForLang = useMemo(
-    () => getVoicesForLanguage(config.language),
-    [config.language]
-  );
+  // Filter talents to ones with a demo matching the selected language. A
+  // talent qualifies if any of their demo_urls.label starts with the
+  // language code — so picking "en" matches en / en-US / en-UK variants,
+  // and "zh-CN" / "zh-TW" stay distinct. Talents without demo metadata
+  // are excluded to avoid offering a voice we can't actually deliver.
+  const voicesForLang = useMemo(() => {
+    const langCode = config.language.toLowerCase();
+    return talents
+      .filter(t => Array.isArray(t.demo_urls) && t.demo_urls.some(d => {
+        const label = (d.label || '').toLowerCase();
+        return label === langCode || label.startsWith(`${langCode}-`) ||
+               (langCode.includes('-') && label === langCode.split('-')[0]);
+      }))
+      .map(t => ({
+        id: t.id,
+        name: t.name,
+        gender: (t.gender || '').toLowerCase() === 'female' ? 'female' as const : 'male' as const,
+        description: t.accent || '',
+        audioPreviewUrl: '',
+        tags: t.tags,
+      }));
+  }, [config.language, talents]);
 
   useEffect(() => {
     if (preVoiceName) {
-      const lang = findLanguageByVoiceName(preVoiceName);
+      // Auto-select language to match the pre-selected voice if any of the
+      // talent's demos covers a language that matches the URL `lang` param;
+      // otherwise leave language as resolved earlier. We rely on the live
+      // talents fetch above, so this effect re-runs once talents arrive.
+      const t = talents.find(x => x.name === preVoiceName);
+      const matchedLang = t?.demo_urls?.find(d =>
+        preLang && (d.label || '').toLowerCase().startsWith(preLang.toLowerCase())
+      )?.label;
       setConfig(prev => ({
         ...prev,
         voiceSelection: preVoiceName,
-        ...(lang ? { language: lang } : {}),
+        ...(matchedLang ? { language: matchedLang.toLowerCase() } : {}),
       }));
     }
-  }, [preVoiceName]);
+  }, [preVoiceName, talents, preLang]);
 
   const validateConfiguration = () => {
     const newErrors: any = {};
@@ -536,18 +584,25 @@ export default function VoiceConfiguratorPage() {
                     </button>
                   </div>
                 ) : (
-                  <select
-                    value={config.voiceSelection}
-                    onChange={(e) => setConfig({ ...config, voiceSelection: e.target.value })}
-                    className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-500/50 transition-colors"
-                  >
-                    <option value="" className="bg-black">{t('selectVoice')}</option>
-                    {voicesForLang.map((v) => (
-                      <option key={v.id} value={v.name} className="bg-black">
-                        {v.name}
+                  <>
+                    <select
+                      value={config.voiceSelection}
+                      onChange={(e) => setConfig({ ...config, voiceSelection: e.target.value })}
+                      className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-500/50 transition-colors"
+                      disabled={voicesForLang.length === 0}
+                    >
+                      <option value="" className="bg-black">
+                        {voicesForLang.length === 0
+                          ? (isZhLocale ? '此語言暫無上線聲音 — 請聯絡客服' : 'No voice available for this language — contact support')
+                          : t('selectVoice')}
                       </option>
-                    ))}
-                  </select>
+                      {voicesForLang.map((v) => (
+                        <option key={v.id} value={v.name} className="bg-black">
+                          {v.name}{v.gender === 'female' ? ' ♀' : ' ♂'}{v.description ? ` — ${v.description}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </>
                 )}
               </div>
             </div>
