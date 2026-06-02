@@ -598,7 +598,7 @@ export default function VoiceConfiguratorPage() {
                       </option>
                       {voicesForLang.map((v) => (
                         <option key={v.id} value={v.name} className="bg-black">
-                          {v.name}{v.gender === 'female' ? ' ♀' : ' ♂'}{v.description ? ` — ${v.description}` : ''}
+                          {v.name}{v.gender === 'female' ? ' ♀' : ' ♂'}
                         </option>
                       ))}
                     </select>
