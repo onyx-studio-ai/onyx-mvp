@@ -69,7 +69,7 @@
 
 ### 8. Royalty
 
-- Onyx shall pay the Talent a royalty of **10%** of the final sale price for each pure-AI generation produced primarily using the Talent's AI Twin.
+- Onyx shall pay the Talent a royalty of **25%** of the final sale price for each pure-AI generation produced primarily using the Talent's AI Twin, across all languages and media in which the AI Twin is deployed.
 - **"Pure-AI generation"** means an Asset where the Talent's AI Twin model is the primary generation source.
 - Royalties are calculated on a monthly basis, with settlement on the last business day of each month and payment by the 31st of the following month.
 - Payment method: Bank transfer / PayPal / [to be specified].
@@ -249,7 +249,7 @@ The Talent represents and warrants that:
 | 5 | Training Data Obligation | — | consent_ai_twin |
 | 6 | Exclusive AI License | §54 (new) | — |
 | 7 | Model Weights & IP | §55 (new) | — |
-| 8 | Royalty (10%) | §54 reference | Apply page: 10% |
+| 8 | Royalty (25%) | §54 reference | Apply page: 25% |
 | 9 | Micro-Patch Protocol | §57 (new) | Apply page: $10/$15 |
 | 11 | Rights Transfer | §6 | consent_terms (light) |
 | 12 | Moral Rights Waiver | §7 | consent_moral_rights (light) |

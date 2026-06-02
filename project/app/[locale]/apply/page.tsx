@@ -876,8 +876,8 @@ export default function ApplyPage() {
                             <p className="text-xs text-gray-400 leading-relaxed">
                               I agree to provide 1 hour of clean, home-studio audio based on Onyx&apos;s provided script.
                               In return, Onyx will train and host my secure AI voice model at no cost.
-                              I grant Onyx the right to license my AI voice for all commercial uses.
-                              I will receive a flat <span className="text-amber-300 font-semibold">10% royalty</span> on
+                              I grant Onyx the right to license my AI voice for all commercial uses across all supported languages.
+                              I will receive a flat <span className="text-amber-300 font-semibold">25% royalty</span> on
                               the final sale price of every pure-AI generation that uses my voice.
                             </p>
                             <p className="text-xs text-gray-500 leading-relaxed mt-2 border-t border-zinc-700/50 pt-2">
@@ -928,7 +928,7 @@ export default function ApplyPage() {
                               <p className="text-sm font-semibold text-white mb-2">{t('singerAiTwinTitle')}</p>
                               <p className="text-xs text-gray-400 leading-relaxed">
                                 Yes, I want to earn passive income! I agree to provide dry vocal stems for Onyx to train and host my secure AI Vocal model.
-                                I grant Onyx commercial licensing rights and will receive a flat <span className="text-amber-300 font-semibold">10% royalty</span> on all pure-AI vocal generations.
+                                I grant Onyx commercial licensing rights across all supported languages and will receive a flat <span className="text-amber-300 font-semibold">25% royalty</span> on all pure-AI vocal generations.
                               </p>
                               <p className="text-xs text-gray-500 leading-relaxed mt-2 border-t border-zinc-700/50 pt-2">
                                 <span className="text-gray-400 font-medium">Micro-Patch Protocol:</span> I agree to provide quick human punch-ins (up to 4 bars) for AI tracks at a flat fee of <span className="text-white font-medium">US$15</span> per request.
