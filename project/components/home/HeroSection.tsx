@@ -77,7 +77,7 @@ export default function HeroSection({
         </p>
 
         <p className="text-sm text-gray-400 font-medium mb-4 tracking-wide">
-          {t('subtext', { price: 'US$49' })}
+          {t('subtext', { price: 'US$39' })}
         </p>
 
         <Link href="/voices">
