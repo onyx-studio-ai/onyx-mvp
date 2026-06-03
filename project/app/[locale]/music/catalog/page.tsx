@@ -16,7 +16,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import {
-  Play, Pause, ArrowRight, Music, Mic2,
+  Play, Pause, ArrowRight, Music, Mic2, ChevronDown,
   Zap, Film, Mic, Briefcase, Gamepad2, Leaf, Heart, Sparkles, Plane, Gift,
   Piano, Star, Moon, Cloud, Sun,
   type LucideIcon,
@@ -43,6 +43,7 @@ type TrackMeta = {
   enDesc: string;
   icon: LucideIcon;
   gradient: string; // tailwind from-X to-Y classes
+  lyrics?: string;  // optional — vocal POP only; one line per row
 };
 
 // Per-slot metadata. Kept in-file so designers can iterate without DB
@@ -85,26 +86,34 @@ const META: Record<string, TrackMeta> = {
   'seasonal-1':     { zhTitle: '節慶 — 新春',         zhCat: '節慶 / 賀年',   zhDesc: '華人新春慶典,琵琶+古箏+太鼓,紅燈籠氛圍',                       enDesc: 'Chinese New Year celebration, pipa + guzheng + taiko, festive',     icon: Gift,      gradient: 'from-red-500 to-amber-500' },
   'seasonal-2':     { zhTitle: '節慶 — 聖誕',         zhCat: '節慶 / 賀年',   zhDesc: '聖誕魔幻雪橇,叮噹鈴+溫暖弦樂+俏皮木管',                        enDesc: 'Magical Christmas sleigh, jingle bells + warm strings + woodwinds', icon: Gift,      gradient: 'from-red-500 to-amber-500' },
   // Vocal POP — Pop Ballad
-  'pop-ballad-en':  { zhTitle: '流行抒情 (英)',       zhCat: '流行抒情',     zhDesc: '情感流行抒情,親密人聲+鋼琴弦樂(英文)',                         enDesc: 'Emotional pop ballad, intimate vocal + piano strings (EN)',         icon: Piano,     gradient: 'from-purple-700 to-indigo-900' },
-  'pop-ballad-cn':  { zhTitle: '流行抒情 (中) — 夜深以後', zhCat: '流行抒情', zhDesc: '華語抒情流行,中音域演唱+暖鋼琴(中文押韻)',                     enDesc: 'Mandarin pop ballad, mid-range vocal + warm piano (rhymed CN)',     icon: Piano,     gradient: 'from-purple-700 to-indigo-900' },
-  // Pop Upbeat
-  'pop-upbeat-en':  { zhTitle: '輕快流行 (英) — Tonight We Stay', zhCat: '輕快流行', zhDesc: '輕快流行舞曲,亮麗合成+俐落鼓+琅琅副歌(英文)',         enDesc: 'Upbeat dance-pop, glossy synth + tight drums + catchy hook (EN)',   icon: Star,      gradient: 'from-pink-500 to-fuchsia-600' },
-  'pop-upbeat-cn':  { zhTitle: '輕快流行 (中) — 今夜街口',       zhCat: '輕快流行', zhDesc: '華語輕快流行,胸聲穩定+口語化副歌(中文押韻)',           enDesc: 'Mandarin upbeat pop, stable chest voice + conversational (rhymed)', icon: Star,      gradient: 'from-pink-500 to-fuchsia-600' },
-  // R&B
-  'rnb-smooth-en':  { zhTitle: 'R&B (英) — Slow It Down',        zhCat: 'R&B',     zhDesc: '慵懶 R&B,80s 墊樂+放克貝斯+深夜感(英文)',               enDesc: 'Smooth R&B, 80s pads + slap bass + late-night vibe (EN)',           icon: Moon,      gradient: 'from-amber-700 to-slate-900' },
-  'rnb-smooth-cn':  { zhTitle: 'R&B (中) — 慢一點走',             zhCat: 'R&B',     zhDesc: '華語都會 R&B,氣音貼麥+指彈節奏(中文押韻)',              enDesc: 'Mandarin urban R&B, breathy mic-close + finger bass (rhymed CN)',   icon: Moon,      gradient: 'from-amber-700 to-slate-900' },
-  // Hip-Hop
-  'hiphop-trap-en': { zhTitle: '嘻哈 (英) — One Brick One Line', zhCat: '嘻哈',     zhDesc: '現代 trap,808 重低音+密集 hi-hat+自信 flow(英文)',     enDesc: 'Modern trap, 808 bass + tight hi-hats + confident flow (EN)',       icon: Mic2,      gradient: 'from-zinc-800 to-red-700' },
-  'hiphop-trap-cn': { zhTitle: '嘻哈 (中) — 從零起跑',             zhCat: '嘻哈',     zhDesc: '華語 trap,中音域 flow+街頭製作感(中文押韻)',            enDesc: 'Mandarin trap, mid-range flow + street production (rhymed CN)',     icon: Mic2,      gradient: 'from-zinc-800 to-red-700' },
-  // Indie
-  'indie-bedroom-en':{ zhTitle: '獨立 (英) — Floorboard Afternoon',zhCat: '獨立流行',zhDesc: '夢幻獨立臥室流行,清吉他+lo-fi 鼓+柔軟人聲(英文)',      enDesc: 'Dreamy indie bedroom pop, clean guitar + lo-fi drums + soft (EN)',  icon: Cloud,     gradient: 'from-pink-300 to-violet-400' },
-  'indie-bedroom-cn':{ zhTitle: '獨立 (中) — 午後地板光',         zhCat: '獨立流行',zhDesc: '華語獨立流行,溫暖內斂+空間殘響(中文押韻)',              enDesc: 'Mandarin indie pop, warm restrained + spacious reverb (rhymed)',    icon: Cloud,     gradient: 'from-pink-300 to-violet-400' },
-  // K-Pop
-  'kpop-idol-en':   { zhTitle: 'K-Pop (英) — Wave Call',           zhCat: 'K-Pop',    zhDesc: '高能 K-Pop,團體和聲+EDM+rap 段落(英文)',                enDesc: 'High-energy K-Pop, group harmonies + EDM + rap break (EN)',         icon: Sparkles,  gradient: 'from-fuchsia-400 to-cyan-400' },
-  'kpop-idol-cn':   { zhTitle: 'K-Pop (中) — 浪起飛翔',            zhCat: 'K-Pop',    zhDesc: '華語 K-Pop,中音域和聲+精緻製作(中文押韻)',              enDesc: 'Mandarin K-Pop, mid-range harmonies + slick production (rhymed)',   icon: Sparkles,  gradient: 'from-fuchsia-400 to-cyan-400' },
-  // Latin
-  'latin-reggaeton-en':{ zhTitle: '拉丁 (英/西) — Marea Alta',     zhCat: '拉丁',     zhDesc: '現代 reggaeton,dembow 節奏+雙語副歌(英/西)',            enDesc: 'Modern reggaeton, dembow rhythm + bilingual hook (EN/ES)',          icon: Sun,       gradient: 'from-orange-500 to-pink-600' },
-  'latin-fusion-cn':{ zhTitle: '拉丁融合 (中) — 海風上心',         zhCat: '拉丁',     zhDesc: '拉丁華語融合,dembow+陽光海島感(中文押韻)',              enDesc: 'Mandarin Latin fusion, dembow + sunny island vibe (rhymed CN)',     icon: Sun,       gradient: 'from-orange-500 to-pink-600' },
+  'pop-ballad-en':  { zhTitle: '流行抒情 (英) — Silence Speaks Too Loud', zhCat: '流行抒情', zhDesc: '情感流行抒情,親密人聲+鋼琴弦樂(英文)', enDesc: 'Emotional pop ballad, intimate vocal + piano strings (EN)', icon: Piano, gradient: 'from-purple-700 to-indigo-900',
+    lyrics: `When you're gone the room stays still\nYour name on every windowsill\nI keep your voice inside my head\nWhere every word I left unsaid` },
+  'pop-ballad-cn':  { zhTitle: '流行抒情 (中) — 夜深以後', zhCat: '流行抒情', zhDesc: '華語抒情流行,中音域演唱+暖鋼琴(中文押韻)', enDesc: 'Mandarin pop ballad, mid-range vocal + warm piano (rhymed CN)', icon: Piano, gradient: 'from-purple-700 to-indigo-900',
+    lyrics: `你走以後 房間越來越空\n想你的習慣 還沒能放鬆\n窗外的光 把回憶照得很重\n我關上眼 練習一個人懂` },
+  'pop-upbeat-en':  { zhTitle: '輕快流行 (英) — Tonight We Stay', zhCat: '輕快流行', zhDesc: '輕快流行舞曲,亮麗合成+俐落鼓+琅琅副歌(英文)', enDesc: 'Upbeat dance-pop, glossy synth + tight drums + catchy hook (EN)', icon: Star, gradient: 'from-pink-500 to-fuchsia-600',
+    lyrics: `Tonight the city's on our side\nWe don't need anywhere to hide\nJust hold my hand and feel the beat\nThe world is dancing at our feet` },
+  'pop-upbeat-cn':  { zhTitle: '輕快流行 (中) — 今夜街口', zhCat: '輕快流行', zhDesc: '華語輕快流行,胸聲穩定+口語化副歌(中文押韻)', enDesc: 'Mandarin upbeat pop, stable chest voice + conversational (rhymed)', icon: Star, gradient: 'from-pink-500 to-fuchsia-600',
+    lyrics: `今晚街上 燈光特別亮\n你笑起來 整個人都漂亮\n這條路上 我們一起闖\n跟著節奏 沒人能擋` },
+  'rnb-smooth-en':  { zhTitle: 'R&B (英) — Slow It Down', zhCat: 'R&B', zhDesc: '慵懶 R&B,80s 墊樂+放克貝斯+深夜感(英文)', enDesc: 'Smooth R&B, 80s pads + slap bass + late-night vibe (EN)', icon: Moon, gradient: 'from-amber-700 to-slate-900',
+    lyrics: `Slow it down the night is young\nEvery word you sing my song\nLet the city blur outside\nStay right here and let me hide` },
+  'rnb-smooth-cn':  { zhTitle: 'R&B (中) — 慢一點走', zhCat: 'R&B', zhDesc: '華語都會 R&B,氣音貼麥+指彈節奏(中文押韻)', enDesc: 'Mandarin urban R&B, breathy mic-close + finger bass (rhymed CN)', icon: Moon, gradient: 'from-amber-700 to-slate-900',
+    lyrics: `慢一點走 別這麼著急\n夜還很長 不需要逃離\n你的呼吸 蓋過了城市\n讓我陪你 找回那個你` },
+  'hiphop-trap-en': { zhTitle: '嘻哈 (英) — One Brick One Line', zhCat: '嘻哈', zhDesc: '現代 trap,808 重低音+密集 hi-hat+自信 flow(英文)', enDesc: 'Modern trap, 808 bass + tight hi-hats + confident flow (EN)', icon: Mic2, gradient: 'from-zinc-800 to-red-700',
+    lyrics: `Came from nothing got it all\nWatch them rise and watch them fall\nEvery move I make is mine\nBuilt it up one brick one line` },
+  'hiphop-trap-cn': { zhTitle: '嘻哈 (中) — 從零起跑', zhCat: '嘻哈', zhDesc: '華語 trap,中音域 flow+街頭製作感(中文押韻)', enDesc: 'Mandarin trap, mid-range flow + street production (rhymed CN)', icon: Mic2, gradient: 'from-zinc-800 to-red-700',
+    lyrics: `從零起跑 沒人看好\n拼到現在 換我來笑\n路我自己 一步一步找\n這條街上 換我帶跑` },
+  'indie-bedroom-en':{ zhTitle: '獨立 (英) — Floorboard Afternoon', zhCat: '獨立流行', zhDesc: '夢幻獨立臥室流行,清吉他+lo-fi 鼓+柔軟人聲(英文)', enDesc: 'Dreamy indie bedroom pop, clean guitar + lo-fi drums + soft (EN)', icon: Cloud, gradient: 'from-pink-300 to-violet-400',
+    lyrics: `Afternoon light across the floor\nYou're the only one I'm here for\nTime forgets to move along\nJust our breathing as the song` },
+  'indie-bedroom-cn':{ zhTitle: '獨立 (中) — 午後地板光', zhCat: '獨立流行', zhDesc: '華語獨立流行,溫暖內斂+空間殘響(中文押韻)', enDesc: 'Mandarin indie pop, warm restrained + spacious reverb (rhymed)', icon: Cloud, gradient: 'from-pink-300 to-violet-400',
+    lyrics: `午後光線 灑滿地板\n只剩你我 安靜陪伴\n不用說話 也很簡單\n就讓呼吸 變成歌單` },
+  'kpop-idol-en':   { zhTitle: 'K-Pop (英) — Wave Call', zhCat: 'K-Pop', zhDesc: '高能 K-Pop,團體和聲+EDM+rap 段落(英文)', enDesc: 'High-energy K-Pop, group harmonies + EDM + rap break (EN)', icon: Sparkles, gradient: 'from-fuchsia-400 to-cyan-400',
+    lyrics: `We the wave we the wave\nEvery step we take is brave\nCatch the beat and call my name\nNothing here is ever same` },
+  'kpop-idol-cn':   { zhTitle: 'K-Pop (中) — 浪起飛翔', zhCat: 'K-Pop', zhDesc: '華語 K-Pop,中音域和聲+精緻製作(中文押韻)', enDesc: 'Mandarin K-Pop, mid-range harmonies + slick production (rhymed)', icon: Sparkles, gradient: 'from-fuchsia-400 to-cyan-400',
+    lyrics: `我們是浪 沒人能擋\n一路向前 不用迷茫\n腳下節奏 為你而響\n這個舞台 由我們扛` },
+  'latin-reggaeton-en':{ zhTitle: '拉丁 (英/西) — Marea Alta', zhCat: '拉丁', zhDesc: '現代 reggaeton,dembow 節奏+雙語副歌(英/西)', enDesc: 'Modern reggaeton, dembow rhythm + bilingual hook (EN/ES)', icon: Sun, gradient: 'from-orange-500 to-pink-600',
+    lyrics: `Bajo la luna we feel alive\nThe night is ours we don't hide\nDame tu mano siente el son\nTonight no one is alone` },
+  'latin-fusion-cn':{ zhTitle: '拉丁融合 (中) — 海風上心', zhCat: '拉丁', zhDesc: '拉丁華語融合,dembow+陽光海島感(中文押韻)', enDesc: 'Mandarin Latin fusion, dembow + sunny island vibe (rhymed CN)', icon: Sun, gradient: 'from-orange-500 to-pink-600',
+    lyrics: `晚風吹來 跳舞的夜\n今晚屬於 我們的世界\n心跳節奏 從不停歇\n拉丁節拍 把空氣切` },
 };
 
 export default function MusicCatalogPage() {
@@ -113,7 +122,16 @@ export default function MusicCatalogPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [view, setView] = useState<'instrumental' | 'vocal'>('instrumental');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [openLyrics, setOpenLyrics] = useState<Set<string>>(new Set());
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+
+  const toggleLyrics = (id: string) => {
+    setOpenLyrics(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     supabase
@@ -206,7 +224,7 @@ export default function MusicCatalogPage() {
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
               <h2 className="text-2xl font-bold mb-5 text-white border-l-4 border-amber-500/60 pl-3">{cat}</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map(row => {
                   const meta = META[row.slot_key];
                   const Icon = meta?.icon ?? Music;
@@ -215,73 +233,90 @@ export default function MusicCatalogPage() {
                   const desc = isZh && meta ? meta.zhDesc : meta?.enDesc ?? row.description;
                   const bpm = row.tags?.[1];
                   const playing = playingId === row.id;
+                  const lyricsOpen = openLyrics.has(row.id);
+                  const hasLyrics = !!meta?.lyrics;
                   return (
                     <div
                       key={row.id}
-                      className={`relative rounded-xl bg-white/[0.04] border transition group overflow-hidden ${
+                      className={`relative rounded-2xl bg-zinc-950/60 border transition-all duration-300 overflow-hidden flex flex-col ${
                         playing
-                          ? 'border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-transparent'
-                          : 'border-white/10 hover:border-white/25 hover:bg-white/[0.06]'
+                          ? 'border-white/40 shadow-[0_0_30px_-8px_rgba(255,255,255,0.2)]'
+                          : 'border-white/10 hover:border-white/25 hover:-translate-y-0.5'
                       }`}
                     >
-                      <div className="flex items-stretch gap-3 p-3">
-                        {/* Small cover: gradient + icon + waveform texture, play overlay on hover */}
+                      {/* Cover: 96px tall band with layered composition (gradient + geometric shapes + big icon) + solid play btn bottom-right + BPM top-right */}
+                      <div className={`relative h-24 bg-gradient-to-br ${gradient} overflow-hidden`}>
+                        {/* Layered geometric composition for a more "designed" feel */}
+                        <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+                        <div className="absolute top-1/2 -right-6 w-24 h-24 rounded-full bg-black/20 blur-xl" />
+                        <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 200 96" preserveAspectRatio="none">
+                          <circle cx="40" cy="20" r="2" fill="white" />
+                          <circle cx="170" cy="70" r="3" fill="white" />
+                          <circle cx="120" cy="15" r="1.5" fill="white" opacity="0.7" />
+                          <path d="M0,60 Q50,30 100,55 T200,50" fill="none" stroke="white" strokeWidth="1" opacity="0.5" />
+                          <path d="M0,75 Q50,45 100,70 T200,65" fill="none" stroke="white" strokeWidth="0.6" opacity="0.3" />
+                        </svg>
+                        <Icon className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 text-white/95 drop-shadow-md" strokeWidth={1.4} />
+
+                        {/* BPM badge top-right */}
+                        <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] font-bold text-white uppercase tracking-wider">
+                          {bpm} BPM
+                        </div>
+
+                        {/* Playing indicator top-left */}
+                        {playing && (
+                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-white text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            {isZh ? '播放中' : 'PLAYING'}
+                          </div>
+                        )}
+
+                        {/* Solid play button bottom-right */}
                         <button
                           onClick={() => togglePlay(row)}
-                          className={`relative w-16 h-16 rounded-lg flex-shrink-0 bg-gradient-to-br ${gradient} overflow-hidden flex items-center justify-center group/play`}
+                          className={`absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                            playing
+                              ? 'bg-white text-black hover:bg-gray-100'
+                              : 'bg-white text-black hover:scale-110'
+                          }`}
                           aria-label={playing ? 'Pause' : 'Play'}
                         >
-                          {/* Decorative waveform behind icon */}
-                          <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 64 64" preserveAspectRatio="none">
-                            <path d="M0,32 Q16,18 32,32 T64,32" fill="none" stroke="white" strokeWidth="1.2" />
-                            <path d="M0,36 Q16,22 32,36 T64,36" fill="none" stroke="white" strokeWidth="0.8" />
-                            <path d="M0,28 Q16,14 32,28 T64,28" fill="none" stroke="white" strokeWidth="0.6" />
-                          </svg>
-                          <Icon className="w-6 h-6 text-white/90 drop-shadow relative z-10" strokeWidth={1.6} />
-                          <div className={`absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] transition-opacity ${
-                            playing ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'
-                          }`}>
-                            {playing
-                              ? <Pause className="w-5 h-5 text-white" />
-                              : <Play className="w-5 h-5 text-white ml-0.5" />}
-                          </div>
+                          {playing
+                            ? <Pause className="w-5 h-5" fill="currentColor" />
+                            : <Play className="w-5 h-5 ml-0.5" fill="currentColor" />}
                         </button>
-
-                        {/* Text block */}
-                        <div className="min-w-0 flex-1 flex flex-col">
-                          <p className="text-sm font-semibold text-white leading-tight truncate">{title}</p>
-                          <p className="text-[11px] text-gray-500 mt-0.5 mb-1.5 flex items-center gap-1.5">
-                            <span>BPM {bpm}</span>
-                            <span className="text-gray-700">·</span>
-                            <span>40s</span>
-                            {playing && (
-                              <>
-                                <span className="text-gray-700">·</span>
-                                <span className="text-amber-400 font-medium uppercase tracking-wider text-[10px]">
-                                  {isZh ? '播放中' : 'PLAYING'}
-                                </span>
-                              </>
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-400 leading-snug line-clamp-2">{desc}</p>
-                        </div>
                       </div>
 
-                      {/* Tag chips at bottom */}
-                      {Array.isArray(row.tags) && row.tags.length > 0 && (
-                        <div className="px-3 pb-3 -mt-1 flex flex-wrap gap-1">
-                          {(isZh && meta ? [meta.zhCat] : [row.subtitle]).map((t, i) => (
-                            <span key={`cat-${i}`} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 border border-white/10 text-gray-300">
-                              {t}
-                            </span>
-                          ))}
-                          {row.tags.filter(t => t !== 'instrumental' && t !== 'vocal').slice(2).map((t, i) => (
-                            <span key={`t-${i}`} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 border border-white/10 text-gray-400">
-                              {t}
-                            </span>
-                          ))}
+                      {/* Text block */}
+                      <div className="p-4 flex-1 flex flex-col gap-2">
+                        <div>
+                          <p className="text-base font-semibold text-white leading-tight">{title}</p>
+                          <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
+                            <span>40s preview</span>
+                            <span className="text-gray-700">·</span>
+                            <span>{isZh && meta ? meta.zhCat : row.subtitle}</span>
+                          </p>
                         </div>
-                      )}
+                        <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">{desc}</p>
+
+                        {/* Lyrics toggle (vocal only) */}
+                        {hasLyrics && (
+                          <div className="mt-1">
+                            <button
+                              onClick={() => toggleLyrics(row.id)}
+                              className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-white transition uppercase tracking-wider font-semibold"
+                            >
+                              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${lyricsOpen ? 'rotate-180' : ''}`} />
+                              {isZh ? '看歌詞' : 'Lyrics'}
+                            </button>
+                            {lyricsOpen && (
+                              <pre className="mt-2 p-3 rounded-lg bg-black/40 border border-white/5 text-xs text-gray-300 font-sans whitespace-pre-wrap leading-relaxed">
+                                {meta.lyrics}
+                              </pre>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
