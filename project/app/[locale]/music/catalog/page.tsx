@@ -133,32 +133,6 @@ export default function MusicCatalogPage() {
     });
   };
 
-  // Deterministic per-slot decorative composition. Hash slot_key → seed →
-  // unique dots / waves / blob positions so every cover has a different
-  // pattern while keeping the category gradient + icon consistent.
-  const coverArt = (slug: string) => {
-    let h = 0;
-    for (let i = 0; i < slug.length; i++) {
-      h = ((h << 5) - h + slug.charCodeAt(i)) | 0;
-    }
-    const seed = Math.abs(h);
-    const lcg = (s: number) => ((s * 9301 + 49297) % 233280) / 233280;
-    let s = seed;
-    const r = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-    const dots = Array.from({ length: 4 + Math.floor(r() * 4) }, () => ({
-      cx: 10 + r() * 180,
-      cy: 8 + r() * 80,
-      rad: 0.8 + r() * 2.8,
-      op: 0.35 + r() * 0.55,
-    }));
-    const path1 = `M0,${20 + r() * 40} Q${50 + r() * 30},${10 + r() * 30} ${100 + r() * 20},${30 + r() * 30} T200,${30 + r() * 40}`;
-    const path2 = `M0,${30 + r() * 40} Q${50 + r() * 30},${20 + r() * 40} ${100 + r() * 20},${40 + r() * 30} T200,${40 + r() * 35}`;
-    const blob1 = { x: -8 - r() * 10, y: -8 - r() * 10, size: 28 + r() * 18 };
-    const blob2 = { x: 60 + r() * 100, y: 30 + r() * 40, size: 18 + r() * 16 };
-    // Pick which corner gets the big blob (deterministic per slug)
-    const iconLeft = r() > 0.5;
-    return { dots, path1, path2, blob1, blob2, iconLeft };
-  };
 
   useEffect(() => {
     supabase
@@ -254,7 +228,6 @@ export default function MusicCatalogPage() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map(row => {
                   const meta = META[row.slot_key];
-                  const Icon = meta?.icon ?? Music;
                   const gradient = meta?.gradient ?? 'from-gray-600 to-gray-800';
                   const title = isZh && meta ? meta.zhTitle : row.label;
                   const desc = isZh && meta ? meta.zhDesc : meta?.enDesc ?? row.description;
@@ -271,34 +244,23 @@ export default function MusicCatalogPage() {
                           : 'border-white/10 hover:border-white/25 hover:-translate-y-0.5'
                       }`}
                     >
-                      {/* Cover: 96px tall band with per-track unique decorative composition
-                          (gradient is category-level; SVG art is slot-level deterministic) */}
-                      {(() => { const art = coverArt(row.slot_key); return (
-                      <div className={`relative h-24 bg-gradient-to-br ${gradient} overflow-hidden`}>
-                        {/* Blurred light/shadow blobs at randomised positions */}
-                        <div
-                          className="absolute rounded-full bg-white/15 blur-2xl"
-                          style={{ left: `${art.blob1.x}px`, top: `${art.blob1.y}px`, width: `${art.blob1.size * 4}px`, height: `${art.blob1.size * 4}px` }}
+                      {/* Cover: Suno-generated album art (extracted from mp3 ID3, uploaded
+                          to storage). Square aspect like a real music card; gradient
+                          fallback under-laid for the rare case the image 404s. */}
+                      <div className={`relative aspect-square w-full bg-gradient-to-br ${gradient} overflow-hidden`}>
+                        <img
+                          src={`https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers/${row.slot_key}.jpg`}
+                          alt={title}
+                          loading="lazy"
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                         />
-                        <div
-                          className="absolute rounded-full bg-black/25 blur-xl"
-                          style={{ left: `${art.blob2.x}px`, top: `${art.blob2.y}px`, width: `${art.blob2.size * 3}px`, height: `${art.blob2.size * 3}px` }}
-                        />
-                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 96" preserveAspectRatio="none">
-                          {art.dots.map((d, i) => (
-                            <circle key={i} cx={d.cx} cy={d.cy} r={d.rad} fill="white" opacity={d.op} />
-                          ))}
-                          <path d={art.path1} fill="none" stroke="white" strokeWidth="1" opacity="0.45" />
-                          <path d={art.path2} fill="none" stroke="white" strokeWidth="0.6" opacity="0.3" />
-                        </svg>
-                        <Icon
-                          className={`absolute top-1/2 -translate-y-1/2 w-10 h-10 text-white/95 drop-shadow-md ${art.iconLeft ? 'left-5' : 'right-16'}`}
-                          strokeWidth={1.4}
-                        />
+                        {/* Subtle bottom darken so the play button + badges stay readable */}
+                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
                         {/* Playing indicator top-left */}
                         {playing && (
-                          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-white text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-white text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                             {isZh ? '播放中' : 'PLAYING'}
                           </div>
@@ -307,7 +269,7 @@ export default function MusicCatalogPage() {
                         {/* Solid play button bottom-right */}
                         <button
                           onClick={() => togglePlay(row)}
-                          className={`absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                          className={`absolute bottom-3 right-3 w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-2xl ${
                             playing
                               ? 'bg-white text-black hover:bg-gray-100'
                               : 'bg-white text-black hover:scale-110'
@@ -319,7 +281,6 @@ export default function MusicCatalogPage() {
                             : <Play className="w-5 h-5 ml-0.5" fill="currentColor" />}
                         </button>
                       </div>
-                      ); })()}
 
                       {/* Text block */}
                       <div className="p-4 flex-1 flex flex-col gap-2">
