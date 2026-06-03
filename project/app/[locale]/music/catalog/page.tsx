@@ -225,7 +225,7 @@ export default function MusicCatalogPage() {
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
               <h2 className="text-2xl font-bold mb-5 text-white border-l-4 border-amber-500/60 pl-3">{cat}</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {items.map(row => {
                   const meta = META[row.slot_key];
                   const gradient = meta?.gradient ?? 'from-gray-600 to-gray-800';
@@ -240,80 +240,76 @@ export default function MusicCatalogPage() {
                   return (
                     <div
                       key={row.id}
-                      className={`relative rounded-2xl bg-zinc-950/60 border transition-all duration-300 overflow-hidden flex flex-col ${
+                      className={`rounded-xl bg-zinc-950/60 border transition-all duration-200 ${
                         playing
-                          ? 'border-white/40 shadow-[0_0_30px_-8px_rgba(255,255,255,0.2)]'
-                          : 'border-white/10 hover:border-white/25 hover:-translate-y-0.5'
+                          ? 'border-white/40 shadow-[0_0_24px_-10px_rgba(255,255,255,0.25)]'
+                          : 'border-white/10 hover:border-white/25 hover:bg-zinc-900/60'
                       }`}
                     >
-                      {/* Cover: Suno-generated album art (extracted from mp3 ID3, uploaded
-                          to storage). Square aspect like a real music card; gradient
-                          fallback under-laid for the rare case the image 404s. */}
-                      <div className={`relative aspect-square w-full bg-gradient-to-br ${gradient} overflow-hidden`}>
-                        <img
-                          src={`https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers/${row.slot_key}.jpg`}
-                          alt={title}
-                          loading="lazy"
-                          className="absolute inset-0 w-full h-full object-cover"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        {/* Subtle bottom darken so the play button + badges stay readable */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                        {/* Playing indicator top-left */}
-                        {playing && (
-                          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-white text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                            {tx('播放中', '播放中', 'PLAYING')}
-                          </div>
-                        )}
-
-                        {/* Solid play button bottom-right */}
-                        <button
-                          onClick={() => togglePlay(row)}
-                          className={`absolute bottom-3 right-3 w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-2xl ${
-                            playing
-                              ? 'bg-white text-black hover:bg-gray-100'
-                              : 'bg-white text-black hover:scale-110'
-                          }`}
-                          aria-label={playing ? 'Pause' : 'Play'}
-                        >
-                          {playing
-                            ? <Pause className="w-5 h-5" fill="currentColor" />
-                            : <Play className="w-5 h-5 ml-0.5" fill="currentColor" />}
-                        </button>
-                      </div>
-
-                      {/* Text block */}
-                      <div className="p-4 flex-1 flex flex-col gap-2">
-                        <div>
-                          <p className="text-base font-semibold text-white leading-tight">{title}</p>
-                          <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
-                            <span>{tx('40 秒試聽', '40 秒试听', '40s preview')}</span>
-                            <span className="text-gray-700">·</span>
-                            <span>{catLabel}</span>
-                          </p>
+                      {/* Compact horizontal layout: small square thumbnail
+                          (~88px) on the left, text + play on the right.
+                          Inspired by Spotify/Apple Music list rows. */}
+                      <div className="flex items-stretch gap-3 p-3">
+                        {/* Thumbnail */}
+                        <div className={`relative shrink-0 w-[88px] h-[88px] rounded-lg overflow-hidden bg-gradient-to-br ${gradient}`}>
+                          <img
+                            src={`https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers/${row.slot_key}.jpg`}
+                            alt={title}
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full object-cover"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                          />
+                          {playing && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            </div>
+                          )}
                         </div>
-                        <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">{desc}</p>
 
-                        {/* Lyrics toggle (vocal only) */}
-                        {hasLyrics && (
-                          <div className="mt-1">
+                        {/* Text + play */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between gap-1.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-white leading-tight truncate">{title}</p>
+                              <p className="text-[10px] text-gray-500 mt-0.5 truncate uppercase tracking-wider">
+                                {catLabel}
+                              </p>
+                            </div>
                             <button
-                              onClick={() => toggleLyrics(row.id)}
-                              className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-white transition uppercase tracking-wider font-semibold"
+                              onClick={() => togglePlay(row)}
+                              className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition shadow-md ${
+                                playing
+                                  ? 'bg-white text-black hover:bg-gray-100'
+                                  : 'bg-white text-black hover:scale-105'
+                              }`}
+                              aria-label={playing ? 'Pause' : 'Play'}
                             >
-                              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${lyricsOpen ? 'rotate-180' : ''}`} />
-                              {tx('看歌詞', '看歌词', 'Lyrics')}
+                              {playing
+                                ? <Pause className="w-4 h-4" fill="currentColor" />
+                                : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
                             </button>
-                            {lyricsOpen && (
-                              <pre className="mt-2 p-3 rounded-lg bg-black/40 border border-white/5 text-xs text-gray-300 font-sans whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
-                                {lyrics}
-                              </pre>
-                            )}
                           </div>
-                        )}
+                          <p className="text-[11px] text-gray-400 leading-snug line-clamp-2">{desc}</p>
+                        </div>
                       </div>
+
+                      {/* Lyrics toggle (vocal only) — full width below the row */}
+                      {hasLyrics && (
+                        <div className="px-3 pb-3 -mt-1">
+                          <button
+                            onClick={() => toggleLyrics(row.id)}
+                            className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition uppercase tracking-wider font-semibold"
+                          >
+                            <ChevronDown className={`w-3 h-3 transition-transform ${lyricsOpen ? 'rotate-180' : ''}`} />
+                            {tx('看歌詞', '看歌词', 'Lyrics')}
+                          </button>
+                          {lyricsOpen && (
+                            <pre className="mt-2 p-3 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-300 font-sans whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+                              {lyrics}
+                            </pre>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
