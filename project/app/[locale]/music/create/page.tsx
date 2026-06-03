@@ -315,9 +315,9 @@ function MusicCreatePageInner() {
           </h1>
           <p className="text-gray-400 text-lg">
             {tx(
-              'AI 生成，Onyx 製作人優化。24-48 小時交件。',
-              'AI 生成，Onyx 制作人优化。24-48 小时交件。',
-              'AI-generated, finessed by Onyx producers. 24–48 hour delivery.'
+              '製作人精選 + 加層 + 重新混音。網路與社群使用授權，48-72 小時交件。',
+              '制作人精选 + 加层 + 重新混音。网络与社群使用授权，48-72 小时交件。',
+              'Producer-curated, layered, remixed. Web & social license. 48-72 hour delivery.'
             )}
           </p>
         </motion.div>

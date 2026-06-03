@@ -300,6 +300,19 @@ export default function MusicPricingPage() {
             </p>
           </motion.div>
 
+          {/* v4.6 — Why Onyx positioning block: AI-as-tool framing + range pricing benchmark */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto mb-20 px-6 py-6 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3"
+          >
+            <p className="text-base text-gray-300 leading-relaxed">{t('whyOnyxLine1')}</p>
+            <p className="text-base text-gray-300 leading-relaxed">{t('whyOnyxLine2')}</p>
+            <p className="text-base text-gray-400 leading-relaxed">{t('whyOnyxLine3')}</p>
+          </motion.div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-32">
             {tiers.map((tier, index) => (
               <motion.div
@@ -524,6 +537,25 @@ export default function MusicPricingPage() {
                 </p>
               </div>
             </div>
+          </motion.div>
+
+          {/* v4.6 — Transparency statement: declares AI-as-tool framing openly
+              so brand can't be accused of hiding it. Legal shield. */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto mb-20 px-6 py-6 rounded-2xl bg-white/[0.02] border border-white/10"
+          >
+            <h3 className="text-lg font-bold mb-3 text-white">{t('transparencyTitle')}</h3>
+            <p className="text-sm text-gray-300 leading-relaxed mb-4">{t('transparencyIntro')}</p>
+            <ul className="space-y-1.5 mb-4 text-sm text-gray-400">
+              <li>• {t('transparencyTier1')}</li>
+              <li>• {t('transparencyTier2')}</li>
+              <li>• {t('transparencyTier3')}</li>
+            </ul>
+            <p className="text-sm text-gray-400 leading-relaxed">{t('transparencyOutro')}</p>
           </motion.div>
 
           <motion.div

@@ -397,9 +397,9 @@ export default function MusicCatalogPage() {
             </h3>
             <p className="text-sm text-gray-400 mb-5 leading-relaxed">
               {tx(
-                'AI 生成 · 專業混音 · 2 輪修改。填規格直接結帳，24-48 小時交件。',
-                'AI 生成 · 专业混音 · 2 轮修改。填规格直接结账，24-48 小时交件。',
-                'AI composition · pro mix · 2 revisions. Fill specs, check out, delivered in 24-48h.'
+                '製作人精選 + 加層 + 重混。網路與社群使用授權，填規格直接結帳，48-72 小時交件。',
+                '制作人精选 + 加层 + 重混。网络与社群使用授权，填规格直接结账，48-72 小时交件。',
+                'Producer-curated, layered, remixed. Web & social license. Fill specs, check out, delivered in 48-72h.'
               )}
             </p>
             <Link
@@ -422,9 +422,9 @@ export default function MusicCatalogPage() {
             </h3>
             <p className="text-sm text-gray-400 mb-5 leading-relaxed">
               {tx(
-                '真人編曲 · Live 弦樂 · 版權買斷。送出需求後 24 小時內回覆報價，接受才付款。',
-                '真人编曲 · Live 弦乐 · 版权买断。送出需求后 24 小时内回复报价，接受才付款。',
-                'Human producer · live strings · copyright buyout. Quote in 24h after you send the brief; payment only on acceptance.'
+                '真人棚內重新演奏 / 全新原創 · 全媒體商業授權或完整買斷。送出需求後 24 小時內回覆報價。',
+                '真人棚内重新演奏 / 全新原创 · 全媒体商业授权或完整买断。送出需求后 24 小时内回复报价。',
+                'Live re-performance or original composition · full commercial license or buyout. Quote within 24h after you send the brief.'
               )}
             </p>
             <Link

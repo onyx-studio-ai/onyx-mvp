@@ -177,27 +177,30 @@ function BriefPageInner() {
       id: 'ai-curator', icon: Wand2,
       nameTw: 'AI Curator', nameCn: 'AI Curator', nameEn: 'AI Curator',
       priceLabel: 'US$999',
-      descTw: 'AI 生成 · 專業混音 · 2 輪修改 · 非獨家授權',
-      descCn: 'AI 生成 · 专业混音 · 2 轮修改 · 非独家授权',
-      descEn: 'AI composition · pro mix · 2 revisions · non-exclusive license',
+      // v4.6: AI 為基底 + 製作人加層 + 重混 → 網路與社群使用授權
+      descTw: '精選 + 加層 + 重混 · 網路與社群使用 · 2 輪修改',
+      descCn: '精选 + 加层 + 重混 · 网络与社群使用 · 2 轮修改',
+      descEn: 'Curated + layered + remixed · web & social use · 2 revisions',
       gradient: 'from-slate-700 to-slate-800',
     },
     {
       id: 'pro-arrangement', icon: Sparkles,
       nameTw: 'Pro Arrangement', nameCn: 'Pro Arrangement', nameEn: 'Pro Arrangement',
       priceLabel: 'US$2,499',
-      descTw: '真人製作人 · Live 吉他 · Master 版權 · 3 輪修改',
-      descCn: '真人制作人 · Live 吉他 · Master 版权 · 3 轮修改',
-      descEn: 'Human producer · live guitar · master rights · 3 revisions',
+      // v4.6: 真人棚內重新演奏 + 完整商業授權(含電視/戶外/廣播)
+      descTw: '真人棚內重新演奏 · 全媒體商業授權 · 3 輪修改',
+      descCn: '真人棚内重新演奏 · 全媒体商业授权 · 3 轮修改',
+      descEn: 'Live in-studio re-performance · full commercial license · 3 revisions',
       gradient: 'from-blue-600 to-cyan-700', popular: true,
     },
     {
       id: 'masterpiece', icon: Crown,
       nameTw: 'Masterpiece', nameCn: 'Masterpiece', nameEn: 'Masterpiece',
       priceLabel: 'US$4,999',
-      descTw: '完整版權買斷 · 專屬製作人 · 5 輪修改 · 可加 Live 弦樂',
-      descCn: '完整版权买断 · 专属制作人 · 5 轮修改 · 可加 Live 弦乐',
-      descEn: 'Full buyout · dedicated producer · 5 revisions · live strings option',
+      // v4.6: 全新原創 + 完整版權買斷
+      descTw: '全新原創 · 完整版權買斷 · 5 輪修改 · 可加 Live 弦樂',
+      descCn: '全新原创 · 完整版权买断 · 5 轮修改 · 可加 Live 弦乐',
+      descEn: 'Original composition · full buyout · 5 revisions · live strings option',
       gradient: 'from-amber-600 to-orange-700',
     },
     {
@@ -806,9 +809,9 @@ function BriefPageInner() {
                 onChange={e => setReferenceTracks(e.target.value)}
                 rows={3}
                 placeholder={tx(
-                  '一行一條，例如:\nhttps://open.spotify.com/track/...\n類似 Coldplay「Yellow」的溫暖感',
-                  '一行一条，例如:\nhttps://open.spotify.com/track/...\n类似 Coldplay「Yellow」的温暖感',
-                  'One per line, e.g.:\nhttps://open.spotify.com/track/...\nWarm like Coldplay "Yellow"'
+                  '一行一條，例如:\nhttps://open.spotify.com/track/...\n溫暖吉他 ballad，夕陽海邊感',
+                  '一行一条，例如:\nhttps://open.spotify.com/track/...\n温暖吉他 ballad，夕阳海边感',
+                  'One per line, e.g.:\nhttps://open.spotify.com/track/...\nWarm acoustic ballad, sunset beach vibe'
                 )}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 resize-y font-mono"
               />
