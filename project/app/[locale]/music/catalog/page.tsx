@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { audioManager } from '@/lib/audioManager';
+import { MUSIC_LYRICS } from '@/lib/music-lyrics';
 import Footer from '@/components/landing/Footer';
 
 type Row = {
@@ -43,7 +44,6 @@ type TrackMeta = {
   enDesc: string;
   icon: LucideIcon;
   gradient: string; // tailwind from-X to-Y classes
-  lyrics?: string;  // optional — vocal POP only; one line per row
 };
 
 // Per-slot metadata. Kept in-file so designers can iterate without DB
@@ -258,10 +258,10 @@ export default function MusicCatalogPage() {
                   const gradient = meta?.gradient ?? 'from-gray-600 to-gray-800';
                   const title = isZh && meta ? meta.zhTitle : row.label;
                   const desc = isZh && meta ? meta.zhDesc : meta?.enDesc ?? row.description;
-                  const bpm = row.tags?.[1];
                   const playing = playingId === row.id;
                   const lyricsOpen = openLyrics.has(row.id);
-                  const hasLyrics = !!meta?.lyrics;
+                  const lyrics = MUSIC_LYRICS[row.slot_key];
+                  const hasLyrics = !!lyrics;
                   return (
                     <div
                       key={row.id}
@@ -295,11 +295,6 @@ export default function MusicCatalogPage() {
                           className={`absolute top-1/2 -translate-y-1/2 w-10 h-10 text-white/95 drop-shadow-md ${art.iconLeft ? 'left-5' : 'right-16'}`}
                           strokeWidth={1.4}
                         />
-
-                        {/* BPM badge top-right */}
-                        <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] font-bold text-white uppercase tracking-wider">
-                          {bpm} BPM
-                        </div>
 
                         {/* Playing indicator top-left */}
                         {playing && (
@@ -349,8 +344,8 @@ export default function MusicCatalogPage() {
                               {isZh ? '看歌詞' : 'Lyrics'}
                             </button>
                             {lyricsOpen && (
-                              <pre className="mt-2 p-3 rounded-lg bg-black/40 border border-white/5 text-xs text-gray-300 font-sans whitespace-pre-wrap leading-relaxed">
-                                {meta.lyrics}
+                              <pre className="mt-2 p-3 rounded-lg bg-black/40 border border-white/5 text-xs text-gray-300 font-sans whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
+                                {lyrics}
                               </pre>
                             )}
                           </div>
