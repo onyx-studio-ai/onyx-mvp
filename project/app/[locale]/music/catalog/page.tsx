@@ -392,7 +392,7 @@ export default function MusicCatalogPage() {
               {tx('直接結帳', '直接结账', 'Direct checkout')}
             </p>
             <h3 className="text-xl font-bold mb-2">
-              Tier 1 AI Curator
+              AI Curator
               <span className="text-cyan-400 ml-2">US$999</span>
             </h3>
             <p className="text-sm text-gray-400 mb-5 leading-relaxed">
@@ -406,7 +406,7 @@ export default function MusicCatalogPage() {
               href="/music/create?tier=ai-curator"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-cyan-500 text-black font-semibold text-sm hover:bg-cyan-400 transition"
             >
-              {tx('Tier 1 快速下單', 'Tier 1 快速下单', 'Quick checkout')}
+              {tx('AI Curator 快速下單', 'AI Curator 快速下单', 'AI Curator quick checkout')}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
