@@ -335,9 +335,9 @@ function MusicCreatePageInner() {
             <FileText className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
               {tx(
-                '需要真人製作 (Tier 2) 或弦樂錄製 (Tier 3)?',
-                '需要真人制作 (Tier 2) 或弦乐录制 (Tier 3)?',
-                'Need human production (Tier 2) or live strings (Tier 3)?'
+                '需要真人製作或 Live 弦樂?(Tier 2 / 3)',
+                '需要真人制作或 Live 弦乐?(Tier 2 / 3)',
+                'Need a human producer or live strings? (Tier 2 / 3)'
               )}
             </span>
           </div>

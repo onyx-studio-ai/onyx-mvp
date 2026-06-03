@@ -177,36 +177,36 @@ function BriefPageInner() {
       id: 'ai-curator', icon: Wand2,
       nameTw: 'AI Curator', nameCn: 'AI Curator', nameEn: 'AI Curator',
       priceLabel: 'US$999',
-      descTw: 'AI 生成 + 專業混音 + 2 輪修改 + 非獨家授權',
-      descCn: 'AI 生成 + 专业混音 + 2 轮修改 + 非独家授权',
-      descEn: 'AI composition + pro mix + 2 revisions + non-exclusive license',
+      descTw: 'AI 生成 · 專業混音 · 2 輪修改 · 非獨家授權',
+      descCn: 'AI 生成 · 专业混音 · 2 轮修改 · 非独家授权',
+      descEn: 'AI composition · pro mix · 2 revisions · non-exclusive license',
       gradient: 'from-slate-700 to-slate-800',
     },
     {
       id: 'pro-arrangement', icon: Sparkles,
       nameTw: 'Pro Arrangement', nameCn: 'Pro Arrangement', nameEn: 'Pro Arrangement',
       priceLabel: 'US$2,499',
-      descTw: '真人編曲 + 真實 Live 吉他 + Master 版權 + 3 輪修改 + 商業授權',
-      descCn: '真人编曲 + 真实 Live 吉他 + Master 版权 + 3 轮修改 + 商业授权',
-      descEn: 'Human producer + live guitar + master rights + 3 revisions + commercial license',
+      descTw: '真人製作人 · Live 吉他 · Master 版權 · 3 輪修改',
+      descCn: '真人制作人 · Live 吉他 · Master 版权 · 3 轮修改',
+      descEn: 'Human producer · live guitar · master rights · 3 revisions',
       gradient: 'from-blue-600 to-cyan-700', popular: true,
     },
     {
       id: 'masterpiece', icon: Crown,
       nameTw: 'Masterpiece', nameCn: 'Masterpiece', nameEn: 'Masterpiece',
       priceLabel: 'US$4,999',
-      descTw: '完整版權買斷 + 專屬製作人 + Premium studio + 5 輪修改 + 可加 Live 弦樂',
-      descCn: '完整版权买断 + 专属制作人 + Premium studio + 5 轮修改 + 可加 Live 弦乐',
-      descEn: 'Full copyright buyout + dedicated producer + premium studio + 5 revisions + live orchestra option',
+      descTw: '完整版權買斷 · 專屬製作人 · 5 輪修改 · 可加 Live 弦樂',
+      descCn: '完整版权买断 · 专属制作人 · 5 轮修改 · 可加 Live 弦乐',
+      descEn: 'Full buyout · dedicated producer · 5 revisions · live strings option',
       gradient: 'from-amber-600 to-orange-700',
     },
     {
       id: 'advise', icon: Music,
-      nameTw: '請建議我', nameCn: '请建议我', nameEn: 'Recommend a tier for me',
+      nameTw: '請建議我', nameCn: '请建议我', nameEn: 'Recommend for me',
       priceLabel: '',
-      descTw: '不確定哪個適合,讓 Onyx 看完 brief 後建議',
-      descCn: '不确定哪个适合,让 Onyx 看完 brief 后建议',
-      descEn: 'Not sure — let Onyx review the brief and recommend',
+      descTw: '不確定哪個適合 — 讓 Onyx 看完 brief 後建議',
+      descCn: '不确定哪个适合 — 让 Onyx 看完 brief 后建议',
+      descEn: 'Not sure which tier fits — let Onyx review and advise',
       gradient: 'from-zinc-700 to-zinc-800',
     },
   ];
@@ -258,20 +258,20 @@ function BriefPageInner() {
       custom:   tx(`自訂: ${customLength}秒`, `自定: ${customLength}秒`, `Custom: ${customLength}s`),
     }[k]),
     usage: (k: Usage): string => ({
-      web:        tx('網路 only(社群、官網、YouTube)', '网络 only(社群、官网、YouTube)', 'Web only (social, site, YouTube)'),
+      web:        tx('僅限網路(社群、官網、YouTube)', '仅限网络(社群、官网、YouTube)', 'Web only (social, site, YouTube)'),
       broadcast:  tx('電視 + 網路',                       '电视 + 网络',                       'Broadcast + Web'),
-      allMedia:   tx('全媒體商業授權',                     '全媒体商业授权',                     'All-media commercial license'),
-      unsure:     tx('還在評估,需要建議',                   '还在评估,需要建议',                   'Not sure yet — advise me'),
+      allMedia:   tx('全媒體授權',                         '全媒体授权',                         'All-media license'),
+      unsure:     tx('不確定，請建議',                       '不确定，请建议',                       'Not sure — advise me'),
     }[k]),
     deadline: (k: Deadline): string => ({
-      rush24h:  tx('24 小時加急', '24 小时加急', '24h rush'),
-      days3:    tx('3 天內',      '3 天内',      'Within 3 days'),
-      week1:    tx('1 週內',      '1 周内',      'Within 1 week'),
-      weeks2:   tx('2 週內',      '2 周内',      'Within 2 weeks'),
-      flexible: tx('彈性',        '弹性',        'Flexible'),
+      rush24h:  tx('24 小時內(加急)', '24 小时内(加急)', '24h rush'),
+      days3:    tx('3 天內',           '3 天内',           'Within 3 days'),
+      week1:    tx('1 週內',           '1 周内',           'Within 1 week'),
+      weeks2:   tx('2 週內',           '2 周内',           'Within 2 weeks'),
+      flexible: tx('彈性',             '弹性',             'Flexible'),
     }[k]),
     lyrics: (k: Lyrics): string => ({
-      reuseDemo: tx('用 demo 原詞為基礎,小幅調整', '用 demo 原词为基础,小幅调整', "Reuse demo lyrics with minor tweaks"),
+      reuseDemo: tx('用 demo 原詞為基礎，小幅調整', '用 demo 原词为基础，小幅调整', "Reuse demo lyrics with minor tweaks"),
       iProvide:  tx('我提供完整歌詞',                '我提供完整歌词',                'I will provide full lyrics'),
       youWrite:  tx('幫我重寫(說明主題即可)',      '帮我重写(说明主题即可)',      'You write new lyrics (I describe the theme)'),
       na:        tx('不適用(純配樂)',              '不适用(纯配乐)',              'N/A (instrumental only)'),
@@ -279,10 +279,10 @@ function BriefPageInner() {
     vocalGender: (k: VocalGender): string => ({
       male:    tx('男聲',          '男声',          'Male'),
       female:  tx('女聲',          '女声',          'Female'),
-      duet:    tx('男女對唱',      '男女对唱',      'Duet (male + female)'),
+      duet:    tx('對唱(2 人)',  '对唱(2 人)',  'Duet (2 vocalists)'),
       group:   tx('團體和聲',      '团体和声',      'Group / harmonies'),
       noPref:  tx('無偏好',        '无偏好',        'No preference'),
-      na:      tx('純配樂,無人聲',  '纯配乐,无人声',  'N/A (instrumental)'),
+      na:      tx('不適用',        '不适用',        'N/A (instrumental)'),
     }[k]),
     deliverable: (code: string): string => {
       const it = DELIVERABLE_OPTIONS.find(x => x.code === code);
@@ -410,8 +410,8 @@ function BriefPageInner() {
       setSent(true);
     } catch (err) {
       toast.error(tx(
-        '送出失敗,請稍後再試或寫信到 produce@onyxstudios.ai',
-        '送出失败,请稍后再试或写信到 produce@onyxstudios.ai',
+        '送出失敗，請稍後再試或寫信到 produce@onyxstudios.ai',
+        '送出失败，请稍后再试或写信到 produce@onyxstudios.ai',
         'Send failed, please retry or email produce@onyxstudios.ai'
       ));
       console.error('[Music Brief] submit error:', err);
@@ -428,13 +428,13 @@ function BriefPageInner() {
           <div className="max-w-xl mx-auto text-center">
             <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-6" />
             <h1 className="text-3xl md:text-4xl font-bold mb-3">
-              {tx('收到你的 brief!', '收到你的 brief!', "We've got your brief!")}
+              {tx('收到 brief 了', '收到 brief 了', "Brief received")}
             </h1>
             <p className="text-gray-400 mb-6">
               {tx(
-                '我們的製作團隊會在 1 個工作日內 email 回覆報價 + 製作時程。',
-                '我们的制作团队会在 1 个工作日内 email 回复报价 + 制作时程。',
-                'Our production team will email you a quote + timeline within 1 business day.'
+                '製作團隊會在 1 個工作日內以 email 回覆報價與製作時程。',
+                '制作团队会在 1 个工作日内以 email 回复报价与制作时程。',
+                'Our production team will email you a quote and timeline within 1 business day.'
               )}
             </p>
             {inquiryNumber && (
@@ -482,9 +482,9 @@ function BriefPageInner() {
           </h1>
           <p className="text-gray-400">
             {tx(
-              '送出後 1 個工作日內回覆報價 + 製作時程。完整商業授權,2-5 輪修改視等級。',
-              '送出后 1 个工作日内回复报价 + 制作时程。完整商业授权,2-5 轮修改视等级。',
-              "We respond with a quote + timeline within 1 business day. Full commercial license. 2-5 revision rounds depending on tier."
+              '送出後 1 個工作日內回覆報價與製作時程。完整商業授權，2-5 輪修改(依等級而定)。',
+              '送出后 1 个工作日内回复报价与制作时程。完整商业授权，2-5 轮修改(依等级而定)。',
+              'We respond with a quote and timeline within 1 business day. Full commercial license, 2-5 revision rounds depending on tier.'
             )}
           </p>
         </div>
@@ -498,16 +498,16 @@ function BriefPageInner() {
           <div className="max-w-3xl mx-auto p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/30 flex items-center justify-between gap-3 text-sm">
             <span className="text-gray-300">
               {tx(
-                '💡 Tier 1 AI Curator 也可以跳過 brief 直接結帳,24-48 hr 交件。',
-                '💡 Tier 1 AI Curator 也可以跳过 brief 直接结账,24-48 hr 交件。',
-                '💡 Tier 1 AI Curator can skip the brief and check out directly — 24-48h delivery.'
+                '💡 Tier 1 AI Curator 可以跳過 brief 直接結帳，24-48 小時交件。',
+                '💡 Tier 1 AI Curator 可以跳过 brief 直接结账，24-48 小时交件。',
+                '💡 Tier 1 AI Curator can skip the brief and check out directly — 24-48 hour delivery.'
               )}
             </span>
             <Link
               href={`/music/create?tier=ai-curator${trackSlug ? `&track=${trackSlug}&trackTitle=${encodeURIComponent(trackTitle)}` : ''}`}
               className="shrink-0 px-3 py-1.5 rounded-full bg-cyan-500 text-black text-xs font-semibold hover:bg-cyan-400 transition"
             >
-              {tx('快速下單 →', '快速下单 →', 'Quick checkout →')}
+              {tx('直接結帳 →', '直接结账 →', 'Direct checkout →')}
             </Link>
           </div>
         </section>
@@ -584,9 +584,9 @@ function BriefPageInner() {
             title={tx('製作等級', '制作等级', 'Production tier')}
             required
             hint={tx(
-              'AI 純生成 / 真人製作 / 完整買斷 — 不確定可選「請建議我」,Onyx 看完 brief 後推薦。',
-              'AI 纯生成 / 真人制作 / 完整买断 — 不确定可选「请建议我」,Onyx 看完 brief 后推荐。',
-              "AI vs human producer vs full buyout. Not sure? Pick 'Recommend for me' and Onyx advises after reviewing the brief."
+              'AI 生成、真人製作、或完整版權買斷。不確定的話選「請建議我」，Onyx 看完 brief 後幫你判斷。',
+              'AI 生成、真人制作、或完整版权买断。不确定的话选「请建议我」，Onyx 看完 brief 后帮你判断。',
+              "AI generation, human producer, or full copyright buyout. Not sure? Pick 'Recommend for me' and Onyx will advise after reviewing your brief."
             )}
           >
             <div className="grid sm:grid-cols-2 gap-3">
@@ -636,11 +636,11 @@ function BriefPageInner() {
           {/* SECTION 2: Strings add-on */}
           <Section
             num="2"
-            title={tx('Live 弦樂 add-on', 'Live 弦乐 add-on', 'Live strings add-on')}
+            title={tx('Live 弦樂(額外加購)', 'Live 弦乐(额外加购)', 'Live strings add-on')}
             hint={tx(
-              '需要真實樂手錄製的弦樂?電影、廣告、品牌片常用。可疊加在任何等級上。',
-              '需要真实乐手录制的弦乐?电影、广告、品牌片常用。可叠加在任何等级上。',
-              'Need real string players recorded? Common for film, ads, premium brand work. Stacks on top of any tier.'
+              '需要真實樂手錄製的弦樂?電影、廣告、品牌片常用，可疊加在任何等級上。不確定就選「請建議我」。',
+              '需要真实乐手录制的弦乐?电影、广告、品牌片常用，可叠加在任何等级上。不确定就选「请建议我」。',
+              "Need real string players recorded? Common for film, ads, and premium brand work. Stacks on top of any tier. Not sure? Pick 'Recommend for me'."
             )}
           >
             <div className="flex flex-wrap gap-2">
@@ -667,13 +667,13 @@ function BriefPageInner() {
 
           {/* SECTION 3: Project specs */}
           <Section num="3" title={tx('專案規格', '项目规格', 'Project specs')} required>
-            <Field label={tx('專案 / 品牌名', '项目 / 品牌名', 'Project / brand name')}>
+            <Field label={tx('專案 / 品牌名稱', '项目 / 品牌名称', 'Project / brand name')}>
               <input
                 type="text"
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
-                placeholder={tx('例:某品牌春季廣告、某遊戲主題曲(可選)',
-                                '例:某品牌春季广告、某游戏主题曲(可选)',
+                placeholder={tx('例:Acme 春季廣告、Project X 主題曲(可選)',
+                                '例:Acme 春季广告、Project X 主题曲(可选)',
                                 'e.g., Acme Spring Ad, Project X Theme (optional)')}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
               />
@@ -686,7 +686,7 @@ function BriefPageInner() {
                   .map(k => [k, labelFor.projectType(k)] as [string, string])}
               />
             </Field>
-            <Field label={tx('需要長度', '需要长度', 'Length needed')} required>
+            <Field label={tx('成品長度', '成品长度', 'Final length')} required>
               <Choices
                 value={lengthBucket}
                 onSelect={(v) => setLengthBucket(v as LengthBucket)}
@@ -698,7 +698,7 @@ function BriefPageInner() {
                   type="number"
                   value={customLength}
                   onChange={e => setCustomLength(e.target.value)}
-                  placeholder={tx('長度(秒)', '长度(秒)', 'Length (seconds)')}
+                  placeholder={tx('秒數', '秒数', 'Seconds')}
                   className="mt-3 w-full max-w-xs px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
                 />
               )}
@@ -723,7 +723,7 @@ function BriefPageInner() {
                 })}
               </div>
             </Field>
-            <Field label={tx('用途 / 授權範圍', '用途 / 授权范围', 'Usage / license scope')} required>
+            <Field label={tx('使用範圍(授權)', '使用范围(授权)', 'Usage scope (license)')} required>
               <Choices
                 value={usage}
                 onSelect={(v) => setUsage(v as Usage)}
@@ -768,9 +768,9 @@ function BriefPageInner() {
             num={isVocalContext ? '5' : '4'}
             title={tx('交付規格', '交付规格', 'Deliverables')}
             hint={tx(
-              '剪輯師通常會需要分軌 stems。電視廣告版本還會需要 15s / 30s 短版。',
-              '剪辑师通常会需要分轨 stems。电视广告版本还会需要 15s / 30s 短版。',
-              "Editors often want separate stems. TV cuts usually need 15s/30s versions in addition to the master."
+              '剪輯師通常需要分軌 stems;電視廣告通常需要 15 秒、30 秒短版。',
+              '剪辑师通常需要分轨 stems;电视广告通常需要 15 秒、30 秒短版。',
+              'Editors usually need separated stems; TV ads usually need 15s/30s edits alongside the master.'
             )}
           >
             <div className="flex flex-wrap gap-2">
@@ -798,35 +798,35 @@ function BriefPageInner() {
             num={isVocalContext ? '6' : '5'}
             title={tx('創意方向', '创意方向', 'Creative direction')}
             hint={tx(
-              '丟參考曲目連結 / 描述想要的氛圍 / 列出不要的元素 — 越具體報價越精準。',
-              '丢参考曲目链接 / 描述想要的氛围 / 列出不要的元素 — 越具体报价越精准。',
-              'Drop reference track URLs / describe the vibe / list what to avoid. The more specific, the tighter the quote.'
+              '參考曲目連結、想要的氛圍、不要的元素 — 寫得越具體，報價越精準、製作越貼近。',
+              '参考曲目链接、想要的氛围、不要的元素 — 写得越具体，报价越精准、制作越贴近。',
+              "Reference track URLs, the vibe you want, things to avoid — the more specific you are, the tighter the quote and the closer we'll hit."
             )}
           >
-            <Field label={tx('參考曲目(YouTube/Spotify/Apple Music 連結 或 文字描述)',
-                              '参考曲目(YouTube/Spotify/Apple Music 链接 或 文字描述)',
-                              'Reference tracks (YouTube / Spotify / Apple Music URLs or text descriptions)')}>
+            <Field label={tx('參考曲目(連結或文字皆可)',
+                              '参考曲目(链接或文字皆可)',
+                              'Reference tracks (URLs or text descriptions)')}>
               <textarea
                 value={referenceTracks}
                 onChange={e => setReferenceTracks(e.target.value)}
                 rows={3}
                 placeholder={tx(
-                  '一行一條,例:\nhttps://open.spotify.com/track/...\n類似 Coldplay - Yellow 那種溫暖感',
-                  '一行一条,例:\nhttps://open.spotify.com/track/...\n类似 Coldplay - Yellow 那种温暖感',
-                  'One per line, e.g.:\nhttps://open.spotify.com/track/...\nWarm vibe like Coldplay - Yellow'
+                  '一行一條，例如:\nhttps://open.spotify.com/track/...\n類似 Coldplay「Yellow」的溫暖感',
+                  '一行一条，例如:\nhttps://open.spotify.com/track/...\n类似 Coldplay「Yellow」的温暖感',
+                  'One per line, e.g.:\nhttps://open.spotify.com/track/...\nWarm like Coldplay "Yellow"'
                 )}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 resize-y font-mono"
               />
             </Field>
-            <Field label={tx('避免的元素 / 風格', '避免的元素 / 风格', 'Avoid (elements / vibes you DON\'T want)')}>
+            <Field label={tx('不要的元素 / 風格', '不要的元素 / 风格', 'Avoid (what you DON\'T want)')}>
               <textarea
                 value={avoidList}
                 onChange={e => setAvoidList(e.target.value)}
                 rows={2}
                 placeholder={tx(
-                  '例:不要鋼琴 / 不要哀傷 / 不要嘻哈節拍 / 不要太電子',
-                  '例:不要钢琴 / 不要哀伤 / 不要嘻哈节拍 / 不要太电子',
-                  'e.g., No piano / nothing too sad / no hip-hop beats / not too electronic'
+                  '例如:不要鋼琴、不要哀傷感、不要嘻哈節拍、不要太電子',
+                  '例如:不要钢琴、不要哀伤感、不要嘻哈节拍、不要太电子',
+                  'e.g., No piano, nothing too sad, no hip-hop beats, not too electronic'
                 )}
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 resize-y"
               />
@@ -884,14 +884,14 @@ function BriefPageInner() {
           >
             {sending
               ? <><Loader2 className="w-4 h-4 animate-spin" /> {tx('送出中…', '送出中…', 'Sending…')}</>
-              : tx('送出 brief — 24 小時內回覆報價', '送出 brief — 24 小时内回复报价', 'Send brief — quote within 24h')
+              : tx('送出 brief — 24 小時內回覆報價', '送出 brief — 24 小时内回复报价', 'Send brief — quote within 24 hours')
             }
           </button>
           <p className="text-center text-xs text-gray-500">
             {tx(
-              '送出代表同意我們以此 brief 為基礎準備報價。報價接受後才付款。',
-              '送出代表同意我们以此 brief 为基础准备报价。报价接受后才付款。',
-              'Submitting authorizes us to prepare a quote based on this brief. Payment only after you accept the quote.'
+              '送出後 24 小時內回覆報價，接受報價才付款。',
+              '送出后 24 小时内回复报价，接受报价才付款。',
+              "We email a quote within 24 hours. You only pay after you accept it."
             )}
           </p>
         </form>
