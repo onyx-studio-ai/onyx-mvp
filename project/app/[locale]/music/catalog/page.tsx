@@ -206,7 +206,7 @@ export default function MusicCatalogPage() {
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
               <h2 className="text-2xl font-bold mb-5 text-white border-l-4 border-amber-500/60 pl-3">{cat}</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {items.map(row => {
                   const meta = META[row.slot_key];
                   const Icon = meta?.icon ?? Music;
@@ -218,36 +218,70 @@ export default function MusicCatalogPage() {
                   return (
                     <div
                       key={row.id}
-                      className="rounded-xl overflow-hidden bg-white/[0.03] border border-white/10 hover:border-white/20 transition group flex flex-col"
+                      className={`relative rounded-xl bg-white/[0.04] border transition group overflow-hidden ${
+                        playing
+                          ? 'border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-transparent'
+                          : 'border-white/10 hover:border-white/25 hover:bg-white/[0.06]'
+                      }`}
                     >
-                      {/* Cover */}
-                      <div className={`relative h-32 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-                        <Icon className="w-12 h-12 text-white/85 drop-shadow-md" strokeWidth={1.5} />
+                      <div className="flex items-stretch gap-3 p-3">
+                        {/* Small cover: gradient + icon + waveform texture, play overlay on hover */}
                         <button
                           onClick={() => togglePlay(row)}
-                          className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition"
+                          className={`relative w-16 h-16 rounded-lg flex-shrink-0 bg-gradient-to-br ${gradient} overflow-hidden flex items-center justify-center group/play`}
                           aria-label={playing ? 'Pause' : 'Play'}
                         >
-                          <div className={`w-12 h-12 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center transition transform ${playing ? 'scale-100 opacity-100' : 'scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100'}`}>
+                          {/* Decorative waveform behind icon */}
+                          <svg className="absolute inset-0 w-full h-full opacity-25" viewBox="0 0 64 64" preserveAspectRatio="none">
+                            <path d="M0,32 Q16,18 32,32 T64,32" fill="none" stroke="white" strokeWidth="1.2" />
+                            <path d="M0,36 Q16,22 32,36 T64,36" fill="none" stroke="white" strokeWidth="0.8" />
+                            <path d="M0,28 Q16,14 32,28 T64,28" fill="none" stroke="white" strokeWidth="0.6" />
+                          </svg>
+                          <Icon className="w-6 h-6 text-white/90 drop-shadow relative z-10" strokeWidth={1.6} />
+                          <div className={`absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] transition-opacity ${
+                            playing ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'
+                          }`}>
                             {playing
                               ? <Pause className="w-5 h-5 text-white" />
                               : <Play className="w-5 h-5 text-white ml-0.5" />}
                           </div>
                         </button>
-                        {playing && (
-                          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
-                            {isZh ? '播放中' : 'Playing'}
-                          </div>
-                        )}
+
+                        {/* Text block */}
+                        <div className="min-w-0 flex-1 flex flex-col">
+                          <p className="text-sm font-semibold text-white leading-tight truncate">{title}</p>
+                          <p className="text-[11px] text-gray-500 mt-0.5 mb-1.5 flex items-center gap-1.5">
+                            <span>BPM {bpm}</span>
+                            <span className="text-gray-700">·</span>
+                            <span>40s</span>
+                            {playing && (
+                              <>
+                                <span className="text-gray-700">·</span>
+                                <span className="text-amber-400 font-medium uppercase tracking-wider text-[10px]">
+                                  {isZh ? '播放中' : 'PLAYING'}
+                                </span>
+                              </>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-400 leading-snug line-clamp-2">{desc}</p>
+                        </div>
                       </div>
-                      {/* Text */}
-                      <div className="p-4 flex-1 flex flex-col">
-                        <p className="text-sm font-semibold text-white leading-tight mb-1">{title}</p>
-                        <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-2">
-                          BPM {bpm} · {isZh ? '40 秒預覽' : '40s preview'}
-                        </p>
-                        <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
-                      </div>
+
+                      {/* Tag chips at bottom */}
+                      {Array.isArray(row.tags) && row.tags.length > 0 && (
+                        <div className="px-3 pb-3 -mt-1 flex flex-wrap gap-1">
+                          {(isZh && meta ? [meta.zhCat] : [row.subtitle]).map((t, i) => (
+                            <span key={`cat-${i}`} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 border border-white/10 text-gray-300">
+                              {t}
+                            </span>
+                          ))}
+                          {row.tags.filter(t => t !== 'instrumental' && t !== 'vocal').slice(2).map((t, i) => (
+                            <span key={`t-${i}`} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 border border-white/10 text-gray-400">
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
