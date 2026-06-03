@@ -29,7 +29,10 @@ const getLanguageFlag = (language: string): string => {
     Italian: "🇮🇹",
     Portuguese: "🇵🇹",
   };
-  return flagMap[language] || "🌐";
+  // Unknown language: return empty string instead of a generic globe.
+  // The language name itself is still visible via the parent <span>'s
+  // `title` attribute (tooltip on hover).
+  return flagMap[language] || "";
 };
 
 export function TalentCard({ talent, selected, onSelect }: TalentCardProps) {
