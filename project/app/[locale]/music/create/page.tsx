@@ -91,6 +91,35 @@ function MusicCreatePageInner() {
   const isZhCN = locale === 'zh-CN';
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
 
+  // Localized label maps for the configurator options. Keys stay stable
+  // (drive the API payload), labels swap by locale. Order in the source
+  // arrays still drives render order.
+  const vibeLabel = (k: VibeKey): { label: string; tagline: string } => ({
+    cinematic: { label: tx('電影感',      '电影感',      'Cinematic'),     tagline: tx('磅礴、戲劇性、管弦樂',       '磅礴、戏剧性、管弦乐',       'Sweeping, dramatic, orchestral') },
+    chill:     { label: tx('慵懶 / Lo-Fi','慵懒 / Lo-Fi','Chill / Lo-Fi'), tagline: tx('輕鬆、氛圍感、Lounge',        '轻松、氛围感、Lounge',        'Mellow, atmospheric, lounge') },
+    epic:      { label: tx('史詩 / 預告', '史诗 / 预告', 'Epic / Trailer'),tagline: tx('大膽、混合電子、衝擊感',     '大胆、混合电子、冲击感',     'Bold, hybrid, hits hard') },
+    corporate: { label: tx('企業',         '企业',         'Corporate'),     tagline: tx('乾淨、激勵、正向',           '干净、激励、正向',           'Clean, uplifting, motivational') },
+    game:      { label: tx('遊戲 / 動作', '游戏 / 动作', 'Game / Action'), tagline: tx('推進感、有能量、可循環',     '推进感、有能量、可循环',     'Driving, energetic, looping') },
+    custom:    { label: tx('自訂',         '自定',         'Custom'),        tagline: tx('自己描述',                   '自己描述',                   'Describe your own') },
+  }[k]);
+
+  const lengthSubtitle = (k: LengthKey): string => ({
+    '15':  tx('短',     '短',     'Short'),
+    '30':  tx('標準',   '标准',   'Standard'),
+    '60':  tx('長',     '长',     'Long'),
+    '120': tx('加長',   '加长',   'Extended'),
+  }[k]);
+
+  const usageLabel = (k: UsageKey): string => ({
+    social_media:  tx('社群媒體(TikTok / Reels / Shorts)', '社群媒体(TikTok / Reels / Shorts)', 'Social Media (TikTok / Reels / Shorts)'),
+    advertisement: tx('廣告(電視 / 網路)',                 '广告(电视 / 网络)',                 'Advertisement (TV / Online ads)'),
+    video_film:    tx('影片 / 電影配樂',                    '影片 / 电影配乐',                    'Video / Film Soundtrack'),
+    game:          tx('遊戲配樂',                           '游戏配乐',                           'Game Soundtrack'),
+    podcast:       tx('Podcast 片頭 / 片尾',                'Podcast 片头 / 片尾',                'Podcast Intro / Outro'),
+    personal:      tx('個人 / 興趣用途(較低價)',           '个人 / 兴趣用途(较低价)',           'Personal / Hobby (lower price)'),
+    other:         tx('其他',                                '其他',                                'Other'),
+  }[k]);
+
   // Pick up ?track= and ?trackTitle= from the catalog so we can show the
   // user the reference track they chose. The slot_key drives both the
   // audio playback (looked up against audio_showcases) and the cover
@@ -191,7 +220,7 @@ function MusicCreatePageInner() {
 
   async function handleSubmit() {
     if (!canSubmit) {
-      setError('Please fill all required fields');
+      setError(tx('請填妥所有必填欄位', '请填妥所有必填栏位', 'Please fill all required fields'));
       return;
     }
     setSubmitting(true);
@@ -199,11 +228,13 @@ function MusicCreatePageInner() {
 
     try {
       const orderNumber = `MO-${Date.now()}`;
-      const vibeLabel =
+      // Use the localized labels in the order payload so the producer
+      // sees the same vibe / usage descriptors the customer picked.
+      const vibeForPayload =
         form.vibe === 'custom'
           ? form.vibeCustom
-          : VIBES.find((v) => v.key === form.vibe)?.label || form.vibe || '';
-      const usageLabel = USAGES.find((u) => u.key === form.usage)?.label || form.usage || '';
+          : form.vibe ? vibeLabel(form.vibe).label : '';
+      const usageForPayload = form.usage ? usageLabel(form.usage) : '';
 
       const description = [
         `Length: ${form.length}s`,
@@ -220,9 +251,9 @@ function MusicCreatePageInner() {
         body: JSON.stringify({
           email: form.email,
           project_name: null,
-          vibe: vibeLabel,
+          vibe: vibeForPayload,
           reference_link: form.referenceLink,
-          usage_type: usageLabel,
+          usage_type: usageForPayload,
           description,
           tier: 'ai-curator',
           price,
@@ -253,7 +284,7 @@ function MusicCreatePageInner() {
 
       window.location.href = checkoutData.checkoutUrl;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : tx('發生錯誤，請稍後再試', '发生错误，请稍后再试', 'Something went wrong'));
       setSubmitting(false);
     }
   }
@@ -266,7 +297,7 @@ function MusicCreatePageInner() {
           className="inline-flex items-center gap-2 text-gray-500 hover:text-white text-sm mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Music
+          {tx('回音樂工作室', '回音乐工作室', 'Back to Music')}
         </button>
 
         <motion.div
@@ -277,13 +308,17 @@ function MusicCreatePageInner() {
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium mb-4">
             <Music className="w-3.5 h-3.5" />
-            New AI Music Project
+            {tx('新 AI 音樂專案', '新 AI 音乐项目', 'New AI Music Project')}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-white via-emerald-100 to-white bg-clip-text text-transparent">
-            Tell us your vibe.
+            {tx('告訴我們你的 vibe。', '告诉我们你的 vibe。', 'Tell us your vibe.')}
           </h1>
           <p className="text-gray-400 text-lg">
-            AI-generated, finessed by Onyx producers. 24–48 hour delivery.
+            {tx(
+              'AI 生成，Onyx 製作人優化。24-48 小時交件。',
+              'AI 生成，Onyx 制作人优化。24-48 小时交件。',
+              'AI-generated, finessed by Onyx producers. 24–48 hour delivery.'
+            )}
           </p>
         </motion.div>
 
@@ -350,7 +385,7 @@ function MusicCreatePageInner() {
         </div>
 
         {/* Email */}
-        <Section title="Your email" required>
+        <Section title={tx('你的 Email', '你的 Email', 'Your email')} required>
           <input
             type="email"
             value={form.email}
@@ -360,15 +395,18 @@ function MusicCreatePageInner() {
             className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition-colors disabled:opacity-60"
           />
           {emailPrefilled && (
-            <p className="text-xs text-gray-500 mt-2">Logged in as {form.email}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {tx('目前登入：', '目前登入：', 'Logged in as ')}{form.email}
+            </p>
           )}
         </Section>
 
         {/* Vibe */}
-        <Section title="1. Vibe / Style" required>
+        <Section title={tx('風格 / 氛圍', '风格 / 氛围', 'Vibe / Style')} required>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {VIBES.map(({ key, icon: Icon, label, tagline }) => {
+            {VIBES.map(({ key, icon: Icon }) => {
               const active = form.vibe === key;
+              const { label, tagline } = vibeLabel(key);
               return (
                 <button
                   key={key}
@@ -393,7 +431,7 @@ function MusicCreatePageInner() {
             <textarea
               value={form.vibeCustom}
               onChange={(e) => update('vibeCustom', e.target.value)}
-              placeholder="Describe the vibe you want..."
+              placeholder={tx('描述你想要的風格…', '描述你想要的风格…', 'Describe the vibe you want...')}
               rows={2}
               className="w-full mt-3 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none resize-y"
             />
@@ -403,15 +441,19 @@ function MusicCreatePageInner() {
             type="url"
             value={form.referenceLink}
             onChange={(e) => update('referenceLink', e.target.value)}
-            placeholder="Optional: Spotify / YouTube reference link"
+            placeholder={tx(
+              '參考連結(Spotify / YouTube，可選)',
+              '参考链接(Spotify / YouTube，可选)',
+              'Optional: Spotify / YouTube reference link'
+            )}
             className="w-full mt-3 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none text-sm"
           />
         </Section>
 
         {/* Length */}
-        <Section title="2. Length" required>
+        <Section title={tx('成品長度', '成品长度', 'Length')} required>
           <div className="grid grid-cols-4 gap-3">
-            {LENGTHS.map(({ key, label, subtitle }) => {
+            {LENGTHS.map(({ key, label }) => {
               const active = form.length === key;
               return (
                 <button
@@ -426,7 +468,7 @@ function MusicCreatePageInner() {
                   <div className={`font-bold text-lg ${active ? 'text-white' : 'text-gray-200'}`}>
                     {label}
                   </div>
-                  <div className="text-xs text-gray-500 mt-0.5">{subtitle}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{lengthSubtitle(key)}</div>
                 </button>
               );
             })}
@@ -434,40 +476,49 @@ function MusicCreatePageInner() {
         </Section>
 
         {/* Usage */}
-        <Section title="3. Usage" required>
+        <Section title={tx('用途', '用途', 'Usage')} required>
           <select
             value={form.usage || ''}
             onChange={(e) => update('usage', e.target.value as UsageKey)}
             className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3.5 text-white focus:border-emerald-500/50 focus:outline-none transition-colors"
           >
             <option value="" disabled className="bg-[#050505]">
-              Select usage...
+              {tx('選擇用途…', '选择用途…', 'Select usage...')}
             </option>
-            {USAGES.map(({ key, label }) => (
+            {USAGES.map(({ key }) => (
               <option key={key} value={key} className="bg-[#050505]">
-                {label}
+                {usageLabel(key)}
               </option>
             ))}
           </select>
         </Section>
 
         {/* License */}
-        <Section title="4. License" required>
+        <Section title={tx('授權方式', '授权方式', 'License')} required>
           {isPersonal ? (
             <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
               <p className="text-sm text-amber-300">
-                Personal use only — non-commercial. Standard 1-year license auto-applied at 30% discount.
+                {tx(
+                  '個人非商業用途 — 自動套用 1 年標準授權，享 7 折優惠。',
+                  '个人非商业用途 — 自动套用 1 年标准授权，享 7 折优惠。',
+                  'Personal use only — non-commercial. Standard 1-year license auto-applied at 30% discount.'
+                )}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {(['standard', 'buyout'] as LicenseKey[]).map((key) => {
                 const active = form.license === key;
-                const label = key === 'standard' ? '🌐 Standard' : '🏆 Buyout';
-                const desc =
-                  key === 'standard'
-                    ? '1 year, web/social/your brand'
-                    : 'Permanent, full IP transfer, you own everything';
+                const label = key === 'standard'
+                  ? tx('🌐 標準授權', '🌐 标准授权', '🌐 Standard')
+                  : tx('🏆 完整買斷', '🏆 完整买断', '🏆 Buyout');
+                const desc = key === 'standard'
+                  ? tx('1 年期，網路 / 社群 / 自家品牌使用',
+                       '1 年期，网络 / 社群 / 自家品牌使用',
+                       '1 year, web/social/your brand')
+                  : tx('永久授權，版權完整移轉，你完全擁有',
+                       '永久授权，版权完整移转，你完全拥有',
+                       'Permanent, full IP transfer, you own everything');
                 return (
                   <button
                     key={key}
@@ -490,11 +541,15 @@ function MusicCreatePageInner() {
         </Section>
 
         {/* Notes */}
-        <Section title="Project notes (optional)">
+        <Section title={tx('專案備註(可選)', '项目备注(可选)', 'Project notes (optional)')}>
           <textarea
             value={form.notes}
             onChange={(e) => update('notes', e.target.value)}
-            placeholder="Mood, instruments, scene context, deadline..."
+            placeholder={tx(
+              '氛圍、樂器、使用情境、交期…',
+              '氛围、乐器、使用情境、交期…',
+              'Mood, instruments, scene context, deadline...'
+            )}
             rows={3}
             className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none resize-y"
           />
@@ -508,13 +563,19 @@ function MusicCreatePageInner() {
           className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent border border-emerald-500/20"
         >
           <div className="flex items-baseline justify-between mb-2">
-            <span className="text-sm text-gray-400 uppercase tracking-wider">Total</span>
+            <span className="text-sm text-gray-400 uppercase tracking-wider">
+              {tx('總計', '总计', 'Total')}
+            </span>
             <span className="text-4xl font-bold text-white">
               {price > 0 ? `US$${price}` : '—'}
             </span>
           </div>
           <p className="text-xs text-gray-500 mb-6">
-            Estimated delivery: 24–48 hours after payment
+            {tx(
+              '預計交件：付款後 24-48 小時',
+              '预计交件：付款后 24-48 小时',
+              'Estimated delivery: 24–48 hours after payment'
+            )}
           </p>
 
           {error && (
@@ -531,12 +592,12 @@ function MusicCreatePageInner() {
             {submitting ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Creating order...
+                {tx('建立訂單中…', '建立订单中…', 'Creating order...')}
               </>
             ) : (
               <>
                 <CreditCard className="w-5 h-5" />
-                Continue to Checkout
+                {tx('前往結帳', '前往结账', 'Continue to Checkout')}
               </>
             )}
           </button>
