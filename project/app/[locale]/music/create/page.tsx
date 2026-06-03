@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter, Link } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Music, Loader2, CreditCard, Sparkles, Waves, Zap, Briefcase, Gamepad2, Edit3, Play, Pause, FileText } from 'lucide-react';
+import { ArrowLeft, Music, Loader2, CreditCard, Sparkles, Zap, Briefcase, Gamepad2, Edit3, Play, Pause, FileText, Film, Mic, Leaf, Heart, Plane, Gift, Music2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { audioManager } from '@/lib/audioManager';
 import Footer from '@/components/landing/Footer';
@@ -13,19 +13,34 @@ import type { LucideIcon } from 'lucide-react';
 
 const STORAGE_BASE = 'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers';
 
-type VibeKey = 'cinematic' | 'chill' | 'epic' | 'corporate' | 'game' | 'custom';
+// 12-vibe set aligned to /music/catalog META categories (10 instrumental
+// + 1 vocal POP umbrella + 1 custom escape hatch). Keeps the configurator
+// in sync with what the customer actually saw in the catalog.
+type VibeKey =
+  | 'brand' | 'trailer' | 'podcast' | 'corporate' | 'game'
+  | 'wellness' | 'wedding' | 'kids' | 'travel' | 'seasonal'
+  | 'song' | 'custom';
 type LengthKey = '15' | '30' | '60' | '120';
 // AI Curator tier-1 project types — narrower than /music/brief's set
 // because Tier 1 is scope-limited to web & social use only.
 type ProjectTypeKey = 'shortVideo' | 'podcast' | 'corporate' | 'social' | 'brandWeb' | 'other';
 
-const VIBES: { key: VibeKey; icon: LucideIcon; label: string; tagline: string }[] = [
-  { key: 'cinematic', icon: Sparkles, label: 'Cinematic', tagline: 'Sweeping, dramatic, orchestral' },
-  { key: 'chill', icon: Waves, label: 'Chill / Lo-Fi', tagline: 'Mellow, atmospheric, lounge' },
-  { key: 'epic', icon: Zap, label: 'Epic / Trailer', tagline: 'Bold, hybrid, hits hard' },
-  { key: 'corporate', icon: Briefcase, label: 'Corporate', tagline: 'Clean, uplifting, motivational' },
-  { key: 'game', icon: Gamepad2, label: 'Game / Action', tagline: 'Driving, energetic, looping' },
-  { key: 'custom', icon: Edit3, label: 'Custom', tagline: 'Describe your own' },
+// Render order driven by this array; labels/taglines resolved per locale
+// via the vibeLabel() helper inside the component. Mirrors catalog's
+// 10 instrumental sections + 1 vocal umbrella + custom.
+const VIBES: { key: VibeKey; icon: LucideIcon }[] = [
+  { key: 'brand',     icon: Zap },
+  { key: 'trailer',   icon: Film },
+  { key: 'podcast',   icon: Mic },
+  { key: 'corporate', icon: Briefcase },
+  { key: 'game',      icon: Gamepad2 },
+  { key: 'wellness',  icon: Leaf },
+  { key: 'wedding',   icon: Heart },
+  { key: 'kids',      icon: Sparkles },
+  { key: 'travel',    icon: Plane },
+  { key: 'seasonal',  icon: Gift },
+  { key: 'song',      icon: Music2 },
+  { key: 'custom',    icon: Edit3 },
 ];
 
 const LENGTHS: { key: LengthKey; label: string; subtitle: string }[] = [
@@ -80,14 +95,42 @@ function MusicCreatePageInner() {
   // Localized label maps for the configurator options. Keys stay stable
   // (drive the API payload), labels swap by locale. Order in the source
   // arrays still drives render order.
+  // 12 vibes aligned to /music/catalog META categories. Label + tagline
+  // per locale so the order payload also reads naturally for the producer.
   const vibeLabel = (k: VibeKey): { label: string; tagline: string } => ({
-    cinematic: { label: tx('電影感',      '电影感',      'Cinematic'),     tagline: tx('磅礴、戲劇性、管弦樂',       '磅礴、戏剧性、管弦乐',       'Sweeping, dramatic, orchestral') },
-    chill:     { label: tx('慵懶 / Lo-Fi','慵懒 / Lo-Fi','Chill / Lo-Fi'), tagline: tx('輕鬆、氛圍感、Lounge',        '轻松、氛围感、Lounge',        'Mellow, atmospheric, lounge') },
-    epic:      { label: tx('史詩 / 預告', '史诗 / 预告', 'Epic / Trailer'),tagline: tx('大膽、混合電子、衝擊感',     '大胆、混合电子、冲击感',     'Bold, hybrid, hits hard') },
-    corporate: { label: tx('企業',         '企业',         'Corporate'),     tagline: tx('乾淨、激勵、正向',           '干净、激励、正向',           'Clean, uplifting, motivational') },
-    game:      { label: tx('遊戲 / 動作', '游戏 / 动作', 'Game / Action'), tagline: tx('推進感、有能量、可循環',     '推进感、有能量、可循环',     'Driving, energetic, looping') },
+    brand:     { label: tx('廣告 / 品牌',  '广告 / 品牌',  'Brand / Ad'),    tagline: tx('短打、品牌音效、產品片頭',    '短打、品牌音效、产品片头',    'Stings, brand reveals, product intros') },
+    trailer:   { label: tx('電影預告',     '电影预告',     'Trailer'),       tagline: tx('史詩、震撼、戲劇張力',        '史诗、震撼、戏剧张力',        'Epic, dramatic, cinematic') },
+    podcast:   { label: tx('Podcast 背景','Podcast 背景','Podcast Bed'),    tagline: tx('lo-fi、爵士、輕柔對談底',     'lo-fi、爵士、轻柔对谈底',     'Lo-fi, jazz, soft conversation bed') },
+    corporate: { label: tx('企業 / 簡報',  '企业 / 简报',  'Corporate'),     tagline: tx('激勵、科技、年報',           '激励、科技、年报',           'Uplifting, tech, annual report') },
+    game:      { label: tx('遊戲',         '游戏',         'Game'),          tagline: tx('RPG 戰鬥、8-bit、黑暗氛圍',  'RPG 战斗、8-bit、黑暗氛围',  'RPG battle, 8-bit, dark ambient') },
+    wellness:  { label: tx('Spa / 冥想',   'Spa / 冥想',   'Wellness'),      tagline: tx('冥想缽鼓、放鬆、禪意',        '冥想钵鼓、放松、禅意',        'Meditation bowls, relaxation, zen') },
+    wedding:   { label: tx('婚禮 / 紀念',  '婚礼 / 纪念',  'Wedding'),       tagline: tx('浪漫吉他、懷舊鋼琴、家庭剪輯','浪漫吉他、怀旧钢琴、家庭剪辑', 'Romantic guitar, nostalgic piano, family montage') },
+    kids:      { label: tx('兒童 / 動畫',  '儿童 / 动画',  'Kids'),          tagline: tx('烏克麗麗、馬林巴、卡通冒險',  '尤克里里、马林巴、卡通冒险',  'Ukulele, marimba, cartoon adventure') },
+    travel:    { label: tx('旅遊 / 美食',  '旅游 / 美食',  'Travel / Food'), tagline: tx('陽光 Vlog、夏日海灘、廚房 lo-fi','阳光 Vlog、夏日海滩、厨房 lo-fi','Sunny vlog, summer beach, kitchen lo-fi') },
+    seasonal:  { label: tx('節慶 / 賀年',  '节庆 / 贺年',  'Seasonal'),      tagline: tx('新春、聖誕、節慶氛圍',        '新春、圣诞、节庆氛围',        'New Year, Christmas, festive vibes') },
+    song:      { label: tx('歌曲 / POP',   '歌曲 / POP',   'Song / Vocal'),  tagline: tx('流行抒情、輕快、R&B、嘻哈、K-Pop','流行抒情、轻快、R&B、嘻哈、K-Pop', 'Pop ballad, upbeat, R&B, hip-hop, K-Pop') },
     custom:    { label: tx('自訂',         '自定',         'Custom'),        tagline: tx('自己描述',                   '自己描述',                   'Describe your own') },
   }[k]);
+
+  // Map catalog slug → vibe so customers arriving via "Quick checkout"
+  // from a specific catalog card don't have to re-pick what they already
+  // listened to. They can still override after the auto-fill.
+  const slugToVibe = (slug: string): VibeKey | null => {
+    if (!slug) return null;
+    if (slug.startsWith('brand-sting'))  return 'brand';
+    if (slug.startsWith('trailer'))      return 'trailer';
+    if (slug.startsWith('podcast-bed'))  return 'podcast';
+    if (slug.startsWith('corporate'))    return 'corporate';
+    if (slug.startsWith('game'))         return 'game';
+    if (slug.startsWith('wellness'))     return 'wellness';
+    if (slug.startsWith('wedding'))      return 'wedding';
+    if (slug.startsWith('kids'))         return 'kids';
+    if (slug.startsWith('travel'))       return 'travel';
+    if (slug.startsWith('seasonal'))     return 'seasonal';
+    // All vocal-POP slot keys end in -en or -cn (e.g. pop-ballad-en).
+    if (slug.endsWith('-en') || slug.endsWith('-cn')) return 'song';
+    return null;
+  };
 
   const lengthSubtitle = (k: LengthKey): string => ({
     '15':  tx('短',     '短',     'Short'),
@@ -149,12 +192,16 @@ function MusicCreatePageInner() {
         if (data?.audio_url) setTrackAudioUrl(data.audio_url);
       });
     // Seed reference_link with a human-readable handle so the producer
-    // sees "catalog:Spark Up (brand-sting-1)" in the order. Don't
-    // overwrite if the user has already typed something.
-    setForm(f => f.referenceLink
-      ? f
-      : { ...f, referenceLink: `catalog:${trackTitle || trackSlug} (${trackSlug})` }
-    );
+    // sees "catalog:Spark Up (brand-sting-1)" in the order. Also
+    // auto-fill vibe from the slug — the customer just picked this
+    // track from the catalog, so we already know what vibe they want.
+    // Both fields skip overwrite if the user has already touched them.
+    const autoVibe = slugToVibe(trackSlug);
+    setForm(f => ({
+      ...f,
+      referenceLink: f.referenceLink || `catalog:${trackTitle || trackSlug} (${trackSlug})`,
+      vibe: f.vibe || autoVibe,
+    }));
     return () => {
       if (trackAudio) {
         trackAudio.pause();
@@ -397,7 +444,9 @@ function MusicCreatePageInner() {
 
         {/* Vibe */}
         <Section title={tx('風格 / 氛圍', '风格 / 氛围', 'Vibe / Style')} required>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {/* 12-vibe grid; denser on larger viewports so the page doesn't
+              feel like a wall of buttons. */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
             {VIBES.map(({ key, icon: Icon }) => {
               const active = form.vibe === key;
               const { label, tagline } = vibeLabel(key);
@@ -405,17 +454,17 @@ function MusicCreatePageInner() {
                 <button
                   key={key}
                   onClick={() => update('vibe', key)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
                     active
                       ? 'border-emerald-500/60 bg-emerald-500/10'
                       : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 mb-2 ${active ? 'text-emerald-300' : 'text-gray-400'}`} />
+                  <Icon className={`w-4 h-4 mb-1.5 ${active ? 'text-emerald-300' : 'text-gray-400'}`} />
                   <div className={`font-semibold text-sm ${active ? 'text-white' : 'text-gray-200'}`}>
                     {label}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1 leading-snug">{tagline}</div>
+                  <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">{tagline}</div>
                 </button>
               );
             })}
