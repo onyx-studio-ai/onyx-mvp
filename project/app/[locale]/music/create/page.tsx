@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter, Link } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
@@ -15,15 +15,9 @@ const STORAGE_BASE = 'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object
 
 type VibeKey = 'cinematic' | 'chill' | 'epic' | 'corporate' | 'game' | 'custom';
 type LengthKey = '15' | '30' | '60' | '120';
-type LicenseKey = 'standard' | 'buyout';
-type UsageKey =
-  | 'social_media'
-  | 'advertisement'
-  | 'video_film'
-  | 'game'
-  | 'podcast'
-  | 'personal'
-  | 'other';
+// AI Curator tier-1 project types — narrower than /music/brief's set
+// because Tier 1 is scope-limited to web & social use only.
+type ProjectTypeKey = 'shortVideo' | 'podcast' | 'corporate' | 'social' | 'brandWeb' | 'other';
 
 const VIBES: { key: VibeKey; icon: LucideIcon; label: string; tagline: string }[] = [
   { key: 'cinematic', icon: Sparkles, label: 'Cinematic', tagline: 'Sweeping, dramatic, orchestral' },
@@ -41,35 +35,25 @@ const LENGTHS: { key: LengthKey; label: string; subtitle: string }[] = [
   { key: '120', label: '2:00', subtitle: 'Extended' },
 ];
 
-const USAGES: { key: UsageKey; label: string }[] = [
-  { key: 'social_media', label: 'Social Media (TikTok / Reels / Shorts)' },
-  { key: 'advertisement', label: 'Advertisement (TV / Online ads)' },
-  { key: 'video_film', label: 'Video / Film Soundtrack' },
-  { key: 'game', label: 'Game Soundtrack' },
-  { key: 'podcast', label: 'Podcast Intro / Outro' },
-  { key: 'personal', label: 'Personal / Hobby (lower price)' },
-  { key: 'other', label: 'Other' },
-];
+// Tier 1 AI Curator — narrower project-type set than /music/brief.
+// Tier 1 is web & social only; broadcast / TV / film go to /music/brief.
+const PROJECT_TYPES: ProjectTypeKey[] = ['shortVideo', 'podcast', 'corporate', 'social', 'brandWeb', 'other'];
 
-// Pricing matrix: USD. Wing can tune.
-const PRICING: Record<LengthKey, Record<LicenseKey, number>> = {
-  '15':  { standard: 49,  buyout: 199 },
-  '30':  { standard: 99,  buyout: 499 },
-  '60':  { standard: 149, buyout: 799 },
-  '120': { standard: 199, buyout: 1499 },
-};
-
-// Personal usage gets 30% off standard, buyout not available.
-const PERSONAL_DISCOUNT = 0.7;
+// Tier 1 AI Curator SKU is a flat US$999 per the pricing config and
+// the v4.6 pricing copy. The previous length×license matrix didn't
+// match the published Tier 1 price and caused customer confusion.
+const FLAT_PRICE = 999;
 
 interface FormState {
   vibe: VibeKey | null;
   vibeCustom: string;
   referenceLink: string;
   length: LengthKey | null;
-  usage: UsageKey | null;
-  license: LicenseKey;
+  projectType: ProjectTypeKey | null;
+  refsAndAvoid: string;
   notes: string;
+  scopeConfirmed: boolean;
+  name: string;
   email: string;
 }
 
@@ -78,9 +62,11 @@ const INITIAL_FORM: FormState = {
   vibeCustom: '',
   referenceLink: '',
   length: null,
-  usage: null,
-  license: 'standard',
+  projectType: null,
+  refsAndAvoid: '',
   notes: '',
+  scopeConfirmed: false,
+  name: '',
   email: '',
 };
 
@@ -110,14 +96,14 @@ function MusicCreatePageInner() {
     '120': tx('加長',   '加长',   'Extended'),
   }[k]);
 
-  const usageLabel = (k: UsageKey): string => ({
-    social_media:  tx('社群媒體(TikTok / Reels / Shorts)', '社群媒体(TikTok / Reels / Shorts)', 'Social Media (TikTok / Reels / Shorts)'),
-    advertisement: tx('廣告(電視 / 網路)',                 '广告(电视 / 网络)',                 'Advertisement (TV / Online ads)'),
-    video_film:    tx('影片 / 電影配樂',                    '影片 / 电影配乐',                    'Video / Film Soundtrack'),
-    game:          tx('遊戲配樂',                           '游戏配乐',                           'Game Soundtrack'),
-    podcast:       tx('Podcast 片頭 / 片尾',                'Podcast 片头 / 片尾',                'Podcast Intro / Outro'),
-    personal:      tx('個人 / 興趣用途(較低價)',           '个人 / 兴趣用途(较低价)',           'Personal / Hobby (lower price)'),
-    other:         tx('其他',                                '其他',                                'Other'),
+  // Tier 1 project types — scope-aligned to web & social use.
+  const projectTypeLabel = (k: ProjectTypeKey): string => ({
+    shortVideo: tx('短影音(TikTok / Reels / Shorts)', '短影音(TikTok / Reels / Shorts)', 'Short video (TikTok / Reels / Shorts)'),
+    podcast:    tx('Podcast 片頭 / 片尾',              'Podcast 片头 / 片尾',              'Podcast intro / outro'),
+    corporate:  tx('企業內部影片 / 簡報',              '企业内部影片 / 简报',              'Corporate internal video / presentation'),
+    social:     tx('品牌社群內容',                     '品牌社群内容',                     'Brand social content'),
+    brandWeb:   tx('品牌官網 / 落地頁',                '品牌官网 / 落地页',                'Brand website / landing page'),
+    other:      tx('其他(網路 / 社群用途)',           '其他(网络 / 社群用途)',           'Other (web / social use)'),
   }[k]);
 
   // Pick up ?track= and ?trackTitle= from the catalog so we can show the
@@ -196,22 +182,18 @@ function MusicCreatePageInner() {
     setTrackPlaying(true);
   };
 
-  const isPersonal = form.usage === 'personal';
-  const effectiveLicense: LicenseKey = isPersonal ? 'standard' : form.license;
-
-  const price = useMemo(() => {
-    if (!form.length) return 0;
-    const base = PRICING[form.length][effectiveLicense];
-    return isPersonal ? Math.round(base * PERSONAL_DISCOUNT) : base;
-  }, [form.length, effectiveLicense, isPersonal]);
+  // Flat US$999 — Tier 1 AI Curator SKU is a single price, no
+  // length×license matrix.
+  const price = FLAT_PRICE;
 
   const canSubmit =
     !!form.email.trim() &&
+    !!form.name.trim() &&
     !!form.vibe &&
     (form.vibe !== 'custom' || form.vibeCustom.trim().length > 0) &&
     !!form.length &&
-    !!form.usage &&
-    price > 0;
+    !!form.projectType &&
+    form.scopeConfirmed;
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -228,18 +210,21 @@ function MusicCreatePageInner() {
 
     try {
       const orderNumber = `MO-${Date.now()}`;
-      // Use the localized labels in the order payload so the producer
-      // sees the same vibe / usage descriptors the customer picked.
+      // Localized labels in the order payload so the producer sees the
+      // exact same descriptors the customer picked.
       const vibeForPayload =
         form.vibe === 'custom'
           ? form.vibeCustom
           : form.vibe ? vibeLabel(form.vibe).label : '';
-      const usageForPayload = form.usage ? usageLabel(form.usage) : '';
+      const projectTypeForPayload = form.projectType ? projectTypeLabel(form.projectType) : '';
 
       const description = [
+        `Project type: ${projectTypeForPayload}`,
         `Length: ${form.length}s`,
-        `License: ${effectiveLicense}`,
+        `Scope: Web & social use only (acknowledged by client)`,
+        form.refsAndAvoid ? `References / avoid: ${form.refsAndAvoid}` : null,
         form.notes ? `Notes: ${form.notes}` : null,
+        `Name: ${form.name}`,
       ]
         .filter(Boolean)
         .join('\n');
@@ -253,7 +238,7 @@ function MusicCreatePageInner() {
           project_name: null,
           vibe: vibeForPayload,
           reference_link: form.referenceLink,
-          usage_type: usageForPayload,
+          usage_type: projectTypeForPayload,
           description,
           tier: 'ai-curator',
           price,
@@ -370,9 +355,9 @@ function MusicCreatePageInner() {
             <FileText className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
               {tx(
-                '需要真人製作或 Live 弦樂?',
-                '需要真人制作或 Live 弦乐?',
-                'Need a human producer or live strings?'
+                '需要電視 / 廣播授權？真人演奏？Live 弦樂？',
+                '需要电视 / 广播授权？真人演奏？Live 弦乐？',
+                'Need broadcast license, live performance, or live strings?'
               )}
             </span>
           </div>
@@ -384,16 +369,25 @@ function MusicCreatePageInner() {
           </Link>
         </div>
 
-        {/* Email */}
-        <Section title={tx('你的 Email', '你的 Email', 'Your email')} required>
-          <input
-            type="email"
-            value={form.email}
-            onChange={(e) => update('email', e.target.value)}
-            disabled={emailPrefilled}
-            placeholder="you@company.com"
-            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition-colors disabled:opacity-60"
-          />
+        {/* Contact — name + email side-by-side */}
+        <Section title={tx('聯絡方式', '联络方式', 'Contact')} required>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => update('name', e.target.value)}
+              placeholder={tx('你的姓名', '你的姓名', 'Your name')}
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition-colors"
+            />
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => update('email', e.target.value)}
+              disabled={emailPrefilled}
+              placeholder="you@company.com"
+              className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none transition-colors disabled:opacity-60"
+            />
+          </div>
           {emailPrefilled && (
             <p className="text-xs text-gray-500 mt-2">
               {tx('目前登入：', '目前登入：', 'Logged in as ')}{form.email}
@@ -475,82 +469,74 @@ function MusicCreatePageInner() {
           </div>
         </Section>
 
-        {/* Usage */}
-        <Section title={tx('用途', '用途', 'Usage')} required>
-          <select
-            value={form.usage || ''}
-            onChange={(e) => update('usage', e.target.value as UsageKey)}
-            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3.5 text-white focus:border-emerald-500/50 focus:outline-none transition-colors"
-          >
-            <option value="" disabled className="bg-[#050505]">
-              {tx('選擇用途…', '选择用途…', 'Select usage...')}
-            </option>
-            {USAGES.map(({ key }) => (
-              <option key={key} value={key} className="bg-[#050505]">
-                {usageLabel(key)}
-              </option>
-            ))}
-          </select>
+        {/* Project type — AI Curator is scope-limited to web & social;
+            the choices here reflect that, no TV / broadcast / film options. */}
+        <Section title={tx('專案類型', '项目类型', 'Project type')} required>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {PROJECT_TYPES.map((key) => {
+              const active = form.projectType === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => update('projectType', key)}
+                  className={`px-3 py-2.5 rounded-xl border-2 text-left text-sm transition-all ${
+                    active
+                      ? 'border-emerald-500/60 bg-emerald-500/10 text-white'
+                      : 'border-white/10 bg-white/[0.02] text-gray-300 hover:border-white/20 hover:bg-white/[0.04]'
+                  }`}
+                >
+                  {projectTypeLabel(key)}
+                </button>
+              );
+            })}
+          </div>
         </Section>
 
-        {/* License */}
-        <Section title={tx('授權方式', '授权方式', 'License')} required>
-          {isPersonal ? (
-            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
-              <p className="text-sm text-amber-300">
-                {tx(
-                  '個人非商業用途 — 自動套用 1 年標準授權，享 7 折優惠。',
-                  '个人非商业用途 — 自动套用 1 年标准授权，享 7 折优惠。',
-                  'Personal use only — non-commercial. Standard 1-year license auto-applied at 30% discount.'
-                )}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(['standard', 'buyout'] as LicenseKey[]).map((key) => {
-                const active = form.license === key;
-                const label = key === 'standard'
-                  ? tx('標準授權', '标准授权', 'Standard')
-                  : tx('完整買斷', '完整买断', 'Buyout');
-                const desc = key === 'standard'
-                  ? tx('1 年期，網路 / 社群 / 自家品牌使用',
-                       '1 年期，网络 / 社群 / 自家品牌使用',
-                       '1 year, web/social/your brand')
-                  : tx('永久授權，版權完整移轉，你完全擁有',
-                       '永久授权，版权完整移转，你完全拥有',
-                       'Permanent, full IP transfer, you own everything');
-                return (
-                  <button
-                    key={key}
-                    onClick={() => update('license', key)}
-                    className={`p-5 rounded-xl border-2 text-left transition-all ${
-                      active
-                        ? 'border-emerald-500/60 bg-emerald-500/10'
-                        : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <div className={`font-semibold text-base mb-1 ${active ? 'text-white' : 'text-gray-200'}`}>
-                      {label}
-                    </div>
-                    <div className="text-xs text-gray-400 leading-relaxed">{desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        {/* References & Avoid — single combined textarea for fast intake */}
+        <Section title={tx('參考方向 / 避免清單(可選)', '参考方向 / 避免清单(可选)', 'References & avoid (optional)')}>
+          <textarea
+            value={form.refsAndAvoid}
+            onChange={(e) => update('refsAndAvoid', e.target.value)}
+            placeholder={tx(
+              '參考：溫暖吉他 ballad、夕陽海邊感\n避免：不要鋼琴、不要太電子',
+              '参考：温暖吉他 ballad、夕阳海边感\n避免：不要钢琴、不要太电子',
+              'References: warm acoustic ballad, sunset beach vibe\nAvoid: no piano, not too electronic'
+            )}
+            rows={3}
+            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none resize-y text-sm"
+          />
+        </Section>
+
+        {/* Scope acknowledgment — confirm AI Curator is web & social only */}
+        <Section title={tx('使用範圍確認', '使用范围确认', 'Scope acknowledgment')} required>
+          <label className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/10 cursor-pointer hover:bg-white/[0.05]">
+            <input
+              type="checkbox"
+              checked={form.scopeConfirmed}
+              onChange={(e) => update('scopeConfirmed', e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-emerald-500"
+            />
+            <span className="text-sm text-gray-300 leading-relaxed">
+              {tx(
+                '我確認此曲僅用於網路與社群使用授權範圍（YouTube / TikTok / Instagram / Facebook / 微博 / 小紅書 / B 站 / 抖音 / 自家官網 / Podcast / 企業內部）。需要電視 / 戶外 / 廣播 / 電影授權請改送音樂製作需求。',
+                '我确认此曲仅用于网络与社群使用授权范围（YouTube / TikTok / Instagram / Facebook / 微博 / 小红书 / B 站 / 抖音 / 自家官网 / Podcast / 企业内部）。需要电视 / 户外 / 广播 / 电影授权请改送音乐制作需求。',
+                'I confirm this track will be used only within the web & social license scope (YouTube / TikTok / Instagram / Facebook / Weibo / Xiaohongshu / Bilibili / Douyin / own website / Podcast / internal corporate). For TV / outdoor / broadcast / film licensing, please send a music production brief instead.'
+              )}
+            </span>
+          </label>
         </Section>
 
         {/* Notes */}
-        <Section title={tx('專案備註(可選)', '项目备注(可选)', 'Project notes (optional)')}>
+        <Section title={tx('其他備註(可選)', '其他备注(可选)', 'Other notes (optional)')}>
           <textarea
             value={form.notes}
             onChange={(e) => update('notes', e.target.value)}
             placeholder={tx(
-              '氛圍、樂器、使用情境、交期…',
-              '氛围、乐器、使用情境、交期…',
-              'Mood, instruments, scene context, deadline...'
+              '交期、特殊需求…',
+              '交期、特殊需求…',
+              'Deadline, special requirements...'
             )}
-            rows={3}
+            rows={2}
             className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:border-emerald-500/50 focus:outline-none resize-y"
           />
         </Section>
@@ -572,9 +558,9 @@ function MusicCreatePageInner() {
           </div>
           <p className="text-xs text-gray-500 mb-6">
             {tx(
-              '預計交件：付款後 24-48 小時',
-              '预计交件：付款后 24-48 小时',
-              'Estimated delivery: 24–48 hours after payment'
+              '預計交件：付款後 48-72 小時 · 含 2 輪修改 · 網路與社群使用授權書',
+              '预计交件：付款后 48-72 小时 · 含 2 轮修改 · 网络与社群使用授权书',
+              'Estimated delivery: 48-72 hours after payment · 2 revision rounds · web & social licensing certificate'
             )}
           </p>
 
