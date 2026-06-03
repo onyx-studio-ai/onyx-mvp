@@ -37,7 +37,7 @@ const STORAGE_BASE = 'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object
 type Tier = 'ai-curator' | 'pro-arrangement' | 'masterpiece' | 'advise';
 type Strings = 'none' | 'intimate-12' | 'rich-16' | 'cinematic-24' | 'advise';
 type ProjectType = 'ad' | 'trailer' | 'podcast' | 'corporate' | 'game' | 'wellness' | 'wedding' | 'kids' | 'travel' | 'seasonal' | 'song' | 'other';
-type LengthBucket = '15s' | '30s' | '60s' | '90s' | '2min' | '3min' | 'longer' | 'custom';
+type LengthBucket = '15s' | '30s' | '60s' | '90s' | '2min' | '3min' | 'custom';
 type Usage = 'web' | 'broadcast' | 'allMedia' | 'unsure';
 type Deadline = 'rush24h' | 'days3' | 'week1' | 'weeks2' | 'flexible';
 type Lyrics = 'reuseDemo' | 'iProvide' | 'youWrite' | 'na';
@@ -254,7 +254,6 @@ function BriefPageInner() {
       '90s':    '90s',
       '2min':   tx('2 分鐘', '2 分钟', '2 min'),
       '3min':   tx('3 分鐘', '3 分钟', '3 min'),
-      longer:   tx('更長',   '更长',   'Longer'),
       custom:   tx(`自訂: ${customLength}秒`, `自定: ${customLength}秒`, `Custom: ${customLength}s`),
     }[k]),
     usage: (k: Usage): string => ({
@@ -688,7 +687,7 @@ function BriefPageInner() {
               <Choices
                 value={lengthBucket}
                 onSelect={(v) => setLengthBucket(v as LengthBucket)}
-                options={(['15s','30s','60s','90s','2min','3min','longer','custom'] as LengthBucket[])
+                options={(['15s','30s','60s','90s','2min','3min','custom'] as LengthBucket[])
                   .map(k => [k, labelFor.lengthBucket(k)] as [string, string])}
               />
               {lengthBucket === 'custom' && (
