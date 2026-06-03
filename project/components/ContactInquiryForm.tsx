@@ -156,7 +156,23 @@ export default function ContactInquiryForm({ locale }: ContactInquiryFormProps) 
   const [topic, setTopic] = useState<typeof TOPICS[number]['key']>(initialTopic);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const trackParam = searchParams.get('track') || '';
+  const trackTitleParam = searchParams.get('trackTitle') || '';
+  // Pre-fill message with the music track the user picked, if any.
+  // The catalog page passes both the slot_key (?track=) and the
+  // human-readable title (?trackTitle=).
+  const initialMessage = (() => {
+    if (!trackParam) return '';
+    const label = trackTitleParam || trackParam;
+    if (locale === 'en') {
+      return `I'm interested in this track as a starting point: ${label} (${trackParam}).\n\nProject details:\n`;
+    }
+    if (locale === 'zh-CN') {
+      return `我想用这首曲目作为起点: ${label} (${trackParam})。\n\n项目细节:\n`;
+    }
+    return `我想用這首曲目作為起點: ${label} (${trackParam})。\n\n專案細節:\n`;
+  })();
+  const [message, setMessage] = useState(initialMessage);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [inquiryNumber, setInquiryNumber] = useState('');

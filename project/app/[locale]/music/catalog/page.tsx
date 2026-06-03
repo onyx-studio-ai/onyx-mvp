@@ -293,9 +293,12 @@ export default function MusicCatalogPage() {
                         </div>
                       </div>
 
-                      {/* Lyrics toggle (vocal only) — full width below the row */}
-                      {hasLyrics && (
-                        <div className="px-3 pb-3 -mt-1">
+                      {/* Footer row: lyrics toggle (vocal only) + per-track
+                          inquiry button. Clicking the inquiry link jumps to
+                          the existing /contact form with this track's title
+                          + slot_key pre-filled into the message. */}
+                      <div className="px-3 pb-3 -mt-1 flex items-center justify-between gap-2">
+                        {hasLyrics ? (
                           <button
                             onClick={() => toggleLyrics(row.id)}
                             className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition uppercase tracking-wider font-semibold"
@@ -303,11 +306,19 @@ export default function MusicCatalogPage() {
                             <ChevronDown className={`w-3 h-3 transition-transform ${lyricsOpen ? 'rotate-180' : ''}`} />
                             {tx('看歌詞', '看歌词', 'Lyrics')}
                           </button>
-                          {lyricsOpen && (
-                            <pre className="mt-2 p-3 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-300 font-sans whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
-                              {lyrics}
-                            </pre>
-                          )}
+                        ) : <span />}
+                        <Link
+                          href={`/contact?source=music-project&track=${row.slot_key}&trackTitle=${encodeURIComponent(title)}`}
+                          className="text-[10px] text-amber-400 hover:text-amber-300 transition uppercase tracking-wider font-semibold flex items-center gap-1"
+                        >
+                          {tx('用這首詢價', '用这首询价', 'Use this →')}
+                        </Link>
+                      </div>
+                      {hasLyrics && lyricsOpen && (
+                        <div className="px-3 pb-3">
+                          <pre className="p-3 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-300 font-sans whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+                            {lyrics}
+                          </pre>
                         </div>
                       )}
                     </div>
@@ -331,16 +342,16 @@ export default function MusicCatalogPage() {
           </h3>
           <p className="text-gray-400 mb-6">
             {tx(
-              '告訴我們你挑的曲目名稱 + 你的專案需求,我們會客製化最終版本。',
-              '告诉我们你挑的曲目名称 + 你的项目需求,我们会定制最终版本。',
-              'Tell us which track you picked plus your project brief — we will customize the final.'
+              '送出專案需求,我們會以你挑的曲目為起點客製化最終版本(2 輪修改內)。',
+              '送出项目需求,我们会以你挑的曲目为起点定制最终版本(2 轮修改内)。',
+              'Send your project brief — we customize the final track using your pick as a starting point (2 revision rounds).'
             )}
           </p>
           <Link
-            href="/music"
+            href="/contact?source=music-project"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500 text-black font-semibold hover:bg-amber-400 transition"
           >
-            {tx('前往音樂工作室', '前往音乐工作室', 'Go to Music Studio')}
+            {tx('送出專案需求', '送出项目需求', 'Send project brief')}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
