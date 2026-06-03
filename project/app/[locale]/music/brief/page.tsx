@@ -498,9 +498,9 @@ function BriefPageInner() {
           <div className="max-w-3xl mx-auto p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/30 flex items-center justify-between gap-3 text-sm">
             <span className="text-gray-300">
               {tx(
-                '💡 Tier 1 AI Curator 可以跳過音樂製作需求，直接結帳，24-48 小時交件。',
-                '💡 Tier 1 AI Curator 可以跳过音乐制作需求，直接结账，24-48 小时交件。',
-                '💡 Tier 1 AI Curator can skip the brief and check out directly — 24-48 hour delivery.'
+                'Tier 1 AI Curator 可以跳過音樂製作需求，直接結帳，24-48 小時交件。',
+                'Tier 1 AI Curator 可以跳过音乐制作需求，直接结账，24-48 小时交件。',
+                'Tier 1 AI Curator can skip the brief and check out directly — 24-48 hour delivery.'
               )}
             </span>
             <Link
@@ -580,7 +580,6 @@ function BriefPageInner() {
 
           {/* SECTION 1: Production tier (cards) */}
           <Section
-            num="1"
             title={tx('製作等級', '制作等级', 'Production tier')}
             required
             hint={tx(
@@ -635,7 +634,6 @@ function BriefPageInner() {
 
           {/* SECTION 2: Strings add-on */}
           <Section
-            num="2"
             title={tx('Live 弦樂(額外加購)', 'Live 弦乐(额外加购)', 'Live strings add-on')}
             hint={tx(
               '需要真實樂手錄製的弦樂?電影、廣告、品牌片常用，可疊加在任何等級上。不確定就選「請建議我」。',
@@ -666,7 +664,7 @@ function BriefPageInner() {
           </Section>
 
           {/* SECTION 3: Project specs */}
-          <Section num="3" title={tx('專案規格', '项目规格', 'Project specs')} required>
+          <Section title={tx('專案規格', '项目规格', 'Project specs')} required>
             <Field label={tx('專案 / 品牌名稱', '项目 / 品牌名称', 'Project / brand name')}>
               <input
                 type="text"
@@ -743,7 +741,7 @@ function BriefPageInner() {
 
           {/* SECTION 4: Vocals (only if song / vocal context) */}
           {isVocalContext && (
-            <Section num="4" title={tx('人聲', '人声', 'Vocals')}>
+            <Section title={tx('人聲', '人声', 'Vocals')}>
               <Field label={tx('歌詞處理', '歌词处理', 'Lyrics handling')}>
                 <Choices
                   value={lyrics}
@@ -765,7 +763,6 @@ function BriefPageInner() {
 
           {/* SECTION 5: Deliverables */}
           <Section
-            num={isVocalContext ? '5' : '4'}
             title={tx('交付規格', '交付规格', 'Deliverables')}
             hint={tx(
               '剪輯師通常需要分軌 stems;電視廣告通常需要 15 秒、30 秒短版。',
@@ -795,7 +792,6 @@ function BriefPageInner() {
 
           {/* SECTION 6: Creative direction */}
           <Section
-            num={isVocalContext ? '6' : '5'}
             title={tx('創意方向', '创意方向', 'Creative direction')}
             hint={tx(
               '參考曲目連結、想要的氛圍、不要的元素 — 寫得越具體，報價越精準、製作越貼近。',
@@ -845,7 +841,7 @@ function BriefPageInner() {
           </Section>
 
           {/* SECTION 7: Contact */}
-          <Section num={isVocalContext ? '7' : '6'} title={tx('聯絡方式', '联络方式', 'Contact')}>
+          <Section title={tx('聯絡方式', '联络方式', 'Contact')}>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label={tx('姓名', '姓名', 'Name')} required>
                 <input
@@ -902,13 +898,11 @@ function BriefPageInner() {
 }
 
 function Section({
-  num,
   title,
   hint,
   required,
   children,
 }: {
-  num: string;
   title: string;
   hint?: string;
   required?: boolean;
@@ -916,17 +910,14 @@ function Section({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline gap-3">
-        <span className="text-xs font-mono text-amber-400 w-6">{num}.</span>
-        <div className="flex-1">
-          <h2 className="text-lg font-bold">
-            {title}
-            {required && <span className="text-amber-400 ml-1">*</span>}
-          </h2>
-          {hint && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{hint}</p>}
-        </div>
+      <div>
+        <h2 className="text-lg font-bold">
+          {title}
+          {required && <span className="text-amber-400 ml-1">*</span>}
+        </h2>
+        {hint && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{hint}</p>}
       </div>
-      <div className="pl-9 space-y-4">{children}</div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }
