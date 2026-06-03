@@ -319,7 +319,7 @@ export default function MusicCatalogPage() {
                           </button>
                         ) : <span />}
                         <Link
-                          href={`/contact?source=music-project&track=${row.slot_key}&trackTitle=${encodeURIComponent(title)}`}
+                          href={`/music/brief?track=${row.slot_key}&trackTitle=${encodeURIComponent(title)}`}
                           className="text-[10px] text-amber-400 hover:text-amber-300 transition uppercase tracking-wider font-semibold flex items-center gap-1"
                         >
                           {tx('用這首詢價', '用这首询价', 'Use this →')}
@@ -381,10 +381,10 @@ export default function MusicCatalogPage() {
             )}
           </p>
           <Link
-            href="/contact?source=music-project"
+            href="/music/brief"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500 text-black font-semibold hover:bg-amber-400 transition"
           >
-            {tx('送出專案需求', '送出项目需求', 'Send project brief')}
+            {tx('送出音樂 brief', '送出音乐 brief', 'Send music brief')}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
