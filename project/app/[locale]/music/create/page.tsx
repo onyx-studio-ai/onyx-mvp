@@ -370,9 +370,9 @@ function MusicCreatePageInner() {
             <FileText className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
               {tx(
-                '需要真人製作或 Live 弦樂?(Tier 2 / 3)',
-                '需要真人制作或 Live 弦乐?(Tier 2 / 3)',
-                'Need a human producer or live strings? (Tier 2 / 3)'
+                '需要真人製作或 Live 弦樂?',
+                '需要真人制作或 Live 弦乐?',
+                'Need a human producer or live strings?'
               )}
             </span>
           </div>
@@ -510,8 +510,8 @@ function MusicCreatePageInner() {
               {(['standard', 'buyout'] as LicenseKey[]).map((key) => {
                 const active = form.license === key;
                 const label = key === 'standard'
-                  ? tx('🌐 標準授權', '🌐 标准授权', '🌐 Standard')
-                  : tx('🏆 完整買斷', '🏆 完整买断', '🏆 Buyout');
+                  ? tx('標準授權', '标准授权', 'Standard')
+                  : tx('完整買斷', '完整买断', 'Buyout');
                 const desc = key === 'standard'
                   ? tx('1 年期，網路 / 社群 / 自家品牌使用',
                        '1 年期，网络 / 社群 / 自家品牌使用',

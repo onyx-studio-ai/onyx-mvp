@@ -417,7 +417,7 @@ export default function MusicCatalogPage() {
               {tx('報價製作', '报价制作', 'Get a quote')}
             </p>
             <h3 className="text-xl font-bold mb-2">
-              {tx('Tier 2 / 3 真人製作', 'Tier 2 / 3 真人制作', 'Tier 2 / 3 Human production')}
+              {tx('真人製作', '真人制作', 'Human production')}
               <span className="text-amber-400 ml-2">US$2,499+</span>
             </h3>
             <p className="text-sm text-gray-400 mb-5 leading-relaxed">
