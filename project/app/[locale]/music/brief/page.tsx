@@ -8,18 +8,25 @@
  * structured fields → POST /api/contact/send with formatted message
  * + department=PRODUCTION → 24h human-reviewed quote follows by email.
  *
- * This sits between catalog browsing and checkout. Direct checkout
- * doesn't work for bespoke music production because the price depends
- * on length/language/usage/deadline/lyrics-rewriting/revisions — see
- * MusicBed / Marmoset / Audio Network for the same inquiry-first
- * pattern at this price point ($229+ per project).
+ * Why a dedicated brief page (not generic /contact): bespoke music
+ * production at our $999+ tiers depends on dimensions a free-text
+ * "contact us" can't capture cleanly — production tier (AI vs human
+ * vs full buyout), live strings add-on, length, language, usage
+ * scope, deadline, lyric handling, references, deliverables. Capture
+ * them up-front so the producer can return a real number on the
+ * first reply instead of doing 4 rounds of follow-up. Same inquiry-
+ * first pattern as MusicBed / Marmoset / Audio Network at this
+ * price tier.
+ *
+ * The production tier and strings add-on options here mirror
+ * lib/config/pricing.config.ts (MUSIC_TIERS + MUSIC_STRING_ADDONS).
  */
 
 import { useState, useEffect, useRef, FormEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Play, Pause, Loader2, CheckCircle2, ArrowLeft, Music } from 'lucide-react';
+import { Play, Pause, Loader2, CheckCircle2, ArrowLeft, Music, Sparkles, Crown, Wand2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { audioManager } from '@/lib/audioManager';
@@ -27,12 +34,14 @@ import Footer from '@/components/landing/Footer';
 
 const STORAGE_BASE = 'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers';
 
+type Tier = 'ai-curator' | 'pro-arrangement' | 'masterpiece' | 'advise';
+type Strings = 'none' | 'intimate-12' | 'rich-16' | 'cinematic-24' | 'advise';
 type ProjectType = 'ad' | 'trailer' | 'podcast' | 'corporate' | 'game' | 'wellness' | 'wedding' | 'kids' | 'travel' | 'seasonal' | 'song' | 'other';
 type LengthBucket = '15s' | '30s' | '60s' | '90s' | '2min' | '3min' | 'longer' | 'custom';
 type Usage = 'web' | 'broadcast' | 'allMedia' | 'unsure';
 type Deadline = 'rush24h' | 'days3' | 'week1' | 'weeks2' | 'flexible';
 type Lyrics = 'reuseDemo' | 'iProvide' | 'youWrite' | 'na';
-type Budget = 'tier1' | 'tier2' | 'tier3' | 'discuss';
+type VocalGender = 'male' | 'female' | 'duet' | 'group' | 'noPref' | 'na';
 
 const LANGS = [
   { code: 'zh-TW', label: { tw: '繁體中文', cn: '繁体中文', en: 'Traditional Chinese' } },
@@ -44,6 +53,15 @@ const LANGS = [
   { code: 'fr',    label: { tw: '法文',     cn: '法文',     en: 'French' } },
   { code: 'de',    label: { tw: '德文',     cn: '德文',     en: 'German' } },
   { code: 'other', label: { tw: '其他',     cn: '其他',     en: 'Other' } },
+] as const;
+
+const DELIVERABLE_OPTIONS = [
+  { code: 'fullMix',     label: { tw: '完整混音版(主版)',       cn: '完整混音版(主版)',     en: 'Full mix (master)' } },
+  { code: 'instrumental',label: { tw: '純配樂版(去人聲)',        cn: '纯配乐版(去人声)',      en: 'Instrumental version (no vocals)' } },
+  { code: 'edit30',      label: { tw: '30 秒剪輯版',                cn: '30 秒剪辑版',              en: '30s edit' } },
+  { code: 'edit15',      label: { tw: '15 秒剪輯版',                cn: '15 秒剪辑版',              en: '15s edit' } },
+  { code: 'sting',       label: { tw: '5-10 秒 Sting / 片尾',       cn: '5-10 秒 Sting / 片尾',     en: '5-10s sting / tag' } },
+  { code: 'stems',       label: { tw: '分軌 Stems(剪輯師用)',     cn: '分轨 Stems(剪辑师用)',     en: 'Stems / split tracks (for editor)' } },
 ] as const;
 
 function BriefPageInner() {
@@ -59,7 +77,6 @@ function BriefPageInner() {
   const [trackAudioUrl, setTrackAudioUrl] = useState('');
   const [trackSubtitle, setTrackSubtitle] = useState('');
   const [playing, setPlaying] = useState(false);
-  // Same Bandcamp-style progress (0..1) as the catalog page.
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -67,6 +84,9 @@ function BriefPageInner() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [tier, setTier] = useState<Tier | ''>('');
+  const [strings, setStrings] = useState<Strings | ''>('');
   const [projectType, setProjectType] = useState<ProjectType | ''>('');
   const [lengthBucket, setLengthBucket] = useState<LengthBucket | ''>('');
   const [customLength, setCustomLength] = useState('');
@@ -74,15 +94,23 @@ function BriefPageInner() {
   const [usage, setUsage] = useState<Usage | ''>('');
   const [deadline, setDeadline] = useState<Deadline | ''>('');
   const [lyrics, setLyrics] = useState<Lyrics | ''>('');
-  const [budget, setBudget] = useState<Budget | ''>('');
+  const [vocalGender, setVocalGender] = useState<VocalGender | ''>('');
+  const [deliverables, setDeliverables] = useState<string[]>(['fullMix']);
+  const [referenceTracks, setReferenceTracks] = useState('');
+  const [avoidList, setAvoidList] = useState('');
   const [notes, setNotes] = useState('');
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [inquiryNumber, setInquiryNumber] = useState('');
 
-  // Pull the picked track's audio_url + subtitle from Supabase so we
-  // can let the user replay it on this page (validates the pick).
+  // Heuristic: vocal-track? (drives whether we ask about vocals/lyrics)
+  const isVocalContext = projectType === 'song'
+    || trackSlug.includes('-en')
+    || trackSlug.includes('-cn');
+
+  // Pull the picked track's audio_url + subtitle from Supabase so the
+  // user can replay it here (validates the pick).
   useEffect(() => {
     if (!trackSlug) return;
     supabase
@@ -130,11 +158,74 @@ function BriefPageInner() {
   const toggleLanguage = (code: string) => {
     setLanguages(prev => prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]);
   };
+  const toggleDeliverable = (code: string) => {
+    setDeliverables(prev => prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]);
+  };
 
-  // Render-friendly labels for the values the user picked. Same locale
-  // logic as the form options — keeps the email body readable for the
-  // producer who reviews it.
+  // Production-tier card data. Prices come from pricing.config.ts —
+  // duplicated here as constants since this is a form (the canonical
+  // source still owns the pricing page).
+  const TIER_CARDS: { id: Tier; nameTw: string; nameCn: string; nameEn: string; priceLabel: string; descTw: string; descCn: string; descEn: string; icon: typeof Wand2; gradient: string; popular?: boolean }[] = [
+    {
+      id: 'ai-curator', icon: Wand2,
+      nameTw: 'AI Curator', nameCn: 'AI Curator', nameEn: 'AI Curator',
+      priceLabel: 'US$999',
+      descTw: 'AI 生成 + 專業混音 + 2 輪修改 + 非獨家授權',
+      descCn: 'AI 生成 + 专业混音 + 2 轮修改 + 非独家授权',
+      descEn: 'AI composition + pro mix + 2 revisions + non-exclusive license',
+      gradient: 'from-slate-700 to-slate-800',
+    },
+    {
+      id: 'pro-arrangement', icon: Sparkles,
+      nameTw: 'Pro Arrangement', nameCn: 'Pro Arrangement', nameEn: 'Pro Arrangement',
+      priceLabel: 'US$2,499',
+      descTw: '真人編曲 + 真實 Live 吉他 + Master 版權 + 3 輪修改 + 商業授權',
+      descCn: '真人编曲 + 真实 Live 吉他 + Master 版权 + 3 轮修改 + 商业授权',
+      descEn: 'Human producer + live guitar + master rights + 3 revisions + commercial license',
+      gradient: 'from-blue-600 to-cyan-700', popular: true,
+    },
+    {
+      id: 'masterpiece', icon: Crown,
+      nameTw: 'Masterpiece', nameCn: 'Masterpiece', nameEn: 'Masterpiece',
+      priceLabel: 'US$4,999',
+      descTw: '完整版權買斷 + 專屬製作人 + Premium studio + 5 輪修改 + 可加 Live 弦樂',
+      descCn: '完整版权买断 + 专属制作人 + Premium studio + 5 轮修改 + 可加 Live 弦乐',
+      descEn: 'Full copyright buyout + dedicated producer + premium studio + 5 revisions + live orchestra option',
+      gradient: 'from-amber-600 to-orange-700',
+    },
+    {
+      id: 'advise', icon: Music,
+      nameTw: '請建議我', nameCn: '请建议我', nameEn: 'Recommend a tier for me',
+      priceLabel: '',
+      descTw: '不確定哪個適合,讓 Onyx 看完 brief 後建議',
+      descCn: '不确定哪个适合,让 Onyx 看完 brief 后建议',
+      descEn: 'Not sure — let Onyx review the brief and recommend',
+      gradient: 'from-zinc-700 to-zinc-800',
+    },
+  ];
+
+  const STRING_CARDS: { id: Strings; nameTw: string; nameCn: string; nameEn: string; priceLabel: string }[] = [
+    { id: 'none',         nameTw: '不加弦樂',          nameCn: '不加弦乐',          nameEn: 'No strings',                priceLabel: '' },
+    { id: 'intimate-12',  nameTw: '12 人 親密弦樂',    nameCn: '12 人 亲密弦乐',    nameEn: 'Intimate Ensemble (12)',    priceLabel: '+US$749' },
+    { id: 'rich-16',      nameTw: '16 人 標準弦樂',    nameCn: '16 人 标准弦乐',    nameEn: 'Rich Studio Strings (16)',  priceLabel: '+US$899' },
+    { id: 'cinematic-24', nameTw: '24 人 電影級',      nameCn: '24 人 电影级',      nameEn: 'Cinematic Symphony (24)',   priceLabel: '+US$1,299' },
+    { id: 'advise',       nameTw: '請建議我',           nameCn: '请建议我',           nameEn: 'Recommend for me',          priceLabel: '' },
+  ];
+
+  // Display labels for picked values (used in submission email body).
   const labelFor = {
+    tier: (k: Tier): string => {
+      const c = TIER_CARDS.find(x => x.id === k);
+      if (!c) return k;
+      const name = isZhCN ? c.nameCn : isZh ? c.nameTw : c.nameEn;
+      return c.priceLabel ? `${name} (${c.priceLabel})` : name;
+    },
+    strings: (k: Strings): string => {
+      const c = STRING_CARDS.find(x => x.id === k);
+      if (!c) return k;
+      const name = isZhCN ? c.nameCn : isZh ? c.nameTw : c.nameEn;
+      return c.priceLabel ? `${name} ${c.priceLabel}` : name;
+    },
     projectType: (k: ProjectType): string => ({
       ad:        tx('廣告 / 品牌', '广告 / 品牌',  'Ad / Brand'),
       trailer:   tx('電影預告',     '电影预告',    'Trailer'),
@@ -178,12 +269,19 @@ function BriefPageInner() {
       youWrite:  tx('幫我重寫(說明主題即可)',      '帮我重写(说明主题即可)',      'You write new lyrics (I describe the theme)'),
       na:        tx('不適用(純配樂)',              '不适用(纯配乐)',              'N/A (instrumental only)'),
     }[k]),
-    budget: (k: Budget): string => ({
-      tier1:   'US$229 - $500',
-      tier2:   'US$500 - $1,500',
-      tier3:   'US$1,500+',
-      discuss: tx('再討論', '再讨论', "Let's discuss"),
+    vocalGender: (k: VocalGender): string => ({
+      male:    tx('男聲',          '男声',          'Male'),
+      female:  tx('女聲',          '女声',          'Female'),
+      duet:    tx('男女對唱',      '男女对唱',      'Duet (male + female)'),
+      group:   tx('團體和聲',      '团体和声',      'Group / harmonies'),
+      noPref:  tx('無偏好',        '无偏好',        'No preference'),
+      na:      tx('純配樂,無人聲',  '纯配乐,无人声',  'N/A (instrumental)'),
     }[k]),
+    deliverable: (code: string): string => {
+      const it = DELIVERABLE_OPTIONS.find(x => x.code === code);
+      if (!it) return code;
+      return isZhCN ? it.label.cn : isZh ? it.label.tw : it.label.en;
+    },
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -197,11 +295,11 @@ function BriefPageInner() {
       toast.error(tx('Email 格式不對', 'Email 格式不对', 'Please enter a valid email'));
       return;
     }
-    if (!projectType || !lengthBucket || !usage || !deadline) {
+    if (!tier || !projectType || !lengthBucket || !usage || !deadline) {
       toast.error(tx(
-        '請填專案類型 / 長度 / 用途 / 交期',
-        '请填项目类型 / 长度 / 用途 / 交期',
-        'Please pick project type, length, usage, and deadline'
+        '請填製作等級 / 專案類型 / 長度 / 用途 / 交期',
+        '请填制作等级 / 项目类型 / 长度 / 用途 / 交期',
+        'Please pick tier, project type, length, usage, and deadline'
       ));
       return;
     }
@@ -210,33 +308,78 @@ function BriefPageInner() {
       return;
     }
 
-    // Build a readable message body for the producer's email. Each
-    // field gets a labelled line — keeps the inbox view skimmable.
+    // Producer email body. Sectioned + labelled so it reads like a
+    // proper brief instead of a wall of text.
     const lines: string[] = [];
     lines.push(tx('=== 音樂製作 Brief ===', '=== 音乐制作 Brief ===', '=== Music Production Brief ==='));
     lines.push('');
+
+    // Section 1: starting reference
+    lines.push(tx('▎ 起點曲目', '▎ 起点曲目', '▎ Starting reference'));
     if (trackSlug) {
-      const titleLabel = trackTitle || trackSlug;
-      lines.push(tx('挑選曲目: ', '挑选曲目: ', 'Selected track: ') + `${titleLabel} (${trackSlug})`);
+      lines.push(`  ${trackTitle || trackSlug} (${trackSlug})`);
+    } else {
+      lines.push(tx('  (未指定 — 純文字 brief)', '  (未指定 — 纯文字 brief)', '  (none — text-only brief)'));
     }
-    lines.push((tx('專案類型: ', '项目类型: ', 'Project type: ')) + labelFor.projectType(projectType));
-    lines.push((tx('需要長度: ', '需要长度: ', 'Length: ')) + labelFor.lengthBucket(lengthBucket));
+    lines.push('');
+
+    // Section 2: tier + add-ons
+    lines.push(tx('▎ 製作等級', '▎ 制作等级', '▎ Production tier'));
+    lines.push(`  ${labelFor.tier(tier)}`);
+    if (strings) lines.push(tx('  弦樂 add-on: ', '  弦乐 add-on: ', '  Strings add-on: ') + labelFor.strings(strings));
+    lines.push('');
+
+    // Section 3: project specs
+    lines.push(tx('▎ 專案規格', '▎ 项目规格', '▎ Project specs'));
+    if (projectName.trim()) lines.push(tx('  專案 / 品牌名: ', '  项目 / 品牌名: ', '  Project / brand name: ') + projectName.trim());
+    lines.push((tx('  類型: ', '  类型: ', '  Type: ')) + labelFor.projectType(projectType));
+    lines.push((tx('  長度: ', '  长度: ', '  Length: ')) + labelFor.lengthBucket(lengthBucket));
     if (languages.length) {
       const langNames = languages.map(c => {
         const item = LANGS.find(l => l.code === c);
         return item ? (isZhCN ? item.label.cn : isZh ? item.label.tw : item.label.en) : c;
       });
-      lines.push((tx('語言: ', '语言: ', 'Languages: ')) + langNames.join(', '));
+      lines.push((tx('  語言: ', '  语言: ', '  Languages: ')) + langNames.join(', '));
     }
-    lines.push((tx('用途: ', '用途: ', 'Usage: ')) + labelFor.usage(usage));
-    lines.push((tx('交期: ', '交期: ', 'Deadline: ')) + labelFor.deadline(deadline));
-    if (lyrics) lines.push((tx('歌詞處理: ', '歌词处理: ', 'Lyrics: ')) + labelFor.lyrics(lyrics));
-    if (budget) lines.push((tx('預算範圍: ', '预算范围: ', 'Budget: ')) + labelFor.budget(budget));
-    if (company.trim()) lines.push((tx('公司: ', '公司: ', 'Company: ')) + company.trim());
-    if (notes.trim()) {
+    lines.push((tx('  用途: ', '  用途: ', '  Usage: ')) + labelFor.usage(usage));
+    lines.push((tx('  交期: ', '  交期: ', '  Deadline: ')) + labelFor.deadline(deadline));
+    lines.push('');
+
+    // Section 4: vocals (only if relevant)
+    if (isVocalContext && (lyrics || vocalGender)) {
+      lines.push(tx('▎ 人聲', '▎ 人声', '▎ Vocals'));
+      if (lyrics) lines.push((tx('  歌詞: ', '  歌词: ', '  Lyrics: ')) + labelFor.lyrics(lyrics));
+      if (vocalGender) lines.push((tx('  人聲: ', '  人声: ', '  Vocal: ')) + labelFor.vocalGender(vocalGender));
       lines.push('');
-      lines.push(tx('--- 補充說明 ---', '--- 补充说明 ---', '--- Additional notes ---'));
-      lines.push(notes.trim());
+    }
+
+    // Section 5: deliverables
+    if (deliverables.length) {
+      lines.push(tx('▎ 交付規格', '▎ 交付规格', '▎ Deliverables'));
+      deliverables.forEach(d => lines.push(`  • ${labelFor.deliverable(d)}`));
+      lines.push('');
+    }
+
+    // Section 6: creative direction
+    if (referenceTracks.trim() || avoidList.trim()) {
+      lines.push(tx('▎ 創意方向', '▎ 创意方向', '▎ Creative direction'));
+      if (referenceTracks.trim()) {
+        lines.push(tx('  參考曲目:', '  参考曲目:', '  References:'));
+        referenceTracks.trim().split('\n').forEach(line => lines.push(`    ${line}`));
+      }
+      if (avoidList.trim()) {
+        lines.push(tx('  避免:', '  避免:', '  Avoid:'));
+        avoidList.trim().split('\n').forEach(line => lines.push(`    ${line}`));
+      }
+      lines.push('');
+    }
+
+    // Section 7: contact + notes
+    lines.push(tx('▎ 聯絡 + 補充', '▎ 联络 + 补充', '▎ Contact + notes'));
+    if (company.trim()) lines.push((tx('  公司: ', '  公司: ', '  Company: ')) + company.trim());
+    if (notes.trim()) {
+      lines.push(tx('  補充說明:', '  补充说明:', '  Notes:'));
+      notes.trim().split('\n').forEach(line => lines.push(`    ${line}`));
     }
 
     const messageBody = lines.join('\n');
@@ -332,9 +475,9 @@ function BriefPageInner() {
           </h1>
           <p className="text-gray-400">
             {tx(
-              '送出後 1 個工作日內回覆報價。涵蓋 2 輪修改、完整商業授權。',
-              '送出后 1 个工作日内回复报价。涵盖 2 轮修改、完整商业授权。',
-              'We respond with a quote within 1 business day. Includes 2 revision rounds + full commercial license.'
+              '送出後 1 個工作日內回覆報價 + 製作時程。完整商業授權,2-5 輪修改視等級。',
+              '送出后 1 个工作日内回复报价 + 制作时程。完整商业授权,2-5 轮修改视等级。',
+              "We respond with a quote + timeline within 1 business day. Full commercial license. 2-5 revision rounds depending on tier."
             )}
           </p>
         </div>
@@ -363,7 +506,6 @@ function BriefPageInner() {
               </p>
               <p className="text-base font-semibold truncate">{trackTitle || trackSlug}</p>
               {trackSubtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{trackSubtitle}</p>}
-              {/* Mini progress under title when playing */}
               {playing && (
                 <div className="mt-1.5 h-0.5 w-full bg-white/10 rounded-full overflow-hidden">
                   <div
@@ -392,15 +534,11 @@ function BriefPageInner() {
           <div className="max-w-3xl mx-auto p-4 rounded-2xl bg-white/5 border border-white/10 text-sm text-gray-400 flex items-center gap-3">
             <Music className="w-5 h-5 text-amber-400 shrink-0" />
             <span>
-              {tx(
-                '尚未挑選起點曲目?',
-                '尚未挑选起点曲目?',
-                'No starting-point track yet?'
-              )}{' '}
+              {tx('尚未挑選起點曲目?', '尚未挑选起点曲目?', 'No starting-point track yet?')}{' '}
               <Link href="/music/catalog" className="text-amber-400 underline hover:text-amber-300">
                 {tx('回音樂庫挑一首', '回音乐库挑一首', 'Pick one from the catalog')}
               </Link>
-              {' '}{tx('(可選,直接填表單也行)', '(可选,直接填表单也行)', '(optional — you can also fill the form without one)')}
+              {' '}{tx('(可選)', '(可选)', '(optional)')}
             </span>
           </div>
         </section>
@@ -408,162 +546,306 @@ function BriefPageInner() {
 
       {/* The form */}
       <section className="px-4 pb-24">
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-8">
-          {/* Project type */}
-          <Field label={tx('專案類型', '项目类型', 'Project type')} required>
-            <Choices
-              value={projectType}
-              onSelect={(v) => setProjectType(v as ProjectType)}
-              options={[
-                ['ad',        labelFor.projectType('ad')],
-                ['trailer',   labelFor.projectType('trailer')],
-                ['podcast',   labelFor.projectType('podcast')],
-                ['corporate', labelFor.projectType('corporate')],
-                ['game',      labelFor.projectType('game')],
-                ['wellness',  labelFor.projectType('wellness')],
-                ['wedding',   labelFor.projectType('wedding')],
-                ['kids',      labelFor.projectType('kids')],
-                ['travel',    labelFor.projectType('travel')],
-                ['seasonal',  labelFor.projectType('seasonal')],
-                ['song',      labelFor.projectType('song')],
-                ['other',     labelFor.projectType('other')],
-              ]}
-            />
-          </Field>
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-10">
 
-          {/* Length */}
-          <Field label={tx('需要長度', '需要长度', 'Length needed')} required>
-            <Choices
-              value={lengthBucket}
-              onSelect={(v) => setLengthBucket(v as LengthBucket)}
-              options={(['15s','30s','60s','90s','2min','3min','longer','custom'] as LengthBucket[]).map(k =>
-                [k, labelFor.lengthBucket(k)] as [string, string]
-              )}
-            />
-            {lengthBucket === 'custom' && (
-              <input
-                type="number"
-                value={customLength}
-                onChange={e => setCustomLength(e.target.value)}
-                placeholder={tx('長度(秒)', '长度(秒)', 'Length (seconds)')}
-                className="mt-3 w-full max-w-xs px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
-              />
+          {/* SECTION 1: Production tier (cards) */}
+          <Section
+            num="1"
+            title={tx('製作等級', '制作等级', 'Production tier')}
+            required
+            hint={tx(
+              'AI 純生成 / 真人製作 / 完整買斷 — 不確定可選「請建議我」,Onyx 看完 brief 後推薦。',
+              'AI 纯生成 / 真人制作 / 完整买断 — 不确定可选「请建议我」,Onyx 看完 brief 后推荐。',
+              "AI vs human producer vs full buyout. Not sure? Pick 'Recommend for me' and Onyx advises after reviewing the brief."
             )}
-          </Field>
-
-          {/* Languages */}
-          <Field label={tx('語言(可多選)', '语言(可多选)', 'Languages (multi-select)')}>
-            <div className="flex flex-wrap gap-2">
-              {LANGS.map(l => {
-                const active = languages.includes(l.code);
+          >
+            <div className="grid sm:grid-cols-2 gap-3">
+              {TIER_CARDS.map(card => {
+                const Icon = card.icon;
+                const active = tier === card.id;
                 return (
                   <button
-                    key={l.code}
+                    key={card.id}
                     type="button"
-                    onClick={() => toggleLanguage(l.code)}
-                    className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                    onClick={() => setTier(card.id)}
+                    className={`relative text-left p-4 rounded-xl border transition ${
                       active
-                        ? 'bg-amber-500 text-black border-amber-500'
-                        : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'
+                        ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30'
+                        : 'border-white/10 bg-white/5 hover:border-white/30'
                     }`}
                   >
-                    {isZhCN ? l.label.cn : isZh ? l.label.tw : l.label.en}
+                    {card.popular && (
+                      <span className="absolute -top-2 right-3 px-2 py-0.5 rounded-full bg-cyan-500 text-black text-[9px] font-bold uppercase tracking-wider">
+                        {tx('最熱門', '最热门', 'Most Popular')}
+                      </span>
+                    )}
+                    <div className="flex items-start gap-3">
+                      <div className={`shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br ${card.gradient} flex items-center justify-center`}>
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="font-semibold text-sm">
+                            {isZhCN ? card.nameCn : isZh ? card.nameTw : card.nameEn}
+                          </p>
+                          {card.priceLabel && (
+                            <span className="text-amber-400 text-sm font-bold whitespace-nowrap">{card.priceLabel}</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
+                          {isZhCN ? card.descCn : isZh ? card.descTw : card.descEn}
+                        </p>
+                      </div>
+                    </div>
                   </button>
                 );
               })}
             </div>
-          </Field>
+          </Section>
 
-          {/* Usage scope */}
-          <Field label={tx('用途 / 授權範圍', '用途 / 授权范围', 'Usage / license scope')} required>
-            <Choices
-              value={usage}
-              onSelect={(v) => setUsage(v as Usage)}
-              options={(['web','broadcast','allMedia','unsure'] as Usage[]).map(k => [k, labelFor.usage(k)] as [string, string])}
-            />
-          </Field>
+          {/* SECTION 2: Strings add-on */}
+          <Section
+            num="2"
+            title={tx('Live 弦樂 add-on', 'Live 弦乐 add-on', 'Live strings add-on')}
+            hint={tx(
+              '需要真實樂手錄製的弦樂?電影、廣告、品牌片常用。可疊加在任何等級上。',
+              '需要真实乐手录制的弦乐?电影、广告、品牌片常用。可叠加在任何等级上。',
+              'Need real string players recorded? Common for film, ads, premium brand work. Stacks on top of any tier.'
+            )}
+          >
+            <div className="flex flex-wrap gap-2">
+              {STRING_CARDS.map(s => {
+                const active = strings === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setStrings(s.id)}
+                    className={`px-3 py-2 rounded-lg text-sm border transition ${
+                      active
+                        ? 'bg-amber-500 text-black border-amber-500 font-semibold'
+                        : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <span>{isZhCN ? s.nameCn : isZh ? s.nameTw : s.nameEn}</span>
+                    {s.priceLabel && <span className="ml-2 text-[11px] opacity-80">{s.priceLabel}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
 
-          {/* Deadline */}
-          <Field label={tx('交期', '交期', 'Deadline')} required>
-            <Choices
-              value={deadline}
-              onSelect={(v) => setDeadline(v as Deadline)}
-              options={(['rush24h','days3','week1','weeks2','flexible'] as Deadline[]).map(k => [k, labelFor.deadline(k)] as [string, string])}
-            />
-          </Field>
-
-          {/* Lyrics (only show if a vocal track is picked OR project type = song) */}
-          {(projectType === 'song' || trackSlug.includes('-en') || trackSlug.includes('-cn')) && (
-            <Field label={tx('歌詞處理', '歌词处理', 'Lyrics handling')}>
-              <Choices
-                value={lyrics}
-                onSelect={(v) => setLyrics(v as Lyrics)}
-                options={(['reuseDemo','iProvide','youWrite','na'] as Lyrics[]).map(k => [k, labelFor.lyrics(k)] as [string, string])}
+          {/* SECTION 3: Project specs */}
+          <Section num="3" title={tx('專案規格', '项目规格', 'Project specs')} required>
+            <Field label={tx('專案 / 品牌名', '项目 / 品牌名', 'Project / brand name')}>
+              <input
+                type="text"
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                placeholder={tx('例:某品牌春季廣告、某遊戲主題曲(可選)',
+                                '例:某品牌春季广告、某游戏主题曲(可选)',
+                                'e.g., Acme Spring Ad, Project X Theme (optional)')}
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
               />
             </Field>
+            <Field label={tx('專案類型', '项目类型', 'Project type')} required>
+              <Choices
+                value={projectType}
+                onSelect={(v) => setProjectType(v as ProjectType)}
+                options={(['ad','trailer','podcast','corporate','game','wellness','wedding','kids','travel','seasonal','song','other'] as ProjectType[])
+                  .map(k => [k, labelFor.projectType(k)] as [string, string])}
+              />
+            </Field>
+            <Field label={tx('需要長度', '需要长度', 'Length needed')} required>
+              <Choices
+                value={lengthBucket}
+                onSelect={(v) => setLengthBucket(v as LengthBucket)}
+                options={(['15s','30s','60s','90s','2min','3min','longer','custom'] as LengthBucket[])
+                  .map(k => [k, labelFor.lengthBucket(k)] as [string, string])}
+              />
+              {lengthBucket === 'custom' && (
+                <input
+                  type="number"
+                  value={customLength}
+                  onChange={e => setCustomLength(e.target.value)}
+                  placeholder={tx('長度(秒)', '长度(秒)', 'Length (seconds)')}
+                  className="mt-3 w-full max-w-xs px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
+                />
+              )}
+            </Field>
+            <Field label={tx('語言(可多選)', '语言(可多选)', 'Languages (multi-select)')}>
+              <div className="flex flex-wrap gap-2">
+                {LANGS.map(l => {
+                  const active = languages.includes(l.code);
+                  return (
+                    <button
+                      key={l.code}
+                      type="button"
+                      onClick={() => toggleLanguage(l.code)}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                        active ? 'bg-amber-500 text-black border-amber-500'
+                               : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'
+                      }`}
+                    >
+                      {isZhCN ? l.label.cn : isZh ? l.label.tw : l.label.en}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+            <Field label={tx('用途 / 授權範圍', '用途 / 授权范围', 'Usage / license scope')} required>
+              <Choices
+                value={usage}
+                onSelect={(v) => setUsage(v as Usage)}
+                options={(['web','broadcast','allMedia','unsure'] as Usage[])
+                  .map(k => [k, labelFor.usage(k)] as [string, string])}
+              />
+            </Field>
+            <Field label={tx('交期', '交期', 'Deadline')} required>
+              <Choices
+                value={deadline}
+                onSelect={(v) => setDeadline(v as Deadline)}
+                options={(['rush24h','days3','week1','weeks2','flexible'] as Deadline[])
+                  .map(k => [k, labelFor.deadline(k)] as [string, string])}
+              />
+            </Field>
+          </Section>
+
+          {/* SECTION 4: Vocals (only if song / vocal context) */}
+          {isVocalContext && (
+            <Section num="4" title={tx('人聲', '人声', 'Vocals')}>
+              <Field label={tx('歌詞處理', '歌词处理', 'Lyrics handling')}>
+                <Choices
+                  value={lyrics}
+                  onSelect={(v) => setLyrics(v as Lyrics)}
+                  options={(['reuseDemo','iProvide','youWrite','na'] as Lyrics[])
+                    .map(k => [k, labelFor.lyrics(k)] as [string, string])}
+                />
+              </Field>
+              <Field label={tx('人聲性別 / 編制', '人声性别 / 编制', 'Vocal gender / lineup')}>
+                <Choices
+                  value={vocalGender}
+                  onSelect={(v) => setVocalGender(v as VocalGender)}
+                  options={(['male','female','duet','group','noPref','na'] as VocalGender[])
+                    .map(k => [k, labelFor.vocalGender(k)] as [string, string])}
+                />
+              </Field>
+            </Section>
           )}
 
-          {/* Budget */}
-          <Field label={tx('預算範圍', '预算范围', 'Budget range')}>
-            <Choices
-              value={budget}
-              onSelect={(v) => setBudget(v as Budget)}
-              options={(['tier1','tier2','tier3','discuss'] as Budget[]).map(k => [k, labelFor.budget(k)] as [string, string])}
-            />
-            <p className="text-xs text-gray-500 mt-2">
-              {tx(
-                '※ 報價依長度 / 語言 / 用途調整,$229 為單曲基礎起價。',
-                '※ 报价依长度 / 语言 / 用途调整,$229 为单曲基础起价。',
-                '※ Final quote depends on length / language / usage. $229 is the base per-track starting price.'
-              )}
-            </p>
-          </Field>
+          {/* SECTION 5: Deliverables */}
+          <Section
+            num={isVocalContext ? '5' : '4'}
+            title={tx('交付規格', '交付规格', 'Deliverables')}
+            hint={tx(
+              '剪輯師通常會需要分軌 stems。電視廣告版本還會需要 15s / 30s 短版。',
+              '剪辑师通常会需要分轨 stems。电视广告版本还会需要 15s / 30s 短版。',
+              "Editors often want separate stems. TV cuts usually need 15s/30s versions in addition to the master."
+            )}
+          >
+            <div className="flex flex-wrap gap-2">
+              {DELIVERABLE_OPTIONS.map(d => {
+                const active = deliverables.includes(d.code);
+                return (
+                  <button
+                    key={d.code}
+                    type="button"
+                    onClick={() => toggleDeliverable(d.code)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                      active ? 'bg-amber-500 text-black border-amber-500'
+                             : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    {isZhCN ? d.label.cn : isZh ? d.label.tw : d.label.en}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
 
-          {/* Notes */}
-          <Field label={tx('補充說明', '补充说明', 'Additional notes')}>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              rows={5}
-              placeholder={tx(
-                '參考曲目、品牌調性、希望的人聲性別、避免的元素…(可選)',
-                '参考曲目、品牌调性、希望的人声性别、避免的元素…(可选)',
-                'Reference tracks, brand tone, preferred vocal gender, things to avoid… (optional)'
-              )}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 resize-y"
-            />
-          </Field>
+          {/* SECTION 6: Creative direction */}
+          <Section
+            num={isVocalContext ? '6' : '5'}
+            title={tx('創意方向', '创意方向', 'Creative direction')}
+            hint={tx(
+              '丟參考曲目連結 / 描述想要的氛圍 / 列出不要的元素 — 越具體報價越精準。',
+              '丢参考曲目链接 / 描述想要的氛围 / 列出不要的元素 — 越具体报价越精准。',
+              'Drop reference track URLs / describe the vibe / list what to avoid. The more specific, the tighter the quote.'
+            )}
+          >
+            <Field label={tx('參考曲目(YouTube/Spotify/Apple Music 連結 或 文字描述)',
+                              '参考曲目(YouTube/Spotify/Apple Music 链接 或 文字描述)',
+                              'Reference tracks (YouTube / Spotify / Apple Music URLs or text descriptions)')}>
+              <textarea
+                value={referenceTracks}
+                onChange={e => setReferenceTracks(e.target.value)}
+                rows={3}
+                placeholder={tx(
+                  '一行一條,例:\nhttps://open.spotify.com/track/...\n類似 Coldplay - Yellow 那種溫暖感',
+                  '一行一条,例:\nhttps://open.spotify.com/track/...\n类似 Coldplay - Yellow 那种温暖感',
+                  'One per line, e.g.:\nhttps://open.spotify.com/track/...\nWarm vibe like Coldplay - Yellow'
+                )}
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 resize-y font-mono"
+              />
+            </Field>
+            <Field label={tx('避免的元素 / 風格', '避免的元素 / 风格', 'Avoid (elements / vibes you DON\'T want)')}>
+              <textarea
+                value={avoidList}
+                onChange={e => setAvoidList(e.target.value)}
+                rows={2}
+                placeholder={tx(
+                  '例:不要鋼琴 / 不要哀傷 / 不要嘻哈節拍 / 不要太電子',
+                  '例:不要钢琴 / 不要哀伤 / 不要嘻哈节拍 / 不要太电子',
+                  'e.g., No piano / nothing too sad / no hip-hop beats / not too electronic'
+                )}
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 resize-y"
+              />
+            </Field>
+            <Field label={tx('其他補充', '其他补充', 'Other notes')}>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={3}
+                placeholder={tx('品牌調性、播放情境、特殊需求…',
+                                '品牌调性、播放情境、特殊需求…',
+                                'Brand tone, playback context, special requirements…')}
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 resize-y"
+              />
+            </Field>
+          </Section>
 
-          {/* Contact */}
-          <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-white/10">
-            <Field label={tx('姓名', '姓名', 'Name')} required>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder={tx('你的名字', '你的名字', 'Your name')}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
-              />
-            </Field>
-            <Field label="Email" required>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
-              />
-            </Field>
-            <Field label={tx('公司 / 品牌', '公司 / 品牌', 'Company / brand')}>
-              <input
-                type="text"
-                value={company}
-                onChange={e => setCompany(e.target.value)}
-                placeholder={tx('可選', '可选', 'Optional')}
-                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
-              />
-            </Field>
-          </div>
+          {/* SECTION 7: Contact */}
+          <Section num={isVocalContext ? '7' : '6'} title={tx('聯絡方式', '联络方式', 'Contact')}>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label={tx('姓名', '姓名', 'Name')} required>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder={tx('你的名字', '你的名字', 'Your name')}
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
+                />
+              </Field>
+              <Field label="Email" required>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
+                />
+              </Field>
+              <Field label={tx('公司 / 品牌', '公司 / 品牌', 'Company / brand')}>
+                <input
+                  type="text"
+                  value={company}
+                  onChange={e => setCompany(e.target.value)}
+                  placeholder={tx('可選', '可选', 'Optional')}
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60"
+                />
+              </Field>
+            </div>
+          </Section>
 
           <button
             type="submit"
@@ -589,7 +871,36 @@ function BriefPageInner() {
   );
 }
 
-// Field: label wrapper used by every form section.
+function Section({
+  num,
+  title,
+  hint,
+  required,
+  children,
+}: {
+  num: string;
+  title: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline gap-3">
+        <span className="text-xs font-mono text-amber-400 w-6">{num}.</span>
+        <div className="flex-1">
+          <h2 className="text-lg font-bold">
+            {title}
+            {required && <span className="text-amber-400 ml-1">*</span>}
+          </h2>
+          {hint && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{hint}</p>}
+        </div>
+      </div>
+      <div className="pl-9 space-y-4">{children}</div>
+    </div>
+  );
+}
+
 function Field({
   label,
   required,
@@ -601,7 +912,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-semibold mb-3">
+      <label className="block text-sm font-semibold mb-2">
         {label}
         {required && <span className="text-amber-400 ml-1">*</span>}
       </label>
@@ -610,7 +921,6 @@ function Field({
   );
 }
 
-// Choices: pill-style radio group. Single-select.
 function Choices({
   value,
   options,
@@ -630,9 +940,8 @@ function Choices({
             type="button"
             onClick={() => onSelect(k)}
             className={`px-3 py-1.5 rounded-full text-sm border transition ${
-              active
-                ? 'bg-amber-500 text-black border-amber-500'
-                : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'
+              active ? 'bg-amber-500 text-black border-amber-500'
+                     : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'
             }`}
           >
             {label}
@@ -644,7 +953,6 @@ function Choices({
 }
 
 export default function MusicBriefPage() {
-  // useSearchParams requires Suspense boundary in App Router.
   return (
     <Suspense fallback={<div className="min-h-screen bg-black" />}>
       <BriefPageInner />
