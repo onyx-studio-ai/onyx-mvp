@@ -73,6 +73,9 @@ function BriefPageInner() {
   const searchParams = useSearchParams();
   const trackSlug = searchParams.get('track') || '';
   const trackTitle = searchParams.get('trackTitle') || '';
+  // Tier may be passed in by the pricing page (?tier=pro-arrangement etc.)
+  // so the relevant card is pre-selected. Valid values match TIER_CARDS ids.
+  const tierParam = searchParams.get('tier') || '';
 
   const [trackAudioUrl, setTrackAudioUrl] = useState('');
   const [trackSubtitle, setTrackSubtitle] = useState('');
@@ -85,7 +88,11 @@ function BriefPageInner() {
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
   const [projectName, setProjectName] = useState('');
-  const [tier, setTier] = useState<Tier | ''>('');
+  // Pre-select tier from URL param if valid. Whitelist before assigning
+  // so a junk ?tier= can't break type assumptions.
+  const validTier = (['ai-curator','pro-arrangement','masterpiece','advise'] as const)
+    .includes(tierParam as Tier) ? (tierParam as Tier) : '';
+  const [tier, setTier] = useState<Tier | ''>(validTier);
   const [strings, setStrings] = useState<Strings | ''>('');
   const [projectType, setProjectType] = useState<ProjectType | ''>('');
   const [lengthBucket, setLengthBucket] = useState<LengthBucket | ''>('');
@@ -482,6 +489,29 @@ function BriefPageInner() {
           </p>
         </div>
       </section>
+
+      {/* Offer Tier 1 fast-track if user picked AI Curator. AI Curator is
+          standardized enough that a brief + 24h wait is overkill — direct
+          checkout is the better path for this segment. */}
+      {tier === 'ai-curator' && (
+        <section className="px-4 mb-6">
+          <div className="max-w-3xl mx-auto p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/30 flex items-center justify-between gap-3 text-sm">
+            <span className="text-gray-300">
+              {tx(
+                '💡 Tier 1 AI Curator 也可以跳過 brief 直接結帳,24-48 hr 交件。',
+                '💡 Tier 1 AI Curator 也可以跳过 brief 直接结账,24-48 hr 交件。',
+                '💡 Tier 1 AI Curator can skip the brief and check out directly — 24-48h delivery.'
+              )}
+            </span>
+            <Link
+              href={`/music/create?tier=ai-curator${trackSlug ? `&track=${trackSlug}&trackTitle=${encodeURIComponent(trackTitle)}` : ''}`}
+              className="shrink-0 px-3 py-1.5 rounded-full bg-cyan-500 text-black text-xs font-semibold hover:bg-cyan-400 transition"
+            >
+              {tx('快速下單 →', '快速下单 →', 'Quick checkout →')}
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Selected track preview */}
       {trackSlug && (

@@ -338,7 +338,19 @@ export default function MusicPricingPage() {
 
                     <p className="text-gray-400 mb-8 leading-relaxed">{tier.description}</p>
 
-                    <Link href={`/music/create?tier=${tier.id}`}>
+                    {/* Hybrid CTA routing:
+                        - Tier 1 (ai-curator) is standardized enough for direct
+                          checkout → /music/create configurator → Paddle.
+                        - Tier 2/3 (pro-arrangement, masterpiece) are bespoke
+                          enough that a human-reviewed quote is much safer than
+                          a YOLO checkout — route through /music/brief instead.
+                        See feedback in commit 77482e1 (and the ElevenLabs /
+                        MusicBed / Marmoset hybrid pattern). */}
+                    <Link href={
+                      tier.id === 'ai-curator'
+                        ? `/music/create?tier=${tier.id}`
+                        : `/music/brief?tier=${tier.id}`
+                    }>
                       <Button
                         className={`w-full h-14 text-base font-semibold mb-8 transition-all duration-300 ${
                           tier.popular
@@ -346,7 +358,7 @@ export default function MusicPricingPage() {
                             : 'bg-white/10 hover:bg-white/20 border border-white/20'
                         }`}
                       >
-                        {t('startProject')}
+                        {tier.id === 'ai-curator' ? t('startProject') : t('getQuote')}
                         <ArrowRight className="ml-2 w-5 h-5" />
                       </Button>
                     </Link>

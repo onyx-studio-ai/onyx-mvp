@@ -304,10 +304,18 @@ export default function MusicCatalogPage() {
                         </div>
                       </div>
 
-                      {/* Footer row: lyrics toggle (vocal only) + per-track
-                          inquiry button. Clicking the inquiry link jumps to
-                          the existing /contact form with this track's title
-                          + slot_key pre-filled into the message. */}
+                      {/* Footer row: lyrics toggle (vocal only) on the left,
+                          dual CTAs on the right.
+
+                          Two paths for this track:
+                          1. Quick checkout (Tier 1 AI Curator $999) — for
+                             standardized scope. Goes to /music/create
+                             configurator + Paddle.
+                          2. Send brief — for Tier 2/3 custom work where a
+                             human-reviewed quote is needed first. Goes to
+                             /music/brief.
+
+                          See pricing-page hybrid routing for the rationale. */}
                       <div className="px-3 pb-3 -mt-1 flex items-center justify-between gap-2">
                         {hasLyrics ? (
                           <button
@@ -318,12 +326,20 @@ export default function MusicCatalogPage() {
                             {tx('看歌詞', '看歌词', 'Lyrics')}
                           </button>
                         ) : <span />}
-                        <Link
-                          href={`/music/brief?track=${row.slot_key}&trackTitle=${encodeURIComponent(title)}`}
-                          className="text-[10px] text-amber-400 hover:text-amber-300 transition uppercase tracking-wider font-semibold flex items-center gap-1"
-                        >
-                          {tx('用這首詢價', '用这首询价', 'Use this →')}
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={`/music/create?track=${row.slot_key}&trackTitle=${encodeURIComponent(title)}&tier=ai-curator`}
+                            className="text-[10px] text-gray-400 hover:text-white transition uppercase tracking-wider font-semibold flex items-center gap-1"
+                          >
+                            {tx('Tier 1 快速下單', 'Tier 1 快速下单', 'Quick checkout')}
+                          </Link>
+                          <Link
+                            href={`/music/brief?track=${row.slot_key}&trackTitle=${encodeURIComponent(title)}`}
+                            className="text-[10px] text-amber-400 hover:text-amber-300 transition uppercase tracking-wider font-semibold flex items-center gap-1"
+                          >
+                            {tx('送 brief →', '送 brief →', 'Send brief →')}
+                          </Link>
+                        </div>
                       </div>
                       {hasLyrics && lyricsOpen && (
                         <div className="px-3 pb-3">
@@ -369,24 +385,56 @@ export default function MusicCatalogPage() {
       </section>
 
       <section className="px-4 pb-24">
-        <div className="max-w-3xl mx-auto p-8 rounded-2xl bg-gradient-to-br from-amber-500/10 to-pink-500/10 border border-amber-500/20 text-center">
-          <h3 className="text-2xl font-bold mb-2">
-            {tx('聽到喜歡的方向了嗎?', '听到喜欢的方向了吗?', 'Heard a direction you like?')}
-          </h3>
-          <p className="text-gray-400 mb-6">
-            {tx(
-              '送出專案需求,我們會以你挑的曲目為起點客製化最終版本(2 輪修改內)。',
-              '送出项目需求,我们会以你挑的曲目为起点定制最终版本(2 轮修改内)。',
-              'Send your project brief — we customize the final track using your pick as a starting point (2 revision rounds).'
-            )}
-          </p>
-          <Link
-            href="/music/brief"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500 text-black font-semibold hover:bg-amber-400 transition"
-          >
-            {tx('送出音樂 brief', '送出音乐 brief', 'Send music brief')}
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+        <div className="max-w-4xl mx-auto grid sm:grid-cols-2 gap-4">
+          {/* Path A: direct checkout (Tier 1) */}
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold mb-2">
+              {tx('快速下單', '快速下单', 'Quick path')}
+            </p>
+            <h3 className="text-xl font-bold mb-2">
+              {tx('Tier 1 AI Curator', 'Tier 1 AI Curator', 'Tier 1 AI Curator')}
+              <span className="text-cyan-400 ml-2">US$999</span>
+            </h3>
+            <p className="text-sm text-gray-400 mb-5 leading-relaxed">
+              {tx(
+                'AI 生成 + 專業混音,30 秒填規格,直接結帳。24-48 hr 交件。',
+                'AI 生成 + 专业混音,30 秒填规格,直接结帐。24-48 hr 交件。',
+                'AI composition + pro mix. 30s to fill specs, checkout immediately. 24-48h delivery.'
+              )}
+            </p>
+            <Link
+              href="/music/create?tier=ai-curator"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-cyan-500 text-black font-semibold text-sm hover:bg-cyan-400 transition"
+            >
+              {tx('快速下單', '快速下单', 'Quick checkout')}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Path B: brief (Tier 2/3 + bespoke) */}
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 to-pink-500/5 border border-amber-500/20 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-amber-400 font-bold mb-2">
+              {tx('客製化', '客制化', 'Custom path')}
+            </p>
+            <h3 className="text-xl font-bold mb-2">
+              {tx('Tier 2 / 3 真人製作', 'Tier 2 / 3 真人制作', 'Tier 2 / 3 Human production')}
+              <span className="text-amber-400 ml-2">$2.5k+</span>
+            </h3>
+            <p className="text-sm text-gray-400 mb-5 leading-relaxed">
+              {tx(
+                '真人編曲、Live 弦樂、版權買斷 — 送 brief 後 24 hr 內報價。',
+                '真人编曲、Live 弦乐、版权买断 — 送 brief 后 24 hr 内报价。',
+                'Human producer, live strings, copyright buyout — send a brief, quote in 24h.'
+              )}
+            </p>
+            <Link
+              href="/music/brief"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 text-black font-semibold text-sm hover:bg-amber-400 transition"
+            >
+              {tx('送 brief 報價', '送 brief 报价', 'Send brief')}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </section>
 

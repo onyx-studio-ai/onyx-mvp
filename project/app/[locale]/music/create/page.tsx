@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from '@/i18n/navigation';
+import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useRouter, Link } from '@/i18n/navigation';
+import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Music, Loader2, CreditCard, Sparkles, Waves, Zap, Briefcase, Gamepad2, Edit3 } from 'lucide-react';
+import { ArrowLeft, Music, Loader2, CreditCard, Sparkles, Waves, Zap, Briefcase, Gamepad2, Edit3, Play, Pause, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { audioManager } from '@/lib/audioManager';
 import Footer from '@/components/landing/Footer';
 import type { LucideIcon } from 'lucide-react';
+
+const STORAGE_BASE = 'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers';
 
 type VibeKey = 'cinematic' | 'chill' | 'epic' | 'corporate' | 'game' | 'custom';
 type LengthKey = '15' | '30' | '60' | '120';
@@ -79,12 +84,30 @@ const INITIAL_FORM: FormState = {
   email: '',
 };
 
-export default function MusicCreatePage() {
+function MusicCreatePageInner() {
   const router = useRouter();
+  const locale = useLocale();
+  const isZh = locale.startsWith('zh');
+  const isZhCN = locale === 'zh-CN';
+  const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
+
+  // Pick up ?track= and ?trackTitle= from the catalog so we can show the
+  // user the reference track they chose. The slot_key drives both the
+  // audio playback (looked up against audio_showcases) and the cover
+  // image URL (predictable path under music-samples/covers/).
+  const searchParams = useSearchParams();
+  const trackSlug = searchParams.get('track') || '';
+  const trackTitle = searchParams.get('trackTitle') || '';
+
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [emailPrefilled, setEmailPrefilled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Preview state for the picked reference track.
+  const [trackAudioUrl, setTrackAudioUrl] = useState('');
+  const [trackPlaying, setTrackPlaying] = useState(false);
+  const [trackAudio, setTrackAudio] = useState<HTMLAudioElement | null>(null);
 
   // Prefill email from auth session if logged in
   useEffect(() => {
@@ -95,6 +118,54 @@ export default function MusicCreatePage() {
       }
     });
   }, []);
+
+  // Load the picked track's audio_url so the user can preview the reference
+  // they brought from the catalog. Also seed the form's reference_link
+  // field with the slot_key so the producer can identify it later.
+  useEffect(() => {
+    if (!trackSlug) return;
+    supabase
+      .from('audio_showcases')
+      .select('audio_url')
+      .eq('section', 'music_library')
+      .eq('slot_key', trackSlug)
+      .single()
+      .then(({ data }) => {
+        if (data?.audio_url) setTrackAudioUrl(data.audio_url);
+      });
+    // Seed reference_link with a human-readable handle so the producer
+    // sees "catalog:Spark Up (brand-sting-1)" in the order. Don't
+    // overwrite if the user has already typed something.
+    setForm(f => f.referenceLink
+      ? f
+      : { ...f, referenceLink: `catalog:${trackTitle || trackSlug} (${trackSlug})` }
+    );
+    return () => {
+      if (trackAudio) {
+        trackAudio.pause();
+        audioManager.stop(trackAudio);
+      }
+    };
+  }, [trackSlug, trackTitle]);
+
+  const toggleTrackPlay = () => {
+    if (!trackAudioUrl) return;
+    if (trackPlaying) {
+      trackAudio?.pause();
+      if (trackAudio) audioManager.stop(trackAudio);
+      setTrackPlaying(false);
+      return;
+    }
+    let a = trackAudio;
+    if (!a) {
+      a = new Audio(trackAudioUrl);
+      a.onended = () => setTrackPlaying(false);
+      setTrackAudio(a);
+    }
+    audioManager.play(a, () => setTrackPlaying(false));
+    a.play();
+    setTrackPlaying(true);
+  };
 
   const isPersonal = form.usage === 'personal';
   const effectiveLicense: LicenseKey = isPersonal ? 'standard' : form.license;
@@ -215,6 +286,68 @@ export default function MusicCreatePage() {
             AI-generated, finessed by Onyx producers. 24–48 hour delivery.
           </p>
         </motion.div>
+
+        {/* Reference track the user picked from the catalog. Shown as a
+            preview card with audio playback so they can re-validate the
+            choice while filling out the configurator. The slot_key is
+            already seeded into form.referenceLink so the producer gets
+            it on the order. */}
+        {trackSlug && (
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-pink-500/10 border border-amber-500/30 flex items-center gap-3">
+            <div className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-zinc-800">
+              <img
+                src={`${STORAGE_BASE}/${trackSlug}.jpg`}
+                alt={trackTitle || trackSlug}
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              {trackPlaying && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-amber-400 uppercase tracking-widest font-semibold">
+                {tx('起點曲目參考', '起点曲目参考', 'Starting reference')}
+              </p>
+              <p className="text-sm font-semibold truncate">{trackTitle || trackSlug}</p>
+              <p className="text-[11px] text-gray-500 truncate">{trackSlug}</p>
+            </div>
+            {trackAudioUrl && (
+              <button
+                type="button"
+                onClick={toggleTrackPlay}
+                className="shrink-0 w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition shadow-md"
+                aria-label={trackPlaying ? 'Pause' : 'Play'}
+              >
+                {trackPlaying ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Pointer to the brief flow for users who realize Tier 1 isn't
+            enough. Better to offer the off-ramp here than have them check
+            out at the wrong tier and request a refund later. */}
+        <div className="mb-8 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2 text-gray-300">
+            <FileText className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              {tx(
+                '需要真人製作 (Tier 2) 或弦樂錄製 (Tier 3)?',
+                '需要真人制作 (Tier 2) 或弦乐录制 (Tier 3)?',
+                'Need human production (Tier 2) or live strings (Tier 3)?'
+              )}
+            </span>
+          </div>
+          <Link
+            href={`/music/brief${trackSlug ? `?track=${trackSlug}&trackTitle=${encodeURIComponent(trackTitle)}` : ''}`}
+            className="shrink-0 px-3 py-1.5 rounded-full bg-amber-500 text-black text-xs font-semibold hover:bg-amber-400 transition"
+          >
+            {tx('送 brief 詢價 →', '送 brief 询价 →', 'Send brief →')}
+          </Link>
+        </div>
 
         {/* Email */}
         <Section title="Your email" required>
@@ -438,5 +571,16 @@ function Section({
       </label>
       {children}
     </motion.div>
+  );
+}
+
+// useSearchParams() needs a Suspense boundary in App Router builds, even
+// inside a 'use client' tree. Splitting the page into an inner component
+// + a wrapping default export keeps the static-prerender path happy.
+export default function MusicCreatePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
+      <MusicCreatePageInner />
+    </Suspense>
   );
 }
