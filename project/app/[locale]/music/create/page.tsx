@@ -296,7 +296,7 @@ function MusicCreatePageInner() {
             {tx('新 AI 音樂專案', '新 AI 音乐项目', 'New AI Music Project')}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-white via-emerald-100 to-white bg-clip-text text-transparent">
-            {tx('告訴我們你的 vibe。', '告诉我们你的 vibe。', 'Tell us your vibe.')}
+            {tx('告訴我們你想要的風格。', '告诉我们你想要的风格。', 'Tell us your vibe.')}
           </h1>
           <p className="text-gray-400 text-lg">
             {tx(
