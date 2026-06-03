@@ -345,7 +345,7 @@ function MusicCreatePageInner() {
             href={`/music/brief${trackSlug ? `?track=${trackSlug}&trackTitle=${encodeURIComponent(trackTitle)}` : ''}`}
             className="shrink-0 px-3 py-1.5 rounded-full bg-amber-500 text-black text-xs font-semibold hover:bg-amber-400 transition"
           >
-            {tx('送 brief 詢價 →', '送 brief 询价 →', 'Send brief →')}
+            {tx('送出詢價 →', '送出询价 →', 'Send brief →')}
           </Link>
         </div>
 

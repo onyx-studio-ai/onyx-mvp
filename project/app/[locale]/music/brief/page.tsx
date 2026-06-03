@@ -318,7 +318,7 @@ function BriefPageInner() {
     // Producer email body. Sectioned + labelled so it reads like a
     // proper brief instead of a wall of text.
     const lines: string[] = [];
-    lines.push(tx('=== 音樂製作 Brief ===', '=== 音乐制作 Brief ===', '=== Music Production Brief ==='));
+    lines.push(tx('=== 音樂製作需求 ===', '=== 音乐制作需求 ===', '=== Music Production Brief ==='));
     lines.push('');
 
     // Section 1: starting reference
@@ -326,7 +326,7 @@ function BriefPageInner() {
     if (trackSlug) {
       lines.push(`  ${trackTitle || trackSlug} (${trackSlug})`);
     } else {
-      lines.push(tx('  (未指定 — 純文字 brief)', '  (未指定 — 纯文字 brief)', '  (none — text-only brief)'));
+      lines.push(tx('  (未指定 — 純文字需求)', '  (未指定 — 纯文字需求)', '  (none — text-only brief)'));
     }
     lines.push('');
 
@@ -428,7 +428,7 @@ function BriefPageInner() {
           <div className="max-w-xl mx-auto text-center">
             <CheckCircle2 className="w-16 h-16 mx-auto text-emerald-400 mb-6" />
             <h1 className="text-3xl md:text-4xl font-bold mb-3">
-              {tx('收到 brief 了', '收到 brief 了', "Brief received")}
+              {tx('需求已收到', '需求已收到', "Brief received")}
             </h1>
             <p className="text-gray-400 mb-6">
               {tx(
@@ -478,7 +478,7 @@ function BriefPageInner() {
             {tx('回音樂庫', '回音乐库', 'Back to catalog')}
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            {tx('音樂製作 Brief', '音乐制作 Brief', 'Music Production Brief')}
+            {tx('音樂製作需求', '音乐制作需求', 'Music Production Brief')}
           </h1>
           <p className="text-gray-400">
             {tx(
@@ -498,9 +498,9 @@ function BriefPageInner() {
           <div className="max-w-3xl mx-auto p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/30 flex items-center justify-between gap-3 text-sm">
             <span className="text-gray-300">
               {tx(
-                '💡 Tier 1 AI Curator 可以跳過 brief 直接結帳，24-48 小時交件。',
-                '💡 Tier 1 AI Curator 可以跳过 brief 直接结账，24-48 小时交件。',
-                '💡 Tier 1 AI Curator can skip the brief and check out directly — 24-48 hour delivery.'
+                '💡 Tier 1 AI Curator 可以跳過這一步直接結帳，24-48 小時交件。',
+                '💡 Tier 1 AI Curator 可以跳过这一步直接结账，24-48 小时交件。',
+                '💡 Tier 1 AI Curator can skip this and check out directly — 24-48 hour delivery.'
               )}
             </span>
             <Link
@@ -584,8 +584,8 @@ function BriefPageInner() {
             title={tx('製作等級', '制作等级', 'Production tier')}
             required
             hint={tx(
-              'AI 生成、真人製作、或完整版權買斷。不確定的話選「請建議我」，Onyx 看完 brief 後幫你判斷。',
-              'AI 生成、真人制作、或完整版权买断。不确定的话选「请建议我」，Onyx 看完 brief 后帮你判断。',
+              'AI 生成、真人製作、或完整版權買斷。不確定的話選「請建議我」，Onyx 看完需求後幫你判斷。',
+              'AI 生成、真人制作、或完整版权买断。不确定的话选「请建议我」，Onyx 看完需求后帮你判断。',
               "AI generation, human producer, or full copyright buyout. Not sure? Pick 'Recommend for me' and Onyx will advise after reviewing your brief."
             )}
           >
@@ -884,7 +884,7 @@ function BriefPageInner() {
           >
             {sending
               ? <><Loader2 className="w-4 h-4 animate-spin" /> {tx('送出中…', '送出中…', 'Sending…')}</>
-              : tx('送出 brief — 24 小時內回覆報價', '送出 brief — 24 小时内回复报价', 'Send brief — quote within 24 hours')
+              : tx('送出需求 — 24 小時內回覆報價', '送出需求 — 24 小时内回复报价', 'Send brief — quote within 24 hours')
             }
           </button>
           <p className="text-center text-xs text-gray-500">

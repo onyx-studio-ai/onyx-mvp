@@ -337,7 +337,7 @@ export default function MusicCatalogPage() {
                             href={`/music/brief?track=${row.slot_key}&trackTitle=${encodeURIComponent(title)}`}
                             className="text-[10px] text-amber-400 hover:text-amber-300 transition uppercase tracking-wider font-semibold"
                           >
-                            {tx('送 brief 詢價 →', '送 brief 询价 →', 'Send brief →')}
+                            {tx('送出詢價 →', '送出询价 →', 'Send brief →')}
                           </Link>
                         </div>
                       </div>
@@ -422,8 +422,8 @@ export default function MusicCatalogPage() {
             </h3>
             <p className="text-sm text-gray-400 mb-5 leading-relaxed">
               {tx(
-                '真人編曲 · Live 弦樂 · 版權買斷。送 brief 後 24 小時內回覆報價，接受才付款。',
-                '真人编曲 · Live 弦乐 · 版权买断。送 brief 后 24 小时内回复报价，接受才付款。',
+                '真人編曲 · Live 弦樂 · 版權買斷。送出需求後 24 小時內回覆報價，接受才付款。',
+                '真人编曲 · Live 弦乐 · 版权买断。送出需求后 24 小时内回复报价，接受才付款。',
                 'Human producer · live strings · copyright buyout. Quote in 24h after you send the brief; payment only on acceptance.'
               )}
             </p>
@@ -431,7 +431,7 @@ export default function MusicCatalogPage() {
               href="/music/brief"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 text-black font-semibold text-sm hover:bg-amber-400 transition"
             >
-              {tx('送 brief 詢價', '送 brief 询价', 'Send brief')}
+              {tx('送出詢價', '送出询价', 'Send brief')}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
