@@ -498,9 +498,9 @@ function BriefPageInner() {
           <div className="max-w-3xl mx-auto p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/30 flex items-center justify-between gap-3 text-sm">
             <span className="text-gray-300">
               {tx(
-                '💡 Tier 1 AI Curator 可以跳過這一步直接結帳，24-48 小時交件。',
-                '💡 Tier 1 AI Curator 可以跳过这一步直接结账，24-48 小时交件。',
-                '💡 Tier 1 AI Curator can skip this and check out directly — 24-48 hour delivery.'
+                '💡 Tier 1 AI Curator 可以跳過音樂製作需求，直接結帳，24-48 小時交件。',
+                '💡 Tier 1 AI Curator 可以跳过音乐制作需求，直接结账，24-48 小时交件。',
+                '💡 Tier 1 AI Curator can skip the brief and check out directly — 24-48 hour delivery.'
               )}
             </span>
             <Link
