@@ -133,6 +133,33 @@ export default function MusicCatalogPage() {
     });
   };
 
+  // Deterministic per-slot decorative composition. Hash slot_key → seed →
+  // unique dots / waves / blob positions so every cover has a different
+  // pattern while keeping the category gradient + icon consistent.
+  const coverArt = (slug: string) => {
+    let h = 0;
+    for (let i = 0; i < slug.length; i++) {
+      h = ((h << 5) - h + slug.charCodeAt(i)) | 0;
+    }
+    const seed = Math.abs(h);
+    const lcg = (s: number) => ((s * 9301 + 49297) % 233280) / 233280;
+    let s = seed;
+    const r = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const dots = Array.from({ length: 4 + Math.floor(r() * 4) }, () => ({
+      cx: 10 + r() * 180,
+      cy: 8 + r() * 80,
+      rad: 0.8 + r() * 2.8,
+      op: 0.35 + r() * 0.55,
+    }));
+    const path1 = `M0,${20 + r() * 40} Q${50 + r() * 30},${10 + r() * 30} ${100 + r() * 20},${30 + r() * 30} T200,${30 + r() * 40}`;
+    const path2 = `M0,${30 + r() * 40} Q${50 + r() * 30},${20 + r() * 40} ${100 + r() * 20},${40 + r() * 30} T200,${40 + r() * 35}`;
+    const blob1 = { x: -8 - r() * 10, y: -8 - r() * 10, size: 28 + r() * 18 };
+    const blob2 = { x: 60 + r() * 100, y: 30 + r() * 40, size: 18 + r() * 16 };
+    // Pick which corner gets the big blob (deterministic per slug)
+    const iconLeft = r() > 0.5;
+    return { dots, path1, path2, blob1, blob2, iconLeft };
+  };
+
   useEffect(() => {
     supabase
       .from('audio_showcases')
@@ -244,19 +271,30 @@ export default function MusicCatalogPage() {
                           : 'border-white/10 hover:border-white/25 hover:-translate-y-0.5'
                       }`}
                     >
-                      {/* Cover: 96px tall band with layered composition (gradient + geometric shapes + big icon) + solid play btn bottom-right + BPM top-right */}
+                      {/* Cover: 96px tall band with per-track unique decorative composition
+                          (gradient is category-level; SVG art is slot-level deterministic) */}
+                      {(() => { const art = coverArt(row.slot_key); return (
                       <div className={`relative h-24 bg-gradient-to-br ${gradient} overflow-hidden`}>
-                        {/* Layered geometric composition for a more "designed" feel */}
-                        <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-                        <div className="absolute top-1/2 -right-6 w-24 h-24 rounded-full bg-black/20 blur-xl" />
-                        <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 200 96" preserveAspectRatio="none">
-                          <circle cx="40" cy="20" r="2" fill="white" />
-                          <circle cx="170" cy="70" r="3" fill="white" />
-                          <circle cx="120" cy="15" r="1.5" fill="white" opacity="0.7" />
-                          <path d="M0,60 Q50,30 100,55 T200,50" fill="none" stroke="white" strokeWidth="1" opacity="0.5" />
-                          <path d="M0,75 Q50,45 100,70 T200,65" fill="none" stroke="white" strokeWidth="0.6" opacity="0.3" />
+                        {/* Blurred light/shadow blobs at randomised positions */}
+                        <div
+                          className="absolute rounded-full bg-white/15 blur-2xl"
+                          style={{ left: `${art.blob1.x}px`, top: `${art.blob1.y}px`, width: `${art.blob1.size * 4}px`, height: `${art.blob1.size * 4}px` }}
+                        />
+                        <div
+                          className="absolute rounded-full bg-black/25 blur-xl"
+                          style={{ left: `${art.blob2.x}px`, top: `${art.blob2.y}px`, width: `${art.blob2.size * 3}px`, height: `${art.blob2.size * 3}px` }}
+                        />
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 96" preserveAspectRatio="none">
+                          {art.dots.map((d, i) => (
+                            <circle key={i} cx={d.cx} cy={d.cy} r={d.rad} fill="white" opacity={d.op} />
+                          ))}
+                          <path d={art.path1} fill="none" stroke="white" strokeWidth="1" opacity="0.45" />
+                          <path d={art.path2} fill="none" stroke="white" strokeWidth="0.6" opacity="0.3" />
                         </svg>
-                        <Icon className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 text-white/95 drop-shadow-md" strokeWidth={1.4} />
+                        <Icon
+                          className={`absolute top-1/2 -translate-y-1/2 w-10 h-10 text-white/95 drop-shadow-md ${art.iconLeft ? 'left-5' : 'right-16'}`}
+                          strokeWidth={1.4}
+                        />
 
                         {/* BPM badge top-right */}
                         <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-sm text-[10px] font-bold text-white uppercase tracking-wider">
@@ -286,6 +324,7 @@ export default function MusicCatalogPage() {
                             : <Play className="w-5 h-5 ml-0.5" fill="currentColor" />}
                         </button>
                       </div>
+                      ); })()}
 
                       {/* Text block */}
                       <div className="p-4 flex-1 flex flex-col gap-2">
