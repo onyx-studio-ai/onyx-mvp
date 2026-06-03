@@ -121,6 +121,10 @@ export default function MusicCatalogPage() {
   const [view, setView] = useState<'instrumental' | 'vocal'>('instrumental');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [openLyrics, setOpenLyrics] = useState<Set<string>>(new Set());
+  // 0..1 progress for the currently-playing track, updated on the
+  // audio element's timeupdate event. Single value because only one
+  // track plays at a time (audioManager enforces this).
+  const [progress, setProgress] = useState(0);
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
 
   const toggleLyrics = (id: string) => {
@@ -160,19 +164,26 @@ export default function MusicCatalogPage() {
       audioRefs.current[row.id]?.pause();
       audioManager.stop(audioRefs.current[row.id]);
       setPlayingId(null);
+      setProgress(0);
       return;
     }
     if (!audioRefs.current[row.id]) {
       audioRefs.current[row.id] = new Audio(row.audio_url);
       audioRefs.current[row.id].onended = () => {
         setPlayingId(null);
+        setProgress(0);
         audioManager.stop(audioRefs.current[row.id]);
+      };
+      audioRefs.current[row.id].ontimeupdate = () => {
+        const el = audioRefs.current[row.id];
+        if (el && el.duration > 0) setProgress(el.currentTime / el.duration);
       };
     }
     const a = audioRefs.current[row.id];
-    audioManager.play(a, () => setPlayingId(null));
+    audioManager.play(a, () => { setPlayingId(null); setProgress(0); });
     a.play();
     setPlayingId(row.id);
+    setProgress(0);
   };
 
   return (
@@ -240,7 +251,7 @@ export default function MusicCatalogPage() {
                   return (
                     <div
                       key={row.id}
-                      className={`rounded-xl bg-zinc-950/60 border transition-all duration-200 ${
+                      className={`relative rounded-xl bg-zinc-950/60 border transition-all duration-200 overflow-hidden ${
                         playing
                           ? 'border-white/40 shadow-[0_0_24px_-10px_rgba(255,255,255,0.25)]'
                           : 'border-white/10 hover:border-white/25 hover:bg-zinc-900/60'
@@ -319,6 +330,28 @@ export default function MusicCatalogPage() {
                           <pre className="p-3 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-300 font-sans whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
                             {lyrics}
                           </pre>
+                        </div>
+                      )}
+
+                      {/* Bandcamp-style thin progress bar at the bottom
+                          edge of the playing card. Click-to-seek: clicking
+                          any point in the track length jumps audio there. */}
+                      {playing && (
+                        <div
+                          className="absolute left-0 right-0 bottom-0 h-[3px] bg-white/10 cursor-pointer group"
+                          onClick={(e) => {
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            const pct = (e.clientX - rect.left) / rect.width;
+                            const a = audioRefs.current[row.id];
+                            if (a && a.duration > 0) {
+                              a.currentTime = Math.max(0, Math.min(1, pct)) * a.duration;
+                            }
+                          }}
+                        >
+                          <div
+                            className="h-full bg-amber-400 transition-[width] duration-150 ease-linear"
+                            style={{ width: `${Math.round(progress * 100)}%` }}
+                          />
                         </div>
                       )}
                     </div>
