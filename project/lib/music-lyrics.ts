@@ -21,14 +21,14 @@ But the quiet in this room
 Keeps saying what I know
 
 [Chorus]
-When youre not here
+When you're not here
 The silence speaks too loud
 It fills my chest
 And pulls me under now
-When youre not here
+When you're not here
 I hear it all too clear
 I call your name
-But you dont disappear
+But you don't disappear
 
 [Verse 2]
 Your keys still in the bowl
@@ -48,41 +48,41 @@ But the quiet in this room
 Keeps saying what I know
 
 [Chorus]
-When youre not here
+When you're not here
 The silence speaks too loud
 It fills my chest
 And pulls me under now
-When youre not here
+When you're not here
 I hear it all too clear
 I call your name
-But you dont disappear
+But you don't disappear
 
 [Bridge]
 If you came back tonight
-I wouldnt ask why
-Id just let your arms
+I wouldn't ask why
+I'd just let your arms
 Make a shelter from the sky
 
 But the door stays shut
 And the clock moves on
 So I hold this ache
-And sing it till its gone
+And sing it till it's gone
 
 [Final Chorus]
-When youre not here
+When you're not here
 The silence speaks too loud
 It fills my chest
 And pulls me under now
-When youre not here
+When you're not here
 I hear it all too clear
 I call your name
-But you dont disappear
+But you don't disappear
 
-When youre not here
+When you're not here
 I learn to stand my ground
 I miss you still
-But I wont break down
-When youre not here
+But I won't break down
+When you're not here
 I hold my breath and hear
 The silence speak
 And love you from here`,
@@ -164,23 +164,23 @@ You made me last
 
 Your hand on my sleeve
 Like you already knew
-I dont need a warning
+I don't need a warning
 I just need you
 
 [Pre-Chorus]
-And its getting closer
+And it's getting closer
 I can feel it now
 No more second-guessing
 When you pull me down
 
 [Chorus]
-Tonight the citys on our side side
-We dont need anywhere to hide hide
+Tonight the city's on our side side
+We don't need anywhere to hide hide
 Just hold my hand and feel the beat beat
 The world is dancing at our feet feet
 
-Tonight the citys on our side side
-I dont want to let this feeling slide slide
+Tonight the city's on our side side
+I don't want to let this feeling slide slide
 Just hold me close and let it breathe breathe
 The world is dancing at our feet feet
 
@@ -188,7 +188,7 @@ The world is dancing at our feet feet
 Your laugh hits soft
 Then it stays all day
 Like a warm-window song
-I cant shake away
+I can't shake away
 
 We talk in half-lines
 Still I understand
@@ -196,19 +196,19 @@ You make a whole new map
 Out of one small hand
 
 [Pre-Chorus]
-And its getting closer
+And it's getting closer
 I can feel it now
 No more second-guessing
 When you pull me down
 
 [Chorus]
-Tonight the citys on our side side
-We dont need anywhere to hide hide
+Tonight the city's on our side side
+We don't need anywhere to hide hide
 Just hold my hand and feel the beat beat
 The world is dancing at our feet feet
 
-Tonight the citys on our side side
-I dont want to let this feeling slide slide
+Tonight the city's on our side side
+I don't want to let this feeling slide slide
 Just hold me close and let it breathe breathe
 The world is dancing at our feet feet
 
@@ -216,7 +216,7 @@ The world is dancing at our feet feet
 If the room goes quiet
 Stay right here
 I can hear forever
-When youre near
+When you're near
 
 No grand confession
 Just this spark
@@ -224,13 +224,13 @@ You and me moving
 Through the dark
 
 [Final Chorus]
-Tonight the citys on our side side
-We dont need anywhere to hide hide
+Tonight the city's on our side side
+We don't need anywhere to hide hide
 Just hold my hand and feel the beat beat
 The world is dancing at our feet feet
 
-Tonight the citys on our side side
-I dont want to let this feeling slide slide
+Tonight the city's on our side side
+I don't want to let this feeling slide slide
 Just hold me close and let it breathe breathe
 The world is dancing at our feet feet`,
   'pop-upbeat-cn': `[Verse 1]
@@ -309,13 +309,13 @@ The world is dancing at our feet feet`,
 Slow it down, come closer
 Leave your shoes by the door
 Your voice leans on my shoulder
-Like it knows what Im here for
+Like it knows what I'm here for
 
 [Pre-Chorus]
 Every word lands softer
 Every glance says more
 Hold that moment longer
-Dont rush this floor
+Don't rush this floor
 
 [Chorus]
 Slow it down, the night is young
@@ -330,14 +330,14 @@ Every word you sing my song
 [Verse 2]
 Your hand on my coffee cup
 Steam fades in the glass
-You laugh like youve been here
+You laugh like you've been here
 Even when the hours pass
 
 [Pre-Chorus]
 Every word lands softer
 Every glance says more
 Hold that moment longer
-Dont rush this floor
+Don't rush this floor
 
 [Chorus]
 Slow it down, the night is young
@@ -356,7 +356,7 @@ I can feel the whole room
 Falling out of reach
 Stay a little longer
 Let the silence bloom
-I dont need forever
+I don't need forever
 Just this little room
 
 [Chorus]
@@ -454,17 +454,17 @@ I learned pressure like a sport
 Watch them rise and watch them fall
 I stayed locked on the climb
 Every move I make is mine
-Built from scraps and Im fine
+Built from scraps and I'm fine
 
 Pocket full of proof now
 Dust on the old front steps
 Count it up, then flip it
-I dont owe what I get
+I don't owe what I get
 
 [Pre-Chorus]
-Too late, Im already in motion
-Hands up, but Im still focused
-They blink, then Im gone
+Too late, I'm already in motion
+Hands up, but I'm still focused
+They blink, then I'm gone
 Same kid, new plan
 
 [Chorus]
@@ -483,7 +483,7 @@ How I made the floor turn gold
 They see the chain, not the nights
 That I carried weight through the cold
 
-I dont brag, I just stack
+I don't brag, I just stack
 Small wins made the throne
 Every loss left a map
 Every scar wrote home
@@ -494,9 +494,9 @@ Same hands that were empty
 Built a whole new frame
 
 [Pre-Chorus]
-Too late, Im already in motion
-Hands up, but Im still focused
-They blink, then Im gone
+Too late, I'm already in motion
+Hands up, but I'm still focused
+They blink, then I'm gone
 Same kid, new plan
 
 [Chorus]
@@ -959,7 +959,7 @@ Feels so right`,
   'latin-reggaeton-en': `[Verse 1]
 Llegas con sal en la piel
 and I lose my calm
-Tus ojos dicen ven
+Tus ojos dicen "ven"
 when the moon goes out
 
 Bare feet in the sand
@@ -985,7 +985,7 @@ Baila, baila, pega fuerte
 Baila conmigo tonight
 
 Sube, sube, marea alta
-Sube, sube, dont let go now
+Sube, sube, don't let go now
 Dime, dime, qué me haces
 Dime, dime, hold me down
 
@@ -1023,7 +1023,7 @@ Baila, baila, pega fuerte
 Baila conmigo tonight
 
 Sube, sube, marea alta
-Sube, sube, dont let go now
+Sube, sube, don't let go now
 Dime, dime, qué me haces
 Dime, dime, hold me down
 
@@ -1036,7 +1036,7 @@ we lose control
 Say my name
 turn it into a song
 Si te vas conmigo
-well stay all night long
+we'll stay all night long
 
 [Chorus]
 Sube, sube, marea alta
@@ -1045,7 +1045,7 @@ Baila, baila, pega fuerte
 Baila conmigo tonight
 
 Sube, sube, marea alta
-Sube, sube, dont let go now
+Sube, sube, don't let go now
 Dime, dime, qué me haces
 Dime, dime, hold me down`,
   'latin-fusion-cn': `[Verse 1]
