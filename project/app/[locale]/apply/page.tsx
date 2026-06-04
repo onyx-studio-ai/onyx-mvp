@@ -31,7 +31,7 @@ export default function ApplyIndexPage() {
   const paths = [
     {
       num: '01', icon: UserPlus, href: '/apply/voice',
-      title: tx('Voice Talent', '配音人才', 'Voice Talent'),
+      title: tx('Voice Talent / 配音人才', 'Voice Talent / 配音人才', 'Voice Talent'),
       desc: tx(
         '個人配音員 / 歌手加入 Onyx 全球陣容。涵蓋廣告、旁白、角色、TTS。',
         '个人配音员 / 歌手加入 Onyx 全球阵容。涵盖广告、旁白、角色、TTS。',
@@ -40,7 +40,7 @@ export default function ApplyIndexPage() {
     },
     {
       num: '02', icon: Building2, href: '/apply/studio',
-      title: tx('Studio Partnership', '錄音室合作', 'Studio Partnership'),
+      title: tx('Studio Partnership / 錄音室合作', 'Studio Partnership / 录音室合作', 'Studio Partnership'),
       desc: tx(
         '全球錄音室合作 — 符合 TTS 規格(48k / 24-bit / -70dBFS / treated room)。',
         '全球录音室合作 — 符合 TTS 规格(48k / 24-bit / -70dBFS / treated room)。',
@@ -49,7 +49,7 @@ export default function ApplyIndexPage() {
     },
     {
       num: '03', icon: UserCheck, href: '/apply/director',
-      title: tx('Session Director', '聲音導演', 'Session Director'),
+      title: tx('Session Director / 聲音導演', 'Session Director / 声音导演', 'Session Director'),
       desc: tx(
         '各語種聲音導演 — 母語直接帶 directed session、引導表演與情緒。',
         '各语种声音导演 — 母语直接带 directed session、引导表演与情绪。',
@@ -58,7 +58,7 @@ export default function ApplyIndexPage() {
     },
     {
       num: '04', icon: FileSearch, href: '/apply/proofreader',
-      title: tx('Proofreader / 語言 QA', '校对 / 语言 QA', 'Proofreader / Language QA'),
+      title: tx('Proofreader / 校對', 'Proofreader / 校对', 'Proofreader / Language QA'),
       desc: tx(
         '各語種校對與語言品質審核 — 需提供可驗證的學經歷、認證與過往案件。',
         '各语种校对与语言质量审核 — 需提供可验证的学经历、认证与过往项目。',
