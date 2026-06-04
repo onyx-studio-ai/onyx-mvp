@@ -351,7 +351,7 @@ export default function ApplyProofreaderPage() {
       <section className="px-4 pb-24">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-10">
 
-          <Section title={tx('01 基本資訊', '01 基本资讯', '01 Basic info')} required>
+          <Section title={tx('基本資訊', '基本资讯', 'Basic info')} required>
             <Field label={tx('姓名', '姓名', 'Full name')} required>
               <Input value={fullName} onChange={setFullName} />
             </Field>
@@ -378,7 +378,7 @@ export default function ApplyProofreaderPage() {
             </Field>
           </Section>
 
-          <Section title={tx('02 學經歷', '02 学经历', '02 Education & experience')} required>
+          <Section title={tx('學經歷', '学经历', 'Education & experience')} required>
             <Field label={tx('校對年資', '校对年资', 'Proofreading experience')} required>
               <Choices value={experience} onSelect={v => setExperience(v as Experience)}
                 options={(['less3','3to7','7to15','over15'] as Experience[]).map(k => [k, labelFor.experience(k)] as [string, string])} />
@@ -410,7 +410,7 @@ export default function ApplyProofreaderPage() {
             </Field>
           </Section>
 
-          <Section title={tx('03 認證(可選但有助評估)', '03 认证(可选但有助评估)', '03 Certifications (optional but helpful)')} hint={tx(
+          <Section title={tx('認證(可選但有助評估)', '认证(可选但有助评估)', 'Certifications (optional but helpful)')} hint={tx(
             '請列出每個認證的:1) 名稱 2) 發證單位 3) 證書編號 / 年份。例:DipTrans / IoLET / 2018 / Cert#12345。模糊的認證(只說「我有 DipTrans」)會被降低權重。',
             '请列出每个认证的:1) 名称 2) 发证单位 3) 证书编号 / 年份。例:DipTrans / IoLET / 2018 / Cert#12345。模糊的认证(只说「我有 DipTrans」)会被降低权重。',
             'For each: 1) name, 2) issuing body, 3) cert ID / year. e.g. DipTrans / IoLET / 2018 / Cert#12345. Vague claims (just "I have DipTrans") are weighted lower.'
@@ -422,7 +422,7 @@ export default function ApplyProofreaderPage() {
             )} />
           </Section>
 
-          <Section title={tx('04 公開資料(用於驗證)', '04 公开资料(用于验证)', '04 Public verification URLs')} required hint={tx(
+          <Section title={tx('公開資料(用於驗證)', '公开资料(用于验证)', 'Public verification URLs')} required hint={tx(
             'Onyx 會交叉比對你提供的學經歷與公開資料。LinkedIn 為必填。',
             'Onyx 会交叉比对你提供的学经历与公开资料。LinkedIn 为必填。',
             'Onyx cross-verifies stated credentials against public records. LinkedIn is required.'
@@ -439,7 +439,7 @@ export default function ApplyProofreaderPage() {
             </Field>
           </Section>
 
-          <Section title={tx('05 專長類型(可複選)', '05 专长类型(可复选)', '05 Content specialization (multi-select)')}>
+          <Section title={tx('專長類型(可複選)', '专长类型(可复选)', 'Content specialization (multi-select)')}>
             <div className="flex flex-wrap gap-2">
               {CONTENT_TYPES.map(c => (
                 <Pill key={c} active={contentTypes.includes(c)} onClick={() => toggleContentType(c)} label={c} />
@@ -447,7 +447,7 @@ export default function ApplyProofreaderPage() {
             </div>
           </Section>
 
-          <Section title={tx('06 過往代表案件 / 客戶', '06 过往代表项目 / 客户', '06 Past notable projects / clients')} required hint={tx(
+          <Section title={tx('過往代表案件 / 客戶', '过往代表项目 / 客户', 'Past notable projects / clients')} required hint={tx(
             '請列出至少 3 個代表案件,每個包含:年份、案件類型、語種、規模(字數 / 時長)、客戶名稱。具體的描述比廣泛的陳述更有說服力。',
             '请列出至少 3 个代表项目,每个包含:年份、项目类型、语种、规模(字数 / 时长)、客户名称。具体的描述比广泛的陈述更有说服力。',
             'List at least 3 notable projects. For each: year, type, language, scale (word count / hours), client. Specificity beats generality.'
@@ -459,7 +459,7 @@ export default function ApplyProofreaderPage() {
             )} />
           </Section>
 
-          <Section title={tx('07 推薦人(選填,加快審核)', '07 推荐人(选填,加快审核)', '07 References (optional, speeds review)')} hint={tx(
+          <Section title={tx('推薦人(選填,加快審核)', '推荐人(选填,加快审核)', 'References (optional, speeds review)')} hint={tx(
             '若有過往客戶 / 雇主願意為你背書,請提供姓名 + Email + 你們的合作關係。Onyx 可能會直接聯繫驗證。',
             '若有过往客户 / 雇主愿意为你背书,请提供姓名 + Email + 你们的合作关系。Onyx 可能会直接联系验证。',
             'If past clients / employers are willing to vouch for you, provide name + email + relationship. Onyx may contact them.'
@@ -471,13 +471,13 @@ export default function ApplyProofreaderPage() {
             )} />
           </Section>
 
-          <Section title={tx('08 樣本作品', '08 样本作品', '08 Sample work')}>
+          <Section title={tx('樣本作品', '样本作品', 'Sample work')}>
             <Field label={tx('樣本 URL(已出版 / Drive / portfolio)', '样本 URL(已出版 / Drive / portfolio)', 'Sample URL (published / Drive / portfolio)')}>
               <Input value={sampleWorkUrl} onChange={setSampleWorkUrl} placeholder="https://..." />
             </Field>
           </Section>
 
-          <Section title={tx('09 可配合度', '09 可配合度', '09 Availability')}>
+          <Section title={tx('可配合度', '可配合度', 'Availability')}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label={tx('每週小時數', '每周小时数', 'Hours / week')}>
                 <Input value={hoursPerWeek} onChange={setHoursPerWeek} placeholder={tx('例:15-30 小時', '例:15-30 小时', 'e.g. 15-30 hours')} />

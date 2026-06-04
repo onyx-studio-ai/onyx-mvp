@@ -419,7 +419,7 @@ export default function DataBriefPage() {
 
           {/* 01 — Service type */}
           <Section
-            title={tx('01 服務類型', '01 服务类型', '01 Service type')}
+            title={tx('服務類型', '服务类型', 'Service type')}
             required
             hint={tx(
               'Onyx 採集語料 + 處理資料 — 客戶用採集到的語料訓自己的模型,Onyx 不訓練 AI 模型。可複選,同一案件常含多種類型。',
@@ -441,7 +441,7 @@ export default function DataBriefPage() {
 
           {/* 02 — Languages & accents */}
           <Section
-            title={tx('02 語種與口音', '02 语种与口音', '02 Languages & accents')}
+            title={tx('語種與口音', '语种与口音', 'Languages & accents')}
             required
             hint={tx('可複選。沒列到的小語種請在備註說明。',
                      '可复选。没列到的小语种请在备注说明。',
@@ -461,7 +461,7 @@ export default function DataBriefPage() {
 
           {/* 03 — Project scale */}
           <Section
-            title={tx('03 專案規模', '03 项目规模', '03 Project scale')}
+            title={tx('專案規模', '项目规模', 'Project scale')}
             hint={tx('如果不確定,留空即可,Onyx 會在報價時建議規模。',
                      '如果不确定,留空即可,Onyx 会在报价时建议规模。',
                      'Leave blank if uncertain — Onyx will advise scale in the quote.')}
@@ -486,7 +486,7 @@ export default function DataBriefPage() {
 
           {/* 04 — Use case & licensing */}
           <Section
-            title={tx('04 用途與授權', '04 用途与授权', '04 Use case & licensing')}
+            title={tx('用途與授權', '用途与授权', 'Use case & licensing')}
             required
             hint={tx(
               '這部分直接決定報價結構 — 越窄的授權範圍價格越低。',
@@ -522,7 +522,7 @@ export default function DataBriefPage() {
 
           {/* 05 — Audio spec */}
           <Section
-            title={tx('05 音檔規格', '05 音档规格', '05 Audio spec')}
+            title={tx('音檔規格', '音档规格', 'Audio spec')}
             hint={tx('Onyx 預設 48k / 24-bit。若客戶有特殊規格(no-processing 等)請在此標示。',
                      'Onyx 默认 48k / 24-bit。若客户有特殊规格(no-processing 等)请在此标示。',
                      'Onyx defaults to 48k / 24-bit. Note any client-specific requirements (e.g. no-processing).')}
@@ -558,7 +558,7 @@ export default function DataBriefPage() {
           {/* 06 — Annotation (conditional shown when annotation selected,
                   but always visible as optional for everyone else) */}
           <Section
-            title={tx('06 標註需求(選填)', '06 标注需求(选填)', '06 Annotation needs (optional)')}
+            title={tx('標註需求(選填)', '标注需求(选填)', 'Annotation needs (optional)')}
             hint={tx(
               wantsAnnotation
                 ? '你選了「標註與清理」 — 請勾選具體要哪幾項。'
@@ -585,7 +585,7 @@ export default function DataBriefPage() {
 
           {/* 07 — Materials */}
           <Section
-            title={tx('07 你能提供的材料(可複選)', '07 你能提供的材料(可复选)', '07 What you can provide (multi-select)')}
+            title={tx('你能提供的材料(可複選)', '你能提供的材料(可复选)', 'What you can provide (multi-select)')}
           >
             <div className="flex flex-wrap gap-2">
               {(['haveScript','haveReference','haveData','fromScratch','other'] as Material[]).map(m => (
@@ -601,7 +601,7 @@ export default function DataBriefPage() {
 
           {/* 08 — Role / identity (neutral pricing — internal classification) */}
           <Section
-            title={tx('08 你的身份', '08 你的身份', '08 Your role')}
+            title={tx('你的身份', '你的身份', 'Your role')}
             required
             hint={tx(
               '這幫助我們依角色提供合適的方案 — Onyx 同時服務終端買方與合作夥伴。',
@@ -619,7 +619,7 @@ export default function DataBriefPage() {
 
           {/* 09 — Timeline + contact + notes */}
           <Section
-            title={tx('09 時程與聯絡', '09 时程与联络', '09 Timeline & contact')}
+            title={tx('時程與聯絡', '时程与联络', 'Timeline & contact')}
             required
           >
             <Field

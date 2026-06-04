@@ -272,7 +272,7 @@ export default function ApplyDirectorPage() {
       <section className="px-4 pb-24">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-10">
 
-          <Section title={tx('01 基本資訊', '01 基本资讯', '01 Basic info')} required>
+          <Section title={tx('基本資訊', '基本资讯', 'Basic info')} required>
             <Field label={tx('姓名', '姓名', 'Full name')} required>
               <Input value={fullName} onChange={setFullName} />
             </Field>
@@ -293,7 +293,7 @@ export default function ApplyDirectorPage() {
             </Field>
           </Section>
 
-          <Section title={tx('02 可帶 session 的語種', '02 可带 session 的语种', '02 Languages you can direct')} required hint={tx(
+          <Section title={tx('可帶 session 的語種', '可带 session 的语种', 'Languages you can direct')} required hint={tx(
             '不一定是母語 — 只要你能用該語種直接引導表演,不需要翻譯員協助。',
             '不一定是母语 — 只要你能用该语种直接引导表演,不需要翻译员协助。',
             'Not necessarily native — any language where you can direct performance without a translator.'
@@ -305,7 +305,7 @@ export default function ApplyDirectorPage() {
             </div>
           </Section>
 
-          <Section title={tx('03 經驗', '03 经验', '03 Experience')} required>
+          <Section title={tx('經驗', '经验', 'Experience')} required>
             <Field label={tx('聲音導演年資', '声音导演年资', 'Years of session direction experience')} required>
               <Choices value={experience} onSelect={v => setExperience(v as Experience)}
                 options={(['less1','1to3','3to7','7to15','over15'] as Experience[]).map(k => [k, labelFor.experience(k)] as [string, string])} />
@@ -327,7 +327,7 @@ export default function ApplyDirectorPage() {
             </Field>
           </Section>
 
-          <Section title={tx('04 技術 / 設備', '04 技术 / 设备', '04 Technical / equipment')}>
+          <Section title={tx('技術 / 設備', '技术 / 设备', 'Technical / equipment')}>
             <Field label={tx('Home recording 麥克風', 'Home recording 麦克风', 'Home recording microphone')}>
               <Input value={homeMic} onChange={setHomeMic} placeholder={tx('例:Blue Yeti / Shure SM7B / 沒有 / ...', '例:Blue Yeti / Shure SM7B / 没有 / ...', 'e.g. Blue Yeti / Shure SM7B / none / ...')} />
             </Field>
@@ -350,7 +350,7 @@ export default function ApplyDirectorPage() {
             </Field>
           </Section>
 
-          <Section title={tx('05 可配合度', '05 可配合度', '05 Availability')}>
+          <Section title={tx('可配合度', '可配合度', 'Availability')}>
             <Field label={tx('每週可接小時數', '每周可接小时数', 'Hours per week available')}>
               <Input value={hoursPerWeek} onChange={setHoursPerWeek} placeholder={tx('例:10-20 小時', '例:10-20 小时', 'e.g. 10-20 hours')} />
             </Field>
@@ -359,7 +359,7 @@ export default function ApplyDirectorPage() {
             </Field>
           </Section>
 
-          <Section title={tx('06 作品 / 資歷', '06 作品 / 资历', '06 Portfolio')} hint={tx(
+          <Section title={tx('作品 / 資歷', '作品 / 资历', 'Portfolio')} hint={tx(
             'Onyx 會依作品與資歷判斷適配的案件類型。',
             'Onyx 会依作品与资历判断适配的项目类型。',
             "Onyx matches projects to your portfolio and credentials."
@@ -379,7 +379,7 @@ export default function ApplyDirectorPage() {
             </Field>
           </Section>
 
-          <Section title={tx('07 聯絡', '07 联络', '07 Contact')} required>
+          <Section title={tx('聯絡', '联络', 'Contact')} required>
             <Field label="Email" required>
               <Input value={email} onChange={setEmail} type="email" placeholder="you@example.com" />
             </Field>

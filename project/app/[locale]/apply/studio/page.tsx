@@ -290,7 +290,7 @@ export default function ApplyStudioPage() {
       <section className="px-4 pb-24">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-10">
 
-          <Section title={tx('01 錄音室基本資訊', '01 录音室基本资讯', '01 Studio info')} required>
+          <Section title={tx('錄音室基本資訊', '录音室基本资讯', 'Studio info')} required>
             <Field label={tx('錄音室名稱', '录音室名称', 'Studio name')} required>
               <Input value={studioName} onChange={setStudioName} placeholder="SONICNEST / Studio Foo / ..." />
             </Field>
@@ -310,7 +310,7 @@ export default function ApplyStudioPage() {
             </Field>
           </Section>
 
-          <Section title={tx('02 錄音規格', '02 录音规格', '02 Recording specs')} required hint={tx(
+          <Section title={tx('錄音規格', '录音规格', 'Recording specs')} required hint={tx(
             'Onyx 對外承接 AI 語音資料案件,客戶端最低要求是 48k / 24-bit / -70 dBFS 底噪。',
             'Onyx 对外承接 AI 语音资料项目,客户端最低要求是 48k / 24-bit / -70 dBFS 底噪。',
             "Onyx's AI voice-data clients require minimum 48k / 24-bit / -70 dBFS noise floor."
@@ -332,7 +332,7 @@ export default function ApplyStudioPage() {
             </Field>
           </Section>
 
-          <Section title={tx('03 設備', '03 设备', '03 Equipment')}>
+          <Section title={tx('設備', '设备', 'Equipment')}>
             <Field label={tx('麥克風(廠牌 / 型號)', '麦克风(厂牌 / 型号)', 'Microphones (brand / model)')}>
               <Input value={micGear} onChange={setMicGear} placeholder={tx('例:Neumann U87 / Sony C800G / ...', '例:Neumann U87 / Sony C800G / ...', 'e.g. Neumann U87 / Sony C800G / ...')} />
             </Field>
@@ -344,7 +344,7 @@ export default function ApplyStudioPage() {
             </Field>
           </Section>
 
-          <Section title={tx('04 可錄語種 / 在地人才網絡', '04 可录语种 / 在地人才网络', '04 Languages / local talent network')} required>
+          <Section title={tx('可錄語種 / 在地人才網絡', '可录语种 / 在地人才网络', 'Languages / local talent network')} required>
             <Field label={tx('可錄製語種(可複選)', '可录制语种(可复选)', 'Languages you can record (multi-select)')} required>
               <div className="flex flex-wrap gap-2">
                 {COMMON_LANGS.map(l => (
@@ -357,7 +357,7 @@ export default function ApplyStudioPage() {
             </Field>
           </Section>
 
-          <Section title={tx('05 製作能力', '05 制作能力', '05 Production capability')}>
+          <Section title={tx('製作能力', '制作能力', 'Production capability')}>
             <Field label={tx('聲音導演', '声音导演', 'Session director')}>
               <Choices value={directorOnSite} onSelect={v => setDirectorOnSite(v as DirectorOnSite)}
                 options={(['inHouse','contract','none'] as DirectorOnSite[]).map(k => [k, labelFor.directorOnSite(k)] as [string, string])} />
@@ -368,34 +368,75 @@ export default function ApplyStudioPage() {
             </Field>
           </Section>
 
-          <Section title={tx('06 商務', '06 商务', '06 Commercial')}>
-            <Field label={tx('時薪區間(USD)', '时薪区间(USD)', 'Hourly rate range (USD)')}>
-              <Input value={hourlyRate} onChange={setHourlyRate} placeholder={tx('例:$50-80 / 小時', '例:$50-80 / 小时', 'e.g. $50-80 / hour')} />
+          <Section title={tx('商務', '商务', 'Commercial')}>
+            <Field
+              label={tx('錄音室時薪(USD per recording hour)', '录音室时薪(USD per recording hour)', 'Studio hourly rate (USD per recording hour)')}
+              hint={tx(
+                '錄音室每小時的收費(不含配音員費),用於評估錄音成本。',
+                '录音室每小时的收费(不含配音员费),用于评估录音成本。',
+                'Per-hour cost of using your studio (not including talent fee). Used to scope production cost.'
+              )}
+            >
+              <Input value={hourlyRate} onChange={setHourlyRate} placeholder={tx('例:$50-80 / hr', '例:$50-80 / hr', 'e.g. $50-80 / hr')} />
             </Field>
             <Field label={tx('付款方式', '付款方式', 'Payment methods')}>
               <Input value={paymentMethods} onChange={setPaymentMethods} placeholder={tx('例:Wire / PayPal / Wise / ...', '例:Wire / PayPal / Wise / ...', 'e.g. Wire / PayPal / Wise / ...')} />
             </Field>
           </Section>
 
-          <Section title={tx('07 樣本工作', '07 样本工作', '07 Sample work')}>
-            <Field label={tx('樣本錄音 URL(Drive / 雲端 / portfolio)', '样本录音 URL(Drive / 云盘 / portfolio)', 'Sample recording URL (Drive / portfolio)')}>
+          <Section
+            title={tx('樣本與測試錄音', '样本与测试录音', 'Samples & test recording')}
+            hint={tx(
+              '請依 Onyx 的測試規格錄製一段測試音檔 — 我們的製作團隊會以此評估你的錄音室是否符合 TTS 級交付標準。',
+              '请依 Onyx 的测试规格录制一段测试音档 — 我们的制作团队会以此评估你的录音室是否符合 TTS 级交付标准。',
+              "Please record a test clip following the Onyx test spec — our production team uses this to evaluate whether your studio meets the TTS-grade delivery standard."
+            )}
+          >
+            <div className="rounded-xl bg-amber-500/[0.06] border border-amber-300/20 px-4 py-3">
+              <p className="text-xs text-gray-300 leading-relaxed">
+                {tx('測試錄音請依規格錄製: ', '测试录音请依规格录制: ', 'Record the test clip following the spec: ')}
+                <Link href="/apply/studio/test-spec" className="text-amber-300 hover:text-amber-200 underline font-medium">
+                  {tx('看 Onyx 錄音室測試規格', '看 Onyx 录音室测试规格', 'see Onyx Studio Test Spec')}
+                </Link>
+                {tx(
+                  '。48 kHz / 24-bit / mono · 無後製 · 含人聲 + room tone + 拍手三段,合併為單一 .wav 檔。',
+                  '。48 kHz / 24-bit / mono · 无后制 · 含人声 + room tone + 拍手三段,合并为单一 .wav 档。',
+                  '. 48 kHz / 24-bit / mono · no processing · speech + room tone + clap test combined into one .wav file.'
+                )}
+              </p>
+            </div>
+            <Field label={tx('測試錄音 URL', '测试录音 URL', 'Test recording URL')}>
               <Input value={sampleWorkUrl} onChange={setSampleWorkUrl} placeholder="https://..." />
             </Field>
           </Section>
 
-          <Section title={tx('08 聯絡', '08 联络', '08 Contact')} required>
+          <Section title={tx('聯絡', '联络', 'Contact')} required>
             <Field label={tx('聯絡人姓名', '联络人姓名', 'Contact name')} required>
               <Input value={contactName} onChange={setContactName} placeholder={tx('你的名字', '你的名字', 'Your name')} />
             </Field>
             <Field label="Email" required>
               <Input value={email} onChange={setEmail} type="email" placeholder="you@studio.com" />
             </Field>
-            <Field label={tx('電話 / WhatsApp / LINE', '电话 / WhatsApp / LINE', 'Phone / WhatsApp / LINE')}>
-              <Input value={phone} onChange={setPhone} placeholder={tx('選填,加快回覆', '选填,加快回复', 'Optional, speeds up reply')} />
+            <Field
+              label={tx('電話(選填)', '电话(选填)', 'Phone (optional)')}
+              hint={tx(
+                '想要直接 / 加快聯絡的填,否則我們以 email 回覆。',
+                '想要直接 / 加快联系的填,否则我们以 email 回复。',
+                'Fill if you want direct / faster contact, otherwise we reply by email.'
+              )}
+            >
+              <Input value={phone} onChange={setPhone} placeholder={tx('包含國碼,例如 +886 ...', '包含国码,例如 +886 ...', 'Include country code, e.g. +1 ...')} />
             </Field>
             <Field label={tx('補充說明', '补充说明', 'Notes')}>
               <Textarea value={notes} onChange={setNotes} placeholder={tx('其他想說明的:特殊規格、合作經歷、...', '其他想说明的:特殊规格、合作经历、...', 'Anything else: special specs, past collaborations, ...')} />
             </Field>
+            <p className="text-xs text-gray-500 leading-relaxed pt-2">
+              {tx('其他聯絡方式,請見我們的', '其他联系方式,请见我们的', 'Other contact methods — see our ')}
+              <Link href="/contact" className="text-amber-300 hover:text-amber-200 underline">
+                {tx('官方聯絡頁', '官方联系页', 'official contact page')}
+              </Link>
+              {tx('。', '。', '.')}
+            </p>
           </Section>
 
           <div className="pt-2">
