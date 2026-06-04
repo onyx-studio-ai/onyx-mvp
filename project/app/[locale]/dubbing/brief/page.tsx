@@ -126,9 +126,9 @@ export default function DubbingBriefPage() {
       loose:     tx('寬鬆時序（廣告 / 旁白）', '宽松时序（广告 / 旁白）', 'Loose timing (ads / narration)'),
     }[m]),
     voiceApproach: (v: VoiceApproach): string => ({
-      preserve: tx('保留原聲（AI 克隆原配音員聲線到新語言 · RVC）',
-                   '保留原声（AI 克隆原配音员声线到新语言 · RVC）',
-                   "Preserve original voice (RVC clone of original talent into new language)"),
+      preserve: tx('保留原聲（AI 克隆原配音員聲線到新語言）',
+                   '保留原声（AI 克隆原配音员声线到新语言）',
+                   "Preserve original voice (clone original talent into new language)"),
       newAI:    tx('AI 全新配音（生成新聲音）',
                    'AI 全新配音（生成新声音）',
                    'New AI voices (fresh AI-generated)'),
@@ -148,15 +148,15 @@ export default function DubbingBriefPage() {
                        'I attest I have authorization and accept all legal liability'),
     }[c]),
     scriptStatus: (s: ScriptStatus): string => ({
-      fullScript:  tx('已有完整翻譯稿（專業翻譯 / 內部已校對）',
-                      '已有完整翻译稿（专业翻译 / 内部已校对）',
-                      'Complete pro translation script ready'),
-      aiDraft:     tx('已有 AI 翻譯稿，需校對 + 真人錄製',
-                      '已有 AI 翻译稿，需校对 + 真人录制',
-                      'Have AI draft — needs proofread + recording'),
-      fromScratch: tx('從原文翻譯 + 真人錄製（全包）',
-                      '从原文翻译 + 真人录制（全包）',
-                      'Translate from source + record (full package)'),
+      fullScript:  tx('已有完整翻譯稿（已校對）',
+                      '已有完整翻译稿（已校对）',
+                      'Have complete translation script (already proofread)'),
+      aiDraft:     tx('已有 AI 翻譯稿（需校對）',
+                      '已有 AI 翻译稿（需校对）',
+                      'Have AI draft (needs proofreading)'),
+      fromScratch: tx('沒有翻譯稿（Onyx 從原文翻譯）',
+                      '没有翻译稿（Onyx 从原文翻译）',
+                      'No script (Onyx translates from source)'),
     }[s]),
     material: (m: Material): string => ({
       sourceVideo:  tx('原始影片', '原始视频', 'Source video'),
@@ -210,9 +210,9 @@ export default function DubbingBriefPage() {
     }
     if (needsConsent && !consentMode) {
       toast.error(tx(
-        '選擇「保留原聲」必須完成 RVC 授權確認',
-        '选择「保留原声」必须完成 RVC 授权确认',
-        'When preserving original voice, RVC authorization must be confirmed'
+        '選擇「保留原聲」必須完成聲線克隆授權確認',
+        '选择「保留原声」必须完成声线克隆授权确认',
+        'When preserving original voice, voice-cloning authorization must be confirmed'
       ));
       return;
     }
@@ -236,7 +236,7 @@ export default function DubbingBriefPage() {
     lines.push(tx('▎ 聲音方式', '▎ 声音方式', '▎ Voice approach'));
     lines.push('  ' + labelFor.voiceApproach(voiceApproach as VoiceApproach));
     if (needsConsent && consentMode) {
-      lines.push((tx('  RVC 授權：', '  RVC 授权：', '  RVC consent: ')) + labelFor.consent(consentMode as ConsentMode));
+      lines.push((tx('  聲線克隆授權：', '  声线克隆授权：', '  Voice-cloning consent: ')) + labelFor.consent(consentMode as ConsentMode));
     }
     lines.push('');
 
@@ -453,9 +453,9 @@ export default function DubbingBriefPage() {
             title={tx('聲音方式', '声音方式', 'Voice approach')}
             required
             hint={tx(
-              '保留原聲 = AI 克隆原配音員的聲線到新語言（RVC）。新聲音 = AI 生成。真人 = Onyx 配音員陣容。',
-              '保留原声 = AI 克隆原配音员的声线到新语言（RVC）。新声音 = AI 生成。真人 = Onyx 配音员阵容。',
-              "Preserve = RVC clone of original talent. New AI = fresh AI voices. Human = Onyx talent roster."
+              '保留原聲 = AI 克隆原配音員的聲線到新語言。新聲音 = AI 生成。真人 = Onyx 配音員陣容。',
+              '保留原声 = AI 克隆原配音员的声线到新语言。新声音 = AI 生成。真人 = Onyx 配音员阵容。',
+              "Preserve = clone of original talent. New AI = fresh AI voices. Human = Onyx talent roster."
             )}
           >
             <Choices
@@ -466,10 +466,10 @@ export default function DubbingBriefPage() {
             />
           </Section>
 
-          {/* SECTION 3.5: RVC consent — only renders when "preserve" picked */}
+          {/* SECTION 3.5: Voice-cloning consent — only renders when "preserve" picked */}
           {needsConsent && (
             <Section
-              title={tx('RVC 授權確認', 'RVC 授权确认', 'RVC authorization')}
+              title={tx('聲線克隆授權確認', '声线克隆授权确认', 'Voice cloning authorization')}
               required
               hint={tx(
                 '克隆原配音員的聲線必須先取得授權。請選擇其中一項：',
@@ -491,9 +491,9 @@ export default function DubbingBriefPage() {
             title={tx('翻譯稿狀態', '翻译稿状态', 'Script status')}
             required
             hint={tx(
-              '已有完整翻譯稿最便宜；AI 草稿需校對；從原文翻譯最完整。',
-              '已有完整翻译稿最便宜；AI 草稿需校对；从原文翻译最完整。',
-              'Pro script ready = cheapest. AI draft = needs proofread. From-scratch = full package.'
+              '只問翻譯文字稿有沒有 — 聲音方式（AI 或真人）在上一個區段已選。已有校對稿最便宜，AI 草稿需校對，沒有則由 Onyx 從原文翻譯。',
+              '只问翻译文字稿有没有 — 声音方式（AI 或真人）在上一个区段已选。已有校对稿最便宜，AI 草稿需校对，没有则由 Onyx 从原文翻译。',
+              'Only about the text translation script — voice approach (AI vs human) was already chosen above. Proofread script = cheapest. AI draft = needs proofread. None = Onyx translates from source.'
             )}
           >
             <Choices
