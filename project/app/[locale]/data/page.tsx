@@ -32,7 +32,6 @@ import {
   ArrowRight, Mic, MessageCircle, User, Tag,
   Send, Users2, Headphones, Package,
   Settings, Globe, ShieldCheck,
-  UserPlus, Building2, UserCheck, FileSearch,
 } from 'lucide-react';
 import Footer from '@/components/landing/Footer';
 
@@ -154,50 +153,11 @@ export default function DataPage() {
     },
   ];
 
-  // Partner Network — 4 supply-side paths. All now route to dedicated
-  // /apply/* forms (was ContactModal in the previous commit; the
-  // Proofreader / Language QA path was added per Wing's note that for
-  // languages she doesn't speak — Hindi, Tamil, etc. — verifiable
-  // credentials are non-negotiable: she can't hear bullshit, so the
-  // form forces LinkedIn + cert IDs + specific past projects).
-  const partners = [
-    {
-      num: '01', icon: UserPlus, href: '/apply/voice',
-      title: tx('Voice Talent', '配音人才', 'Voice Talent'),
-      desc: tx(
-        '個人配音員加入 Onyx 全球陣容。',
-        '个人配音员加入 Onyx 全球阵容。',
-        'Individual voice talents joining the Onyx global roster.'
-      ),
-    },
-    {
-      num: '02', icon: Building2, href: '/apply/studio',
-      title: tx('Studio Partnership', '錄音室合作', 'Studio Partnership'),
-      desc: tx(
-        '符合 TTS 級規格的全球錄音室合作 — 在當地錄音,穩定性最好。',
-        '符合 TTS 级规格的全球录音室合作 — 在当地录音,稳定性最好。',
-        'Global studios meeting TTS-grade specs. Local recording = better stability.'
-      ),
-    },
-    {
-      num: '03', icon: UserCheck, href: '/apply/director',
-      title: tx('Session Director', '聲音導演', 'Session Director'),
-      desc: tx(
-        '具母語直接帶 directed session 經驗的各語種聲音導演。',
-        '具母语直接带 directed session 经验的各语种声音导演。',
-        'Native-speaker session directors with directed-session experience, per language.'
-      ),
-    },
-    {
-      num: '04', icon: FileSearch, href: '/apply/proofreader',
-      title: tx('Proofreader / 語言 QA', '校對 / 语言 QA', 'Proofreader / Language QA'),
-      desc: tx(
-        '各語種校對與語言品質審核 — 需提供可驗證的學經歷、認證與過往案件。',
-        '各语种校对与语言质量审核 — 需提供可验证的学经历、认证与过往项目。',
-        'Per-language proofreading and QA — verifiable credentials, certifications, and past projects required.'
-      ),
-    },
-  ];
+  // (Partner Network was previously here as a 4-card section near the
+  // bottom of this page. It's been moved out — /data is now 100%
+  // client-facing. Partner Network lives on /apply with its own top-nav
+  // entry, so client and supply audiences don't get mixed on the same
+  // page.)
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-28">
@@ -418,69 +378,6 @@ export default function DataPage() {
             )}
           </p>
         </motion.div>
-      </section>
-
-      {/* PARTNER NETWORK — supply-side recruitment */}
-      <section className="px-4 sm:px-6 lg:px-8 py-16 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mb-10 text-center"
-          >
-            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-amber-300 mb-3">
-              {tx('合作網絡', '合作网络', 'Partner Network')}
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
-              {tx('Onyx Partner Network', 'Onyx Partner Network', 'Onyx Partner Network')}
-            </h2>
-            <p className="text-gray-400 text-base max-w-3xl mx-auto">
-              {tx(
-                '我們持續擴大全球錄音室與聲導陣容 — 三條合作路徑。',
-                '我们持续扩大全球录音室与声导阵容 — 三条合作路径。',
-                'We continually expand our global studio and director network — three partnership paths.'
-              )}
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-            {partners.map((p, i) => {
-              const Icon = p.icon;
-              return (
-                <Link key={p.num} href={p.href} className="block h-full">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-60px' }}
-                    transition={{ duration: 0.5, delay: i * 0.08 }}
-                    className="group h-full rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.18] p-7 transition-all"
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="font-mono text-xs tracking-[0.25em] text-amber-300/70">{p.num}</span>
-                      <Icon className="w-5 h-5 text-amber-300" />
-                    </div>
-                    <h3 className="text-white font-bold text-lg mb-2 tracking-tight">{p.title}</h3>
-                    <p className="text-sm text-gray-400 leading-relaxed mb-5">{p.desc}</p>
-                    <div className="flex items-center gap-1.5 text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                      <span>{tx('申請加入', '申请加入', 'Apply')}</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                  </motion.div>
-                </Link>
-              );
-            })}
-          </div>
-
-          <p className="mt-8 text-sm text-gray-500 text-center max-w-3xl mx-auto leading-relaxed">
-            {tx(
-              'Onyx 透過全球錄音室與聲導合作網絡,提供當地規格交付。歡迎符合 TTS 級規格(48k / 24-bit / -70dBFS 底噪 / acoustically treated room)的錄音室,以及具備母語直接帶 directed session 經驗的聲音導演加入。',
-              'Onyx 透过全球录音室与声导合作网络,提供当地规格交付。欢迎符合 TTS 级规格(48k / 24-bit / -70dBFS 底噪 / acoustically treated room)的录音室,以及具备母语直接带 directed session 经验的声音导演加入。',
-              'Onyx delivers local-spec recording through a global studio + director network. We welcome studios meeting TTS-grade specs (48k / 24-bit / -70dBFS noise floor / acoustically treated room) and native-speaker session directors with directed-session experience.'
-            )}
-          </p>
-        </div>
       </section>
 
       {/* CTA */}

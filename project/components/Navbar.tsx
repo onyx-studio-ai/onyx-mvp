@@ -44,12 +44,19 @@ export default function Navbar() {
   const isVoiceContext = pathname?.startsWith('/voice') || pathname === '/voices' || pathname === '/pricing';
   const isMusicContext = pathname?.startsWith('/music');
   const isDubbingContext = pathname?.startsWith('/dubbing');
+  const isDataContext = pathname?.startsWith('/data');
+  const isPartnerContext = pathname?.startsWith('/apply');
   const isLobby = pathname === '/';
 
+  // 4 service modules — mirrors the 4 service cards on the homepage so the
+  // top nav reads as the canonical service taxonomy. Partner Network is
+  // separate (right-side, secondary) — it's supply-side recruitment, not a
+  // service to clients, so it doesn't belong in the service-module row.
   const visibleModules = [
     { href: '/voice' as const, label: t('voiceStudio') },
     { href: '/music' as const, label: t('musicStudio') },
     { href: '/dubbing' as const, label: t('dubbingStudio') },
+    { href: '/data' as const, label: t('dataStudio') },
   ];
 
   const getContextTools = (): NavigationLink[] => {
@@ -127,6 +134,10 @@ export default function Navbar() {
                   isActive = true;
                 }
 
+                if (module.href === '/data' && isDataContext) {
+                  isActive = true;
+                }
+
                 return (
                   <Link
                     key={module.href}
@@ -171,6 +182,24 @@ export default function Navbar() {
                   })}
                 </>
               )}
+
+              {/* Partner Network — supply-side recruitment entry. Sits in
+                  the secondary nav (right of the 4 service modules) because
+                  it's not a service; it's where talents / studios / directors
+                  / proofreaders apply to join. */}
+              <Link
+                href="/apply"
+                className={`text-sm font-medium transition-colors relative ${
+                  isPartnerContext
+                    ? 'text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {t('partnerNetwork')}
+                {isPartnerContext && (
+                  <div className="absolute -bottom-[37px] left-0 right-0 h-[2px] bg-blue-500" />
+                )}
+              </Link>
 
               <Link
                 href="/contact"
@@ -262,6 +291,10 @@ export default function Navbar() {
                 isActive = true;
               }
 
+              if (module.href === '/data' && isDataContext) {
+                isActive = true;
+              }
+
               return (
                 <Link
                   key={module.href}
@@ -310,6 +343,21 @@ export default function Navbar() {
             )}
 
             <div className="h-[1px] w-full bg-white/10 my-2" />
+
+            <Link
+              href="/apply"
+              onClick={() => closeMobileMenu()}
+              className={`text-lg font-medium transition-colors ${
+                isPartnerContext
+                  ? 'text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {t('partnerNetwork')}
+              {isPartnerContext && (
+                <div className="mt-2 h-[2px] w-12 bg-blue-500" />
+              )}
+            </Link>
 
             <Link
               href="/contact"
