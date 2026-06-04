@@ -206,38 +206,15 @@ export default function DataPage() {
         </motion.div>
       </section>
 
-      {/* WHY ONYX block */}
-      <section className="px-4 sm:px-6 lg:px-8 pb-12">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="max-w-3xl mx-auto px-6 py-6 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3"
-        >
-          <p className="text-base text-gray-300 leading-relaxed">
-            {tx(
-              '17 年配音導演經驗,知道客戶要的「自然對話 + 情緒真實」是怎麼錄出來的,不是錄音棚朗讀。',
-              '17 年配音导演经验,知道客户要的「自然对话 + 情绪真实」是怎么录出来的,不是录音棚朗读。',
-              "17 years of voice direction experience. We know how to produce the 'natural conversation + genuine emotion' clients actually need — not studio recitation."
-            )}
-          </p>
-          <p className="text-base text-gray-300 leading-relaxed">
-            {tx(
-              '1,500+ 配音員 × 30+ 語種 — 亞語深度(台灣、大陸、香港粵語、台語、東南亞、印度)是其他供應端覆蓋不到的。',
-              '1,500+ 配音员 × 30+ 语种 — 亚语深度(台湾、大陆、香港粤语、台语、东南亚、印度)是其他供应端覆盖不到的。',
-              "1,500+ talents across 30+ languages. Asian-language depth — Taiwan / Mainland Mandarin, Hong Kong Cantonese, Hokkien, Southeast Asian, Indian — that other suppliers can't match."
-            )}
-          </p>
-          <p className="text-base text-gray-400 leading-relaxed">
-            {tx(
-              'Studio-managed 流程 — 從 directed session、規格錄音、到授權文件,客戶不用 onboard 任何個別配音員。',
-              'Studio-managed 流程 — 从 directed session、规格录音、到授权文件,客户不用 onboard 任何个别配音员。',
-              'Studio-managed workflow — from directed session to spec recording to license documentation. Clients never onboard individual talents.'
-            )}
-          </p>
-        </motion.div>
-      </section>
+      {/* (Why Onyx block removed — the Hero already establishes
+          positioning [錄音室級 + 真人導演 + 一站交付], and Capabilities
+          downstream covers the same three points [Studio-managed /
+          亞語深度 / 授權合規] as proof. Repeating them here in a
+          third place pushed the actual Service cards too far below
+          the fold and overclaimed on content-type ['自然對話 +
+          情緒真實' doesn't apply to scripted-TTS or annotation
+          projects]. Pure-funnel layout now: Hero → Services →
+          Workflow → Capabilities → Transparency → CTA.) */}
 
       {/* SERVICES (4 cards) */}
       <section className="px-4 sm:px-6 lg:px-8 py-16">
