@@ -100,6 +100,7 @@ export default function DataBriefPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [role, setRole] = useState<Role | ''>('');
   const [timeline, setTimeline] = useState<Timeline | ''>('');
+  const [targetDeliveryDate, setTargetDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -183,14 +184,14 @@ export default function DataBriefPage() {
               'No — Onyx may apply standard post-production'),
     }[n]),
     annotation: (a: AnnotationNeed): string => ({
-      timestamp:  tx('時間軸標註(秒數 / 片段 segment)',  '时间轴标注(秒数 / 片段 segment)',  'Timestamp annotation (segments / seconds)'),
+      timestamp:  tx('時間軸標註(秒數 / segment)',  '时间轴标注(秒数 / segment)',  'Timestamp annotation (segments / seconds)'),
       transcript: tx('文字校對 / 逐字稿',          '文字校对 / 逐字稿',          'Transcript proofreading'),
-      metadata:   tx('Metadata(標籤資料)標註(情緒 / 事件)', 'Metadata(标签资料)标注(情绪 / 事件)', 'Metadata tagging (emotion / events)'),
+      metadata:   tx('Metadata 標註(情緒 / 事件)', 'Metadata 标注(情绪 / 事件)', 'Metadata tagging (emotion / events)'),
       all:        tx('全部',                       '全部',                       'All of the above'),
     }[a]),
     material: (m: Material): string => ({
-      haveScript:    tx('已有腳本 / 提示句(prompts)(可提供)',  '已有脚本 / 提示句(prompts)(可提供)',  'Have script / prompts (can provide)'),
-      haveReference: tx('已有參考(reference)聲音 / 模型',    '已有参考(reference)声音 / 模型',    'Have reference voice / model'),
+      haveScript:    tx('已有腳本 / prompts(可提供)',  '已有脚本 / prompts(可提供)',  'Have script / prompts (can provide)'),
+      haveReference: tx('已有 reference 聲音 / 模型',    '已有 reference 声音 / 模型',    'Have reference voice / model'),
       haveData:      tx('已有部分語料 / 資料',         '已有部分语料 / 资料',         'Have existing partial data'),
       fromScratch:   tx('從零開始(Onyx 提供腳本)',    '从零开始(Onyx 提供脚本)',    'From scratch (Onyx provides script)'),
       other:         tx('其他(備註說明)',             '其他(备注说明)',             'Other (specify in notes)'),
@@ -208,9 +209,9 @@ export default function DataBriefPage() {
       other:   tx('其他(備註說明)', '其他(备注说明)', 'Other (specify in notes)'),
     }[r]),
     timeline: (t: Timeline): string => ({
-      rush:     tx('加急(2 週內,+30% 費用)',  '加急(2 周内,+30% 费用)',  'Rush (within 2 weeks, +30% fee)'),
-      standard: tx('標準(4-8 週)',             '标准(4-8 周)',             'Standard (4-8 weeks)'),
-      flexible: tx('彈性',                     '弹性',                     'Flexible'),
+      rush:     tx('加急(優先排期,+30% 費用)',  '加急(优先排期,+30% 费用)',  'Rush (priority scheduling, +30% fee)'),
+      standard: tx('標準',                       '标准',                       'Standard'),
+      flexible: tx('彈性',                       '弹性',                       'Flexible'),
     }[t]),
   };
 
@@ -291,7 +292,15 @@ export default function DataBriefPage() {
     lines.push('');
 
     lines.push(tx('▎ 交期', '▎ 交期', '▎ Timeline'));
-    lines.push('  ' + labelFor.timeline(timeline as Timeline));
+    if (targetDeliveryDate) {
+      lines.push((tx('  希望交付日期:', '  希望交付日期:', '  Target delivery date: ')) + targetDeliveryDate);
+    }
+    lines.push((tx('  急迫程度:', '  急迫程度:', '  Urgency: ')) + labelFor.timeline(timeline as Timeline));
+    lines.push((tx(
+      '  (實際交期 Onyx 收到 brief 後 24h 內回報具體 timeline,從首次錄音後起算)',
+      '  (实际交期 Onyx 收到 brief 后 24h 内回报具体 timeline,从首次录音后起算)',
+      '  (Actual timeline reported within 24h of brief; counted from first recording session.)'
+    )));
     lines.push('');
 
     if (notes.trim()) {
@@ -613,13 +622,31 @@ export default function DataBriefPage() {
             title={tx('09 時程與聯絡', '09 时程与联络', '09 Timeline & contact')}
             required
           >
-            <Field label={tx('交期', '交期', 'Timeline')} required>
+            <Field
+              label={tx('希望交付日期(選填)', '希望交付日期(选填)', 'Target delivery date (optional)')}
+              hint={tx('留空 = 沒有固定 deadline。', '留空 = 没有固定 deadline。', 'Leave blank if no fixed deadline.')}
+            >
+              <input
+                type="date"
+                value={targetDeliveryDate}
+                onChange={e => setTargetDeliveryDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-amber-500/60 [color-scheme:dark]"
+              />
+            </Field>
+            <Field label={tx('急迫程度', '急迫程度', 'Urgency')} required>
               <Choices
                 value={timeline}
                 onSelect={(v) => setTimeline(v as Timeline)}
                 options={(['rush','standard','flexible'] as Timeline[])
                   .map(k => [k, labelFor.timeline(k)] as [string, string])}
               />
+              <p className="mt-3 text-xs text-gray-500 leading-relaxed">
+                {tx(
+                  '實際交期看規模、語種、人數 — Onyx 收到 brief 後 24 小時內回報具體 timeline(從首次錄音後起算)。',
+                  '实际交期看规模、语种、人数 — Onyx 收到 brief 后 24 小时内回报具体 timeline(从首次录音后起算)。',
+                  'Actual timeline depends on scale, language count, and number of talents. Onyx reports specific timeline within 24h of brief, counted from first recording session.'
+                )}
+              </p>
             </Field>
             <Field label={tx('補充說明 / 參考', '补充说明 / 参考', 'Notes / references')}>
               <textarea

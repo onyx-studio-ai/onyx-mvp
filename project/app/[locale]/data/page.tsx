@@ -70,8 +70,8 @@ export default function DataPage() {
       num: '03', icon: MessageCircle,
       title: tx('對話 / 情緒語料', '对话 / 情绪语料', 'Conversational / Emotion Corpus'),
       desc: tx(
-        '即興對話、多輪對話、多情緒範圍 — 客戶用來訓自己的對話 AI / 情緒感知(emotion-aware)模型。',
-        '即兴对话、多轮对话、多情绪范围 — 客户用来训自己的对话 AI / 情绪感知(emotion-aware)模型。',
+        '即興對話、多輪對話、多情緒範圍 — 客戶用來訓自己的對話 AI / emotion-aware 模型。',
+        '即兴对话、多轮对话、多情绪范围 — 客户用来训自己的对话 AI / emotion-aware 模型。',
         'Improvised conversational, multi-turn dialogue, full emotional range — client uses this to train their own conversational AI / emotion-aware models.'
       ),
     },
@@ -79,8 +79,8 @@ export default function DataPage() {
       num: '04', icon: Tag,
       title: tx('資料標註與清理', '资料标注与清理', 'Data Annotation & Cleaning'),
       desc: tx(
-        '對音檔做時間軸標註、文字校對、metadata(標籤資料)整理 — 客戶已有音檔交給我們做後製。完整方案(turnkey)客戶可加購一站處理。',
-        '对音档做时间轴标注、文字校对、metadata(标签资料)整理 — 客户已有音档交给我们做后制。完整方案(turnkey)客户可加购一站处理。',
+        '對音檔做時間軸標註、文字校對、metadata 整理 — 客戶已有音檔交給我們做後製。turnkey 客戶可加購一站處理。',
+        '对音档做时间轴标注、文字校对、metadata 整理 — 客户已有音档交给我们做后制。turnkey 客户可加购一站处理。',
         'Timestamp annotation, transcript proofreading, metadata tagging on existing audio — client hands over recordings and we post-process. Available as a turnkey add-on.'
       ),
     },
@@ -91,8 +91,8 @@ export default function DataPage() {
       num: '01', icon: Send,
       title: tx('詢價', '询价', 'Inquire'),
       desc: tx(
-        '詢價單(Brief)+ 語種規格確認,24 小時內回覆方向與報價。',
-        '询价单(Brief)+ 语种规格确认,24 小时内回复方向与报价。',
+        'Brief + 語種規格確認,24 小時內回覆方向與報價。',
+        'Brief + 语种规格确认,24 小时内回复方向与报价。',
         'Brief + language/spec confirmation. Direction + quote within 24h.'
       ),
     },
@@ -100,8 +100,8 @@ export default function DataPage() {
       num: '02', icon: Users2,
       title: tx('選聲', '选声', 'Roster'),
       desc: tx(
-        '我們提供統一管理(studio-managed)的聲音池,客戶從中挑選。',
-        '我们提供统一管理(studio-managed)的声音池,客户从中挑选。',
+        '我們提供 studio-managed 聲音池,客戶從中挑選。',
+        '我们提供 studio-managed 声音池,客户从中挑选。',
         "We supply the studio-managed roster — you pick from it."
       ),
     },
@@ -130,8 +130,8 @@ export default function DataPage() {
       icon: Settings,
       title: tx('Studio-managed 流程', 'Studio-managed 流程', 'Studio-Managed Workflow'),
       desc: tx(
-        '客戶面對一個窗口,Onyx 統包人才、付款、文件 — 不用對接(onboard)任何個別配音員。',
-        '客户面对一个窗口,Onyx 统包人才、付款、文件 — 不用对接(onboard)任何个别配音员。',
+        '客戶面對一個窗口,Onyx 統包人才、付款、文件 — 不用 onboard 任何個別配音員。',
+        '客户面对一个窗口,Onyx 统包人才、付款、文件 — 不用 onboard 任何个别配音员。',
         "One point of contact. We handle the roster, payment, and documentation — clients never onboard individual talents."
       ),
     },
@@ -148,8 +148,8 @@ export default function DataPage() {
       icon: ShieldCheck,
       title: tx('授權合規交付', '授权合规交付', 'Compliant Licensing'),
       desc: tx(
-        '同意書(Consent)流程、授權範圍明文、續約結構 — 規格化文件,一次交清。',
-        '同意书(Consent)流程、授权范围明文、续约结构 — 规格化文件,一次交清。',
+        'Consent 流程、授權範圍明文、續約結構 — 規格化文件,一次交清。',
+        'Consent 流程、授权范围明文、续约结构 — 规格化文件,一次交清。',
         'Consent process, explicit license scope, renewal structure — standardized documentation, delivered together.'
       ),
     },
