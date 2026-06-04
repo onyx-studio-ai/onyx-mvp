@@ -159,20 +159,27 @@ export default function DubbingPage() {
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] tracking-tight">
-            <span className="block text-white">
-              {tx('影片、遊戲、品牌的', '影视、游戏、品牌的', 'Multilingual Dubbing')}
-            </span>
-            <span className="block bg-gradient-to-r from-blue-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent">
-              {tx('多語配音', '多语配音', 'for Film, Game & Brand')}
-            </span>
+          {/* h1 (white) — anchors to the homepage brand label "全球 AI 配音"
+              so the customer arriving from the lobby keeps brand continuity. */}
+          <h1 className="text-5xl md:text-7xl font-bold mb-5 leading-[1.1] tracking-tight text-white">
+            {tx('全球 AI 配音', '全球 AI 配音', 'Global AI Dubbing')}
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
+          {/* Gradient tagline — this is the slogan slot, parallel to the
+              homepage's "AI 生成，賦予靈魂" gradient tagline pattern. */}
+          <p className="text-2xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent leading-tight">
             {tx(
-              'AI 速度、真人導演品質。從原始腳本到可直接上線的音檔，30+ 語種。',
-              'AI 速度、真人导演品质。从原始脚本到可直接上线的音档，30+ 语种。',
-              'AI speed, human-directed quality. From source script to broadcast-ready audio in 30+ languages.'
+              '一個聲音，跨越 30+ 語種',
+              '一个声音，跨越 30+ 语种',
+              'One voice, across 30+ languages'
+            )}
+          </p>
+
+          <p className="text-lg md:text-xl text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
+            {tx(
+              '從原始腳本到可直接上線的多語音檔。',
+              '从原始脚本到可直接上线的多语音档。',
+              'From source script to broadcast-ready multilingual audio.'
             )}
           </p>
 
@@ -180,7 +187,7 @@ export default function DubbingPage() {
             {tx(
               '純 AI 不夠用、全包真人錄音室又太貴 — Onyx 介於兩者之間，AI 處理、真人把關。',
               '纯 AI 不够用、全包真人录音棚又太贵 — Onyx 介于两者之间，AI 处理、真人把关。',
-              "Sits between pure AI and full studio: AI does the heavy lifting; our voice directors catch what AI misses."
+              "Pure AI isn't enough, full human studio is too expensive — Onyx sits between: AI handles the volume, humans guard the quality."
             )}
           </p>
         </motion.div>
