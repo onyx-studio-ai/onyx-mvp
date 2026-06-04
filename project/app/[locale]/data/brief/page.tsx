@@ -183,14 +183,14 @@ export default function DataBriefPage() {
               'No — Onyx may apply standard post-production'),
     }[n]),
     annotation: (a: AnnotationNeed): string => ({
-      timestamp:  tx('時間軸標註(秒數 / segment)',  '时间轴标注(秒数 / segment)',  'Timestamp annotation (segments / seconds)'),
+      timestamp:  tx('時間軸標註(秒數 / 片段 segment)',  '时间轴标注(秒数 / 片段 segment)',  'Timestamp annotation (segments / seconds)'),
       transcript: tx('文字校對 / 逐字稿',          '文字校对 / 逐字稿',          'Transcript proofreading'),
-      metadata:   tx('Metadata 標註(情緒 / 事件)', 'Metadata 标注(情绪 / 事件)', 'Metadata tagging (emotion / events)'),
+      metadata:   tx('Metadata(標籤資料)標註(情緒 / 事件)', 'Metadata(标签资料)标注(情绪 / 事件)', 'Metadata tagging (emotion / events)'),
       all:        tx('全部',                       '全部',                       'All of the above'),
     }[a]),
     material: (m: Material): string => ({
-      haveScript:    tx('已有腳本 / prompts(可提供)',  '已有脚本 / prompts(可提供)',  'Have script / prompts (can provide)'),
-      haveReference: tx('已有 reference 聲音 / 模型',    '已有 reference 声音 / 模型',    'Have reference voice / model'),
+      haveScript:    tx('已有腳本 / 提示句(prompts)(可提供)',  '已有脚本 / 提示句(prompts)(可提供)',  'Have script / prompts (can provide)'),
+      haveReference: tx('已有參考(reference)聲音 / 模型',    '已有参考(reference)声音 / 模型',    'Have reference voice / model'),
       haveData:      tx('已有部分語料 / 資料',         '已有部分语料 / 资料',         'Have existing partial data'),
       fromScratch:   tx('從零開始(Onyx 提供腳本)',    '从零开始(Onyx 提供脚本)',    'From scratch (Onyx provides script)'),
       other:         tx('其他(備註說明)',             '其他(备注说明)',             'Other (specify in notes)'),
@@ -252,7 +252,7 @@ export default function DataBriefPage() {
     lines.push(tx('▎ 專案規模', '▎ 项目规模', '▎ Project scale'));
     if (voiceCount.trim())     lines.push((tx('  聲音數量(預估):',  '  声音数量(预估):',  '  Voices (est.): ')) + voiceCount.trim());
     if (finishedHours.trim())  lines.push((tx('  完成時數(預估):',  '  完成时数(预估):',  '  Finished hours (est.): ')) + finishedHours.trim());
-    if (utteranceCount.trim()) lines.push((tx('  utterance 數(預估):', '  utterance 数(预估):', '  Utterances (est.): ')) + utteranceCount.trim());
+    if (utteranceCount.trim()) lines.push((tx('  短句 / utterance 數(預估):', '  短句 / utterance 数(预估):', '  Utterances (est.): ')) + utteranceCount.trim());
     if (!voiceCount.trim() && !finishedHours.trim() && !utteranceCount.trim()) {
       lines.push(tx('  (規模待確認,Onyx 提供建議)',
                     '  (规模待确认,Onyx 提供建议)',
@@ -461,7 +461,14 @@ export default function DataBriefPage() {
             <Field label={tx('完成時數(預估)', '完成时数(预估)', 'Finished hours (est.)')}>
               <Input value={finishedHours} onChange={setFinishedHours} placeholder={tx('例:3 / 10 / 100 小時', '例:3 / 10 / 100 小时', 'e.g. 3 / 10 / 100 hours')} />
             </Field>
-            <Field label={tx('Utterance 數(預估)', 'Utterance 数(预估)', 'Utterances (est.)')}>
+            <Field
+              label={tx('短句 / Utterance 數(預估)', '短句 / Utterance 数(预估)', 'Utterances (est.)')}
+              hint={tx(
+                'AI 訓練常用單位 — 一個 utterance ≈ 一個短句或一段獨立錄音(約 2-15 秒)。',
+                'AI 训练常用单位 — 一个 utterance ≈ 一个短句或一段独立录音(约 2-15 秒)。',
+                'Common AI-training unit. One utterance ≈ one short sentence or a discrete recording (≈ 2-15 seconds).'
+              )}
+            >
               <Input value={utteranceCount} onChange={setUtteranceCount} placeholder={tx('例:1,000 / 10,000 / 不確定', '例:1,000 / 10,000 / 不确定', 'e.g. 1,000 / 10,000 / unsure')} />
             </Field>
           </Section>

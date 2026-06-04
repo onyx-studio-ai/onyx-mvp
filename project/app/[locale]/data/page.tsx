@@ -59,8 +59,8 @@ export default function DataPage() {
       num: '02', icon: User,
       title: tx('Voice Avatar / 聲線克隆', 'Voice Avatar / 声线克隆', 'Voice Avatar / Cloning'),
       desc: tx(
-        'Directed session 錄音,授權制交付,適合客服 agent、品牌 voice 部署。',
-        'Directed session 录音,授权制交付,适合客服 agent、品牌 voice 部署。',
+        '導演引導錄音(Directed session),授權制交付,適合客服 agent、品牌語音部署。',
+        '导演引导录音(Directed session),授权制交付,适合客服 agent、品牌语音部署。',
         'Directed session recording with license-based delivery. For customer-service agents and branded voice deployment.'
       ),
     },
@@ -68,8 +68,8 @@ export default function DataPage() {
       num: '03', icon: MessageCircle,
       title: tx('對話 / 情緒語料', '对话 / 情绪语料', 'Conversational / Emotion Data'),
       desc: tx(
-        '即興 conversational、多輪對話、多情緒範圍,emotion-aware AI 訓練必備。',
-        '即兴 conversational、多轮对话、多情绪范围,emotion-aware AI 训练必备。',
+        '即興對話(conversational)、多輪對話、多情緒範圍,情緒感知(emotion-aware)AI 訓練必備。',
+        '即兴对话(conversational)、多轮对话、多情绪范围,情绪感知(emotion-aware)AI 训练必备。',
         'Improvised conversational, multi-turn dialogue, full emotional range — essential for emotion-aware AI training.'
       ),
     },
@@ -77,8 +77,8 @@ export default function DataPage() {
       num: '04', icon: Tag,
       title: tx('資料標註與清理', '资料标注与清理', 'Data Annotation & Cleaning'),
       desc: tx(
-        '時間軸標註、文字校對、metadata 整理。turnkey 客戶可加購一站處理。',
-        '时间轴标注、文字校对、metadata 整理。turnkey 客户可加购一站处理。',
+        '時間軸標註、文字校對、metadata(標籤資料)整理。完整方案(turnkey)客戶可加購一站處理。',
+        '时间轴标注、文字校对、metadata(标签资料)整理。完整方案(turnkey)客户可加购一站处理。',
         'Timestamp annotation, transcript proofreading, metadata tagging. Available as a turnkey add-on.'
       ),
     },
@@ -89,8 +89,8 @@ export default function DataPage() {
       num: '01', icon: Send,
       title: tx('詢價', '询价', 'Inquire'),
       desc: tx(
-        'Brief + 語種規格確認,24 小時內回覆方向與報價。',
-        'Brief + 语种规格确认,24 小时内回复方向与报价。',
+        '詢價單(Brief)+ 語種規格確認,24 小時內回覆方向與報價。',
+        '询价单(Brief)+ 语种规格确认,24 小时内回复方向与报价。',
         'Brief + language/spec confirmation. Direction + quote within 24h.'
       ),
     },
@@ -98,8 +98,8 @@ export default function DataPage() {
       num: '02', icon: Users2,
       title: tx('選聲', '选声', 'Roster'),
       desc: tx(
-        '我們提供 studio-managed 聲音池,客戶從中挑選。',
-        '我们提供 studio-managed 声音池,客户从中挑选。',
+        '我們提供統一管理(studio-managed)的聲音池,客戶從中挑選。',
+        '我们提供统一管理(studio-managed)的声音池,客户从中挑选。',
         "We supply the studio-managed roster — you pick from it."
       ),
     },
@@ -107,8 +107,8 @@ export default function DataPage() {
       num: '03', icon: Headphones,
       title: tx('製作', '制作', 'Produce'),
       desc: tx(
-        '導演引導 directed session,規格錄音全程把關。',
-        '导演引导 directed session,规格录音全程把关。',
+        '導演現場引導錄音(directed session),規格錄音全程把關。',
+        '导演现场引导录音(directed session),规格录音全程把关。',
         'Director-led session, spec-compliant recording supervised end-to-end.'
       ),
     },
@@ -128,8 +128,8 @@ export default function DataPage() {
       icon: Settings,
       title: tx('Studio-managed 流程', 'Studio-managed 流程', 'Studio-Managed Workflow'),
       desc: tx(
-        '客戶面對一個窗口,Onyx 統包人才、付款、文件 — 不用 onboard 任何個別配音員。',
-        '客户面对一个窗口,Onyx 统包人才、付款、文件 — 不用 onboard 任何个别配音员。',
+        '客戶面對一個窗口,Onyx 統包人才、付款、文件 — 不用對接(onboard)任何個別配音員。',
+        '客户面对一个窗口,Onyx 统包人才、付款、文件 — 不用对接(onboard)任何个别配音员。',
         "One point of contact. We handle the roster, payment, and documentation — clients never onboard individual talents."
       ),
     },
@@ -146,8 +146,8 @@ export default function DataPage() {
       icon: ShieldCheck,
       title: tx('授權合規交付', '授权合规交付', 'Compliant Licensing'),
       desc: tx(
-        'Consent 流程、授權範圍明文、續約結構 — 規格化文件,一次交清。',
-        'Consent 流程、授权范围明文、续约结构 — 规格化文件,一次交清。',
+        '同意書(Consent)流程、授權範圍明文、續約結構 — 規格化文件,一次交清。',
+        '同意书(Consent)流程、授权范围明文、续约结构 — 规格化文件,一次交清。',
         'Consent process, explicit license scope, renewal structure — standardized documentation, delivered together.'
       ),
     },
