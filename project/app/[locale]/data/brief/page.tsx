@@ -105,7 +105,9 @@ export default function DataBriefPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
-  const [phone, setPhone] = useState('');
+  // Note: no phone field — Wing's pattern is "clients add our official
+  // LINE / WhatsApp", not "we ask for their phone". The contact-method
+  // note below the form points them at /contact for those channels.
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -311,7 +313,6 @@ export default function DataBriefPage() {
 
     lines.push(tx('▎ 聯絡', '▎ 联络', '▎ Contact'));
     if (company.trim()) lines.push((tx('  公司:', '  公司:', '  Company: ')) + company.trim());
-    if (phone.trim())   lines.push((tx('  電話:', '  电话:', '  Phone: ')) + phone.trim());
 
     const messageBody = lines.join('\n');
 
@@ -670,9 +671,20 @@ export default function DataBriefPage() {
             <Field label={tx('公司 / 機構', '公司 / 机构', 'Company / Organization')}>
               <Input value={company} onChange={setCompany} placeholder={tx('公司名稱(選填)', '公司名称(选填)', 'Company name (optional)')} />
             </Field>
-            <Field label={tx('電話 / WhatsApp / LINE', '电话 / WhatsApp / LINE', 'Phone / WhatsApp / LINE')}>
-              <Input value={phone} onChange={setPhone} placeholder={tx('選填,加快回覆', '选填,加快回复', 'Optional, speeds up response')} />
-            </Field>
+
+            {/* Alternate-contact note — Wing's preference: clients add our
+                official LINE / WhatsApp, not the other way around. */}
+            <p className="text-xs text-gray-500 leading-relaxed pt-2">
+              {tx(
+                '不想用 email 聯絡? 可以加我們的官方 LINE / WhatsApp,我們會直接對接 — ',
+                '不想用 email 联系? 可以加我们的官方 LINE / WhatsApp,我们会直接对接 — ',
+                "Prefer not to use email? Add our official LINE / WhatsApp and we'll connect directly — "
+              )}
+              <Link href="/contact" className="text-amber-300 hover:text-amber-200 underline">
+                {tx('看聯絡資訊', '看联络资讯', 'see contact info')}
+              </Link>
+              {tx('。', '。', '.')}
+            </p>
           </Section>
 
           <div className="pt-2">
