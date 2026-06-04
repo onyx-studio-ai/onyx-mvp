@@ -105,9 +105,7 @@ export default function DataBriefPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
-  // Note: no phone field — Wing's pattern is "clients add our official
-  // LINE / WhatsApp", not "we ask for their phone". The contact-method
-  // note below the form points them at /contact for those channels.
+  const [phone, setPhone] = useState('');
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -313,6 +311,7 @@ export default function DataBriefPage() {
 
     lines.push(tx('▎ 聯絡', '▎ 联络', '▎ Contact'));
     if (company.trim()) lines.push((tx('  公司:', '  公司:', '  Company: ')) + company.trim());
+    if (phone.trim())   lines.push((tx('  電話:', '  电话:', '  Phone: ')) + phone.trim());
 
     const messageBody = lines.join('\n');
 
@@ -671,17 +670,28 @@ export default function DataBriefPage() {
             <Field label={tx('公司 / 機構', '公司 / 机构', 'Company / Organization')}>
               <Input value={company} onChange={setCompany} placeholder={tx('公司名稱(選填)', '公司名称(选填)', 'Company name (optional)')} />
             </Field>
+            <Field
+              label={tx('電話(選填)', '电话(选填)', 'Phone (optional)')}
+              hint={tx(
+                '想要直接 / 加快聯絡的填,否則我們以 email 回覆。',
+                '想要直接 / 加快联系的填,否则我们以 email 回复。',
+                'Fill if you want direct / faster contact, otherwise we reply by email.'
+              )}
+            >
+              <Input value={phone} onChange={setPhone} placeholder={tx('包含國碼,例如 +886 ...', '包含国码,例如 +886 ...', 'Include country code, e.g. +1 ...')} />
+            </Field>
 
-            {/* Alternate-contact note — Wing's preference: clients add our
-                official LINE / WhatsApp, not the other way around. */}
+            {/* Neutral pointer to the contact page — Wing's stance is
+                email + platform forms are primary. Other channels (if any)
+                live on /contact and she controls what's listed there. */}
             <p className="text-xs text-gray-500 leading-relaxed pt-2">
               {tx(
-                '不想用 email 聯絡? 可以加我們的官方 LINE / WhatsApp,我們會直接對接 — ',
-                '不想用 email 联系? 可以加我们的官方 LINE / WhatsApp,我们会直接对接 — ',
-                "Prefer not to use email? Add our official LINE / WhatsApp and we'll connect directly — "
+                '其他聯絡方式,請見我們的',
+                '其他联系方式,请见我们的',
+                'Other contact methods — see our '
               )}
               <Link href="/contact" className="text-amber-300 hover:text-amber-200 underline">
-                {tx('看聯絡資訊', '看联络资讯', 'see contact info')}
+                {tx('官方聯絡頁', '官方联系页', 'official contact page')}
               </Link>
               {tx('。', '。', '.')}
             </p>
