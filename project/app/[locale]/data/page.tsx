@@ -25,7 +25,6 @@
  * scale; for industry insiders, it reads as a recruitment signal.
  */
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
@@ -33,18 +32,15 @@ import {
   ArrowRight, Mic, MessageCircle, User, Tag,
   Send, Users2, Headphones, Package,
   Settings, Globe, ShieldCheck,
-  UserPlus, Building2, UserCheck,
+  UserPlus, Building2, UserCheck, FileSearch,
 } from 'lucide-react';
 import Footer from '@/components/landing/Footer';
-import ContactModal from '@/components/ContactModal';
 
 export default function DataPage() {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
   const isZhCN = locale === 'zh-CN';
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
-
-  const [contactOpen, setContactOpen] = useState<null | 'studio' | 'director'>(null);
 
   // Service types — the 4 distinct revenue streams. Annotation is an
   // explicit card (not buried as a capability) because it's a higher-
@@ -158,44 +154,48 @@ export default function DataPage() {
     },
   ];
 
-  // Partner Network — supply-side recruitment without undermining
-  // client-side credibility. Framing is "we are expanding the network"
-  // (scale signal), not "we lack these" (gap signal). 02 and 03 use
-  // ContactModal as temporary intake until /apply/studio and
-  // /apply/director are built in a follow-up commit.
+  // Partner Network — 4 supply-side paths. All now route to dedicated
+  // /apply/* forms (was ContactModal in the previous commit; the
+  // Proofreader / Language QA path was added per Wing's note that for
+  // languages she doesn't speak — Hindi, Tamil, etc. — verifiable
+  // credentials are non-negotiable: she can't hear bullshit, so the
+  // form forces LinkedIn + cert IDs + specific past projects).
   const partners = [
     {
-      num: '01', icon: UserPlus,
+      num: '01', icon: UserPlus, href: '/apply/voice',
       title: tx('Voice Talent', '配音人才', 'Voice Talent'),
       desc: tx(
         '個人配音員加入 Onyx 全球陣容。',
         '个人配音员加入 Onyx 全球阵容。',
         'Individual voice talents joining the Onyx global roster.'
       ),
-      action: 'link' as const,
-      href: '/apply',
     },
     {
-      num: '02', icon: Building2,
-      title: tx('Studio Partnership', '录音室合作', 'Studio Partnership'),
+      num: '02', icon: Building2, href: '/apply/studio',
+      title: tx('Studio Partnership', '錄音室合作', 'Studio Partnership'),
       desc: tx(
         '符合 TTS 級規格的全球錄音室合作 — 在當地錄音,穩定性最好。',
         '符合 TTS 级规格的全球录音室合作 — 在当地录音,稳定性最好。',
         'Global studios meeting TTS-grade specs. Local recording = better stability.'
       ),
-      action: 'contact' as const,
-      kind: 'studio' as const,
     },
     {
-      num: '03', icon: UserCheck,
-      title: tx('Session Director', '声音导演', 'Session Director'),
+      num: '03', icon: UserCheck, href: '/apply/director',
+      title: tx('Session Director', '聲音導演', 'Session Director'),
       desc: tx(
         '具母語直接帶 directed session 經驗的各語種聲音導演。',
         '具母语直接带 directed session 经验的各语种声音导演。',
         'Native-speaker session directors with directed-session experience, per language.'
       ),
-      action: 'contact' as const,
-      kind: 'director' as const,
+    },
+    {
+      num: '04', icon: FileSearch, href: '/apply/proofreader',
+      title: tx('Proofreader / 語言 QA', '校對 / 语言 QA', 'Proofreader / Language QA'),
+      desc: tx(
+        '各語種校對與語言品質審核 — 需提供可驗證的學經歷、認證與過往案件。',
+        '各语种校对与语言质量审核 — 需提供可验证的学经历、认证与过往项目。',
+        'Per-language proofreading and QA — verifiable credentials, certifications, and past projects required.'
+      ),
     },
   ];
 
@@ -445,45 +445,30 @@ export default function DataPage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             {partners.map((p, i) => {
               const Icon = p.icon;
-              const Body = (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-60px' }}
-                  transition={{ duration: 0.5, delay: i * 0.08 }}
-                  className="h-full rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.18] p-7 transition-all group"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="font-mono text-xs tracking-[0.25em] text-amber-300/70">{p.num}</span>
-                    <Icon className="w-5 h-5 text-amber-300" />
-                  </div>
-                  <h3 className="text-white font-bold text-lg mb-2 tracking-tight">{p.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed mb-5">{p.desc}</p>
-                  <div className="flex items-center gap-1.5 text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                    <span>{tx('申請加入', '申请加入', 'Apply')}</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </motion.div>
-              );
-
-              if (p.action === 'link') {
-                return (
-                  <Link key={p.num} href={p.href!} className="block h-full">
-                    {Body}
-                  </Link>
-                );
-              }
               return (
-                <button
-                  key={p.num}
-                  onClick={() => setContactOpen(p.kind!)}
-                  className="block h-full w-full text-left"
-                >
-                  {Body}
-                </button>
+                <Link key={p.num} href={p.href} className="block h-full">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-60px' }}
+                    transition={{ duration: 0.5, delay: i * 0.08 }}
+                    className="group h-full rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.18] p-7 transition-all"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="font-mono text-xs tracking-[0.25em] text-amber-300/70">{p.num}</span>
+                      <Icon className="w-5 h-5 text-amber-300" />
+                    </div>
+                    <h3 className="text-white font-bold text-lg mb-2 tracking-tight">{p.title}</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed mb-5">{p.desc}</p>
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+                      <span>{tx('申請加入', '申请加入', 'Apply')}</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </motion.div>
+                </Link>
               );
             })}
           </div>
@@ -528,15 +513,6 @@ export default function DataPage() {
       </section>
 
       <Footer />
-      {/* ContactModal department enum is limited to HELLO/PRODUCTION/etc — we
-          use HELLO and disambiguate Studio vs Director via the source field
-          so the inbox routing and the spawned-task title can split them. */}
-      <ContactModal
-        isOpen={contactOpen !== null}
-        onClose={() => setContactOpen(null)}
-        department="HELLO"
-        source={contactOpen === 'studio' ? 'data-studio-partner' : 'data-session-director'}
-      />
     </main>
   );
 }
