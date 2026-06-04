@@ -218,9 +218,9 @@ export default function DubbingPage() {
           </p>
           <p className="text-base text-gray-400 leading-relaxed">
             {tx(
-              '適合大型在地化：電影、戲劇、遊戲、e-learning、品牌全球發佈 — 純 AI 太粗糙、全真人又太貴的中段需求。',
-              '适合大型本地化：电影、戏剧、游戏、e-learning、品牌全球发布 — 纯 AI 太粗糙、全真人又太贵的中段需求。',
-              "Built for large localization — film, drama, game, e-learning, global brand rollout — anywhere pure AI is too rough and full studio is too expensive."
+              '適合大型在地化：電影、戲劇、遊戲、e-learning、品牌全球發佈。',
+              '适合大型本地化：电影、戏剧、游戏、e-learning、品牌全球发布。',
+              'Built for large localization — film, drama, game, e-learning, global brand rollout.'
             )}
           </p>
         </motion.div>
