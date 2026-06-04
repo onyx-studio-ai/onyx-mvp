@@ -150,7 +150,7 @@ export default function DubbingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="relative max-w-5xl mx-auto"
+          className="relative max-w-5xl mx-auto text-center"
         >
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-blue-300/25 bg-blue-500/[0.08] px-5 py-2">
             <span className="w-2 h-2 rounded-full bg-blue-300 animate-pulse" />
@@ -168,7 +168,7 @@ export default function DubbingPage() {
             </span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-3xl leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-3xl mx-auto leading-relaxed">
             {tx(
               'AI 速度、真人導演品質。從原始腳本到可直接上線的音檔，30+ 語種。',
               'AI 速度、真人导演品质。从原始脚本到可直接上线的音档，30+ 语种。',
@@ -176,7 +176,7 @@ export default function DubbingPage() {
             )}
           </p>
 
-          <p className="text-base md:text-lg text-gray-400 max-w-3xl leading-relaxed">
+          <p className="text-base md:text-lg text-gray-400 max-w-3xl mx-auto leading-relaxed">
             {tx(
               '純 AI 不夠用、全包真人錄音室又太貴 — Onyx 介於兩者之間，AI 處理、真人把關。',
               '纯 AI 不够用、全包真人录音棚又太贵 — Onyx 介于两者之间，AI 处理、真人把关。',
