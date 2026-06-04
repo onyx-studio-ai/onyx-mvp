@@ -68,32 +68,35 @@ export default function DubbingPage() {
     },
   ];
 
+  // Workflow shown at a higher abstraction than the internal SOP — industry
+  // insiders know what's in each step, outsiders will ask. Keeping it tight
+  // protects what's effectively trade craft.
   const workflow = [
     {
       num: '01', icon: Upload,
-      title: tx('寄稿', '寄稿', 'Submit'),
+      title: tx('詢價', '询价', 'Inquire'),
       desc: tx(
-        '劇本 / 影片 / 已有的 AI 翻譯版，我們都收。',
-        '剧本 / 视频 / 已有的 AI 翻译版，我们都收。',
-        'Script / video / existing AI draft — all welcome.'
+        'Brief 接洽，24 小時內回覆方向與報價。',
+        'Brief 接洽，24 小时内回复方向与报价。',
+        'Brief received. Direction + quote within 24h.'
       ),
     },
     {
       num: '02', icon: FileCheck,
-      title: tx('審稿 + 試音', '审稿 + 试音', 'Review + audition'),
+      title: tx('翻譯', '翻译', 'Translate'),
       desc: tx(
-        '24 小時內聲音導演審完，配音員試音供你挑。',
-        '24 小时内声音导演审完，配音员试音供你挑。',
-        'Voice director reviews within 24h. Audition samples for your selection.'
+        '專業翻譯 + 在地化校對。',
+        '专业翻译 + 在地化校对。',
+        'Professional translation + localization review.'
       ),
     },
     {
       num: '03', icon: Headphones,
-      title: tx('錄製 + 母帶', '录制 + 母带', 'Record + master'),
+      title: tx('製作', '制作', 'Produce'),
       desc: tx(
-        'Onyx 自有錄音室 + 全球合作棚，聲音導演現場把關。',
-        'Onyx 自有录音室 + 全球合作棚，声音导演现场把关。',
-        'Onyx-owned studio + global partner network. Director supervises every session.'
+        '錄製 + 後製，品質全程把關。',
+        '录制 + 后制，品质全程把关。',
+        'Recording + post-production, quality supervised end-to-end.'
       ),
     },
     {
@@ -224,7 +227,7 @@ export default function DubbingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="mb-10"
+            className="mb-10 text-center"
           >
             <p className="text-xs font-semibold tracking-[0.25em] uppercase text-blue-300 mb-3">
               {tx('30+ 語種', '30+ 语种', '30+ Languages')}
@@ -236,7 +239,7 @@ export default function DubbingPage() {
                 'Western to Arabic dialects to Asian niches'
               )}
             </h2>
-            <p className="text-gray-400 text-base max-w-3xl">
+            <p className="text-gray-400 text-base max-w-3xl mx-auto">
               {tx(
                 '涵蓋全球主要市場 — 沒列到的小語種歡迎詢問。',
                 '涵盖全球主要市场 — 没列到的小语种欢迎询问。',
@@ -273,13 +276,13 @@ export default function DubbingPage() {
 
       {/* WORKFLOW */}
       <section className="px-4 sm:px-6 lg:px-8 py-16">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-3xl md:text-4xl font-bold text-white mb-10 tracking-tight"
+            className="text-3xl md:text-4xl font-bold text-white mb-10 tracking-tight text-center"
           >
             {tx('工作流程', '工作流程', 'Workflow')}
           </motion.h2>
@@ -316,7 +319,7 @@ export default function DubbingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-3xl md:text-4xl font-bold text-white mb-10 tracking-tight"
+            className="text-3xl md:text-4xl font-bold text-white mb-10 tracking-tight text-center"
           >
             {tx('我們的能力', '我们的能力', 'Capabilities')}
           </motion.h2>
