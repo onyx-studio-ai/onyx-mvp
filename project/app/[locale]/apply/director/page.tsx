@@ -20,19 +20,25 @@ import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/landing/Footer';
 import { Section, Field, Choices, Pill, Input, Textarea } from '@/components/forms/PartnerFormHelpers';
+import { PARTNER_LANGS, langLabel } from '@/components/forms/PartnerFormLangs';
 
 type Experience = 'less1' | '1to3' | '3to7' | '7to15' | 'over15';
 type TTSExperience = 'extensive' | 'some' | 'none';
 type AIClientExperience = 'yes' | 'no';
 
-const LANGS = [
-  'Mandarin (TW)', 'Mandarin (CN)', 'Cantonese', 'Hokkien',
-  'English (US)', 'English (UK)', 'Japanese', 'Korean',
-  'Thai', 'Vietnamese', 'Indonesian', 'Malay', 'Tagalog',
-  'Hindi', 'Bengali', 'Tamil', 'Urdu',
-  'Spanish', 'French', 'German', 'Portuguese', 'Italian',
-  'Arabic (MSA)', 'Russian',
+// Director-relevant language subset — drops Punjabi / Polish / Dutch /
+// Swedish / Turkish / Arabic variants that the master list has, since
+// directors for those are rare in Onyx's current pipeline. Add ids back
+// here when demand justifies.
+const LANG_IDS = [
+  'mandarin-tw', 'mandarin-cn', 'cantonese', 'hokkien',
+  'en-us', 'en-uk', 'ja', 'ko',
+  'th', 'vi', 'id', 'ms', 'tl',
+  'hi', 'bn', 'ta', 'ur',
+  'es', 'fr', 'de', 'pt', 'it',
+  'ar-msa', 'ru',
 ];
+const LANGS = PARTNER_LANGS.filter(l => LANG_IDS.includes(l.id));
 
 // Remote-session tools — ipDTL is the broadcast/dubbing industry standard
 // (added per Wing's audit). Audiomovers is gaining traction with hybrid
@@ -141,11 +147,11 @@ export default function ApplyDirectorPage() {
     lines.push((tx('  姓名:', '  姓名:', '  Name: ')) + fullName.trim());
     if (country.trim())  lines.push((tx('  國家 / 城市:', '  国家 / 城市:', '  Country / city: ')) + country.trim());
     if (timezone.trim()) lines.push((tx('  時區:', '  时区:', '  Time zone: ')) + timezone.trim());
-    lines.push((tx('  母語:', '  母语:', '  Native languages: ')) + nativeLanguages.join('、'));
+    lines.push((tx('  母語:', '  母语:', '  Native languages: ')) + nativeLanguages.map(id => langLabel(id, locale)).join('、'));
     lines.push('');
 
     lines.push(tx('▎ 可帶 session 的語種', '▎ 可带 session 的语种', '▎ Languages you can direct'));
-    directorLanguages.forEach(l => lines.push('  • ' + l));
+    directorLanguages.forEach(id => lines.push('  • ' + langLabel(id, locale)));
     lines.push('');
 
     lines.push(tx('▎ 經驗', '▎ 经验', '▎ Experience'));
@@ -304,7 +310,7 @@ export default function ApplyDirectorPage() {
             <Field label={tx('母語(可複選)', '母语(可复选)', 'Native languages (multi-select)')} required>
               <div className="flex flex-wrap gap-2">
                 {LANGS.map(l => (
-                  <Pill key={l} active={nativeLanguages.includes(l)} onClick={() => toggleNative(l)} label={l} />
+                  <Pill key={l.id} active={nativeLanguages.includes(l.id)} onClick={() => toggleNative(l.id)} label={langLabel(l.id, locale)} />
                 ))}
               </div>
             </Field>
@@ -317,7 +323,7 @@ export default function ApplyDirectorPage() {
           )}>
             <div className="flex flex-wrap gap-2">
               {LANGS.map(l => (
-                <Pill key={l} active={directorLanguages.includes(l)} onClick={() => toggleDirectorLang(l)} label={l} />
+                <Pill key={l.id} active={directorLanguages.includes(l.id)} onClick={() => toggleDirectorLang(l.id)} label={langLabel(l.id, locale)} />
               ))}
             </div>
           </Section>

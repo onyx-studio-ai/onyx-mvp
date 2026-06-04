@@ -20,6 +20,7 @@ import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/landing/Footer';
 import { Section, Field, Choices, Pill, Input, Textarea } from '@/components/forms/PartnerFormHelpers';
+import { PARTNER_LANGS, langLabel } from '@/components/forms/PartnerFormLangs';
 
 type NoiseFloor = 'better70' | 'b6070' | 'b5060' | 'worse50' | 'unsure';
 type RoomTreatment = 'fullyTreated' | 'partiallyTreated' | 'basicAcoustic' | 'untreated';
@@ -27,14 +28,18 @@ type SampleSpec = 'yes48k24' | 'no48k24' | 'unsure';
 type DirectorOnSite = 'inHouse' | 'contract' | 'none';
 type LongForm = 'yes' | 'no' | 'depends';
 
-const COMMON_LANGS = [
-  'Mandarin (TW)', 'Mandarin (CN)', 'Cantonese', 'Hokkien',
-  'English (US)', 'English (UK)', 'Japanese', 'Korean',
-  'Thai', 'Vietnamese', 'Indonesian', 'Malay', 'Tagalog',
-  'Hindi', 'Bengali', 'Tamil', 'Urdu',
-  'Spanish', 'French', 'German', 'Portuguese', 'Italian',
-  'Arabic (MSA)', 'Russian',
+// Studio language subset — same shape as director's (a studio that
+// records languages they have local talent for; broader European /
+// Arabic variants live in the proofreader form).
+const LANG_IDS = [
+  'mandarin-tw', 'mandarin-cn', 'cantonese', 'hokkien',
+  'en-us', 'en-uk', 'ja', 'ko',
+  'th', 'vi', 'id', 'ms', 'tl',
+  'hi', 'bn', 'ta', 'ur',
+  'es', 'fr', 'de', 'pt', 'it',
+  'ar-msa', 'ru',
 ];
+const COMMON_LANGS = PARTNER_LANGS.filter(l => LANG_IDS.includes(l.id));
 
 export default function ApplyStudioPage() {
   const locale = useLocale();
@@ -163,7 +168,7 @@ export default function ApplyStudioPage() {
     }
 
     lines.push(tx('▎ 可錄語種', '▎ 可录语种', '▎ Languages'));
-    languages.forEach(l => lines.push('  • ' + l));
+    languages.forEach(id => lines.push('  • ' + langLabel(id, locale)));
     if (talentNetwork.trim()) {
       lines.push((tx('  人才網絡規模:', '  人才网络规模:', '  Talent network: ')) + talentNetwork.trim());
     }
@@ -348,7 +353,7 @@ export default function ApplyStudioPage() {
             <Field label={tx('可錄製語種(可複選)', '可录制语种(可复选)', 'Languages you can record (multi-select)')} required>
               <div className="flex flex-wrap gap-2">
                 {COMMON_LANGS.map(l => (
-                  <Pill key={l} active={languages.includes(l)} onClick={() => toggleLang(l)} label={l} />
+                  <Pill key={l.id} active={languages.includes(l.id)} onClick={() => toggleLang(l.id)} label={langLabel(l.id, locale)} />
                 ))}
               </div>
             </Field>

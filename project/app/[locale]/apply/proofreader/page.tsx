@@ -41,6 +41,7 @@ import { ArrowLeft, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import Footer from '@/components/landing/Footer';
 import { Section, Field, Choices, Pill, Input, Textarea } from '@/components/forms/PartnerFormHelpers';
+import { PARTNER_LANGS, langLabel } from '@/components/forms/PartnerFormLangs';
 
 type Experience = 'less3' | '3to7' | '7to15' | 'over15';
 type EducationLevel = 'phd' | 'masters' | 'bachelors' | 'specialized' | 'other';
@@ -48,15 +49,11 @@ type SampleTest = 'yes' | 'maybe' | 'no';
 type Proficiency = 'native' | 'c2' | 'c1' | 'b2' | 'other';
 type AIClientExperience = 'yes' | 'no';
 
-const LANGS = [
-  'Mandarin (TW)', 'Mandarin (CN)', 'Cantonese', 'Hokkien',
-  'English (US)', 'English (UK)', 'Japanese', 'Korean',
-  'Thai', 'Vietnamese', 'Indonesian', 'Malay', 'Tagalog',
-  'Hindi', 'Bengali', 'Tamil', 'Urdu', 'Punjabi',
-  'Spanish', 'French', 'German', 'Portuguese', 'Italian',
-  'Arabic (MSA)', 'Arabic (Egyptian)', 'Arabic (Gulf)',
-  'Russian', 'Polish', 'Turkish', 'Dutch', 'Swedish',
-];
+// Proofreader takes the full master list — written QA work happens in
+// every language Onyx might encounter, narrower than director's spoken-
+// direction work but wider on European languages (Polish, Dutch, Swedish,
+// Turkish all live here for translators).
+const LANGS = PARTNER_LANGS;
 
 const CONTENT_TYPES = [
   'Subtitle / Closed Captions',
@@ -186,8 +183,8 @@ export default function ApplyProofreaderPage() {
     lines.push(tx('▎ 基本資訊', '▎ 基本资讯', '▎ Basic info'));
     lines.push((tx('  姓名:', '  姓名:', '  Name: ')) + fullName.trim());
     if (country.trim()) lines.push((tx('  國家 / 城市:', '  国家 / 城市:', '  Country / city: ')) + country.trim());
-    lines.push((tx('  母語:', '  母语:', '  Native languages: ')) + nativeLanguages.join('、'));
-    lines.push((tx('  工作語種:', '  工作语种:', '  Working languages: ')) + workingLanguages.join('、'));
+    lines.push((tx('  母語:', '  母语:', '  Native languages: ')) + nativeLanguages.map(id => langLabel(id, locale)).join('、'));
+    lines.push((tx('  工作語種:', '  工作语种:', '  Working languages: ')) + workingLanguages.map(id => langLabel(id, locale)).join('、'));
     if (proficiency) lines.push((tx('  工作語種程度:', '  工作语种程度:', '  Working proficiency: ')) + labelFor.proficiency(proficiency as Proficiency));
     lines.push('');
 
@@ -370,14 +367,14 @@ export default function ApplyProofreaderPage() {
             <Field label={tx('母語(可複選)', '母语(可复选)', 'Native languages (multi-select)')} required>
               <div className="flex flex-wrap gap-2">
                 {LANGS.map(l => (
-                  <Pill key={l} active={nativeLanguages.includes(l)} onClick={() => toggleNative(l)} label={l} />
+                  <Pill key={l.id} active={nativeLanguages.includes(l.id)} onClick={() => toggleNative(l.id)} label={langLabel(l.id, locale)} />
                 ))}
               </div>
             </Field>
             <Field label={tx('校對工作語種(可複選)', '校对工作语种(可复选)', 'Working languages (multi-select)')} required>
               <div className="flex flex-wrap gap-2">
                 {LANGS.map(l => (
-                  <Pill key={l} active={workingLanguages.includes(l)} onClick={() => toggleWorking(l)} label={l} />
+                  <Pill key={l.id} active={workingLanguages.includes(l.id)} onClick={() => toggleWorking(l.id)} label={langLabel(l.id, locale)} />
                 ))}
               </div>
             </Field>
