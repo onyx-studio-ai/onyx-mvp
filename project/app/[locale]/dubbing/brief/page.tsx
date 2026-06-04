@@ -22,8 +22,30 @@ import { toast } from 'sonner';
 import Footer from '@/components/landing/Footer';
 
 type LipsyncMode = 'full' | 'voiceover' | 'loose';
-type AiDraft = 'has' | 'none';
-type UseCase = 'film' | 'game' | 'brand' | 'elearning' | 'podcast' | 'other';
+
+// Voice approach drives the production pipeline:
+//   preserve = RVC clone of original talent's voice to new language
+//              (NEEDS CONSENT — show consent section conditionally)
+//   newAI    = fresh AI-generated voices
+//   human    = real-talent dubbing via Onyx roster (separate quote)
+type VoiceApproach = 'preserve' | 'newAI' | 'human';
+
+// Only required when voiceApproach === 'preserve'. All three paths shift
+// the cloning-authorization liability away from Onyx onto the client.
+type ConsentMode = 'have' | 'needTemplate' | 'attest';
+
+// Script-status replaces the binary "has AI draft?" — three concrete
+// pricing tiers from cheapest (already proofread) to most-work (full).
+type ScriptStatus = 'fullScript' | 'aiDraft' | 'fromScratch';
+
+// Source-material checklist — directly affects difficulty and price.
+// "finishedOnly" is the worst case (no stems → separation + remix).
+type Material = 'sourceVideo' | 'vocalStem' | 'musicStem' | 'sfxStem' | 'osVersion' | 'finishedOnly';
+
+type UseCase =
+  | 'film' | 'tvSeries' | 'shortDrama' | 'documentary' | 'animation'
+  | 'game' | 'brand' | 'elearning' | 'podcast' | 'other';
+
 type Timeline = 'rush' | 'standard' | 'flexible';
 
 const LANGS = [
@@ -61,7 +83,10 @@ export default function DubbingBriefPage() {
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState('');
   const [lipsync, setLipsync] = useState<LipsyncMode | ''>('');
-  const [aiDraft, setAiDraft] = useState<AiDraft | ''>('');
+  const [voiceApproach, setVoiceApproach] = useState<VoiceApproach | ''>('');
+  const [consentMode, setConsentMode] = useState<ConsentMode | ''>('');
+  const [scriptStatus, setScriptStatus] = useState<ScriptStatus | ''>('');
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [durationMinutes, setDurationMinutes] = useState('');
   const [episodes, setEpisodes] = useState('');
   const [characters, setCharacters] = useState('');
@@ -72,6 +97,11 @@ export default function DubbingBriefPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
+
+  const needsConsent = voiceApproach === 'preserve';
+  const toggleMaterial = (m: Material) => {
+    setMaterials(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
+  };
 
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -95,17 +125,60 @@ export default function DubbingBriefPage() {
       voiceover: tx('配音 voice-over（疊在原音上）', '配音 voice-over（叠在原音上）', 'Voice-over (over original)'),
       loose:     tx('寬鬆時序（廣告 / 旁白）', '宽松时序（广告 / 旁白）', 'Loose timing (ads / narration)'),
     }[m]),
-    aiDraft: (a: AiDraft): string => ({
-      has:  tx('是 — 已有 AI 翻譯版，需校對 + 真人錄製', '是 — 已有 AI 翻译版，需校对 + 真人录制', "Yes — has AI draft, needs proofread + human recording"),
-      none: tx('否 — 從原文開始翻譯 + 錄製', '否 — 从原文开始翻译 + 录制', 'No — translate + record from scratch'),
-    }[a]),
+    voiceApproach: (v: VoiceApproach): string => ({
+      preserve: tx('保留原聲（AI 克隆原配音員聲線到新語言 · RVC）',
+                   '保留原声（AI 克隆原配音员声线到新语言 · RVC）',
+                   "Preserve original voice (RVC clone of original talent into new language)"),
+      newAI:    tx('AI 全新配音（生成新聲音）',
+                   'AI 全新配音（生成新声音）',
+                   'New AI voices (fresh AI-generated)'),
+      human:    tx('真人配音員（Onyx 配音員陣容 · 獨立報價）',
+                   '真人配音员（Onyx 配音员阵容 · 独立报价）',
+                   'Human voice talent (Onyx roster — separately quoted)'),
+    }[v]),
+    consent: (c: ConsentMode): string => ({
+      have:         tx('我已取得原配音員的克隆授權書',
+                       '我已取得原配音员的克隆授权书',
+                       "I have the original talent's cloning authorization"),
+      needTemplate: tx('需要 Onyx 提供授權書範本，我會簽完上傳',
+                       '需要 Onyx 提供授权书范本，我会签完上传',
+                       'I need Onyx to provide the authorization template'),
+      attest:       tx('我聲明已取得授權並承擔法律責任（Onyx 不負連帶責任）',
+                       '我声明已取得授权并承担法律责任（Onyx 不负连带责任）',
+                       'I attest I have authorization and accept all legal liability'),
+    }[c]),
+    scriptStatus: (s: ScriptStatus): string => ({
+      fullScript:  tx('已有完整翻譯稿（專業翻譯 / 內部已校對）',
+                      '已有完整翻译稿（专业翻译 / 内部已校对）',
+                      'Complete pro translation script ready'),
+      aiDraft:     tx('已有 AI 翻譯稿，需校對 + 真人錄製',
+                      '已有 AI 翻译稿，需校对 + 真人录制',
+                      'Have AI draft — needs proofread + recording'),
+      fromScratch: tx('從原文翻譯 + 真人錄製（全包）',
+                      '从原文翻译 + 真人录制（全包）',
+                      'Translate from source + record (full package)'),
+    }[s]),
+    material: (m: Material): string => ({
+      sourceVideo:  tx('原始影片', '原始视频', 'Source video'),
+      vocalStem:    tx('純人聲分軌（vocal stem）', '纯人声分轨（vocal stem）', 'Vocal stem (clean dialogue)'),
+      musicStem:    tx('音樂分軌', '音乐分轨', 'Music stem'),
+      sfxStem:      tx('音效分軌', '音效分轨', 'SFX stem'),
+      osVersion:    tx('OS 版本（無對白原聲）', 'OS 版本（无对白原声）', 'OS version (no dialogue)'),
+      finishedOnly: tx('僅完成片（無分軌素材 · 處理較複雜）',
+                       '仅完成片（无分轨素材 · 处理较复杂）',
+                       'Finished master only (no stems — more complex)'),
+    }[m]),
     useCase: (u: UseCase): string => ({
-      film:       tx('電影 / 戲劇',    '电影 / 戏剧',    'Film / drama'),
-      game:       tx('遊戲',           '游戏',           'Game'),
-      brand:      tx('品牌廣告',       '品牌广告',       'Brand commercial'),
-      elearning:  tx('e-learning / 線上課', 'e-learning / 在线课', 'e-learning / online course'),
-      podcast:    tx('Podcast / 有聲書', 'Podcast / 有声书', 'Podcast / audiobook'),
-      other:      tx('其他',           '其他',           'Other'),
+      film:        tx('電影',                  '电影',                  'Film'),
+      tvSeries:    tx('電視劇 / 影集',         '电视剧 / 影集',         'TV series / drama'),
+      shortDrama:  tx('短劇 / 短影片',         '短剧 / 短视频',         'Short drama / short-form'),
+      documentary: tx('紀錄片',                '纪录片',                'Documentary'),
+      animation:   tx('動畫',                  '动画',                  'Animation'),
+      game:        tx('遊戲',                  '游戏',                  'Game'),
+      brand:       tx('品牌廣告',              '品牌广告',              'Brand commercial'),
+      elearning:   tx('e-learning / 線上課',   'e-learning / 在线课',   'e-learning / online course'),
+      podcast:     tx('Podcast / 有聲書',       'Podcast / 有声书',       'Podcast / audiobook'),
+      other:       tx('其他',                  '其他',                  'Other'),
     }[u]),
     timeline: (t: Timeline): string => ({
       rush:     tx('加急（3-5 天，+30% 費用）', '加急（3-5 天，+30% 费用）', 'Rush (3-5 days, +30% fee)'),
@@ -125,11 +198,21 @@ export default function DubbingBriefPage() {
       toast.error(tx('Email 格式不對', 'Email 格式不对', 'Please enter a valid email'));
       return;
     }
-    if (!sourceLanguage || targetLanguages.length === 0 || !lipsync || !aiDraft || !durationMinutes.trim() || !useCase || !timeline) {
+    if (!sourceLanguage || targetLanguages.length === 0 || !lipsync
+        || !voiceApproach || !scriptStatus || !durationMinutes.trim()
+        || !useCase || !timeline) {
       toast.error(tx(
-        '請填原語、目標語種、對嘴需求、AI 翻譯草稿、時長、用途、交期',
-        '请填原语、目标语种、对嘴需求、AI 翻译草稿、时长、用途、交期',
-        'Please fill source lang, target langs, lip-sync, AI draft, duration, use case, timeline'
+        '請填原語、目標語種、對嘴需求、聲音方式、翻譯稿狀態、時長、用途、交期',
+        '请填原语、目标语种、对嘴需求、声音方式、翻译稿状态、时长、用途、交期',
+        'Please fill source lang, target langs, lip-sync, voice approach, script status, duration, use case, timeline'
+      ));
+      return;
+    }
+    if (needsConsent && !consentMode) {
+      toast.error(tx(
+        '選擇「保留原聲」必須完成 RVC 授權確認',
+        '选择「保留原声」必须完成 RVC 授权确认',
+        'When preserving original voice, RVC authorization must be confirmed'
       ));
       return;
     }
@@ -150,9 +233,22 @@ export default function DubbingBriefPage() {
     lines.push((tx('  對嘴需求：', '  对嘴需求：', '  Lip-sync: ')) + labelFor.lipsync(lipsync as LipsyncMode));
     lines.push('');
 
-    lines.push(tx('▎ AI 翻譯草稿', '▎ AI 翻译草稿', '▎ AI translation draft'));
-    lines.push('  ' + labelFor.aiDraft(aiDraft as AiDraft));
+    lines.push(tx('▎ 聲音方式', '▎ 声音方式', '▎ Voice approach'));
+    lines.push('  ' + labelFor.voiceApproach(voiceApproach as VoiceApproach));
+    if (needsConsent && consentMode) {
+      lines.push((tx('  RVC 授權：', '  RVC 授权：', '  RVC consent: ')) + labelFor.consent(consentMode as ConsentMode));
+    }
     lines.push('');
+
+    lines.push(tx('▎ 翻譯稿狀態', '▎ 翻译稿状态', '▎ Script status'));
+    lines.push('  ' + labelFor.scriptStatus(scriptStatus as ScriptStatus));
+    lines.push('');
+
+    if (materials.length > 0) {
+      lines.push(tx('▎ 可提供素材', '▎ 可提供素材', '▎ Available source materials'));
+      materials.forEach(m => lines.push('  • ' + labelFor.material(m)));
+      lines.push('');
+    }
 
     lines.push(tx('▎ 專案規模', '▎ 项目规模', '▎ Project scope'));
     lines.push((tx('  總時長：', '  总时长：', '  Total duration: ')) + durationMinutes.trim() + (isZh ? ' 分鐘' : ' min'));
@@ -352,18 +448,89 @@ export default function DubbingBriefPage() {
             </Field>
           </Section>
 
-          {/* SECTION 3: AI draft */}
-          <Section title={tx('已有 AI 翻譯草稿?', '已有 AI 翻译草稿?', 'Existing AI translation draft?')} required hint={tx(
-            '若你已用 ChatGPT / DeepL 等工具翻過，我們會直接走「校對 + 真人錄製」流程，比從零開始便宜。',
-            '若你已用 ChatGPT / DeepL 等工具翻过，我们会直接走「校对 + 真人录制」流程，比从零开始便宜。',
-            'If you already translated with ChatGPT / DeepL, we go straight to proofread + recording — cheaper than from-scratch translation.'
-          )}>
+          {/* SECTION 3: Voice approach — drives the production pipeline + legal exposure */}
+          <Section
+            title={tx('聲音方式', '声音方式', 'Voice approach')}
+            required
+            hint={tx(
+              '保留原聲 = AI 克隆原配音員的聲線到新語言（RVC）。新聲音 = AI 生成。真人 = Onyx 配音員陣容。',
+              '保留原声 = AI 克隆原配音员的声线到新语言（RVC）。新声音 = AI 生成。真人 = Onyx 配音员阵容。',
+              "Preserve = RVC clone of original talent. New AI = fresh AI voices. Human = Onyx talent roster."
+            )}
+          >
             <Choices
-              value={aiDraft}
-              onSelect={(v) => setAiDraft(v as AiDraft)}
-              options={(['has', 'none'] as AiDraft[])
-                .map(k => [k, labelFor.aiDraft(k)] as [string, string])}
+              value={voiceApproach}
+              onSelect={(v) => setVoiceApproach(v as VoiceApproach)}
+              options={(['preserve', 'newAI', 'human'] as VoiceApproach[])
+                .map(k => [k, labelFor.voiceApproach(k)] as [string, string])}
             />
+          </Section>
+
+          {/* SECTION 3.5: RVC consent — only renders when "preserve" picked */}
+          {needsConsent && (
+            <Section
+              title={tx('RVC 授權確認', 'RVC 授权确认', 'RVC authorization')}
+              required
+              hint={tx(
+                '克隆原配音員的聲線必須先取得授權。請選擇其中一項：',
+                '克隆原配音员的声线必须先取得授权。请选择其中一项：',
+                "Cloning the original talent's voice requires authorization. Pick one:"
+              )}
+            >
+              <Choices
+                value={consentMode}
+                onSelect={(v) => setConsentMode(v as ConsentMode)}
+                options={(['have', 'needTemplate', 'attest'] as ConsentMode[])
+                  .map(k => [k, labelFor.consent(k)] as [string, string])}
+              />
+            </Section>
+          )}
+
+          {/* SECTION 4: Script status — replaces the old AI-draft binary */}
+          <Section
+            title={tx('翻譯稿狀態', '翻译稿状态', 'Script status')}
+            required
+            hint={tx(
+              '已有完整翻譯稿最便宜；AI 草稿需校對；從原文翻譯最完整。',
+              '已有完整翻译稿最便宜；AI 草稿需校对；从原文翻译最完整。',
+              'Pro script ready = cheapest. AI draft = needs proofread. From-scratch = full package.'
+            )}
+          >
+            <Choices
+              value={scriptStatus}
+              onSelect={(v) => setScriptStatus(v as ScriptStatus)}
+              options={(['fullScript', 'aiDraft', 'fromScratch'] as ScriptStatus[])
+                .map(k => [k, labelFor.scriptStatus(k)] as [string, string])}
+            />
+          </Section>
+
+          {/* SECTION 5: Available source materials — pricing driver */}
+          <Section
+            title={tx('可提供素材（可多選）', '可提供素材（可多选）', 'Available source materials (multi-select)')}
+            hint={tx(
+              '勾越多越好估算 — 有分軌的案件處理快、報價低；只有完成片要做分離 + 重新合成，較複雜。',
+              '勾越多越好估算 — 有分轨的项目处理快、报价低；只有完成片要做分离 + 重新合成，较复杂。',
+              'The more you can provide, the cleaner the quote. Stems = faster + cheaper. Finished-only = needs separation + re-mix.'
+            )}
+          >
+            <div className="flex flex-wrap gap-2">
+              {(['sourceVideo', 'vocalStem', 'musicStem', 'sfxStem', 'osVersion', 'finishedOnly'] as Material[]).map(m => {
+                const active = materials.includes(m);
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => toggleMaterial(m)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                      active ? 'bg-blue-500 text-black border-blue-500'
+                             : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    {labelFor.material(m)}
+                  </button>
+                );
+              })}
+            </div>
           </Section>
 
           {/* SECTION 4: Project scope */}
@@ -401,7 +568,7 @@ export default function DubbingBriefPage() {
               <Choices
                 value={useCase}
                 onSelect={(v) => setUseCase(v as UseCase)}
-                options={(['film', 'game', 'brand', 'elearning', 'podcast', 'other'] as UseCase[])
+                options={(['film', 'tvSeries', 'shortDrama', 'documentary', 'animation', 'game', 'brand', 'elearning', 'podcast', 'other'] as UseCase[])
                   .map(k => [k, labelFor.useCase(k)] as [string, string])}
               />
             </Field>
