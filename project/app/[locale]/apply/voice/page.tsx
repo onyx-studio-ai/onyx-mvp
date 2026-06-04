@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,6 +61,12 @@ const ACCENT_MAP: Record<string, string[]> = {
   'Punjabi': ['Pakistani', 'Indian'],
 };
 
+// Feature flag — Wing temporarily hiding singer applications until the
+// singer recruitment / vetting flow is finalized. Flip back to `true`
+// when ready; all singer-specific UI and submit logic stays intact
+// behind this gate so re-enabling is just a one-line change.
+const SINGER_ENABLED = false;
+
 const VOICE_TYPES = ['Warm', 'Cool', 'Energetic', 'Calm', 'Corporate', 'Friendly', 'Authoritative', 'Conversational', 'Smooth', 'Powerful', 'Deep', 'Bright'];
 const VO_SPECIALTIES = ['Commercial', 'Documentary', 'Narration', 'E-Learning', 'Animation / Character', 'Audiobook', 'IVR / Phone System', 'Video Game', 'Corporate Training'];
 const SINGER_SPECIALTIES = ['Pop', 'Rock', 'Jazz', 'Classical / Opera', 'R&B / Soul', 'Folk / Acoustic', 'Electronic / EDM', 'Hip-Hop', 'Country', 'Musical Theatre'];
@@ -117,7 +123,9 @@ interface FormData {
 }
 
 const defaultForm: FormData = {
-  role_type: '',
+  // When singer is disabled, default straight to VO so applicants don't
+  // have to click a single-option "role selection" step.
+  role_type: SINGER_ENABLED ? '' : 'VO',
   full_name: '',
   email: '',
   phone: '',
@@ -351,6 +359,7 @@ function SelectField({ label, value, onChange, options, placeholder, required }:
 
 export default function ApplyVoicePage() {
   const t = useTranslations('apply');
+  const locale = useLocale();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(defaultForm);
   const [file, setFile] = useState<File | null>(null);
@@ -597,12 +606,15 @@ export default function ApplyVoicePage() {
               className="p-8"
             >
 
-              {/* Step 1: Role Selection */}
+              {/* Step 1: Role Selection
+                  When SINGER_ENABLED = false, the Singer button is hidden,
+                  the VO button takes the full width, and we surface a small
+                  note that singer applications will reopen later. */}
               {step === 1 && (
                 <div>
                   <h2 className="text-xl font-bold mb-2">{t('step1Title')}</h2>
                   <p className="text-gray-400 text-sm mb-8">{t('step1Subtitle')}</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${SINGER_ENABLED ? 'grid-cols-2' : 'grid-cols-1 max-w-md mx-auto'} gap-4`}>
                     <button
                       type="button"
                       onClick={() => update('role_type', 'VO')}
@@ -614,18 +626,29 @@ export default function ApplyVoicePage() {
                       <h3 className="font-bold text-white mb-1">{t('roleVoiceActor')}</h3>
                       <p className="text-xs text-gray-400">{t('roleVODesc')}</p>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => update('role_type', 'Singer')}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
-                        form.role_type === 'Singer' ? 'border-amber-500 bg-amber-500/10' : 'border-zinc-700 hover:border-zinc-500'
-                      }`}
-                    >
-                      <Music className={`w-8 h-8 mb-3 ${form.role_type === 'Singer' ? 'text-amber-400' : 'text-gray-400'}`} />
-                      <h3 className="font-bold text-white mb-1">{t('roleSinger')}</h3>
-                      <p className="text-xs text-gray-400">{t('roleSingerDesc')}</p>
-                    </button>
+                    {SINGER_ENABLED && (
+                      <button
+                        type="button"
+                        onClick={() => update('role_type', 'Singer')}
+                        className={`p-6 rounded-xl border-2 text-left transition-all ${
+                          form.role_type === 'Singer' ? 'border-amber-500 bg-amber-500/10' : 'border-zinc-700 hover:border-zinc-500'
+                        }`}
+                      >
+                        <Music className={`w-8 h-8 mb-3 ${form.role_type === 'Singer' ? 'text-amber-400' : 'text-gray-400'}`} />
+                        <h3 className="font-bold text-white mb-1">{t('roleSinger')}</h3>
+                        <p className="text-xs text-gray-400">{t('roleSingerDesc')}</p>
+                      </button>
+                    )}
                   </div>
+                  {!SINGER_ENABLED && (
+                    <p className="mt-6 text-xs text-gray-500 text-center max-w-md mx-auto leading-relaxed">
+                      {locale === 'zh-CN'
+                        ? '歌手申请暂未开放 — Onyx 正在整理歌手招募流程,稍后会重新开放。目前仅接受配音员申请。'
+                        : locale.startsWith('zh')
+                        ? '歌手申請暫未開放 — Onyx 正在整理歌手招募流程,稍後會重新開放。目前僅接受配音員申請。'
+                        : "Singer applications are temporarily closed while Onyx finalizes the singer recruitment process. Currently accepting voice-actor applications only."}
+                    </p>
+                  )}
                 </div>
               )}
 
