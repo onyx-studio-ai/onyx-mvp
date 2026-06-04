@@ -67,8 +67,8 @@ export default function LobbyPage() {
       id: 'data', number: '04', icon: Database, accent: 'text-amber-300',
       title: t('dataTitle'),
       description: t('dataDesc'),
-      href: '#',
-      type: 'contact' as const,
+      href: '/data',
+      type: 'link' as const,
       featured: false,
     },
   ];
