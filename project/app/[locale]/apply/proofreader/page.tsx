@@ -55,18 +55,23 @@ type AIClientExperience = 'yes' | 'no';
 // Turkish all live here for translators).
 const LANGS = PARTNER_LANGS;
 
-const CONTENT_TYPES = [
-  'Subtitle / Closed Captions',
-  'Dubbing Script',
-  'TTS Prompts / Voice-Data Script',
-  'Literary Translation',
-  'Legal / Contracts',
-  'Technical / Engineering',
-  'Marketing / Copywriting',
-  'e-Learning / Educational',
-  'Medical / Pharmaceutical',
-  'Game / Interactive',
-  'Academic / Research',
+// Content specialization — Onyx clients ask QA across these domains.
+// Was plain English strings (which leaked through to zh-TW / zh-CN
+// users showing "Subtitle / Closed Captions" etc. as English-only).
+// Now structured + locale-resolved via contentTypeLabel().
+type ContentType = { id: string; tw: string; cn: string; en: string };
+const CONTENT_TYPES: ContentType[] = [
+  { id: 'subtitle',    tw: '字幕 / Closed Captions',    cn: '字幕 / Closed Captions',    en: 'Subtitle / Closed Captions' },
+  { id: 'dubbing',     tw: '配音稿',                    cn: '配音稿',                    en: 'Dubbing Script' },
+  { id: 'tts',         tw: 'TTS 腳本 / 語音資料腳本',    cn: 'TTS 脚本 / 语音数据脚本',    en: 'TTS Prompts / Voice-Data Script' },
+  { id: 'literary',    tw: '文學翻譯',                  cn: '文学翻译',                  en: 'Literary Translation' },
+  { id: 'legal',       tw: '法律 / 合約',                cn: '法律 / 合约',                en: 'Legal / Contracts' },
+  { id: 'technical',   tw: '技術 / 工程',                cn: '技术 / 工程',                en: 'Technical / Engineering' },
+  { id: 'marketing',   tw: '行銷文案',                  cn: '营销文案',                  en: 'Marketing / Copywriting' },
+  { id: 'elearning',   tw: 'e-learning / 教育',          cn: 'e-learning / 教育',          en: 'e-Learning / Educational' },
+  { id: 'medical',     tw: '醫療 / 製藥',                cn: '医疗 / 制药',                en: 'Medical / Pharmaceutical' },
+  { id: 'game',        tw: '遊戲 / 互動內容',            cn: '游戏 / 互动内容',            en: 'Game / Interactive' },
+  { id: 'academic',    tw: '學術 / 研究',                cn: '学术 / 研究',                en: 'Academic / Research' },
 ];
 
 export default function ApplyProofreaderPage() {
@@ -119,6 +124,13 @@ export default function ApplyProofreaderPage() {
   const toggleNative = (l: string) => setNativeLanguages(p => p.includes(l) ? p.filter(x => x !== l) : [...p, l]);
   const toggleWorking = (l: string) => setWorkingLanguages(p => p.includes(l) ? p.filter(x => x !== l) : [...p, l]);
   const toggleContentType = (t: string) => setContentTypes(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
+
+  // Resolve content-type id → locale label
+  const contentTypeLabel = (id: string) => {
+    const item = CONTENT_TYPES.find(c => c.id === id);
+    if (!item) return id;
+    return isZhCN ? item.cn : isZh ? item.tw : item.en;
+  };
 
   // ---- labels ----------------------------------------------------------
   const labelFor = {
@@ -210,7 +222,7 @@ export default function ApplyProofreaderPage() {
 
     if (contentTypes.length > 0) {
       lines.push(tx('▎ 專長類型', '▎ 专长类型', '▎ Content specialization'));
-      contentTypes.forEach(c => lines.push('  • ' + c));
+      contentTypes.forEach(id => lines.push('  • ' + contentTypeLabel(id)));
       lines.push('');
     }
 
@@ -459,7 +471,7 @@ export default function ApplyProofreaderPage() {
           <Section title={tx('專長類型(可複選)', '专长类型(可复选)', 'Content specialization (multi-select)')}>
             <div className="flex flex-wrap gap-2">
               {CONTENT_TYPES.map(c => (
-                <Pill key={c} active={contentTypes.includes(c)} onClick={() => toggleContentType(c)} label={c} />
+                <Pill key={c.id} active={contentTypes.includes(c.id)} onClick={() => toggleContentType(c.id)} label={contentTypeLabel(c.id)} />
               ))}
             </div>
           </Section>

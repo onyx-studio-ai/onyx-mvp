@@ -371,7 +371,12 @@ export default function ApplyDirectorPage() {
             <Field label={tx('遠端 session 工具熟悉(可複選)', '远端 session 工具熟悉(可复选)', 'Remote session tools (multi-select)')}>
               <div className="flex flex-wrap gap-2">
                 {REMOTE_TOOLS.map(t => (
-                  <Pill key={t} active={remoteTools.includes(t)} onClick={() => toggleRemoteTool(t)} label={t} />
+                  <Pill
+                    key={t}
+                    active={remoteTools.includes(t)}
+                    onClick={() => toggleRemoteTool(t)}
+                    label={t === 'Other' ? tx('其他', '其他', 'Other') : t}
+                  />
                 ))}
               </div>
             </Field>
