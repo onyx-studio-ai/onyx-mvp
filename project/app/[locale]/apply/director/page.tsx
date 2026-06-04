@@ -23,6 +23,7 @@ import { Section, Field, Choices, Pill, Input, Textarea } from '@/components/for
 
 type Experience = 'less1' | '1to3' | '3to7' | '7to15' | 'over15';
 type TTSExperience = 'extensive' | 'some' | 'none';
+type AIClientExperience = 'yes' | 'no';
 
 const LANGS = [
   'Mandarin (TW)', 'Mandarin (CN)', 'Cantonese', 'Hokkien',
@@ -33,7 +34,10 @@ const LANGS = [
   'Arabic (MSA)', 'Russian',
 ];
 
-const REMOTE_TOOLS = ['Zoom', 'SourceConnect', 'Riverside', 'Cleanfeed', 'Google Meet', 'Microsoft Teams', 'Other'];
+// Remote-session tools — ipDTL is the broadcast/dubbing industry standard
+// (added per Wing's audit). Audiomovers is gaining traction with hybrid
+// remote-monitoring setups.
+const REMOTE_TOOLS = ['Zoom', 'SourceConnect', 'ipDTL', 'Audiomovers', 'Riverside', 'Cleanfeed', 'Google Meet', 'Microsoft Teams', 'Other'];
 const AUDIO_TERMS = ['Noise Floor', 'LUFS', 'RMS', 'Peak Levels', 'Signal-to-Noise', 'Spectrogram', 'Sample Rate / Bit Depth'];
 
 export default function ApplyDirectorPage() {
@@ -51,6 +55,7 @@ export default function ApplyDirectorPage() {
 
   const [experience, setExperience] = useState<Experience | ''>('');
   const [ttsExperience, setTtsExperience] = useState<TTSExperience | ''>('');
+  const [aiClientExperience, setAiClientExperience] = useState<AIClientExperience | ''>('');
   const [background, setBackground] = useState(''); // voice acting / coaching / etc.
 
   const [homeMic, setHomeMic] = useState('');
@@ -64,6 +69,7 @@ export default function ApplyDirectorPage() {
   const [sampleWorkUrl, setSampleWorkUrl] = useState('');
   const [pastCredits, setPastCredits] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [referencesText, setReferencesText] = useState('');
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -98,6 +104,12 @@ export default function ApplyDirectorPage() {
                     '没有(但有其他相关导演经验)',
                     'None (but have other related direction experience)'),
     }[t]),
+    aiClient: (a: AIClientExperience): string => ({
+      yes: tx('有 — 帶過 AI 語音資料 / TTS 平台類型案件(Voices / Appen / 大型 AI 公司等)',
+              '有 — 带过 AI 语音资料 / TTS 平台类型项目(Voices / Appen / 大型 AI 公司等)',
+              'Yes — directed AI voice-data / TTS platform projects (Voices / Appen / major AI clients)'),
+      no:  tx('沒有(但有其他相關背景)', '没有(但有其他相关背景)', 'No (but have other relevant background)'),
+    }[a]),
   };
 
   // ---- submit ----------------------------------------------------------
@@ -112,11 +124,11 @@ export default function ApplyDirectorPage() {
       toast.error(tx('Email 格式不對', 'Email 格式不对', 'Please enter a valid email'));
       return;
     }
-    if (nativeLanguages.length === 0 || directorLanguages.length === 0 || !experience || !ttsExperience) {
+    if (nativeLanguages.length === 0 || directorLanguages.length === 0 || !experience || !ttsExperience || !linkedinUrl.trim()) {
       toast.error(tx(
-        '請填母語、可帶 session 的語種、年資、TTS 經驗',
-        '请填母语、可带 session 的语种、年资、TTS 经验',
-        'Please fill native languages, director languages, experience, TTS experience'
+        '請填母語、可帶 session 的語種、年資、TTS 經驗、LinkedIn URL',
+        '请填母语、可带 session 的语种、年资、TTS 经验、LinkedIn URL',
+        'Please fill native languages, director languages, experience, TTS experience, LinkedIn URL'
       ));
       return;
     }
@@ -139,6 +151,9 @@ export default function ApplyDirectorPage() {
     lines.push(tx('▎ 經驗', '▎ 经验', '▎ Experience'));
     lines.push((tx('  年資:', '  年资:', '  Years: ')) + labelFor.experience(experience as Experience));
     lines.push((tx('  TTS / AI 語音資料經驗:', '  TTS / AI 语音资料经验:', '  TTS / AI voice-data experience: ')) + labelFor.tts(ttsExperience as TTSExperience));
+    if (aiClientExperience) {
+      lines.push((tx('  AI 平台客戶經驗:', '  AI 平台客户经验:', '  AI platform client experience: ')) + labelFor.aiClient(aiClientExperience as AIClientExperience));
+    }
     if (background.trim()) {
       lines.push((tx('  其他背景:', '  其他背景:', '  Other background: ')));
       background.trim().split('\n').forEach(l => lines.push('    ' + l));
@@ -161,16 +176,18 @@ export default function ApplyDirectorPage() {
       lines.push('');
     }
 
-    if (sampleWorkUrl.trim() || pastCredits.trim() || linkedinUrl.trim()) {
-      lines.push(tx('▎ 作品與資歷', '▎ 作品与资历', '▎ Portfolio'));
-      if (sampleWorkUrl.trim()) lines.push((tx('  樣本 URL:', '  样本 URL:', '  Sample URL: ')) + sampleWorkUrl.trim());
-      if (linkedinUrl.trim())   lines.push((tx('  LinkedIn:', '  LinkedIn:', '  LinkedIn: ')) + linkedinUrl.trim());
-      if (pastCredits.trim()) {
-        lines.push((tx('  過往代表案件:', '  过往代表项目:', '  Past credits:')));
-        pastCredits.trim().split('\n').forEach(l => lines.push('    ' + l));
-      }
-      lines.push('');
+    lines.push(tx('▎ 作品與資歷', '▎ 作品与资历', '▎ Portfolio'));
+    lines.push((tx('  LinkedIn:', '  LinkedIn:', '  LinkedIn: ')) + linkedinUrl.trim());
+    if (sampleWorkUrl.trim()) lines.push((tx('  作品樣本 URL:', '  作品样本 URL:', '  Sample / showreel URL: ')) + sampleWorkUrl.trim());
+    if (pastCredits.trim()) {
+      lines.push((tx('  過往代表案件:', '  过往代表项目:', '  Past credits:')));
+      pastCredits.trim().split('\n').forEach(l => lines.push('    ' + l));
     }
+    if (referencesText.trim()) {
+      lines.push((tx('  推薦人(可聯繫的過往合作對象):', '  推荐人(可联系的过往合作对象):', '  References (past collaborators willing to vouch):')));
+      referencesText.trim().split('\n').forEach(l => lines.push('    ' + l));
+    }
+    lines.push('');
 
     if (notes.trim()) {
       lines.push(tx('▎ 備註', '▎ 备注', '▎ Notes'));
@@ -314,6 +331,17 @@ export default function ApplyDirectorPage() {
               <Choices value={ttsExperience} onSelect={v => setTtsExperience(v as TTSExperience)}
                 options={(['extensive','some','none'] as TTSExperience[]).map(k => [k, labelFor.tts(k)] as [string, string])} />
             </Field>
+            <Field
+              label={tx('AI 平台客戶經驗', 'AI 平台客户经验', 'AI platform client experience')}
+              hint={tx(
+                '是否帶過 Voices.com / Appen / 大型 AI 公司類型案件? Sierra-tier 客戶 demand 越來越多有此經驗的聲導。',
+                '是否带过 Voices.com / Appen / 大型 AI 公司类型项目? Sierra-tier 客户 demand 越来越多有此经验的声导。',
+                'Have you directed AI platform projects (Voices.com / Appen / major AI clients)? Sierra-tier clients increasingly require this background.'
+              )}
+            >
+              <Choices value={aiClientExperience} onSelect={v => setAiClientExperience(v as AIClientExperience)}
+                options={(['yes','no'] as AIClientExperience[]).map(k => [k, labelFor.aiClient(k)] as [string, string])} />
+            </Field>
             <Field label={tx('其他相關背景', '其他相关背景', 'Other relevant background')} hint={tx(
               '例:配音、表演、音樂製作、廣告創意、教學等。',
               '例:配音、表演、音乐制作、广告创意、教学等。',
@@ -354,28 +382,81 @@ export default function ApplyDirectorPage() {
             <Field label={tx('每週可接小時數', '每周可接小时数', 'Hours per week available')}>
               <Input value={hoursPerWeek} onChange={setHoursPerWeek} placeholder={tx('例:10-20 小時', '例:10-20 小时', 'e.g. 10-20 hours')} />
             </Field>
-            <Field label={tx('時薪期望(USD)', '时薪期望(USD)', 'Hourly rate (USD)')}>
-              <Input value={hourlyRate} onChange={setHourlyRate} placeholder={tx('例:$80-150 / 小時', '例:$80-150 / 小时', 'e.g. $80-150 / hour')} />
+            <Field
+              label={tx('費用期望(USD)', '费用期望(USD)', 'Rate expectation (USD)')}
+              hint={tx(
+                '聲導工作常見 3 種計價:時薪 / 每場 session(3-4 hr block)/ 日薪。請填你最常用的格式 + 數字。',
+                '声导工作常见 3 种计价:时薪 / 每场 session(3-4 hr block)/ 日薪。请填你最常用的格式 + 数字。',
+                'Director rates are commonly quoted 3 ways: hourly / per session (3-4 hr block) / day rate. State your preferred format and amount.'
+              )}
+            >
+              <Input value={hourlyRate} onChange={setHourlyRate} placeholder={tx(
+                '例:$120 / hr  或  $400 / session  或  $1,000 / day',
+                '例:$120 / hr  或  $400 / session  或  $1,000 / day',
+                'e.g. $120 / hr  or  $400 / session  or  $1,000 / day'
+              )} />
             </Field>
           </Section>
 
-          <Section title={tx('作品 / 資歷', '作品 / 资历', 'Portfolio')} hint={tx(
-            'Onyx 會依作品與資歷判斷適配的案件類型。',
-            'Onyx 会依作品与资历判断适配的项目类型。',
-            "Onyx matches projects to your portfolio and credentials."
-          )}>
-            <Field label={tx('樣本錄音 URL(Drive / 雲端)', '样本录音 URL(Drive / 云盘)', 'Sample recording URL (Drive)')}>
-              <Input value={sampleWorkUrl} onChange={setSampleWorkUrl} placeholder="https://..." />
-            </Field>
-            <Field label="LinkedIn URL">
+          <Section
+            title={tx('作品 / 資歷', '作品 / 资历', 'Portfolio')}
+            required
+            hint={tx(
+              'Onyx 對外承接案件的品質責任要求每位聲導提供可驗證的學經歷:LinkedIn 必填、過往案件具體描述。我們會以這些公開資料交叉比對你的陳述。',
+              'Onyx 对外承接项目的质量责任要求每位声导提供可验证的学经历:LinkedIn 必填、过往项目具体描述。我们会以这些公开资料交叉比对你的陈述。',
+              "Onyx's quality commitment requires verifiable credentials: LinkedIn is required, past credits must be specific. We cross-check stated experience against public records."
+            )}
+          >
+            <Field label="LinkedIn URL" required>
               <Input value={linkedinUrl} onChange={setLinkedinUrl} placeholder="https://linkedin.com/in/..." />
             </Field>
-            <Field label={tx('過往代表案件 / 客戶', '过往代表项目 / 客户', 'Past credits / clients')}>
-              <Textarea value={pastCredits} onChange={setPastCredits} placeholder={tx(
-                '請列舉 3-5 個代表案件或客戶,越具體越好(年份、案件類型、語種、規模)。',
-                '请列举 3-5 个代表项目或客户,越具体越好(年份、项目类型、语种、规模)。',
-                'List 3-5 notable credits or clients — the more specific (year, type, language, scale), the better.'
-              )} />
+            <Field
+              label={tx('作品樣本 URL(選填)', '作品样本 URL(选填)', 'Sample / showreel URL (optional)')}
+              hint={tx(
+                'Session 引導 demo / 過往作品 / showreel / Vimeo / YouTube 皆可 — 聲導不一定有自己的錄音,但有作品反映導演風格更有幫助。',
+                'Session 引导 demo / 过往作品 / showreel / Vimeo / YouTube 皆可 — 声导不一定有自己的录音,但有作品反映导演风格更有帮助。',
+                'Session-direction demo / past work / showreel / Vimeo / YouTube — directors don\'t always record themselves, but anything reflecting your direction style helps.'
+              )}
+            >
+              <Input value={sampleWorkUrl} onChange={setSampleWorkUrl} placeholder="https://..." />
+            </Field>
+            <Field
+              label={tx('過往代表案件 / 客戶', '过往代表项目 / 客户', 'Past credits / clients')}
+              hint={tx(
+                '請列舉 3-5 個代表案件,每個包含:年份、案件類型、語種、規模、客戶名稱。具體越多越有說服力 — 模糊陳述(只說「導過 Disney」沒寫年份 / 案件)會被降低權重。',
+                '请列举 3-5 个代表项目,每个包含:年份、项目类型、语种、规模、客户名称。具体越多越有说服力 — 模糊陈述(只说「导过 Disney」没写年份 / 项目)会被降低权重。',
+                'List 3-5 notable credits. For each: year, project type, language, scale, client. Specificity wins — vague claims ("directed for Disney" with no year / title) get weighted down.'
+              )}
+            >
+              <Textarea
+                value={pastCredits}
+                onChange={setPastCredits}
+                rows={5}
+                placeholder={tx(
+                  '2023 / Disney 動畫 / 國語配音導演 / 80 集 / 客戶:迪士尼台灣\n2022 / 大型 TTS 採集 directed session / 普通話 / 6 位配音員 × 3hr / 客戶:Foo AI\n...',
+                  '2023 / Disney 动画 / 国语配音导演 / 80 集 / 客户:迪士尼台湾\n2022 / 大型 TTS 采集 directed session / 普通话 / 6 位配音员 × 3hr / 客户:Foo AI\n...',
+                  '2023 / Disney animation / Mandarin VO direction / 80 eps / Client: Disney Taiwan\n2022 / Large-scale TTS directed session / Mandarin / 6 talents × 3hr / Client: Foo AI\n...'
+                )}
+              />
+            </Field>
+            <Field
+              label={tx('推薦人(選填,加快審核)', '推荐人(选填,加快审核)', 'References (optional, speeds review)')}
+              hint={tx(
+                '過往合作的製作人 / 客戶 / 配音員願意為你背書 — 提供姓名 + 公司 + Email + 合作關係。Onyx 可能會直接聯繫驗證。',
+                '过往合作的制作人 / 客户 / 配音员愿意为你背书 — 提供姓名 + 公司 + Email + 合作关系。Onyx 可能会直接联系验证。',
+                'Past producer / client / talent willing to vouch for you — name + company + email + relationship. Onyx may contact them.'
+              )}
+            >
+              <Textarea
+                value={referencesText}
+                onChange={setReferencesText}
+                rows={3}
+                placeholder={tx(
+                  '姓名 / 公司 / Email / 合作關係',
+                  '姓名 / 公司 / Email / 合作关系',
+                  'Name / Company / Email / Relationship'
+                )}
+              />
             </Field>
           </Section>
 
@@ -383,12 +464,26 @@ export default function ApplyDirectorPage() {
             <Field label="Email" required>
               <Input value={email} onChange={setEmail} type="email" placeholder="you@example.com" />
             </Field>
-            <Field label={tx('電話 / WhatsApp / LINE', '电话 / WhatsApp / LINE', 'Phone / WhatsApp / LINE')}>
-              <Input value={phone} onChange={setPhone} />
+            <Field
+              label={tx('電話(選填)', '电话(选填)', 'Phone (optional)')}
+              hint={tx(
+                '想要直接 / 加快聯絡的填,否則我們以 email 回覆。',
+                '想要直接 / 加快联系的填,否则我们以 email 回复。',
+                'Fill if you want direct / faster contact, otherwise we reply by email.'
+              )}
+            >
+              <Input value={phone} onChange={setPhone} placeholder={tx('包含國碼,例如 +886 ...', '包含国码,例如 +886 ...', 'Include country code, e.g. +1 ...')} />
             </Field>
             <Field label={tx('補充說明', '补充说明', 'Notes')}>
               <Textarea value={notes} onChange={setNotes} />
             </Field>
+            <p className="text-xs text-gray-500 leading-relaxed pt-2">
+              {tx('其他聯絡方式,請見我們的', '其他联系方式,请见我们的', 'Other contact methods — see our ')}
+              <Link href="/contact" className="text-amber-300 hover:text-amber-200 underline">
+                {tx('官方聯絡頁', '官方联系页', 'official contact page')}
+              </Link>
+              {tx('。', '。', '.')}
+            </p>
           </Section>
 
           <div className="pt-2">
