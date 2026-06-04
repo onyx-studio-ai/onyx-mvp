@@ -41,45 +41,47 @@ export default function DataPage() {
   const isZhCN = locale === 'zh-CN';
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
 
-  // Service types — the 4 distinct revenue streams. Annotation is an
-  // explicit card (not buried as a capability) because it's a higher-
-  // margin add-on and acknowledging it here primes the customer to
-  // request it in the brief.
+  // Service types — the 4 distinct revenue streams. All framed as
+  // "Onyx collects / processes; client trains" to avoid the misread
+  // that Onyx is an AI engineering shop (we're a data supplier).
+  // Annotation is an explicit card (not buried as a capability)
+  // because it's a higher-margin add-on and acknowledging it here
+  // primes the customer to request it in the brief.
   const services = [
     {
       num: '01', icon: Mic,
-      title: tx('TTS 語料製作', 'TTS 语料制作', 'TTS Voice Data'),
+      title: tx('TTS 訓練用語料', 'TTS 训练用语料', 'TTS Training Corpus'),
       desc: tx(
-        '念稿型訓練語料、多風格、長時數,適合通用 TTS 與多場景部署。',
-        '念稿型训练语料、多风格、长时数,适合通用 TTS 与多场景部署。',
-        'Scripted training corpora — multi-style, long-form. For general TTS and multi-scenario deployment.'
+        '配音員念腳本、長時數錄音 — 採集後交付,客戶用來訓自己的 TTS 模型。多風格、多場景皆可。',
+        '配音员念脚本、长时数录音 — 采集后交付,客户用来训自己的 TTS 模型。多风格、多场景皆可。',
+        'Voice actors reading scripts, long-form recording — delivered to the client, who trains their own TTS model. Multi-style, multi-scenario.'
       ),
     },
     {
       num: '02', icon: User,
-      title: tx('Voice Avatar / 聲線克隆', 'Voice Avatar / 声线克隆', 'Voice Avatar / Cloning'),
+      title: tx('聲線克隆用素材', '声线克隆用素材', 'Voice-Cloning Source Material'),
       desc: tx(
-        '導演引導錄音(Directed session),授權制交付,適合客服 agent、品牌語音部署。',
-        '导演引导录音(Directed session),授权制交付,适合客服 agent、品牌语音部署。',
-        'Directed session recording with license-based delivery. For customer-service agents and branded voice deployment.'
+        '單一配音員 directed session 錄音 + 授權文件 — 客戶用素材訓自己的 voice cloning 模型,適合客服 agent、品牌語音部署。',
+        '单一配音员 directed session 录音 + 授权文件 — 客户用素材训自己的 voice cloning 模型,适合客服 agent、品牌语音部署。',
+        'Single-talent directed session + license documents — client uses the material to train their own voice-cloning model. For customer-service agents and branded voice deployment.'
       ),
     },
     {
       num: '03', icon: MessageCircle,
-      title: tx('對話 / 情緒語料', '对话 / 情绪语料', 'Conversational / Emotion Data'),
+      title: tx('對話 / 情緒語料', '对话 / 情绪语料', 'Conversational / Emotion Corpus'),
       desc: tx(
-        '即興對話(conversational)、多輪對話、多情緒範圍,情緒感知(emotion-aware)AI 訓練必備。',
-        '即兴对话(conversational)、多轮对话、多情绪范围,情绪感知(emotion-aware)AI 训练必备。',
-        'Improvised conversational, multi-turn dialogue, full emotional range — essential for emotion-aware AI training.'
+        '即興對話、多輪對話、多情緒範圍 — 客戶用來訓自己的對話 AI / 情緒感知(emotion-aware)模型。',
+        '即兴对话、多轮对话、多情绪范围 — 客户用来训自己的对话 AI / 情绪感知(emotion-aware)模型。',
+        'Improvised conversational, multi-turn dialogue, full emotional range — client uses this to train their own conversational AI / emotion-aware models.'
       ),
     },
     {
       num: '04', icon: Tag,
       title: tx('資料標註與清理', '资料标注与清理', 'Data Annotation & Cleaning'),
       desc: tx(
-        '時間軸標註、文字校對、metadata(標籤資料)整理。完整方案(turnkey)客戶可加購一站處理。',
-        '时间轴标注、文字校对、metadata(标签资料)整理。完整方案(turnkey)客户可加购一站处理。',
-        'Timestamp annotation, transcript proofreading, metadata tagging. Available as a turnkey add-on.'
+        '對音檔做時間軸標註、文字校對、metadata(標籤資料)整理 — 客戶已有音檔交給我們做後製。完整方案(turnkey)客戶可加購一站處理。',
+        '对音档做时间轴标注、文字校对、metadata(标签资料)整理 — 客户已有音档交给我们做后制。完整方案(turnkey)客户可加购一站处理。',
+        'Timestamp annotation, transcript proofreading, metadata tagging on existing audio — client hands over recordings and we post-process. Available as a turnkey add-on.'
       ),
     },
   ];

@@ -133,11 +133,11 @@ export default function DataBriefPage() {
       return isZhCN ? item.label.cn : isZh ? item.label.tw : item.label.en;
     },
     service: (s: ServiceType): string => ({
-      tts:            tx('TTS 語料製作',          'TTS 语料制作',          'TTS Voice Data'),
-      cloning:        tx('Voice Cloning / 聲線克隆','Voice Cloning / 声线克隆','Voice Cloning'),
-      conversational: tx('對話 / 情緒語料',        '对话 / 情绪语料',        'Conversational / Emotion Data'),
-      annotation:     tx('資料標註與清理',         '资料标注与清理',         'Annotation & Cleaning'),
-      other:          tx('其他(備註說明)',         '其他(备注说明)',         'Other (specify in notes)'),
+      tts:            tx('TTS 訓練用語料(念稿型)',      'TTS 训练用语料(念稿型)',      'TTS training corpus (scripted)'),
+      cloning:        tx('聲線克隆用素材(directed session)', '声线克隆用素材(directed session)', 'Voice-cloning source material (directed session)'),
+      conversational: tx('對話 / 情緒語料',                '对话 / 情绪语料',                'Conversational / emotion corpus'),
+      annotation:     tx('資料標註與清理',                 '资料标注与清理',                 'Annotation & cleaning'),
+      other:          tx('其他(備註說明)',                 '其他(备注说明)',                 'Other (specify in notes)'),
     }[s]),
     useCase: (u: UseCase): string => ({
       customerService:  tx('AI 客服 agent',                  'AI 客服 agent',                  'AI customer-service agent'),
@@ -412,9 +412,11 @@ export default function DataBriefPage() {
           <Section
             title={tx('01 服務類型', '01 服务类型', '01 Service type')}
             required
-            hint={tx('可複選 — 同一案件常含多種類型。',
-                     '可复选 — 同一项目常含多种类型。',
-                     'Multi-select — projects often span multiple types.')}
+            hint={tx(
+              'Onyx 採集語料 + 處理資料 — 客戶用採集到的語料訓自己的模型,Onyx 不訓練 AI 模型。可複選,同一案件常含多種類型。',
+              'Onyx 采集语料 + 处理数据 — 客户用采集到的语料训自己的模型,Onyx 不训练 AI 模型。可复选,同一项目常含多种类型。',
+              "Onyx collects corpora + processes data. Clients use what we deliver to train their own models — Onyx does not train AI models. Multi-select — projects often span multiple types."
+            )}
           >
             <div className="flex flex-wrap gap-2">
               {(['tts','cloning','conversational','annotation','other'] as ServiceType[]).map(s => (
