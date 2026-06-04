@@ -46,6 +46,7 @@ type Experience = 'less3' | '3to7' | '7to15' | 'over15';
 type EducationLevel = 'phd' | 'masters' | 'bachelors' | 'specialized' | 'other';
 type SampleTest = 'yes' | 'maybe' | 'no';
 type Proficiency = 'native' | 'c2' | 'c1' | 'b2' | 'other';
+type AIClientExperience = 'yes' | 'no';
 
 const LANGS = [
   'Mandarin (TW)', 'Mandarin (CN)', 'Cantonese', 'Hokkien',
@@ -91,6 +92,7 @@ export default function ApplyProofreaderPage() {
 
   const [certifications, setCertifications] = useState('');
   const [currentEmployer, setCurrentEmployer] = useState('');
+  const [aiClientExperience, setAiClientExperience] = useState<AIClientExperience | ''>('');
 
   // VERIFIABILITY — these are the spam filters
   const [linkedinUrl, setLinkedinUrl] = useState('');
@@ -148,6 +150,12 @@ export default function ApplyProofreaderPage() {
       b2:     tx('B2 / 中高級', 'B2 / 中高级', 'B2 / upper-intermediate'),
       other:  tx('其他(備註說明)', '其他(备注说明)', 'Other (specify in notes)'),
     }[p]),
+    aiClient: (a: AIClientExperience): string => ({
+      yes: tx('有 — 為 AI 語音資料 / TTS 公司校對過(Voices / Appen / 大型 AI 數據公司類型)',
+              '有 — 为 AI 语音资料 / TTS 公司校对过(Voices / Appen / 大型 AI 数据公司类型)',
+              'Yes — proofread for AI voice-data / TTS clients (Voices / Appen / major AI data companies)'),
+      no:  tx('沒有(但有其他校對背景)', '没有(但有其他校对背景)', 'No (but have other proofreading background)'),
+    }[a]),
   };
 
   // ---- submit ----------------------------------------------------------
@@ -189,6 +197,7 @@ export default function ApplyProofreaderPage() {
     if (educationField.trim())       lines.push((tx('  專業領域:', '  专业领域:', '  Field: ')) + educationField.trim());
     if (educationInstitution.trim()) lines.push((tx('  畢業 / 任職機構:', '  毕业 / 任职机构:', '  Institution: ')) + educationInstitution.trim());
     if (currentEmployer.trim())      lines.push((tx('  現職:', '  现职:', '  Current employer: ')) + currentEmployer.trim());
+    if (aiClientExperience)          lines.push((tx('  AI 平台客戶經驗:', '  AI 平台客户经验:', '  AI platform client experience: ')) + labelFor.aiClient(aiClientExperience as AIClientExperience));
     lines.push('');
 
     if (certifications.trim()) {
@@ -246,7 +255,7 @@ export default function ApplyProofreaderPage() {
     }
 
     lines.push(tx('▎ 聯絡', '▎ 联络', '▎ Contact'));
-    if (phone.trim()) lines.push((tx('  電話 / WhatsApp / LINE:', '  电话 / WhatsApp / LINE:', '  Phone / WA / LINE: ')) + phone.trim());
+    if (phone.trim()) lines.push((tx('  電話:', '  电话:', '  Phone: ')) + phone.trim());
 
     const messageBody = lines.join('\n');
 
@@ -408,6 +417,17 @@ export default function ApplyProofreaderPage() {
                 'e.g. Translator at Foo Inc. / freelance / lecturer at Bar Uni'
               )} />
             </Field>
+            <Field
+              label={tx('AI 平台客戶經驗', 'AI 平台客户经验', 'AI platform client experience')}
+              hint={tx(
+                '是否為 AI 語音資料 / TTS 公司校對過? Onyx 對接的客戶常有 TTS 語料、Voice Cloning 腳本、對話訓練資料的校對需求,這類經驗會優先進入媒合。',
+                '是否为 AI 语音资料 / TTS 公司校对过? Onyx 对接的客户常有 TTS 语料、Voice Cloning 脚本、对话训练资料的校对需求,这类经验会优先进入媒合。',
+                "Have you proofread for AI voice-data / TTS clients? Onyx's clients commonly need TTS corpus / voice-cloning script / dialog data QA — this experience prioritizes matching."
+              )}
+            >
+              <Choices value={aiClientExperience} onSelect={v => setAiClientExperience(v as AIClientExperience)}
+                options={(['yes','no'] as AIClientExperience[]).map(k => [k, labelFor.aiClient(k)] as [string, string])} />
+            </Field>
           </Section>
 
           <Section title={tx('認證(可選但有助評估)', '认证(可选但有助评估)', 'Certifications (optional but helpful)')} hint={tx(
@@ -494,7 +514,7 @@ export default function ApplyProofreaderPage() {
             </Field>
           </Section>
 
-          <Section title={tx('10 有償試譯意願', '10 有偿试译意愿', '10 Paid sample test willingness')} hint={tx(
+          <Section title={tx('有償試譯意願', '有偿试译意愿', 'Paid sample test willingness')} hint={tx(
             'Onyx 可能會以小規模有償試譯(通常 300-500 字)評估你的實際校對能力。願意者通常會優先進入媒合。',
             'Onyx 可能会以小规模有偿试译(通常 300-500 字)评估你的实际校对能力。愿意者通常会优先进入媒合。',
             'Onyx may evaluate via small paid sample test (typically 300-500 words). Willingness prioritizes you in our matching.'
@@ -503,16 +523,30 @@ export default function ApplyProofreaderPage() {
               options={(['yes','maybe','no'] as SampleTest[]).map(k => [k, labelFor.sampleTest(k)] as [string, string])} />
           </Section>
 
-          <Section title={tx('11 聯絡', '11 联络', '11 Contact')} required>
+          <Section title={tx('聯絡', '联络', 'Contact')} required>
             <Field label="Email" required>
               <Input value={email} onChange={setEmail} type="email" placeholder="you@example.com" />
             </Field>
-            <Field label={tx('電話 / WhatsApp / LINE', '电话 / WhatsApp / LINE', 'Phone / WhatsApp / LINE')}>
-              <Input value={phone} onChange={setPhone} />
+            <Field
+              label={tx('電話(選填)', '电话(选填)', 'Phone (optional)')}
+              hint={tx(
+                '想要直接 / 加快聯絡的填,否則我們以 email 回覆。',
+                '想要直接 / 加快联系的填,否则我们以 email 回复。',
+                'Fill if you want direct / faster contact, otherwise we reply by email.'
+              )}
+            >
+              <Input value={phone} onChange={setPhone} placeholder={tx('包含國碼,例如 +886 ...', '包含国码,例如 +886 ...', 'Include country code, e.g. +1 ...')} />
             </Field>
             <Field label={tx('補充說明', '补充说明', 'Notes')}>
               <Textarea value={notes} onChange={setNotes} />
             </Field>
+            <p className="text-xs text-gray-500 leading-relaxed pt-2">
+              {tx('其他聯絡方式,請見我們的', '其他联系方式,请见我们的', 'Other contact methods — see our ')}
+              <Link href="/contact" className="text-amber-300 hover:text-amber-200 underline">
+                {tx('官方聯絡頁', '官方联系页', 'official contact page')}
+              </Link>
+              {tx('。', '。', '.')}
+            </p>
           </Section>
 
           <div className="pt-2">
