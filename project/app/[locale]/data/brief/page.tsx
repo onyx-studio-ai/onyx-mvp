@@ -703,10 +703,12 @@ function Section({
 function Field({
   label,
   required,
+  hint,
   children,
 }: {
   label: string;
   required?: boolean;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -715,6 +717,7 @@ function Field({
         {label}
         {required && <span className="text-amber-400 ml-1">*</span>}
       </label>
+      {hint && <p className="text-xs text-gray-500 mb-2 leading-relaxed">{hint}</p>}
       {children}
     </div>
   );
