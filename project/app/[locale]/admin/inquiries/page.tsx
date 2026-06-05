@@ -82,6 +82,11 @@ export default function InquiriesPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDept, setFilterDept] = useState('all');
+  // Source-group tab: separates client briefs (work requests) from
+  // partner applications (studio / director / proofreader). Partner
+  // forms all submit with source starting with "apply-". Filter is
+  // client-side because all rows are already fetched.
+  const [filterSourceGroup, setFilterSourceGroup] = useState<'all' | 'client' | 'partner'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -195,7 +200,20 @@ export default function InquiriesPage() {
     }
   };
 
+  // Helper — partner applications all use sources like apply-studio,
+  // apply-director, apply-proofreader (set by /api/contact/send POST
+  // from the partner forms). Anything else = client-facing brief.
+  const isPartnerInquiry = (inq: Inquiry) => !!inq.source?.startsWith('apply-');
+
+  const partnerCount = inquiries.filter(isPartnerInquiry).length;
+  const clientCount = inquiries.length - partnerCount;
+
   const filtered = inquiries.filter((inq) => {
+    // Source-group filter (client vs partner)
+    if (filterSourceGroup === 'client' && isPartnerInquiry(inq)) return false;
+    if (filterSourceGroup === 'partner' && !isPartnerInquiry(inq)) return false;
+
+    // Search
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       return (
@@ -230,6 +248,41 @@ export default function InquiriesPage() {
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           Refresh
         </button>
+      </div>
+
+      {/* Source-group tabs — separates client work-requests from
+          partner applications. All 3 partner forms (apply/studio,
+          apply/director, apply/proofreader) currently land in the
+          contact_inquiries table alongside client briefs; this tab
+          gives Wing a quick way to triage one stream without the
+          other (Option A from the routing audit). Counts update
+          automatically with the underlying data. */}
+      <div className="flex gap-1 mb-5 border-b border-gray-200">
+        {([
+          { id: 'all',     label: 'All',                                  count: inquiries.length },
+          { id: 'client',  label: 'Client briefs / 客戶詢價',              count: clientCount },
+          { id: 'partner', label: 'Partner applications / 人才申請',      count: partnerCount },
+        ] as const).map(tab => {
+          const active = filterSourceGroup === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setFilterSourceGroup(tab.id as typeof filterSourceGroup)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                active
+                  ? 'text-blue-700 border-blue-600'
+                  : 'text-gray-600 border-transparent hover:text-gray-900'
+              }`}
+            >
+              {tab.label}
+              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Filters */}
