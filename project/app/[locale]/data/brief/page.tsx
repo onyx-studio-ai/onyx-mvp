@@ -686,12 +686,12 @@ export default function DataBriefPage() {
                 live on /contact and she controls what's listed there. */}
             <p className="text-xs text-gray-500 leading-relaxed pt-2">
               {tx(
-                '其他聯絡方式,請見我們的',
-                '其他联系方式,请见我们的',
-                'Other contact methods — see our '
+                '完整聯絡資訊請見我們的',
+                '完整联络信息请见我们的',
+                'See all our contact channels on our '
               )}
               <Link href="/contact" className="text-amber-300 hover:text-amber-200 underline">
-                {tx('官方聯絡頁', '官方联系页', 'official contact page')}
+                {tx('聯絡頁', '联络页', 'contact page')}
               </Link>
               {tx('。', '。', '.')}
             </p>
