@@ -10,6 +10,7 @@ import {
   AlertTriangle, FileAudio, User, Globe, Settings, DollarSign, Shield, Search
 } from 'lucide-react';
 import { COUNTRIES } from '@/lib/countries';
+import { Link } from '@/i18n/navigation';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -116,10 +117,19 @@ interface FormData {
   rate_hook_chorus: string;
   rate_notes: string;
   consent_data_processing: boolean;
+  // ⚠️ consent_terms is a LEGACY misleading name — it captures the
+  // ORIGINALITY / IP declaration ("audio is my own, not synthesized,
+  // not infringing"), NOT acceptance of Onyx's Terms of Service.
+  // For Terms acceptance use the separate `consent_legal_agreement`
+  // field. Renamed only via a future DB migration (would need to
+  // backfill existing rows).
   consent_terms: boolean;
   consent_moral_rights: boolean;
   consent_voice_id: boolean;
   consent_age_verified: boolean;
+  // Explicit acceptance of Terms of Service + Privacy Policy + AUP.
+  // Required to submit; persisted for audit. Added 2026-06-05.
+  consent_legal_agreement: boolean;
 }
 
 const defaultForm: FormData = {
@@ -157,6 +167,7 @@ const defaultForm: FormData = {
   consent_moral_rights: false,
   consent_voice_id: false,
   consent_age_verified: false,
+  consent_legal_agreement: false,
 };
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -381,7 +392,7 @@ export default function ApplyVoicePage() {
       case 4: return form.recording_environment !== '';
       case 5: return form.role_type === 'VO' ? form.consent_ai_twin : !!(form.rate_lead_vocal && form.rate_hook_chorus);
       case 6: return file !== null && !fileError;
-      case 7: return form.consent_data_processing && form.consent_terms && form.consent_moral_rights && form.consent_voice_id && form.consent_age_verified;
+      case 7: return form.consent_data_processing && form.consent_terms && form.consent_moral_rights && form.consent_voice_id && form.consent_age_verified && form.consent_legal_agreement;
       default: return true;
     }
   };
@@ -456,6 +467,7 @@ export default function ApplyVoicePage() {
         consent_moral_rights: form.consent_moral_rights,
         consent_voice_id: form.consent_voice_id,
         consent_age_verified: form.consent_age_verified,
+        consent_legal_agreement: form.consent_legal_agreement,
         fileUrl,
         fileName,
         fileSize: file.size,
@@ -1135,6 +1147,74 @@ export default function ApplyVoicePage() {
                       </div>
                     </div>
                   ))}
+
+                  {/* Explicit acceptance of platform legal terms — the 5
+                      mapped items above are content-specific declarations
+                      (originality / age / etc.), NOT acceptance of Onyx's
+                      ToS / Privacy / AUP. This dedicated item closes that
+                      gap. Clicking the row toggles the checkbox; the
+                      hyperlinks open the legal pages in new tabs without
+                      flipping the consent state. */}
+                  <div
+                    className={`p-5 rounded-xl border-2 transition-all cursor-pointer ${
+                      form.consent_legal_agreement ? 'border-green-500/40 bg-green-500/5' : 'border-zinc-700 hover:border-zinc-500'
+                    }`}
+                    onClick={() => update('consent_legal_agreement', !form.consent_legal_agreement)}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                        form.consent_legal_agreement ? 'bg-green-500 border-green-500' : 'border-zinc-600'
+                      }`}>
+                        {form.consent_legal_agreement && <Check className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-white text-sm">
+                          {locale === 'zh-CN'
+                            ? '同意 Onyx 平台条款'
+                            : locale.startsWith('zh')
+                            ? '同意 Onyx 平台條款'
+                            : 'Agreement to Onyx platform terms'}
+                        </p>
+                        <p className="text-gray-400 text-sm mt-1">
+                          {locale === 'zh-CN' ? '我已阅读并同意 Onyx 的 ' :
+                            locale.startsWith('zh') ? '我已閱讀並同意 Onyx 的 ' :
+                            "I have read and agree to Onyx's "}
+                          <Link
+                            href="/legal/terms"
+                            target="_blank"
+                            rel="noopener"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-amber-300 hover:text-amber-200 underline"
+                          >
+                            {locale.startsWith('zh') ? '服務條款' : 'Terms of Service'}
+                          </Link>
+                          {locale.startsWith('zh') ? '、' : ', '}
+                          <Link
+                            href="/legal/privacy"
+                            target="_blank"
+                            rel="noopener"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-amber-300 hover:text-amber-200 underline"
+                          >
+                            {locale === 'zh-CN' ? '隐私政策' : locale.startsWith('zh') ? '隱私政策' : 'Privacy Policy'}
+                          </Link>
+                          {locale.startsWith('zh') ? '、與' : ', and '}
+                          <Link
+                            href="/legal/aup"
+                            target="_blank"
+                            rel="noopener"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-amber-300 hover:text-amber-200 underline"
+                          >
+                            {locale === 'zh-CN' ? '合理使用政策' : locale.startsWith('zh') ? '合理使用政策' : 'Acceptable Use Policy'}
+                          </Link>
+                          {locale === 'zh-CN' ? '，并同意受这些条款约束。' :
+                            locale.startsWith('zh') ? ',並同意受這些條款約束。' :
+                            ', and I agree to be bound by these terms.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
