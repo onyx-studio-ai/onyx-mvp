@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/mail';
-import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
+import { requireAdminOnly } from '@/app/api/admin/_utils/requireAdmin';
 
 export async function POST(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = requireAdminOnly(request);
   if (unauthorized) return unauthorized;
 
   try {

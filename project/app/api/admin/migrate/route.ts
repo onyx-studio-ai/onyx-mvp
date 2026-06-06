@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest } from 'next/server';
-import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
+import { requireAdminOnly } from '@/app/api/admin/_utils/requireAdmin';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,7 +9,7 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  const unauthorized = requireAdminOnly(request);
   if (unauthorized) return unauthorized;
 
   try {

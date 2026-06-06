@@ -62,6 +62,8 @@ const headings: Record<string, ZhPair> = {
   'terms.56': { tw: '人才離開不溯及既往', cn: '人才离开不溯及既往' },
   'terms.57': { tw: '微修補協議', cn: '微修补协议' },
   'terms.58': { tw: '離開後封存權利', cn: '离开后封存权利' },
+  'terms.59': { tw: '語音資料蒐集服務', cn: '语音数据收集服务' },
+  'terms.60': { tw: '合作夥伴網絡', cn: '合作伙伴网络' },
 
   // ── Privacy Policy ──
   'privacy.1':  { tw: '簡介', cn: '简介' },

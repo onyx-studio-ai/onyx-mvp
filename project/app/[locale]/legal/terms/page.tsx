@@ -26,7 +26,7 @@ export default async function TermsPage() {
         <DisclaimerBanner locale={locale} />
 
         <article className="space-y-8 text-[13px] leading-relaxed text-gray-400">
-          {Array.from({ length: 58 }, (_, i) => i + 1).map(n => (
+          {Array.from({ length: 60 }, (_, i) => i + 1).map(n => (
             <section key={n}>
               <SH id={`terms.${n}`} locale={locale}>{t(`s${n}Title`)}</SH>
               <div

@@ -108,6 +108,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const tr = (key: keyof typeof dict) => dict[key];
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [role, setRole] = useState<'admin' | 'production' | null>(null);
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(true);
@@ -124,7 +125,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       try {
         const res = await fetch('/api/admin/auth');
         if (res.ok) {
+          const data = await res.json();
           setIsAuthenticated(true);
+          setRole(data.role === 'production' ? 'production' : 'admin');
         } else {
           localStorage.removeItem('onyx_admin_auth');
         }
@@ -178,6 +181,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (res.ok && data.success) {
         localStorage.setItem('onyx_admin_auth', 'true');
         setIsAuthenticated(true);
+        setRole(data.role === 'production' ? 'production' : 'admin');
       } else {
         setError(data.error || tr('invalidAdminCode'));
         setInputCode('');
@@ -303,9 +307,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation — filtered by role.
+            Production role only sees orders + inquiries (no /admin/dashboard
+            revenue stats), applications, and talents (no payouts, users,
+            promos, certificates, showcases, vibes, voices, sovits). */}
         <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
-          {navGroups.map((group) => (
+          {navGroups
+            .map((group) => {
+              if (role !== 'production') return group;
+              const PRODUCTION_ALLOWED_HREFS = new Set([
+                '/admin/orders',
+                '/admin/inquiries',
+                '/admin/applications',
+                '/admin/talents',
+              ]);
+              const filteredItems = group.items.filter((item) => PRODUCTION_ALLOWED_HREFS.has(item.href));
+              return filteredItems.length > 0 ? { ...group, items: filteredItems } : null;
+            })
+            .filter((group): group is NavGroup => group !== null)
+            .map((group) => (
             <div key={group.titleKey}>
               <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 px-4 mb-1">{tr(group.titleKey as keyof typeof dict)}</p>
               <div className="space-y-1">

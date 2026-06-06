@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { use } from 'react';
 import Footer from '@/components/landing/Footer';
 import ContactInquiryForm from '@/components/ContactInquiryForm';
-import { Mail, Building2, Globe } from 'lucide-react';
+import { Mail, Building2, Globe, Calendar } from 'lucide-react';
 
 type SupportedLocale = 'en' | 'zh-TW' | 'zh-CN';
 
@@ -112,6 +112,39 @@ export default function ContactPage({
               </div>
             </div>
           </div>
+
+          {/* ──────────────────────────────────────────────
+              Book a call (Calendly) — driven by env var.
+              Set NEXT_PUBLIC_CALENDLY_URL in .env to activate.
+              When unset, this section is hidden completely. */}
+          {process.env.NEXT_PUBLIC_CALENDLY_URL ? (
+            <div className="max-w-3xl mx-auto mt-16 mb-12">
+              <div className="rounded-2xl bg-gradient-to-br from-blue-500/[0.08] to-purple-500/[0.05] border border-blue-500/20 p-8 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-500/15 mb-4">
+                  <Calendar className="w-6 h-6 text-blue-400" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">
+                  {locale === 'zh-TW' ? '預約 30 分鐘討論' : locale === 'zh-CN' ? '预约 30 分钟讨论' : 'Book a 30-minute call'}
+                </h3>
+                <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+                  {locale === 'zh-TW'
+                    ? '案件規格較複雜、或需要走過案例?直接挑時段聊。'
+                    : locale === 'zh-CN'
+                    ? '案件规格较复杂、或需要走过案例?直接挑时段聊。'
+                    : 'Got a complex brief or want to walk through past work? Pick a time below.'}
+                </p>
+                <a
+                  href={process.env.NEXT_PUBLIC_CALENDLY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  {locale === 'zh-TW' ? '挑時段' : locale === 'zh-CN' ? '挑时段' : 'See available times'}
+                </a>
+              </div>
+            </div>
+          ) : null}
 
           <ContactInquiryForm locale={locale} />
         </div>
