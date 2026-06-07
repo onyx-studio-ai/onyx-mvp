@@ -20,6 +20,28 @@ class AudioManager {
       this.currentStopCallback = null;
     }
   }
+
+  /**
+   * Hard-stop whatever's playing. Call from useEffect cleanup when a
+   * component that started audio unmounts — Next.js client-side
+   * navigation tears down components but `new Audio()` objects survive
+   * unless paused explicitly. Without this, sample playback continues
+   * after the user navigates away from /voices, the homepage, etc.
+   */
+  stopAll() {
+    if (this.currentAudio) {
+      try {
+        this.currentAudio.pause();
+        this.currentAudio.currentTime = 0;
+      } catch {
+        // pause() can reject if the play() promise hasn't resolved;
+        // we just want best-effort silence on unmount.
+      }
+      this.currentStopCallback?.();
+    }
+    this.currentAudio = null;
+    this.currentStopCallback = null;
+  }
 }
 
 export const audioManager = new AudioManager();

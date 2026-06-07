@@ -61,6 +61,25 @@ export default function FeaturedVoices() {
       });
   }, []);
 
+  // 2026-06-07: Wing 反饋 — 在主頁按播放後切到其他頁面,聲音不會停。
+  // FeaturedVoices 用 new Audio() 建立的物件不受 React 樹生命週期管理,
+  // 元件 unmount 時要主動 pause + audioManager.stopAll(),否則背景音
+  // 會跟著用戶到新頁面繼續播。
+  useEffect(() => {
+    return () => {
+      Object.values(audioRefs.current).forEach((a) => {
+        try {
+          a.pause();
+          a.currentTime = 0;
+        } catch {
+          // ignore — best effort
+        }
+      });
+      audioRefs.current = {};
+      audioManager.stopAll();
+    };
+  }, []);
+
   // Helper: try translation, fall back to provided default. next-intl logs a
   // warning on missing keys but won't throw at runtime; t.has() is the
   // recommended way to gate it.

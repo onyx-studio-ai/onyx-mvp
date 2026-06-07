@@ -8,6 +8,7 @@ import { User, UserRound, Play, Activity, Wand2, ChevronDown, X, Globe, Search }
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/landing/Footer';
+import { audioManager } from '@/lib/audioManager';
 
 const POPULAR_CODES = ['en', 'zh-CN', 'zh-TW', 'yue', 'ja', 'ko', 'th', 'es', 'fr'];
 const popularLanguages = languages.filter(l => POPULAR_CODES.includes(l.code));
@@ -87,6 +88,11 @@ export default function VoicesPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('all');
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
+  // Per-voice: which demo chip the user has clicked (= which language
+  // demo the main ▶ should play). null/undefined = use voice.audioPreviewUrl.
+  // Decoupled from playingVoiceId so chip click ≠ play (Wing 2026-06-07
+  // bug report: chip 點下去就自動播放是錯的;chip 只該 SELECT,▶ 才該 PLAY).
+  const [selectedDemoIndexByVoice, setSelectedDemoIndexByVoice] = useState<Record<string, number>>({});
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -158,8 +164,15 @@ export default function VoicesPage() {
   const selectedLangObj = selectedLanguage === 'all' ? { code: 'all', name: 'All' } : languages.find(l => l.code === selectedLanguage);
   const isFromMore = selectedLanguage !== 'all' && !POPULAR_CODES.includes(selectedLanguage);
 
+  // Tear down audio when the page unmounts (navigation away). The
+  // local ref handles the page-owned <audio>; audioManager.stopAll()
+  // also catches anything kicked off by other components (e.g. the
+  // homepage FeaturedVoices) that's still tracked globally.
   useEffect(() => {
-    return () => { stopCurrentAudio(); };
+    return () => {
+      stopCurrentAudio();
+      audioManager.stopAll();
+    };
   }, []);
 
   useEffect(() => {
@@ -388,7 +401,12 @@ export default function VoicesPage() {
                     <div className="flex flex-col items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={(e) => toggleAudioPreview(voice, e)}
+                        onClick={(e) => {
+                          const selectedIdx = selectedDemoIndexByVoice[voice.id];
+                          const selectedDemo = selectedIdx != null ? voice.demos?.[selectedIdx] : null;
+                          const url = selectedDemo?.url || voice.audioPreviewUrl;
+                          toggleAudioPreview({ ...voice, audioPreviewUrl: url }, e);
+                        }}
                         className={`
                           p-3 rounded-lg transition-all
                           ${
@@ -422,28 +440,30 @@ export default function VoicesPage() {
                   {voice.demos && voice.demos.length > 1 && (
                     <div className="mb-4">
                       <p className="text-xs text-gray-500 mb-2">
-                        {isZh ? `${voice.demos.length} 個語言示範 · 點擊試聽` : `${voice.demos.length} language demos · click to preview`}
+                        {isZh ? `${voice.demos.length} 個語言示範 · 選擇後按 ▶ 試聽` : `${voice.demos.length} language demos · select, then press ▶`}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {voice.demos.map((demo, i) => {
                           const langObj = languages.find(l => l.code === demo.label);
                           const display = langObj ? langDisplayName(langObj) : (demo.label || `Demo ${i+1}`);
-                          const demoId = `${voice.id}__demo${i}`;
-                          const isActive = playingVoiceId === demoId;
+                          const isSelected = selectedDemoIndexByVoice[voice.id] === i;
                           return (
                             <button
                               key={demo.url + i}
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // 切 demo 前先強制停掉當前音頻,避免兩段疊播
+                                // 2026-06-07 Wing 反饋:點 chip 不該自動播,
+                                // 只負責 SELECT。換 chip 前先停掉當前播放音
+                                // (避免使用者邊聽 A 邊點 B 結果聽到 A 的尾巴)。
                                 stopCurrentAudio();
-                                if (isActive) return; // 同一個 chip 再點 = 停止
-                                // 用 synthetic id 給 toggleAudioPreview 追蹤
-                                toggleAudioPreview({ ...voice, audioPreviewUrl: demo.url, id: demoId }, e);
+                                setSelectedDemoIndexByVoice(prev => ({
+                                  ...prev,
+                                  [voice.id]: i,
+                                }));
                               }}
                               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                                isActive
+                                isSelected
                                   ? 'bg-blue-600 border-blue-500 text-white'
                                   : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20'
                               }`}
