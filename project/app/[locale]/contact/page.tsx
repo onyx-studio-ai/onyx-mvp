@@ -92,9 +92,9 @@ export default function ContactPage({
                       <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">
                         {t('taipeiAddress')}
                       </p>
-                      <p className="text-gray-500 text-xs mt-3">
-                        {t('taipeiTel')}
-                      </p>
+                      {/* Phone number removed 2026-06-07 — line is
+                          currently inactive (no one answers). Will
+                          re-enable when staffed. */}
                       <div className="flex items-center gap-1.5 mt-3 px-2 py-1 bg-blue-500/10 rounded-full w-fit">
                         <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
                         <span className="text-blue-400 text-xs font-medium">{t('taipeiHours')}</span>
