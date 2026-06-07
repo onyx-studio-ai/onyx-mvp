@@ -392,7 +392,7 @@ export default function VoiceIdUploadPage() {
 
                 <div>
                   <h4 className="text-white font-semibold mb-1">8. Royalty</h4>
-                  <p>Onyx shall pay Talent a royalty of <strong className="text-white">10%</strong> of the final sale price for each pure-AI generation. Monthly settlement with payment by the 31st of the following month via bank transfer or PayPal. Onyx shall provide monthly statements. Tax responsibility lies solely with Talent.</p>
+                  <p>Onyx shall pay Talent a royalty of <strong className="text-white">25%</strong> of the final sale price for each pure-AI generation. Monthly settlement with payment by the 31st of the following month via bank transfer or PayPal. Onyx shall provide monthly statements. Tax responsibility lies solely with Talent.</p>
                 </div>
 
                 {/* Part III */}
