@@ -24,6 +24,7 @@ const COPY: Record<Locale, {
   topicDubbing: string;
   topicMusic: string;
   topicVoice: string;
+  topicData: string;
   topicTechnical: string;
   topicBilling: string;
   messageLabel: string;
@@ -31,6 +32,7 @@ const COPY: Record<Locale, {
   messagePlaceholderDubbing: string;
   messagePlaceholderMusic: string;
   messagePlaceholderVoice: string;
+  messagePlaceholderData: string;
   errorRequired: string;
   errorEmail: string;
   sending: string;
@@ -53,6 +55,7 @@ const COPY: Record<Locale, {
     topicDubbing: 'Video dubbing project',
     topicMusic: 'Music production project',
     topicVoice: 'Voice production project',
+    topicData: 'Voice data collection (AI training)',
     topicTechnical: 'Technical / account support',
     topicBilling: 'Billing',
     messageLabel: 'Project details',
@@ -60,6 +63,7 @@ const COPY: Record<Locale, {
     messagePlaceholderDubbing: 'Source language, target language(s), total duration in minutes, deadline, any reference material.',
     messagePlaceholderMusic: 'Project type (ad, film, brand), desired vibe / references, target length, deadline.',
     messagePlaceholderVoice: 'Language, character/tone, script length, deadline, usage (broadcast, web, internal).',
+    messagePlaceholderData: 'Target language(s), required finished hours, voice type (TTS / clone / chat), license scope, deadline.',
     errorRequired: 'Please fill in name, email, and project details.',
     errorEmail: 'Please enter a valid email address.',
     sending: 'Sending…',
@@ -82,6 +86,7 @@ const COPY: Record<Locale, {
     topicDubbing: '影片配音專案',
     topicMusic: '音樂製作專案',
     topicVoice: '配音製作專案',
+    topicData: '語音資料採集 (AI 訓練用)',
     topicTechnical: '技術支援 / 帳號',
     topicBilling: '帳務',
     messageLabel: '專案內容',
@@ -89,6 +94,7 @@ const COPY: Record<Locale, {
     messagePlaceholderDubbing: '原語、目標語系、總時長（分鐘）、交付期限、有無參考素材。',
     messagePlaceholderMusic: '專案類型（廣告／影片／品牌）、想要的曲風或參考、預估長度、交付期限。',
     messagePlaceholderVoice: '語系、角色／語氣、腳本長度、交付期限、用途（廣播／網路／內部）。',
+    messagePlaceholderData: '目標語系、需要完成時數、聲線類型 (TTS / 克隆 / 對話)、授權範圍、交付期限。',
     errorRequired: '請填寫姓名、Email 與專案內容。',
     errorEmail: '請輸入有效的 Email。',
     sending: '送出中…',
@@ -111,6 +117,7 @@ const COPY: Record<Locale, {
     topicDubbing: '影视配音项目',
     topicMusic: '音乐制作项目',
     topicVoice: '配音制作项目',
+    topicData: '语音数据采集 (AI 训练用)',
     topicTechnical: '技术支持 / 账号',
     topicBilling: '账务',
     messageLabel: '项目内容',
@@ -118,6 +125,7 @@ const COPY: Record<Locale, {
     messagePlaceholderDubbing: '原语、目标语种、总时长（分钟）、交付期限、有无参考素材。',
     messagePlaceholderMusic: '项目类型（广告／影片／品牌）、想要的曲风或参考、预估长度、交付期限。',
     messagePlaceholderVoice: '语种、角色／语气、脚本长度、交付期限、用途（广播／网络／内部）。',
+    messagePlaceholderData: '目标语种、需要完成时数、声线类型 (TTS / 克隆 / 对话)、授权范围、交付期限。',
     errorRequired: '请填写姓名、Email 与项目内容。',
     errorEmail: '请输入有效的 Email。',
     sending: '送出中…',
@@ -131,18 +139,20 @@ const COPY: Record<Locale, {
 };
 
 // Maps the ?source= query value to a default topic key.
-const SOURCE_TO_TOPIC: Record<string, 'general' | 'dubbing' | 'music' | 'voice'> = {
+const SOURCE_TO_TOPIC: Record<string, 'general' | 'dubbing' | 'music' | 'voice' | 'data'> = {
   'dubbing-project': 'dubbing',
   'music-project':   'music',
   'voice-project':   'voice',
+  'data-project':    'data',
 };
 
 // Each topic maps to (department for routing, message-placeholder key).
-const TOPICS: { key: 'general' | 'dubbing' | 'music' | 'voice' | 'technical' | 'billing'; department: Department }[] = [
+const TOPICS: { key: 'general' | 'dubbing' | 'music' | 'voice' | 'data' | 'technical' | 'billing'; department: Department }[] = [
   { key: 'general',   department: 'HELLO' },
   { key: 'dubbing',   department: 'PRODUCTION' },
   { key: 'music',     department: 'PRODUCTION' },
   { key: 'voice',     department: 'PRODUCTION' },
+  { key: 'data',      department: 'PRODUCTION' },
   { key: 'technical', department: 'SUPPORT' },
   { key: 'billing',   department: 'BILLING' },
 ];
@@ -173,6 +183,7 @@ export default function ContactInquiryForm({ locale }: ContactInquiryFormProps) 
       case 'dubbing':   return t.topicDubbing;
       case 'music':     return t.topicMusic;
       case 'voice':     return t.topicVoice;
+      case 'data':      return t.topicData;
       case 'technical': return t.topicTechnical;
       case 'billing':   return t.topicBilling;
     }
@@ -183,6 +194,7 @@ export default function ContactInquiryForm({ locale }: ContactInquiryFormProps) 
       case 'dubbing': return t.messagePlaceholderDubbing;
       case 'music':   return t.messagePlaceholderMusic;
       case 'voice':   return t.messagePlaceholderVoice;
+      case 'data':    return t.messagePlaceholderData;
       default:        return t.messagePlaceholderGeneral;
     }
   })();
