@@ -23,6 +23,10 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   replyTo?: string;
+  /** Blind copy recipient(s). Used by inquiry-reply flow to mirror
+   *  outbound to Wing's personal inbox while fine-biz.com is
+   *  bouncing. Empty / undefined = no BCC (default). */
+  bcc?: string | string[];
 }
 
 export interface SendEmailResult {
@@ -40,12 +44,17 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
   const timestamp = new Date().toISOString();
 
   try {
+    const bccList = options.bcc
+      ? (Array.isArray(options.bcc) ? options.bcc : [options.bcc]).filter(Boolean)
+      : undefined;
+
     const { data, error } = await resend.emails.send({
       from,
       to: Array.isArray(options.to) ? options.to : [options.to],
       subject: options.subject,
       html: options.html,
       replyTo: options.replyTo,
+      ...(bccList && bccList.length > 0 ? { bcc: bccList } : {}),
     });
 
     if (error) {

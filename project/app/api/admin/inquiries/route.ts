@@ -129,12 +129,20 @@ export async function POST(request: NextRequest) {
       department: inquiry.department,
     });
 
+    // BCC every reply to Wing's personal inbox so she has a backup
+    // copy regardless of whether the primary deliverable lands. The
+    // BCC address is configured via INQUIRY_REPLY_BCC env var — set
+    // it in Vercel to e.g. ukuclai@gmail.com to activate. Empty / unset
+    // = no BCC (preserves prior behaviour).
+    const bccTarget = process.env.INQUIRY_REPLY_BCC?.trim() || undefined;
+
     const result = await sendEmail({
       category: inquiry.department as SenderCategory,
       to: inquiry.email,
       subject: template.subject,
       html: template.html,
       replyTo: getDeptEmail(inquiry.department),
+      bcc: bccTarget,
     });
 
     if (!result.success) {
