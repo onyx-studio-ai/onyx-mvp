@@ -1230,6 +1230,8 @@
     "tryAgain": "Try Again",
     "navVoiceStudio": "Voice Studio",
     "navMusicStudio": "Music Studio",
+    "navDubbingStudio": "Video Studio",
+    "navDataStudio": "Data Studio",
     "navContact": "Contact",
     "navDashboard": "Dashboard",
     "navSignOut": "Sign Out",

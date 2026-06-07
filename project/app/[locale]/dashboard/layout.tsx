@@ -21,9 +21,14 @@ function DashboardHeader() {
     router.push('/');
   };
 
+  // Mirror the 4 service modules from the marketing-side Navbar so the
+  // dashboard top nav reads as the same taxonomy users saw before sign-in.
+  // Wing 2026-06-07: 影片工作室 + 數據工作室 were missing — restored.
   const mainLinks = [
     { href: '/voice', label: tr('navVoiceStudio', '配音工作室') },
     { href: '/music', label: tr('navMusicStudio', '音樂工作室') },
+    { href: '/dubbing', label: tr('navDubbingStudio', '影片工作室') },
+    { href: '/data', label: tr('navDataStudio', '數據工作室') },
     { href: '/contact', label: tr('navContact', '聯絡我們') },
   ];
 
