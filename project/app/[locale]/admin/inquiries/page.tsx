@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   Search, Filter, RefreshCw, Mail, Send, Clock,
   CheckCircle, MessageSquare, ChevronDown, ChevronUp,
-  X, User, ArrowRight, Eye,
+  X, User, ArrowRight, Eye, Calendar,
 } from 'lucide-react';
 
 interface Reply {
@@ -453,9 +453,33 @@ export default function InquiriesPage() {
 
                     {/* Reply Composer */}
                     <div>
-                      <p className="text-xs text-gray-600 mb-2 flex items-center gap-1.5">
-                        <ArrowRight size={12} /> Reply to {inq.name}
-                      </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-600 flex items-center gap-1.5">
+                          <ArrowRight size={12} /> Reply to {inq.name}
+                        </p>
+                        {/* Insert Calendly link — appears only when
+                            NEXT_PUBLIC_CALENDLY_URL env var is set.
+                            Wing's preferred workflow: don't expose
+                            the booking link publicly on /contact;
+                            instead, manually drop it into the reply
+                            after vetting the client via email. */}
+                        {process.env.NEXT_PUBLIC_CALENDLY_URL ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = process.env.NEXT_PUBLIC_CALENDLY_URL || '';
+                              const snippet = `\n\nIf you'd like a quick 30-min call to walk through this, pick a time that works for you:\n${url}\n`;
+                              setReplyText((prev) => prev + snippet);
+                            }}
+                            disabled={replying}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="Append a Calendly booking link to the reply"
+                          >
+                            <Calendar size={12} />
+                            + Calendly
+                          </button>
+                        ) : null}
+                      </div>
                       <textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
