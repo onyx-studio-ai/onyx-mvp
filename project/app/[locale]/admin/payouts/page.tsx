@@ -815,6 +815,11 @@ function ManualEntryModal({
   const [subtype, setSubtype] = useState<'client_deal' | 'buyout'>('client_deal');
   const [talentId, setTalentId] = useState('');
   const [orderNumber, setOrderNumber] = useState('');
+  // Tracks whether the user has manually typed in the Order Number
+  // field. When false, switching subtype (or first mount) re-fetches
+  // the next auto-generated number from the API. When true, we leave
+  // their value alone — they explicitly chose a custom slug.
+  const [orderNumberManuallyEdited, setOrderNumberManuallyEdited] = useState(false);
   const [realTotal, setRealTotal] = useState('');
   const [payoutAmount, setPayoutAmount] = useState('');
   const [marketing, setMarketing] = useState('');
@@ -827,6 +832,28 @@ function ManualEntryModal({
   const [error, setError] = useState<string | null>(null);
 
   const isBuyout = subtype === 'buyout';
+
+  // Auto-fill the next manual order number on mount and whenever the
+  // subtype switches (case_deal ↔ buyout). Skip if the user has already
+  // hand-edited the field (orderNumberManuallyEdited). Single fetch per
+  // subtype change; no debounce needed.
+  useEffect(() => {
+    if (orderNumberManuallyEdited) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/earnings/next-manual-number?subtype=${subtype}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.nextNumber) {
+          setOrderNumber(data.nextNumber);
+        }
+      } catch {
+        // best-effort — leave field blank, user can type
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [subtype, orderNumberManuallyEdited]);
 
   const talent = talentOptions.find(t => t.id === talentId);
   const suggestedFolderPath = useMemo(() => {
@@ -965,14 +992,27 @@ function ManualEntryModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Order Number *</label>
+              <label className="block text-xs text-gray-600 mb-1">
+                Order Number *
+                {!orderNumberManuallyEdited && orderNumber && (
+                  <span className="ml-1.5 text-[10px] text-gray-400 font-normal">(auto)</span>
+                )}
+              </label>
               <input
                 type="text"
                 value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
+                onChange={(e) => {
+                  setOrderNumber(e.target.value);
+                  setOrderNumberManuallyEdited(true);
+                }}
                 placeholder={isBuyout ? 'BUYOUT-2026-001' : 'MANUAL-2026-001'}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
               />
+              <p className="text-[10px] text-gray-500 mt-1">
+                {orderNumberManuallyEdited
+                  ? '自訂編號(改動後不再自動更新)'
+                  : '系統自動填下一個流水號,你可以直接改成自訂(例 SIERRA-Q3)'}
+              </p>
             </div>
           </div>
 
