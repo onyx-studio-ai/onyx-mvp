@@ -94,4 +94,15 @@ export type Talent = {
     swift_code?: string;
     notes?: string;
   } | null;
+  /**
+   * Wing's two-path payout model (2026-06-07):
+   *  - 'commission' (default): talent earns 25% of each platform AI
+   *    generation sale. Ongoing revenue share.
+   *  - 'buyout': Onyx pays talent a one-off lump sum. 100% of future
+   *    platform revenue from that voice flows to Onyx. No royalty.
+   * Wing decides per-talent (not talent self-selection — avoids
+   * adverse selection). New talents default to 'commission'; flip
+   * to 'buyout' from /admin/talents only after evaluation.
+   */
+  compensation_model?: 'commission' | 'buyout';
 };

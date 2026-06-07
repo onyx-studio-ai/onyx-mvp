@@ -45,15 +45,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const supabase = getAdminClient();
 
-    // Manual / offline deal: Wing keys in the real client total + the
-    // talent payout independently (they may differ wildly — talent never
-    // sees the real total). cost_breakdown captures where the gap went.
+    // Manual entry has two sub-types:
+    //   - 'client_deal' (default): Wing keys in real client total +
+    //     talent payout + cost breakdown (talent never sees real total)
+    //   - 'buyout': Wing pays talent a one-off lump sum to own the
+    //     voice. No client deal yet, no cost breakdown. payoutAmount =
+    //     the buyout price; order_total = same value for accounting
+    //     symmetry. Marked via tier='buyout' so the front-end can
+    //     render the filing checklist with only the relevant boxes.
     if (body.orderType === 'manual') {
       const { talentId, orderNumber, realTotal, payoutAmount, costBreakdown, localFolderPath } = body;
+      const subtype = body.subtype === 'buyout' ? 'buyout' : 'client_deal';
 
-      if (!talentId || !orderNumber || realTotal == null || payoutAmount == null) {
+      if (!talentId || !orderNumber || payoutAmount == null) {
         return NextResponse.json(
-          { error: 'Manual entry needs talentId, orderNumber, realTotal, payoutAmount' },
+          { error: 'Manual entry needs talentId, orderNumber, payoutAmount' },
+          { status: 400 }
+        );
+      }
+      // For client_deal, real total is also required; for buyout we
+      // synthesise it = payoutAmount (single source of truth).
+      const effectiveRealTotal = subtype === 'buyout'
+        ? Number(payoutAmount)
+        : (realTotal != null ? Number(realTotal) : null);
+      if (effectiveRealTotal == null) {
+        return NextResponse.json(
+          { error: 'client_deal manual entry needs realTotal' },
           { status: 400 }
         );
       }
@@ -73,6 +90,13 @@ export async function POST(request: NextRequest) {
       }
 
       const syntheticOrderId = crypto.randomUUID();
+      const tier = subtype === 'buyout' ? 'buyout' : 'manual';
+      // Buyouts: talent gets 100% of the lump sum Wing offered (the
+      // entire transaction IS the payment). Client deals: the rate
+      // reflects what share of the real total went to talent.
+      const computedRate = subtype === 'buyout'
+        ? 1
+        : (effectiveRealTotal > 0 ? Number(payoutAmount) / effectiveRealTotal : 0);
 
       const { data, error } = await supabase
         .from('talent_earnings')
@@ -81,12 +105,12 @@ export async function POST(request: NextRequest) {
           order_id: syntheticOrderId,
           order_type: 'manual',
           order_number: orderNumber,
-          tier: 'manual',
-          order_total: realTotal,
-          commission_rate: realTotal > 0 ? payoutAmount / realTotal : 0,
-          commission_amount: payoutAmount,
+          tier,
+          order_total: effectiveRealTotal,
+          commission_rate: computedRate,
+          commission_amount: Number(payoutAmount),
           status: 'pending',
-          cost_breakdown: costBreakdown || {},
+          cost_breakdown: subtype === 'buyout' ? {} : (costBreakdown || {}),
           local_folder_path: localFolderPath || null,
         })
         .select()

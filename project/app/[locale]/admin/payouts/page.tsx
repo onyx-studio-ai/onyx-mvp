@@ -292,8 +292,18 @@ export default function PayoutsPage() {
     setSelected(new Set());
   };
 
+  // Buyouts don't have a client-side invoicing/payment flow — Wing
+  // pays the talent directly with no client deal in the middle. Drop
+  // those two boxes from the checklist for buyout rows.
+  const BUYOUT_CHECKLIST_FIELDS = CHECKLIST_FIELDS.filter(
+    f => f !== 'invoice_sent' && f !== 'payment_received',
+  ) as readonly ChecklistField[];
+
+  const effectiveChecklist = (e: Earning): readonly ChecklistField[] =>
+    e.tier === 'buyout' ? BUYOUT_CHECKLIST_FIELDS : CHECKLIST_FIELDS;
+
   const checklistCount = (e: Earning) =>
-    CHECKLIST_FIELDS.reduce((acc, f) => acc + (e[f] ? 1 : 0), 0);
+    effectiveChecklist(e).reduce((acc, f) => acc + (e[f] ? 1 : 0), 0);
 
   const colSpanForExpanded = (showCheckbox: boolean) => {
     let n = 8; // Order, Type, Total, Rate, Commission, Status, Date, Filing
@@ -335,6 +345,8 @@ export default function PayoutsPage() {
             const isExpanded = expandedRowId === e.id;
             const filed = checklistCount(e);
             const isManual = e.order_type === 'manual';
+            const isBuyout = e.tier === 'buyout';
+            const checklistTotal = effectiveChecklist(e).length;
             return (
               <React.Fragment key={e.id}>
                 <tr className="border-b border-gray-200/50 hover:bg-gray-100/30">
@@ -351,11 +363,15 @@ export default function PayoutsPage() {
                   )}
                   <td className="px-5 py-3 font-mono text-gray-700 text-xs">
                     #{e.order_number}
-                    {isManual && (
+                    {isBuyout ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                        🔒 Buyout
+                      </span>
+                    ) : isManual ? (
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
                         Manual
                       </span>
-                    )}
+                    ) : null}
                   </td>
                   {!activeTalent && <td className="px-5 py-3 text-gray-900">{e.talents?.name || '—'}</td>}
                   <td className="px-5 py-3">
@@ -381,14 +397,14 @@ export default function PayoutsPage() {
                     <button
                       onClick={() => setExpandedRowId(isExpanded ? null : e.id)}
                       className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border transition-colors ${
-                        filed === 5
+                        filed === checklistTotal
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                           : filed > 0
                           ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                           : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                       }`}
                     >
-                      <span className="font-mono">{filed}/5</span>
+                      <span className="font-mono">{filed}/{checklistTotal}</span>
                       <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
                   </td>
@@ -423,9 +439,11 @@ export default function PayoutsPage() {
                           </div>
                         )}
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">歸檔進度</p>
-                          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                            {CHECKLIST_FIELDS.map(field => {
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                            歸檔進度{isBuyout && <span className="ml-1 text-purple-700">(買斷流程簡化版)</span>}
+                          </p>
+                          <div className={`grid grid-cols-2 ${isBuyout ? 'md:grid-cols-3' : 'md:grid-cols-5'} gap-2`}>
+                            {effectiveChecklist(e).map(field => {
                               const checked = !!e[field];
                               const stamp = e[`${field}_at` as keyof Earning] as string | null | undefined;
                               return (
@@ -794,6 +812,7 @@ function ManualEntryModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const [subtype, setSubtype] = useState<'client_deal' | 'buyout'>('client_deal');
   const [talentId, setTalentId] = useState('');
   const [orderNumber, setOrderNumber] = useState('');
   const [realTotal, setRealTotal] = useState('');
@@ -807,13 +826,16 @@ function ManualEntryModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isBuyout = subtype === 'buyout';
+
   const talent = talentOptions.find(t => t.id === talentId);
   const suggestedFolderPath = useMemo(() => {
     if (!orderNumber) return '';
     const year = new Date().getFullYear();
     const talentSlug = talent?.name?.replace(/\s+/g, '_') || 'Talent';
-    return `${year}/Cases/Case_${orderNumber}_${talentSlug}`;
-  }, [orderNumber, talent]);
+    const prefix = isBuyout ? 'Buyout' : 'Case';
+    return `${year}/${isBuyout ? 'Buyouts' : 'Cases'}/${prefix}_${orderNumber}_${talentSlug}`;
+  }, [orderNumber, talent, isBuyout]);
 
   const effectiveFolderPath = folderPath || suggestedFolderPath;
 
@@ -825,22 +847,28 @@ function ManualEntryModal({
     (Number(payoutAmount) || 0);
   const realTotalNum = Number(realTotal) || 0;
   const breakdownMismatch =
-    realTotalNum > 0 && Math.abs(sumBreakdown - realTotalNum) > 0.01;
+    !isBuyout && realTotalNum > 0 && Math.abs(sumBreakdown - realTotalNum) > 0.01;
 
   const handleSubmit = async () => {
     setError(null);
     if (!talentId) return setError('請選配音員');
     if (!orderNumber.trim()) return setError('請輸入 Order Number');
-    if (!realTotal || realTotalNum <= 0) return setError('Real total 要大於 0');
-    if (!payoutAmount || Number(payoutAmount) <= 0) return setError('Talent payout 要大於 0');
+    if (!payoutAmount || Number(payoutAmount) <= 0) {
+      return setError(isBuyout ? '買斷金額要大於 0' : 'Talent payout 要大於 0');
+    }
+    if (!isBuyout && (!realTotal || realTotalNum <= 0)) {
+      return setError('Real total 要大於 0');
+    }
 
     setSaving(true);
     try {
       const costBreakdown: Record<string, number | string> = {};
-      if (marketing) costBreakdown.marketing = Number(marketing);
-      if (platformFee) costBreakdown.platform_fee = Number(platformFee);
-      if (operations) costBreakdown.operations = Number(operations);
-      if (other) costBreakdown.other = Number(other);
+      if (!isBuyout) {
+        if (marketing) costBreakdown.marketing = Number(marketing);
+        if (platformFee) costBreakdown.platform_fee = Number(platformFee);
+        if (operations) costBreakdown.operations = Number(operations);
+        if (other) costBreakdown.other = Number(other);
+      }
       if (notes.trim()) costBreakdown.notes = notes.trim();
 
       const res = await fetch('/api/admin/earnings', {
@@ -848,9 +876,10 @@ function ManualEntryModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderType: 'manual',
+          subtype,
           talentId,
           orderNumber: orderNumber.trim(),
-          realTotal: Number(realTotal),
+          ...(isBuyout ? {} : { realTotal: Number(realTotal) }),
           payoutAmount: Number(payoutAmount),
           costBreakdown,
           localFolderPath: effectiveFolderPath || null,
@@ -882,7 +911,9 @@ function ManualEntryModal({
           <div>
             <h2 className="text-lg font-semibold text-gray-900">新增手動分潤</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              線下/離平台案子。Real total 跟 talent payout 可以不一樣 — 中間差額放成本拆分,配音員看不到。
+              {isBuyout
+                ? '一次付清買斷配音員的聲音。沒客戶 invoice,後續平台收入 Wing 拿 100%。'
+                : '線下/離平台案子。Real total 跟 talent payout 可以不一樣 — 中間差額放成本拆分,配音員看不到。'}
             </p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
@@ -891,6 +922,34 @@ function ManualEntryModal({
         </div>
 
         <div className="px-6 py-5 space-y-4">
+          {/* Subtype switch */}
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setSubtype('client_deal')}
+              className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                !isBuyout ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              💼 案子分潤
+              <span className="block text-[10px] font-normal text-gray-500 mt-0.5">
+                客戶離平台付款,配音員拿一塊
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSubtype('buyout')}
+              className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isBuyout ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              🔒 買斷配音員
+              <span className="block text-[10px] font-normal text-gray-500 mt-0.5">
+                Wing 一次付清,聲音歸我
+              </span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-gray-600 mb-1">配音員 *</label>
@@ -911,99 +970,119 @@ function ManualEntryModal({
                 type="text"
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="MANUAL-2026-001"
+                placeholder={isBuyout ? 'BUYOUT-2026-001' : 'MANUAL-2026-001'}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {isBuyout ? (
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Real Client Total (US$) *</label>
-              <input
-                type="number"
-                step="0.01"
-                value={realTotal}
-                onChange={(e) => setRealTotal(e.target.value)}
-                placeholder="3000000"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
-              />
-              <p className="text-[10px] text-gray-500 mt-1">客戶真正付的金額,配音員看不到</p>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Talent Payout (US$) *</label>
+              <label className="block text-xs text-gray-600 mb-1">買斷金額 (US$) *</label>
               <input
                 type="number"
                 step="0.01"
                 value={payoutAmount}
                 onChange={(e) => setPayoutAmount(e.target.value)}
-                placeholder="300000"
-                className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm font-mono bg-emerald-50"
+                placeholder="5000"
+                className="w-full border border-purple-300 rounded-lg px-3 py-2 text-sm font-mono bg-purple-50"
               />
-              <p className="text-[10px] text-emerald-700 mt-1">配音員實拿(他看得到的)</p>
+              <p className="text-[10px] text-purple-700 mt-1">
+                Wing 一次付給配音員的買斷價。付完聲音歸 Onyx,後續平台收入 Wing 拿 100%。
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Real Client Total (US$) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={realTotal}
+                  onChange={(e) => setRealTotal(e.target.value)}
+                  placeholder="3000000"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">客戶真正付的金額,配音員看不到</p>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Talent Payout (US$) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={payoutAmount}
+                  onChange={(e) => setPayoutAmount(e.target.value)}
+                  placeholder="300000"
+                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm font-mono bg-emerald-50"
+                />
+                <p className="text-[10px] text-emerald-700 mt-1">配音員實拿(他看得到的)</p>
+              </div>
+            </div>
+          )}
+
+          {!isBuyout && (
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">成本拆分(差額去哪)</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1">Marketing</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={marketing}
+                    onChange={(e) => setMarketing(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1">Platform Fee</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={platformFee}
+                    onChange={(e) => setPlatformFee(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1">Operations</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={operations}
+                    onChange={(e) => setOperations(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1">Other</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={other}
+                    onChange={(e) => setOther(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
+                  />
+                </div>
+              </div>
+              {realTotalNum > 0 && (
+                <p className={`text-[11px] mt-2 ${breakdownMismatch ? 'text-amber-700' : 'text-emerald-700'}`}>
+                  Payout + breakdown = US${sumBreakdown.toFixed(2)} / Real total = US${realTotalNum.toFixed(2)}
+                  {breakdownMismatch && ` (差 US$${(realTotalNum - sumBreakdown).toFixed(2)},記得補)`}
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">成本拆分(差額去哪)</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-[10px] text-gray-500 mb-1">Marketing</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={marketing}
-                  onChange={(e) => setMarketing(e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] text-gray-500 mb-1">Platform Fee</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={platformFee}
-                  onChange={(e) => setPlatformFee(e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] text-gray-500 mb-1">Operations</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={operations}
-                  onChange={(e) => setOperations(e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] text-gray-500 mb-1">Other</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={other}
-                  onChange={(e) => setOther(e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                />
-              </div>
-            </div>
-            <div className="mt-2">
-              <label className="block text-[10px] text-gray-500 mb-1">Notes</label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. 跟 X 公司簽 3 年獨家,中間經過 Y agency"
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs"
-              />
-            </div>
-            {realTotalNum > 0 && (
-              <p className={`text-[11px] mt-2 ${breakdownMismatch ? 'text-amber-700' : 'text-emerald-700'}`}>
-                Payout + breakdown = US${sumBreakdown.toFixed(2)} / Real total = US${realTotalNum.toFixed(2)}
-                {breakdownMismatch && ` (差 US$${(realTotalNum - sumBreakdown).toFixed(2)},記得補)`}
-              </p>
-            )}
+            <label className="block text-[10px] text-gray-500 mb-1">Notes</label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={isBuyout ? 'e.g. Wing 自己找的 talent,Onyx 錄音室錄' : 'e.g. 跟 X 公司簽 3 年獨家,中間經過 Y agency'}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs"
+            />
           </div>
 
           <div>

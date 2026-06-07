@@ -330,6 +330,7 @@ export default function AdminTalentsPage() {
       swift_code: "",
       notes: "",
     },
+    compensation_model: "commission" as "commission" | "buyout",
   });
   const [saving, setSaving] = useState(false);
   const [uploadingHeadshot, setUploadingHeadshot] = useState(false);
@@ -484,6 +485,7 @@ export default function AdminTalentsPage() {
         demo_urls: formData.demo_urls,
         payment_method: formData.payment_method || null,
         payment_details: formData.payment_method ? formData.payment_details : null,
+        compensation_model: formData.compensation_model,
       };
 
       if (editingTalent) {
@@ -551,6 +553,7 @@ export default function AdminTalentsPage() {
         swift_code: pd?.swift_code || "",
         notes: pd?.notes || "",
       },
+      compensation_model: (talent.compensation_model || "commission") as "commission" | "buyout",
     });
     setDialogOpen(true);
   };
@@ -595,6 +598,7 @@ export default function AdminTalentsPage() {
         swift_code: "",
         notes: "",
       },
+      compensation_model: "commission",
     });
     setNewDemoName("");
   };
@@ -905,6 +909,34 @@ export default function AdminTalentsPage() {
                 <p className="text-[11px] text-gray-500">MP3, WAV, AIFF, FLAC. Max 20 MB per file.</p>
               </div>
 
+              {/* Compensation Model */}
+              <div className="space-y-3 pt-3 border-t border-gray-200">
+                <Label className="text-gray-700 font-semibold text-sm">Compensation Model</Label>
+                <div className="space-y-2">
+                  <Select
+                    value={formData.compensation_model}
+                    onValueChange={v => setFormData({ ...formData, compensation_model: v as "commission" | "buyout" })}
+                  >
+                    <SelectTrigger className="bg-white border-gray-300 text-gray-900">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-300">
+                      <SelectItem value="commission" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">
+                        💰 抽成 25%(預設)
+                      </SelectItem>
+                      <SelectItem value="buyout" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">
+                        🔒 買斷(一次付清)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-gray-500">
+                    {formData.compensation_model === "commission"
+                      ? "平台預設。每筆純 AI 生成銷售配音員拿 25%,月結。"
+                      : "Wing 一次付清買斷聲音。後續平台收入 Wing 拿 100%,配音員沒分潤。"}
+                  </p>
+                </div>
+              </div>
+
               {/* Payment Info */}
               <div className="space-y-3 pt-3 border-t border-gray-200">
                 <Label className="text-gray-700 font-semibold text-sm">Payment Information</Label>
@@ -1058,7 +1090,18 @@ export default function AdminTalentsPage() {
                         <User className="w-4 h-4 text-gray-500" />
                       </div>
                     )}
-                    <span className="font-medium text-gray-900">{talent.name || 'N/A'}</span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-medium text-gray-900">{talent.name || 'N/A'}</span>
+                      {talent.compensation_model === 'buyout' ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 w-fit">
+                          🔒 Buyout
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit">
+                          💰 25%
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="capitalize text-gray-700">
