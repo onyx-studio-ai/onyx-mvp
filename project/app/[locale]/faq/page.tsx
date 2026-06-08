@@ -56,9 +56,9 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'How much does AI voiceover cost?'
           ),
           a: tx(
-            'AI 配音方案最低從 $29 起。費用依字數、語言、交期與是否包含人類導演精修而定。完整費率及方案比較請參閱 onyxstudios.ai/pricing。',
-            'AI 配音方案最低从 $29 起。费用依字数、语言、交期与是否包含真人导演精修而定。完整费率及方案比较请参阅 onyxstudios.ai/pricing。',
-            'AI voiceover plans start from $29. Pricing depends on word count, language, delivery speed, and whether human director polish is included. See full tier breakdowns at onyxstudios.ai/pricing.'
+            'AI 配音方案最低從 $39 起（0–60 秒 AI 即時配音）。費用依字數、語言、交期與是否包含人類導演精修而定。完整費率及方案比較請參閱 onyxstudios.ai/pricing。',
+            'AI 配音方案最低从 $39 起（0–60 秒 AI 即时配音）。费用依字数、语言、交期与是否包含真人导演精修而定。完整费率及方案比较请参阅 onyxstudios.ai/pricing。',
+            'AI voiceover plans start from $39 (0–60s AI Instant Voice package). Pricing depends on word count, language, delivery speed, and whether human director polish is included. See full tier breakdowns at onyxstudios.ai/pricing.'
           ),
         },
         {
@@ -160,9 +160,9 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'What file formats do you deliver?'
           ),
           a: tx(
-            '預設以廣播品質 WAV（48 kHz / 24-bit）交付。可依需求提供 MP3 或其他格式。配音專案交付物含配音音軌，視情況附字幕檔（SRT / VTT）。',
-            '默认以广播品质 WAV（48 kHz / 24-bit）交付。可按需提供 MP3 或其他格式。配音项目交付物含配音音轨，视情况附字幕文件（SRT / VTT）。',
-            'Deliverables are provided as broadcast-quality WAV (48 kHz / 24-bit) by default. MP3 and other formats are available on request. Dubbing projects include dubbed audio tracks and, where applicable, subtitle files (SRT / VTT).'
+            '配音成品預設以 WAV + MP3 廣播品質格式交付。語音數據與現場弦樂錄製專案預設為 48 kHz / 24-bit WAV。配音專案交付物含配音音軌，視情況附字幕檔（SRT / VTT）。如有特殊格式需求請在提案時說明。',
+            '配音成品预设以 WAV + MP3 广播品质格式交付。语音数据与现场弦乐录制项目预设为 48 kHz / 24-bit WAV。配音项目交付物含配音音轨，视情况附字幕文件（SRT / VTT）。如有特殊格式需求请在提案时说明。',
+            'Voiceover deliverables are provided as broadcast-quality WAV + MP3 by default. Speech data and live strings recording projects default to 48 kHz / 24-bit WAV. Dubbing projects include dubbed audio tracks and, where applicable, subtitle files (SRT / VTT). If you have specific format requirements, include them in your brief.'
           ),
         },
       ],
@@ -230,9 +230,9 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'Who owns the music I commission?'
           ),
           a: tx(
-            '完款後，您取得所委製作品的母帶完整所有權及全部商業使用授權，涵蓋串流發行、廣告、同步授權與廣播。所有作品均為原創專屬委製，我們不會將您的委製作品轉售或轉授權給其他客戶。分軌與工程源檔可於高階方案中取得。',
-            '完款后，您取得所委制作品的母带完整所有权及全部商业使用授权，涵盖流媒体发行、广告、同步授权与广播。所有作品均为原创专属委制，我们不会将您的委制作品转售或转授权给其他客户。分轨与工程源文件可在高阶方案中取得。',
-            'Upon full payment, you receive full ownership of the master recording and all commercial usage rights — including streaming, advertising, sync licensing, and broadcast. Every commissioned piece is original and created exclusively for your project; we do not re-sell or re-license your work to other clients. Stems and source project files are available on higher-tier plans.'
+            '視方案而定。AI Curator 與 Pro Arrangement 方案完款後取得永久商業使用授權，涵蓋串流、廣告、同步授權與廣播，但作品的底層著作權仍歸 Onyx Studios 所有，我們不會將您的委製作品轉售給其他客戶。Masterpiece 方案（頂階）則為完整著作權買斷（Work-for-hire），作品所有權全數移交給您。分軌原始檔可於 Pro Arrangement 以上方案取得。詳細授權範圍請參閱各方案說明。',
+            '视方案而定。AI Curator 与 Pro Arrangement 方案完款后取得永久商业使用授权，涵盖流媒体、广告、同步授权与广播，但作品的底层著作权仍归 Onyx Studios 所有，我们不会将您的委制作品转售给其他客户。Masterpiece 方案（顶阶）则为完整著作权买断（Work-for-hire），作品所有权全数移交给您。分轨原始文件可在 Pro Arrangement 以上方案取得。详细授权范围请参阅各方案说明。',
+            'It depends on the plan. AI Curator and Pro Arrangement plans include a perpetual commercial license upon full payment — covering streaming, advertising, sync, and broadcast — but the underlying composition copyright remains with Onyx Studios, and your commissioned piece is never re-sold to other clients. The Masterpiece tier is a full copyright buyout (work-for-hire): complete ownership transfers to you. Stems and source files are available from Pro Arrangement upward. See each plan\'s details for the exact licensing scope.'
           ),
         },
       ],
@@ -264,9 +264,9 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'Do you work with enterprise clients?'
           ),
           a: tx(
-            '是的。Onyx Studios 與廣告代理商、串流平台、線上教育公司、遊戲發行商，以及打造自有聲音模型的 AI 公司合作。我們支援客製 SLA、NDA、白牌交付及專屬製作產能。企業洽詢請聯繫 support@onyxstudios.ai。',
-            '是的。Onyx Studios 与广告代理商、流媒体平台、在线教育公司、游戏发行商，以及打造自有声音模型的 AI 公司合作。我们支持定制 SLA、NDA、白牌交付及专属制作产能。企业咨询请联系 support@onyxstudios.ai。',
-            'Yes. Onyx Studios works with advertising agencies, streaming platforms, e-learning companies, game publishers, and AI companies building proprietary voice models. We support custom SLAs, NDAs, white-label delivery, and dedicated production capacity. Contact support@onyxstudios.ai for enterprise inquiries.'
+            '是的。Onyx Studios 與廣告代理商、串流平台、線上教育公司、遊戲發行商，以及打造自有聲音模型的 AI 公司合作。企業客戶可協商客製交期保證條款（SLA）、保密協議（NDA）及專屬製作產能配置。企業洽詢請聯繫 support@onyxstudios.ai。',
+            '是的。Onyx Studios 与广告代理商、流媒体平台、在线教育公司、游戏发行商，以及打造自有声音模型的 AI 公司合作。企业客户可协商定制交期保证条款（SLA）、保密协议（NDA）及专属制作产能配置。企业咨询请联系 support@onyxstudios.ai。',
+            'Yes. Onyx Studios works with advertising agencies, streaming platforms, e-learning companies, game publishers, and AI companies building proprietary voice models. Enterprise clients can negotiate custom delivery guarantee terms (SLA), NDAs, and dedicated production capacity. Contact support@onyxstudios.ai for enterprise inquiries.'
           ),
         },
         {
