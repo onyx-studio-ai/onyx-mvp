@@ -22,6 +22,18 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
         },
         {
           q: tx(
+            '如何開始？我需要提供什麼？',
+            '如何开始？我需要提供什么？',
+            'How do I get started? What do I need to provide?'
+          ),
+          a: tx(
+            '流程很簡單。AI 配音請透過訂單流程提交腳本、目標語言、偏好語調與交期。配音或音樂製作請使用各服務頁的需求表單，簡短描述專案即可開始。我們將在一個工作日內確認範疇、時程與費用。',
+            '流程很简单。AI 配音请通过订单流程提交脚本、目标语言、偏好语调与交期。配音或音乐制作请使用各服务页的需求表单，简短描述项目即可开始。我们将在一个工作日内确认范围、时程与费用。',
+            'Getting started is simple. For AI voiceover, submit your script, target language, preferred voice style, and deadline through the order flow. For dubbing or music production, use the brief form on the relevant service page — a short project description is all you need. We will confirm scope, timeline, and pricing within one business day.'
+          ),
+        },
+        {
+          q: tx(
             'Onyx Studios 和其他 AI 配音平台有什麼不同？',
             'Onyx Studios 和其他 AI 配音平台有什么不同？',
             'What makes Onyx Studios different from other AI voice platforms?'
@@ -59,6 +71,18 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
         },
         {
           q: tx(
+            '可以修改幾次？不滿意怎麼辦？',
+            '可以修改几次？不满意怎么办？',
+            'How many revisions do I get? What if I\'m not satisfied?'
+          ),
+          a: tx(
+            '可修改次數依方案而定，詳見定價頁各方案說明。修改涵蓋依調整指示重新生成（語調、節奏、發音等）。若交付物有客觀錯誤（發音有誤、漏讀台詞、技術品質問題），不計修改次數，我們免費重做。已完成交付不提供退款；若您的專案有特殊要求，建議在製作前於需求單中詳細說明，確保雙方對成品有一致預期。',
+            '可修改次数依方案而定，详见定价页各方案说明。修改涵盖依调整指示重新生成（语调、节奏、发音等）。若交付物有客观错误（发音有误、漏读台词、技术质量问题），不计修改次数，我们免费重做。已完成交付不提供退款；如您的项目有特殊要求，建议在制作前于需求单中详细说明，确保双方对成品有一致预期。',
+            'Revision allowances vary by plan — see each tier\'s details on the pricing page. Revisions cover re-generation with adjusted direction notes (tone, pacing, pronunciation). If a delivery has objective errors — mispronounced words, missing lines, or technical quality issues — we redo it at no charge, regardless of revision count. Completed deliveries are non-refundable; if your project has specific requirements, state them clearly in your brief before production begins so both sides share the same expectations.'
+          ),
+        },
+        {
+          q: tx(
             'AI 生成的配音能和真人錄音一樣好嗎？',
             'AI 生成的配音能和真人录音一样好吗？',
             'Is AI-generated voiceover as good as a human recording?'
@@ -91,6 +115,30 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'Onyx Studios 涵蓋 16+ 主要商業語言：英文（美式 / 英式）、普通話（繁體 / 簡體）、粵語、日文、韓文、西班牙文、法文、德文、葡萄牙文、義大利文、俄文、阿拉伯文、印地文、印尼文、越南文、泰文。稀有語言（達里語、斯瓦希里語、緬甸語等）可按需求提供。',
             'Onyx Studios 涵盖 16+ 主要商业语言：英文（美式 / 英式）、普通话（繁体 / 简体）、粤语、日文、韩文、西班牙文、法文、德文、葡萄牙文、意大利文、俄文、阿拉伯文、印地文、印尼文、越南文、泰文。稀有语言（达里语、斯瓦希里语、缅甸语等）可按需提供。',
             'Onyx Studios covers 16+ major commercial languages: English (US / UK), Mandarin (Traditional / Simplified), Cantonese, Japanese, Korean, Spanish, French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian, Vietnamese, and Thai. Rare languages (Dari, Swahili, Burmese, etc.) are available on request.'
+          ),
+        },
+        {
+          q: tx(
+            '可以指定口音嗎？（例如美式英文 vs 英式英文）',
+            '可以指定口音吗？（例如美式英文 vs 英式英文）',
+            'Can I request a specific accent within a language?'
+          ),
+          a: tx(
+            '可以。下單或提交需求時，您可以指定所需的口音或區域變體，例如美式英文 vs. 英式英文、台灣普通話 vs. 大陸普通話、巴西葡萄牙文 vs. 歐洲葡萄牙文。我們的聲音陣容涵蓋最常見的區域變體。若特定口音對您的專案至關重要，請提早說明，以便我們在製作前確認可用性。',
+            '可以。下单或提交需求时，您可以指定所需的口音或地区变体，例如美式英文 vs. 英式英文、台湾普通话 vs. 大陆普通话、巴西葡萄牙文 vs. 欧洲葡萄牙文。我们的声音阵容涵盖最常见的地区变体。若特定口音对您的项目至关重要，请提前说明，以便我们在制作前确认可用性。',
+            'Yes. When ordering or submitting a brief, you can specify the accent or regional variant you need — for example, US English vs. UK English, Taiwanese Mandarin vs. Mainland Mandarin, or Brazilian Portuguese vs. European Portuguese. Our roster covers the most common regional variants. If a specific accent is critical to your project, mention it early so we can confirm availability before production begins.'
+          ),
+        },
+        {
+          q: tx(
+            '可以複製我的品牌聲音或建立客製聲音模型嗎？',
+            '可以复制我的品牌声音或建立定制声音模型吗？',
+            'Can you clone a specific voice or build a custom voice model?'
+          ),
+          a: tx(
+            '可以，但有前提條件。Onyx Studios 可依配音員的錄音建立客製 AI 聲音模型，適用品牌代言人、內部旁白，或透過我們的人才網絡媒合的配音員。配音員必須在任何模型訓練開始前提供明確書面同意並簽署授權協議——我們不在無書面同意的情況下複製任何聲音。客製聲音開發費用單獨報價，請聯繫我們並附上需求說明進行可行性評估。',
+            '可以，但有前提条件。Onyx Studios 可依配音员的录音建立定制 AI 声音模型，适用品牌代言人、内部旁白，或通过我们的人才网络匹配的配音员。配音员必须在任何模型训练开始前提供明确书面同意并签署授权协议——我们不在无书面同意的情况下克隆任何声音。定制声音开发费用单独报价，请联系我们并附上需求说明进行可行性评估。',
+            'Yes, with conditions. Onyx Studios can build a custom AI voice model from recordings of a consenting, contracted voice actor — whether that is your brand spokesperson, an internal narrator, or a talent sourced through our network. The voice actor must provide explicit written consent and sign a licensing agreement before any model training begins. We do not clone voices without documented consent. Custom voice development is quoted separately; contact us with your requirements for a feasibility assessment.'
           ),
         },
         {
@@ -146,6 +194,18 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'Lip-sync dubbing aligns the timing of dubbed audio to the on-screen mouth movements of the original actor so speech appears natural when viewed. Onyx Studios uses AI-assisted lip-sync to match phoneme duration and phrasing to the original video without re-editing the picture.\n\nOne important note: because different languages vary in syllable structure and sentence length — for example, English phrases are often longer than their Mandarin equivalents — the total duration of a dubbed video may differ slightly from the original. A typical drift is a few seconds to around ten seconds per four minutes of content (e.g., a 4:00 original may become a 4:10 dubbed version). This is a normal characteristic of cross-language dubbing, not a quality issue, and is standard across the industry. If you have strict runtime requirements, please let us know at the briefing stage and we will assess feasibility.'
           ),
         },
+        {
+          q: tx(
+            '配音服務包含翻譯嗎？還是需要自備腳本？',
+            '配音服务包含翻译吗？还是需要自备脚本？',
+            'Does dubbing include translation, or do I need to provide the script?'
+          ),
+          a: tx(
+            '預設情況下，客戶需提供已翻譯並經審核的腳本，我們依稿製作。若您需要翻譯服務，可作為加購項目另行報價——請在需求單中說明來源語言、目標語言及內容性質，我們將隨製作報價一併提供翻譯報價。',
+            '默认情况下，客户需提供已翻译并经审核的脚本，我们依稿制作。如您需要翻译服务，可作为加购项目另行报价——请在需求单中说明来源语言、目标语言及内容性质，我们将随制作报价一并提供翻译报价。',
+            'By default, clients provide the translated, approved script and we produce from it. If you need translation included, it can be arranged as a paid add-on — include the source language, target language, and content type in your brief and we will provide a translation quote alongside the production quote.'
+          ),
+        },
       ],
     },
     {
@@ -161,6 +221,18 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'Onyx Studios 提供混合 AI 音樂製作：AI 工具生成編曲草圖與方向 Demo，再由資深製作人發展成完整製作，涵蓋編曲、管絃配器、混音與母帶。成品是原創、可上線的音樂，時間與成本遠低於傳統錄音室創作。',
             'Onyx Studios 提供混合 AI 音乐制作：AI 工具生成编曲草图与方向 Demo，再由资深制作人发展成完整制作，涵盖编曲、管弦配器、混音与母带。成品是原创、可上线的音乐，时间与成本远低于传统录音室创作。',
             'Onyx Studios offers hybrid AI music production: AI tools generate arrangement sketches and direction demos, which senior producers then develop into full production — arrangement, orchestration, mixing, and mastering. The result is original, production-ready music at a fraction of the time and cost of traditional studio composition.'
+          ),
+        },
+        {
+          q: tx(
+            '我委製的音樂版權歸誰？',
+            '我委制的音乐版权归谁？',
+            'Who owns the music I commission?'
+          ),
+          a: tx(
+            '完款後，您取得所委製作品的母帶完整所有權及全部商業使用授權，涵蓋串流發行、廣告、同步授權與廣播。所有作品均為原創專屬委製，我們不會將您的委製作品轉售或轉授權給其他客戶。分軌與工程源檔可於高階方案中取得。',
+            '完款后，您取得所委制作品的母带完整所有权及全部商业使用授权，涵盖流媒体发行、广告、同步授权与广播。所有作品均为原创专属委制，我们不会将您的委制作品转售或转授权给其他客户。分轨与工程源文件可在高阶方案中取得。',
+            'Upon full payment, you receive full ownership of the master recording and all commercial usage rights — including streaming, advertising, sync licensing, and broadcast. Every commissioned piece is original and created exclusively for your project; we do not re-sell or re-license your work to other clients. Stems and source project files are available on higher-tier plans.'
           ),
         },
       ],
@@ -195,6 +267,18 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             '是的。Onyx Studios 與廣告代理商、串流平台、線上教育公司、遊戲發行商，以及打造自有聲音模型的 AI 公司合作。我們支援客製 SLA、NDA、白牌交付及專屬製作產能。企業洽詢請聯繫 support@onyxstudios.ai。',
             '是的。Onyx Studios 与广告代理商、流媒体平台、在线教育公司、游戏发行商，以及打造自有声音模型的 AI 公司合作。我们支持定制 SLA、NDA、白牌交付及专属制作产能。企业咨询请联系 support@onyxstudios.ai。',
             'Yes. Onyx Studios works with advertising agencies, streaming platforms, e-learning companies, game publishers, and AI companies building proprietary voice models. We support custom SLAs, NDAs, white-label delivery, and dedicated production capacity. Contact support@onyxstudios.ai for enterprise inquiries.'
+          ),
+        },
+        {
+          q: tx(
+            '我的腳本與專案內容會保密嗎？你們簽 NDA 嗎？',
+            '我的脚本与项目内容会保密吗？你们签 NDA 吗？',
+            'Is my content kept confidential? Do you sign NDAs?'
+          ),
+          a: tx(
+            '是的。所有客戶腳本、需求內容與交付物均視為機密，不用於合約範圍以外的任何用途。若企業客戶在分享資料前需要正式 NDA，我們可以配合簽署——請在提交需求前聯繫我們，我們會優先安排。',
+            '是的。所有客户脚本、需求内容与交付物均视为机密，不用于合同范围以外的任何用途。如企业客户在分享资料前需要正式 NDA，我们可以配合签署——请在提交需求前联系我们，我们会优先安排。',
+            'Yes. All client scripts, project briefs, and deliverables are treated as confidential and are not used for any purpose beyond the contracted scope. If you require a formal NDA before sharing materials, we are happy to sign one — contact us before submitting your brief and we will arrange it promptly.'
           ),
         },
         {
