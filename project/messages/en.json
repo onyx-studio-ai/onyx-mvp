@@ -62,7 +62,7 @@
     "toggleMobileMenu": "Toggle mobile menu"
   },
   "footer": {
-    "tagline": "AI Generated. Human Perfected.",
+    "tagline": "AI-Generated. Human-Perfected.",
     "locations": "Taipei, Taiwan",
     "aboutUs": "About Us",
     "pricing": "Pricing",
@@ -87,12 +87,12 @@
   "home": {
     "hero": {
       "badge": "ONYX STUDIOS",
-      "headingLine1": "AI Generated",
-      "headingLine2": "Human Perfected",
+      "headingLine1": "AI-Generated",
+      "headingLine2": "Human-Perfected",
       "description": "One voice, many languages. AI-produced, human-directed, fully licensed.",
-      "serviceScope": "Service scope: AI Voiceover | Multilingual Dubbing | Human Voice Direction",
+      "serviceScope": "What we offer: AI Voiceover · Multilingual Dubbing · Human Voice Direction",
       "subtext": "From {price} · 16+ major languages · Full commercial licensing",
-      "buttonBrowseVoices": "Preview Voice Samples"
+      "buttonBrowseVoices": "Hear Our Voices"
     },
     "coreSolutions": {
       "sectionTitle": "Our Core Solutions",
@@ -100,10 +100,10 @@
       "voiceoverTitle": "Premium AI Voiceover",
       "voiceoverDescription": "Commercial-ready AI voiceover and multilingual narration. AI generates first passes, then human directors refine tone, pacing, and pronunciation for delivery-ready results.",
       "voiceoverButton": "Go to Voice Studio",
-      "musicTitle": "Hybrid AI Music Production",
+      "musicTitle": "AI-Assisted Music Production",
       "musicDescription": "End-to-end production from direction demos to arrangement, mix, and master. AI speeds up iteration while experienced producers handle quality and final delivery.",
       "musicButton": "Go to Music Studio",
-      "lipSyncTitle": "Global AI Original-Voice Dubbing",
+      "lipSyncTitle": "AI Dubbing — Original Voice Preserved",
       "lipSyncDescription": "For drama, short-form series, and video localization at scale: keep the original actor's voice identity while translating into multiple languages with accurate lip-sync. Core coverage spans 16+ major commercial languages (EN, ZH, JA, KO, ES, FR, DE, IT, PT, RU, AR, HI, ID, VI, TH, YUE); rare languages (Dari, Swahili, Burmese, etc.) on request.",
       "lipSyncButton": "View Dubbing Service",
       "acousticTitle": "AI Speech Data Collection",
@@ -180,7 +180,7 @@
       "badge4Description": "Every order includes a verifiable License Certificate for your records."
     },
     "studioGrid": {
-      "headingMain": "AI Generated.",
+      "headingMain": "AI-Generated.",
       "headingHighlight": "Human Expertise.",
       "description": "We are more than just engineers. Backed by 17 years of studio experience, our team of vocal directors ensures that every AI-generated voice sounds natural, emotional, and professionally mastered.",
       "labelMainControl": "Main Control",
@@ -251,7 +251,7 @@
       "categoryRights": "Rights & Licensing",
       "featurePureAI": "Pure AI Generation",
       "featureHumanDirector": "Human Director Polish",
-      "featureMicroPatching": "Original Actor Micro-Patching",
+      "featureMicroPatching": "Micro-Patch Recording",
       "featureHumanRecording": "100% Human Studio Recording",
       "featureLiveDirected": "Live Directed Session",
       "featurePronunciation": "100% Pronunciation Guarantee",
@@ -480,7 +480,7 @@
       "compCategoryRights": "Rights & Licensing",
       "compPureAI": "Pure AI Generation",
       "compHumanDirector": "Human Director Polish",
-      "compMicroPatching": "Original Actor Micro-Patching",
+      "compMicroPatching": "Micro-Patch Recording",
       "compHumanRecording": "100% Human Studio Recording",
       "compLiveDirected": "Live Directed Session",
       "compPronunciation": "100% Pronunciation Guarantee",
@@ -1146,7 +1146,7 @@
     "orderNotFound": "Order not found",
     "vatNumberOptional": "Billing VAT Number (Optional, for invoice only)",
     "stateRegionOptional": "State / Region (Optional)",
-    "licenseeType": "Licensee Type",
+    "licenseeType": "License Recipient Type",
     "fullLegalName": "Full Legal Name",
     "taxRegistrationNumber": "License Entity Tax ID",
     "taxIdHint": "Required only when the license recipient is a company (VAT / EIN / local equivalent)",
@@ -2047,12 +2047,12 @@
   },
   "lobby": {
     "brandName": "ONYX STUDIOS",
-    "tagline": "AI Generated. Human Perfected.",
+    "tagline": "AI-Generated. Human-Perfected.",
     "subtitle": "One studio for voiceover, music production, and live strings recording.",
     "description": "Not just a model platform, but an end-to-end production service from brief to final delivery.",
     "voiceTitle": "Elite AI Voiceover",
     "voiceDesc": "Built for ads, brand videos, courses, and spoken content. AI creates the first pass, then voice directors refine tone, pacing, and pronunciation for delivery-ready output.",
-    "musicTitle": "Hybrid AI Music",
+    "musicTitle": "AI + Human Music",
     "musicDesc": "End-to-end production from direction and arrangement to mix and master. AI speeds up iteration while senior producers handle quality and final delivery.",
     "videoTitle": "Global AI Dubbing",
     "videoDesc": "Preserve the original actor's voice identity with multilingual translation and lip-sync. Ideal for drama, short-form series, interviews, and global content rollout at scale.",
@@ -2075,6 +2075,8 @@
     "musicPricingDescription": "Compare Onyx music production plans across deliverables, revisions, licensing, and timeline to select the right tier for your release.",
     "dubbingTitle": "Global AI Dubbing | Onyx Studios",
     "dubbingDescription": "Multilingual AI dubbing with original voice preservation, lip-sync, and human-directed QA for drama, series, courses, and global video distribution.",
+    "dataTitle": "AI Speech Data Studio | Onyx Studios",
+    "dataDescription": "Enterprise speech data collection, cleanup, segmentation, and annotation for TTS and ASR pipelines. Managed talent operations and turnkey delivery.",
     "aboutTitle": "About | Onyx Studios",
     "contactTitle": "Contact | Onyx Studios",
     "dashboardTitle": "Dashboard | Onyx Studios"

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
 export const StudioGrid = () => {
@@ -19,27 +20,36 @@ export const StudioGrid = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2 h-64 md:h-[350px] relative overflow-hidden rounded-2xl group border border-white/5">
-            <img
+            <Image
               src="/studio-main.jpg"
               alt={t('altStudioMain')}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
               style={{ objectPosition: 'center 60%' }}
+              priority
+              sizes="(max-width: 768px) 100vw, 80vw"
             />
           </div>
 
           <div className="h-64 relative overflow-hidden rounded-2xl group border border-white/5">
-            <img
+            <Image
               src="/studio-booth.jpg"
               alt={t('altStudioBooth')}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+              loading="lazy"
+              sizes="(max-width: 768px) 100vw, 40vw"
             />
           </div>
 
           <div className="h-64 relative overflow-hidden rounded-2xl group border border-white/5">
-            <img
+            <Image
               src="/studio-daw.jpg"
               alt={t('altStudioDaw')}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+              loading="lazy"
+              sizes="(max-width: 768px) 100vw, 40vw"
             />
           </div>
         </div>

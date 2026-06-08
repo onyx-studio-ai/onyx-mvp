@@ -14,6 +14,7 @@ const publicRoutes = [
   '/music/orchestra',
   '/pricing',
   '/dubbing',
+  '/data',
   '/apply',
   '/legal/privacy',
   '/legal/terms',

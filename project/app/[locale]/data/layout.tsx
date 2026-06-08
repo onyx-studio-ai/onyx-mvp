@@ -5,11 +5,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const t = await getTranslations({ locale, namespace: 'meta' });
 
   return {
-    title: t('dubbingTitle'),
-    description: t('dubbingDescription'),
+    title: t('dataTitle'),
+    description: t('dataDescription'),
   };
 }
 
-export default function DubbingLayout({ children }: { children: React.ReactNode }) {
+export default function DataLayout({ children }: { children: React.ReactNode }) {
   return children;
 }
