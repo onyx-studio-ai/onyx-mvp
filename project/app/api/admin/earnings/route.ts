@@ -289,7 +289,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true, earning: data });
     }
 
-    // Existing bulk status update (mark paid/pending)
+    // Bulk status update (mark paid/pending)
+    // Also syncs payment_received and triggers pocket allocation so
+    // pockets stay consistent regardless of which path sets status.
     const { ids, status: newStatus, payout_id } = body;
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
@@ -299,8 +301,19 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Status must be "paid" or "pending"' }, { status: 400 });
     }
 
-    const updateData: Record<string, string> = { status: newStatus };
+    const now = new Date().toISOString();
+    const updateData: Record<string, unknown> = {
+      status: newStatus,
+      payment_received: newStatus === 'paid',
+      payment_received_at: newStatus === 'paid' ? now : null,
+    };
     if (payout_id) updateData.payout_id = payout_id;
+
+    // Fetch prior states so we can run allocation side-effects correctly
+    const { data: priorRows } = await supabase
+      .from('talent_earnings')
+      .select('id, tier, order_number, order_total, commission_amount, payment_received')
+      .in('id', ids);
 
     const { data, error } = await supabase
       .from('talent_earnings')
@@ -310,6 +323,29 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Trigger pocket allocation side-effects for each affected row
+    if (priorRows) {
+      for (const prior of priorRows) {
+        const isBuyout = prior.tier === 'buyout';
+        if (isBuyout) continue; // buyout handled by talent_paid checkbox
+        const flippedOn = !prior.payment_received && newStatus === 'paid';
+        const flippedOff = prior.payment_received && newStatus === 'pending';
+        try {
+          if (flippedOn) {
+            await allocateIncome({
+              sourceEarningId: prior.id,
+              incomeAmount: Number(prior.order_total) || 0,
+              description: `Income from ${prior.order_number}`,
+            });
+          } else if (flippedOff) {
+            await reverseAllocation(prior.id);
+          }
+        } catch (allocErr) {
+          console.error('[Earnings PATCH bulk] pocket allocation error:', allocErr);
+        }
+      }
     }
 
     return NextResponse.json({ success: true, updated: data?.length || 0 });
