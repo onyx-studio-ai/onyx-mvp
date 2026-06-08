@@ -76,6 +76,7 @@
     "dataStudio": "Data Studio",
     "voiceRoster": "Voice Roster",
     "faq": "FAQ",
+    "aiTools": "AI Tools",
     "joinTalentRoster": "Partner Network",
     "supportEmail": "support@onyxstudios.ai",
     "refundPolicyLabel": "Refund Policy:",
@@ -2083,6 +2084,8 @@
     "dataDescription": "Enterprise speech data collection, cleanup, segmentation, and annotation for TTS and ASR pipelines. Managed talent operations and turnkey delivery.",
     "faqTitle": "FAQ | Onyx Studios",
     "faqDescription": "Answers to common questions about Onyx Studios' AI voiceover, dubbing, music production, and speech data services — pricing, delivery, rights, languages, and more.",
+    "toolsTitle": "AI Tools Directory — Voice, Music & Audio | Onyx Studios",
+    "toolsDescription": "Curated AI tools for voice actors, audio engineers, and music creators. TTS, voice cloning, music generation, dubbing, and transcription — 20 picks, updated regularly.",
     "aboutTitle": "About | Onyx Studios",
     "contactTitle": "Contact | Onyx Studios",
     "dashboardTitle": "Dashboard | Onyx Studios"

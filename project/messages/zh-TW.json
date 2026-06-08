@@ -76,6 +76,7 @@
     "dataStudio": "數據工作室",
     "voiceRoster": "聲音名冊",
     "faq": "常見問題",
+    "aiTools": "AI 工具",
     "joinTalentRoster": "Partner Network",
     "supportEmail": "support@onyxstudios.ai",
     "refundPolicyLabel": "退款政策：",
@@ -2083,6 +2084,8 @@
     "dataDescription": "企業級語音數據收集、清理、切分與標註服務，適用 TTS / ASR 訓練管線，提供代管人才運營與完整交付。",
     "faqTitle": "常見問題 | Onyx Studios",
     "faqDescription": "關於 Onyx Studios AI 配音、多語配音、音樂製作與語音數據服務的常見問題解答，涵蓋費用、交期、授權、語言支援等。",
+    "toolsTitle": "AI 工具推薦 — 語音、音樂與音訊 | Onyx Studios",
+    "toolsDescription": "為語音配音、音訊工程與音樂創作者精心策劃的 AI 工具清單，涵蓋 TTS、語音複製、音樂生成、配音與語音辨識，共 20 款精選持續更新。",
     "aboutTitle": "關於我們 | Onyx Studios",
     "contactTitle": "聯繫我們 | Onyx Studios",
     "dashboardTitle": "控制台 | Onyx Studios"
