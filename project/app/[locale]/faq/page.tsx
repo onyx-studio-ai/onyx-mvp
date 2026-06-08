@@ -22,14 +22,14 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
         },
         {
           q: tx(
-            '如何開始？我需要提供什麼？',
-            '如何开始？我需要提供什么？',
-            'How do I get started? What do I need to provide?'
+            '如何開始？可以線上付款嗎？還是要先詢問？',
+            '如何开始？可以线上付款吗？还是要先询问？',
+            'How do I get started? Can I pay online, or should I enquire first?'
           ),
           a: tx(
-            '流程很簡單。AI 配音請透過訂單流程提交腳本、目標語言、偏好語調與交期。配音或音樂製作請使用各服務頁的需求表單，簡短描述專案即可開始。我們將在一個工作日內確認範疇、時程與費用。',
-            '流程很简单。AI 配音请通过订单流程提交脚本、目标语言、偏好语调与交期。配音或音乐制作请使用各服务页的需求表单，简短描述项目即可开始。我们将在一个工作日内确认范围、时程与费用。',
-            'Getting started is simple. For AI voiceover, submit your script, target language, preferred voice style, and deadline through the order flow. For dubbing or music production, use the brief form on the relevant service page — a short project description is all you need. We will confirm scope, timeline, and pricing within one business day.'
+            '兩種路徑都可以。若您已確認需求，線上下單是最快的方式——提交腳本、選擇方案、完成付款後製作即刻排程，通常 24 小時內交付。若您希望先了解更多、討論客製需求、或有大型 / 企業級專案，歡迎來信 support@onyxstudios.ai 或使用聯繫表單，我們將在一個工作日內回覆並安排後續流程。',
+            '两种路径都可以。若您已确认需求，线上下单是最快的方式——提交脚本、选择方案、完成付款后制作即刻排程，通常 24 小时内交付。若您希望先了解更多、讨论定制需求、或有大型 / 企业级项目，欢迎来信 support@onyxstudios.ai 或使用联系表单，我们将在一个工作日内回复并安排后续流程。',
+            'Both paths work. If you already know what you need, online checkout is the fastest route — submit your script, select a plan, complete payment, and production is scheduled immediately, typically delivered within 24 hours. If you would like to discuss your requirements first, explore custom options, or have a large-scale or enterprise project, email us at support@onyxstudios.ai or use the contact form. We respond within one business day and can handle everything offline from there.'
           ),
         },
         {
