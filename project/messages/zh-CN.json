@@ -358,7 +358,7 @@
   },
   "voice": {
     "landing": {
-      "studioBadge": "VOICE STUDIO",
+      "studioBadge": "配音工作室",
       "clarityLabel": "服务定义",
       "clarityTitle": "这不是纯 AI 网站，而是 AI + 真人导演的配音制作服务",
       "clarityDesc": "你提供脚本与用途，我们先用 AI 生成，再由声音导演进行语气、节奏与发音质检，最终交付可直接上线的商用音频。",
@@ -531,7 +531,7 @@
   },
   "music": {
     "landing": {
-      "studioBadge": "MUSIC STUDIO",
+      "studioBadge": "音乐工作室",
       "heroLine1": "品牌音魂",
       "heroLine2": "演算为骨",
       "heroLine3": "人心赋魂",
