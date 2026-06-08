@@ -146,7 +146,7 @@ export default function LobbyPage() {
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-sky-300/25 bg-sky-500/[0.08] px-5 py-2">
             <span className="w-2 h-2 rounded-full bg-sky-300 animate-pulse" />
             <span className="text-sm tracking-wide text-gray-100 font-medium">
-              {tx('凡音文化 · Onyx Studios', '凡音文化 · Onyx Studios', 'Onyx Studios · 凡音文化')}
+              {tx('Onyx Studios', 'Onyx Studios', 'Onyx Studios')}
             </span>
           </div>
 
