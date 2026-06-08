@@ -6,6 +6,7 @@ const PRELAUNCH_MODE = process.env.PRELAUNCH_MODE === 'true' || process.env.VERC
 const publicRoutes = [
   '/',
   '/about',
+  '/faq',
   '/contact',
   '/voice',
   '/voices',

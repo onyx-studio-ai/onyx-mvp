@@ -1,0 +1,43 @@
+# Onyx Studios
+> AI-powered voiceover, dubbing, and music production studio. All AI output is human-directed and fully licensed.
+
+Onyx Studios (onyxstudios.ai) is a professional AI voice and music production studio founded in 2008, headquartered in Taiwan. We serve advertising agencies, streaming platforms, e-learning companies, game publishers, and enterprise AI teams globally.
+
+Core differentiator: every AI-generated output is reviewed and refined by experienced human voice directors before delivery. We do not sell raw model output.
+
+## Services
+
+- [AI Voiceover — Voice Studio](/voice): Commercial-ready AI voiceover with human director polish. 16+ languages. Plans from $29. 24-hour standard delivery.
+- [AI Dubbing — Film Studio](/dubbing): Multilingual dubbing that preserves the original actor's voice identity across languages. Accurate lip-sync for drama, series, courses, and brand video at scale. 16+ languages.
+- [AI-Assisted Music Production — Music Studio](/music): End-to-end production from direction demos to arrangement, mix, and master. AI accelerates iteration; senior producers handle quality and final delivery.
+- [AI Speech Data Collection — Data Studio](/data): Enterprise TTS/ASR corpus collection, segmentation, transcription, and annotation. Managed talent operations and turnkey labeled dataset delivery.
+- [Live String Recording — Orchestra](/music/orchestra): Real string ensemble recordings at fixed rates. Submit MIDI, receive a full live recording with score preparation and conducting included.
+
+## Pricing
+
+- [Voice Pricing](/pricing)
+- [Music Pricing](/music/pricing)
+
+## Key Pages
+
+- [Voice Samples](/voices): Browse and preview licensed AI voice demos
+- [FAQ](/faq): Answers to common questions about pricing, delivery, rights, and services
+- [About](/about): Studio history, team, and mission
+- [Contact](/contact): Enterprise inquiries and project briefs
+- [Partner Network](/apply): Join as a voice talent or studio partner
+
+## Key Facts
+
+- Founded: 2008
+- Headquarters: Taipei, Taiwan (global operations)
+- Billing entity: Fine Entertainment Co., Ltd. (凡音文化有限公司)
+- Languages: 16+ major commercial languages — English (US/UK), Mandarin (Traditional/Simplified), Cantonese, Japanese, Korean, Spanish, French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian, Vietnamese, Thai; rare languages on request
+- All AI voices are built from recordings by consenting, contracted, compensated voice actors
+- Every order includes a verifiable License Certificate
+- Standard delivery: 24 hours for AI voiceover orders
+- Enterprise support: custom SLA, NDA, white-label delivery available
+
+## Contact
+
+- Email: support@onyxstudios.ai
+- Web: https://www.onyxstudios.ai/contact
