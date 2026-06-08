@@ -14,20 +14,24 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
 
+  const ogImage = { url: '/logo-og.png', width: 1200, height: 1200, alt: 'Onyx Studios' };
   return {
     metadataBase: new URL('https://www.onyxstudios.ai'),
     title: t('homeTitle'),
     description: t('homeDescription'),
     openGraph: {
+      type: 'website',
+      siteName: 'Onyx Studios',
       title: t('homeTitle'),
       description: t('homeDescription'),
-      images: [{ url: '/logo-og.png' }],
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image' as const,
+      site: '@onyxstudios',
       title: t('homeTitle'),
       description: t('homeDescription'),
-      images: [{ url: '/logo-og.png' }],
+      images: [ogImage],
     },
     icons: {
       icon: [
@@ -37,6 +41,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       ],
       apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
     },
+    ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION && {
+      verification: { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION },
+    }),
   };
 }
 
@@ -61,8 +68,28 @@ export default async function LocaleLayout({
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Onyx Studios',
+    legalName: 'Fine Entertainment Co., Ltd.',
     url: baseUrl,
     logo: `${baseUrl}/logo-og.png`,
+    image: `${baseUrl}/logo-og.png`,
+    description: 'AI-powered voiceover, dubbing, music production, and speech data studio. Founded 2008 in Taiwan. All AI output is human-directed and fully licensed.',
+    foundingDate: '2008',
+    slogan: 'AI-Generated. Human-Perfected.',
+    email: 'support@onyxstudios.ai',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '2F., No. 79, Anping Rd., Zhonghe Dist.',
+      addressLocality: 'New Taipei City',
+      addressCountry: 'TW',
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      email: 'support@onyxstudios.ai',
+      availableLanguage: ['English', 'Chinese'],
+    },
+    areaServed: 'Worldwide',
+    knowsAbout: ['AI Voiceover', 'Text-to-Speech', 'AI Dubbing', 'Music Production', 'Speech Data Collection', 'Voice Cloning'],
   };
   const websiteJsonLd = {
     '@context': 'https://schema.org',
@@ -70,6 +97,11 @@ export default async function LocaleLayout({
     name: 'Onyx Studios',
     url: baseUrl,
     inLanguage: ['en', 'zh-TW', 'zh-CN'],
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${baseUrl}/voices?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
   };
 
   const fontClass = 'font-sans';

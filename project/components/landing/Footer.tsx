@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import Image from 'next/image';
 
 export default function Footer() {
   const t = useTranslations('footer');
@@ -14,9 +15,11 @@ export default function Footer() {
         <div className="text-center space-y-8">
           <div className="flex items-center justify-center">
             <Link href="/">
-              <img
+              <Image
                 src="/logo-horizontal-white.svg"
                 alt="Onyx Studios"
+                width={160}
+                height={40}
                 className="h-10 w-auto opacity-90 hover:opacity-100 transition-opacity"
               />
             </Link>
@@ -29,6 +32,33 @@ export default function Footer() {
           <div className="py-6 border-t border-b border-white/5 space-y-4">
             <div className="text-gray-400 text-sm">
               <p>{t('locations')}</p>
+            </div>
+
+            {/* Services nav — internal links for SEO */}
+            <div className="flex items-center justify-center gap-6 text-xs text-gray-500 flex-wrap">
+              <Link href="/voice" className="hover:text-gray-300 transition-colors">
+                {t('voiceStudio')}
+              </Link>
+              <span>·</span>
+              <Link href="/music" className="hover:text-gray-300 transition-colors">
+                {t('musicStudio')}
+              </Link>
+              <span>·</span>
+              <Link href="/dubbing" className="hover:text-gray-300 transition-colors">
+                {t('dubbingStudio')}
+              </Link>
+              <span>·</span>
+              <Link href="/data" className="hover:text-gray-300 transition-colors">
+                {t('dataStudio')}
+              </Link>
+              <span>·</span>
+              <Link href="/voices" className="hover:text-gray-300 transition-colors">
+                {t('voiceRoster')}
+              </Link>
+              <span>·</span>
+              <Link href="/faq" className="hover:text-gray-300 transition-colors">
+                {t('faq')}
+              </Link>
             </div>
 
             <div className="flex items-center justify-center gap-6 text-xs text-gray-600 flex-wrap">

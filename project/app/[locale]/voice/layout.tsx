@@ -5,21 +5,21 @@ const BASE_URL = 'https://www.onyxstudios.ai';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
-  const ogImage = { url: '/logo-og.png', width: 1200, height: 1200, alt: 'Onyx Studios Dubbing Studio' };
+  const ogImage = { url: '/logo-og.png', width: 1200, height: 1200, alt: 'Onyx Studios Voice Studio' };
   return {
-    title: t('dubbingTitle'),
-    description: t('dubbingDescription'),
+    title: t('voiceTitle'),
+    description: t('voiceDescription'),
     openGraph: {
       type: 'website' as const,
       siteName: 'Onyx Studios',
-      title: t('dubbingTitle'),
-      description: t('dubbingDescription'),
+      title: t('voiceTitle'),
+      description: t('voiceDescription'),
       images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image' as const,
-      title: t('dubbingTitle'),
-      description: t('dubbingDescription'),
+      title: t('voiceTitle'),
+      description: t('voiceDescription'),
       images: [ogImage],
     },
   };
@@ -28,16 +28,22 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 const serviceJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Service',
-  name: 'AI Dubbing & Video Localization',
-  serviceType: 'Video Dubbing & Localization',
+  name: 'AI Voiceover & Text-to-Speech Studio',
+  serviceType: 'AI Voiceover Production',
   description:
-    'Multilingual AI dubbing with original voice preservation, lip-sync alignment, and human-directed QA. For drama, series, e-learning courses, and global video distribution.',
+    'Professional AI voiceover, text-to-speech (TTS), and multilingual dubbing. Natural-sounding voice generation with consent-based voice cloning and human-directed quality assurance. 24-hour delivery.',
   provider: { '@type': 'Organization', name: 'Onyx Studios', url: BASE_URL },
   areaServed: 'Worldwide',
-  url: `${BASE_URL}/dubbing`,
+  url: `${BASE_URL}/voice`,
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'USD',
+    price: '39',
+    description: 'Starting from $39 per voiceover project',
+  },
 };
 
-export default function DubbingLayout({ children }: { children: React.ReactNode }) {
+export default function VoiceLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <script
