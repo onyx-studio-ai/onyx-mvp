@@ -49,11 +49,11 @@
     "previewOrderingDisabled": "预览模式：暂不开放下单。"
   },
   "navbar": {
-    "voiceStudio": "Voice Studio",
-    "musicStudio": "Music Studio",
-    "dubbingStudio": "Film Studio",
-    "dataStudio": "Data Studio",
-    "partnerNetwork": "Partner Network",
+    "voiceStudio": "配音工作室",
+    "musicStudio": "音乐工作室",
+    "dubbingStudio": "影视工作室",
+    "dataStudio": "数据工作室",
+    "partnerNetwork": "合作伙伴",
     "browseVoices": "浏览声音",
     "pricing": "价格方案",
     "catalog": "音乐库",
