@@ -822,10 +822,6 @@ function ManualEntryModal({
   const [orderNumberManuallyEdited, setOrderNumberManuallyEdited] = useState(false);
   const [realTotal, setRealTotal] = useState('');
   const [payoutAmount, setPayoutAmount] = useState('');
-  const [marketing, setMarketing] = useState('');
-  const [platformFee, setPlatformFee] = useState('');
-  const [operations, setOperations] = useState('');
-  const [other, setOther] = useState('');
   const [notes, setNotes] = useState('');
   const [folderPath, setFolderPath] = useState('');
   const [saving, setSaving] = useState(false);
@@ -866,15 +862,23 @@ function ManualEntryModal({
 
   const effectiveFolderPath = folderPath || suggestedFolderPath;
 
-  const sumBreakdown =
-    (Number(marketing) || 0) +
-    (Number(platformFee) || 0) +
-    (Number(operations) || 0) +
-    (Number(other) || 0) +
-    (Number(payoutAmount) || 0);
+  // Auto-compute Wing's net + margin from Real Total - Talent Payout.
+  // 2026-06-07: replaced the 4-field cost breakdown (marketing/platform_fee/
+  // operations/other) — Wing won't manually itemise per case. Real cost
+  // tracking moved to Phase 5 Profit First pockets system, which auto-splits
+  // every received payment across 6 pockets. This modal now just captures
+  // the per-case headline numbers; pocket allocation happens when Wing ticks
+  // the "已收款" checkbox.
   const realTotalNum = Number(realTotal) || 0;
-  const breakdownMismatch =
-    !isBuyout && realTotalNum > 0 && Math.abs(sumBreakdown - realTotalNum) > 0.01;
+  const payoutNum = Number(payoutAmount) || 0;
+  const wingNet = realTotalNum - payoutNum;
+  const marginPct = realTotalNum > 0 ? (wingNet / realTotalNum) * 100 : 0;
+  const marginColor =
+    marginPct >= 50
+      ? { text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', label: '✅ 健康' }
+      : marginPct >= 30
+      ? { text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', label: '🟡 偏低,可接受' }
+      : { text: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200', label: '⚠️ 太低,虧本邊緣' };
 
   const handleSubmit = async () => {
     setError(null);
@@ -889,13 +893,10 @@ function ManualEntryModal({
 
     setSaving(true);
     try {
+      // cost_breakdown JSONB now only holds Notes (free-text context).
+      // Per-case itemisation removed; real cost allocation lives in
+      // Phase 5 pockets system.
       const costBreakdown: Record<string, number | string> = {};
-      if (!isBuyout) {
-        if (marketing) costBreakdown.marketing = Number(marketing);
-        if (platformFee) costBreakdown.platform_fee = Number(platformFee);
-        if (operations) costBreakdown.operations = Number(operations);
-        if (other) costBreakdown.other = Number(other);
-      }
       if (notes.trim()) costBreakdown.notes = notes.trim();
 
       const res = await fetch('/api/admin/earnings', {
@@ -1060,57 +1061,23 @@ function ManualEntryModal({
             </div>
           )}
 
-          {!isBuyout && (
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">成本拆分(差額去哪)</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-[10px] text-gray-500 mb-1">Marketing</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={marketing}
-                    onChange={(e) => setMarketing(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-gray-500 mb-1">Platform Fee</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={platformFee}
-                    onChange={(e) => setPlatformFee(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-gray-500 mb-1">Operations</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={operations}
-                    onChange={(e) => setOperations(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-gray-500 mb-1">Other</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={other}
-                    onChange={(e) => setOther(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
-                  />
-                </div>
+          {!isBuyout && realTotalNum > 0 && payoutNum > 0 && (
+            <div className={`rounded-lg border ${marginColor.border} ${marginColor.bg} p-3 space-y-1`}>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-gray-600">Wing&apos;s Net:</span>
+                <span className={`text-lg font-bold font-mono ${marginColor.text}`}>
+                  US${wingNet.toFixed(2)}
+                </span>
               </div>
-              {realTotalNum > 0 && (
-                <p className={`text-[11px] mt-2 ${breakdownMismatch ? 'text-amber-700' : 'text-emerald-700'}`}>
-                  Payout + breakdown = US${sumBreakdown.toFixed(2)} / Real total = US${realTotalNum.toFixed(2)}
-                  {breakdownMismatch && ` (差 US$${(realTotalNum - sumBreakdown).toFixed(2)},記得補)`}
-                </p>
-              )}
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-gray-600">Margin %:</span>
+                <span className={`text-sm font-semibold ${marginColor.text}`}>
+                  {marginPct.toFixed(1)}%  {marginColor.label}
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-500 pt-1">
+                收款後自動拆 6 個 Profit First 口袋 — 看 <code>/admin/pockets</code>
+              </p>
             </div>
           )}
 

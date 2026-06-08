@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminOnly } from '@/app/api/admin/_utils/requireAdmin';
+import {
+  allocateIncome,
+  reverseAllocation,
+  recordBuyoutOutflow,
+  reverseBuyoutOutflow,
+} from '@/lib/pockets';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -197,7 +203,24 @@ export async function PATCH(request: NextRequest) {
     // Checklist update: { id, checklist: { contract_filed: bool, ... } }
     // For each key set true, also stamp `<key>_at` with now(); for false,
     // clear the timestamp so unchecking erases the record cleanly.
+    //
+    // Phase 5 side-effect: this is also the trigger for Profit First
+    // pocket allocation. When payment_received flips true we allocate
+    // the income across all 6 pockets; when talent_paid flips true on
+    // a buyout entry we deduct from the Talent pocket. Both are
+    // idempotent (re-tick won't double-allocate) and reversible
+    // (untick removes the matching transactions).
     if (body.checklist && body.id) {
+      // Fetch the BEFORE state so we can diff (true → false vs false → true)
+      const { data: priorEarning, error: priorErr } = await supabase
+        .from('talent_earnings')
+        .select('*')
+        .eq('id', body.id)
+        .single();
+      if (priorErr || !priorEarning) {
+        return NextResponse.json({ error: 'Earning not found' }, { status: 404 });
+      }
+
       const updates: Record<string, unknown> = {};
       const now = new Date().toISOString();
       const checklist = body.checklist as Partial<Record<ChecklistField, boolean>>;
@@ -218,6 +241,51 @@ export async function PATCH(request: NextRequest) {
         .select()
         .single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // --- Phase 5 pocket side-effects ---
+      const isBuyout = priorEarning.tier === 'buyout';
+
+      // payment_received: income allocation (skip buyout — buyout is
+      // outflow not income; its talent_paid handler does the work)
+      if ('payment_received' in checklist && !isBuyout) {
+        const flippedOn = !priorEarning.payment_received && checklist.payment_received === true;
+        const flippedOff = priorEarning.payment_received && checklist.payment_received === false;
+        try {
+          if (flippedOn) {
+            await allocateIncome({
+              sourceEarningId: priorEarning.id,
+              incomeAmount: Number(priorEarning.order_total) || 0,
+              description: `Income from ${priorEarning.order_number}`,
+            });
+          } else if (flippedOff) {
+            await reverseAllocation(priorEarning.id);
+          }
+        } catch (allocErr) {
+          // Don't fail the checklist update if pocket allocation breaks;
+          // log and continue so Wing's UI stays consistent.
+          console.error('[Earnings PATCH] pocket allocation error:', allocErr);
+        }
+      }
+
+      // talent_paid on buyout: deduct from Talent pocket
+      if ('talent_paid' in checklist && isBuyout) {
+        const flippedOn = !priorEarning.talent_paid && checklist.talent_paid === true;
+        const flippedOff = priorEarning.talent_paid && checklist.talent_paid === false;
+        try {
+          if (flippedOn) {
+            await recordBuyoutOutflow({
+              sourceEarningId: priorEarning.id,
+              payoutAmount: Number(priorEarning.commission_amount) || 0,
+              description: `Buyout payout ${priorEarning.order_number}`,
+            });
+          } else if (flippedOff) {
+            await reverseBuyoutOutflow(priorEarning.id);
+          }
+        } catch (outflowErr) {
+          console.error('[Earnings PATCH] buyout outflow error:', outflowErr);
+        }
+      }
+
       return NextResponse.json({ success: true, earning: data });
     }
 
