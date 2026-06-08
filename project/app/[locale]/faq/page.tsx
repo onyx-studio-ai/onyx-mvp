@@ -136,14 +136,14 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
         },
         {
           q: tx(
-            '什麼是唇形同步配音？',
-            '什么是唇形同步配音？',
-            'What is lip-sync dubbing and how does it work?'
+            '什麼是唇形同步配音？影片長度會改變嗎？',
+            '什么是唇形同步配音？影片长度会改变吗？',
+            'What is lip-sync dubbing, and will my video length change?'
           ),
           a: tx(
-            '唇形同步配音將配音音頻的時序對齊原演員螢幕上的嘴型動作，使聲音看起來自然。Onyx Studios 使用 AI 輔助唇形同步，在不重新剪輯畫面的情況下，將音素時長和語句與原片對齊。',
-            '唇形同步配音将配音音频的时序对齐原演员屏幕上的口型动作，使声音看起来自然。Onyx Studios 使用 AI 辅助唇形同步，在不重新剪辑画面的情况下，将音素时长和语句与原片对齐。',
-            'Lip-sync dubbing aligns the timing of dubbed audio to the on-screen mouth movements of the original actor so speech appears natural when viewed. Onyx Studios uses AI-assisted lip-sync to match phoneme duration and phrasing to the original video without re-editing the picture.'
+            '唇形同步配音將配音音頻的時序對齊原演員螢幕上的嘴型動作，使聲音看起來自然。Onyx Studios 使用 AI 輔助唇形同步，在不重新剪輯畫面的情況下，將音素時長和語句對齊原片。\n\n需要特別說明的是：由於不同語言的音節結構與語句長度存在差異（例如英文語句通常比中文長），配音版影片的總時長可能與原片略有不同，一般誤差約在數秒至十數秒之間（如原片 4:00，配音版可能為 4:10）。這是語言特性造成的正常現象，而非品質問題，業界的配音專案普遍如此。若您對總時長有嚴格要求，請在提案階段告知我們，我們將針對需求進行評估。',
+            '唇形同步配音将配音音频的时序对齐原演员屏幕上的口型动作，使声音看起来自然。Onyx Studios 使用 AI 辅助唇形同步，在不重新剪辑画面的情况下，将音素时长和语句对齐原片。\n\n需要特别说明的是：由于不同语言的音节结构与语句长度存在差异（例如英文语句通常比中文长），配音版影片的总时长可能与原片略有不同，一般误差约在数秒至十数秒之间（如原片 4:00，配音版可能为 4:10）。这是语言特性造成的正常现象，而非质量问题，业界配音项目普遍如此。如您对总时长有严格要求，请在提案阶段告知我们，我们将针对需求进行评估。',
+            'Lip-sync dubbing aligns the timing of dubbed audio to the on-screen mouth movements of the original actor so speech appears natural when viewed. Onyx Studios uses AI-assisted lip-sync to match phoneme duration and phrasing to the original video without re-editing the picture.\n\nOne important note: because different languages vary in syllable structure and sentence length — for example, English phrases are often longer than their Mandarin equivalents — the total duration of a dubbed video may differ slightly from the original. A typical drift is a few seconds to around ten seconds per four minutes of content (e.g., a 4:00 original may become a 4:10 dubbed version). This is a normal characteristic of cross-language dubbing, not a quality issue, and is standard across the industry. If you have strict runtime requirements, please let us know at the briefing stage and we will assess feasibility.'
           ),
         },
       ],
