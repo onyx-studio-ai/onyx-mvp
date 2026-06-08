@@ -170,14 +170,14 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
       items: [
         {
           q: tx(
-            '什麼是 AI 語音數據採集？',
-            '什么是 AI 语音数据采集？',
-            'What is AI speech data collection?'
+            '什麼是 AI 語音數據採集？你們有提供標注服務嗎？',
+            '什么是 AI 语音数据采集？你们有提供标注服务吗？',
+            'What is AI speech data collection? Do you offer annotation?'
           ),
           a: tx(
-            'AI 語音數據採集是錄製、切分、轉寫及標註大量人聲音頻以訓練 TTS / ASR AI 模型的完整流程。Onyx Studios 管理整個流程：招募與指導配音人才、品質管控音頻、按規格切分錄音，並交付已標註、可用於模型訓練的數據集。',
-            'AI 语音数据采集是录制、切分、转写及标注大量人声音频以训练 TTS / ASR AI 模型的完整流程。Onyx Studios 管理整个流程：招募与指导配音人才、质量管控音频、按规格切分录音，并交付已标注、可用于模型训练的数据集。',
-            'AI speech data collection is the end-to-end process of recording, segmenting, transcribing, and annotating large volumes of human voice audio to train TTS and ASR AI models. Onyx Studios manages the full pipeline: recruiting and directing voice talent, QC-ing audio quality, segmenting recordings to specification, and delivering labeled datasets ready for model training.'
+            'AI 語音數據採集是錄製、切分、轉寫大量人聲音頻以供 TTS / ASR 模型訓練使用的服務。Onyx Studios 的核心交付涵蓋：人才招募與錄音指導、音頻品質管控、依規格切分、逐字稿與基礎元數據標記，交付可直接進入訓練管線的數據集。\n\n標注服務可依需求加購，但可行性視語系與標注複雜度而定——基礎時間戳、語者識別等較標準的任務通常可承接；複雜的情緒標注、多維度語音分類等需個案評估。若您有標注需求，請在提案時一併說明，我們將依語系與規格提供可行性評估與報價。',
+            'AI 语音数据采集是录制、切分、转写大量人声音频以供 TTS / ASR 模型训练使用的服务。Onyx Studios 的核心交付涵盖：人才招募与录音指导、音频质量管控、依规格切分、逐字稿与基础元数据标记，交付可直接进入训练管线的数据集。\n\n标注服务可依需求加购，但可行性视语系与标注复杂度而定——基础时间戳、说话人识别等较标准的任务通常可承接；复杂的情绪标注、多维语音分类等需个案评估。如您有标注需求，请在提案时一并说明，我们将依语系与规格提供可行性评估与报价。',
+            'AI speech data collection covers recording, segmenting, and transcribing large volumes of human voice audio for TTS and ASR model training. Onyx Studios\' core deliverable includes talent recruitment and session direction, audio QC, spec-compliant segmentation, transcription, and basic metadata tagging — datasets delivered ready for training pipelines.\n\nAnnotation is available as an add-on, subject to language and complexity. Standard tasks such as timestamp alignment and speaker identification are generally feasible; more complex annotation types — emotion labeling, multi-dimensional phonetic classification, and similar — are evaluated on a case-by-case basis. If annotation is part of your requirement, include the spec in your brief and we will assess feasibility and provide a separate quote.'
           ),
         },
       ],
