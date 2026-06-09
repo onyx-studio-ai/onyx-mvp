@@ -847,15 +847,32 @@ export default function ApplyVoicePage() {
                     <InputField label={t('labelMicrophone')} value={form.microphone_model} onChange={v => update('microphone_model', v)} placeholder={t('placeholderMicrophone')} />
                     <InputField label={t('labelDAW')} value={form.daw_software} onChange={v => update('daw_software', v)} placeholder={t('placeholderDAW')} />
                   </div>
-                  <SelectField
-                    label={t('labelRecEnv')} value={form.recording_environment} onChange={v => update('recording_environment', v)}
-                    options={[
-                      { value: 'Home Studio', label: t('recEnvHome') },
-                      { value: 'Professional Studio', label: t('recEnvPro') },
-                      { value: 'Both', label: t('recEnvBoth') },
-                    ]}
-                    placeholder={t('placeholderRecEnv')}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-3">{t('labelRecEnv')}</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { value: 'Home Studio', label: t('recEnvHome') },
+                        { value: 'Professional Studio', label: t('recEnvPro') },
+                        { value: 'Both', label: t('recEnvBoth') },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => update('recording_environment', opt.value)}
+                          className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border-2 text-sm font-medium text-center transition-all ${
+                            form.recording_environment === opt.value
+                              ? 'border-amber-500 bg-amber-500/10 text-amber-300'
+                              : 'border-zinc-700 bg-zinc-900 text-gray-400 hover:border-zinc-500 hover:text-white'
+                          }`}
+                        >
+                          {form.recording_environment === opt.value && (
+                            <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                          )}
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-xl border border-zinc-700">
                     <div>
                       <p className="font-medium text-white">{t('labelDryAudio')}</p>
