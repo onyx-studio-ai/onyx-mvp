@@ -21,6 +21,7 @@ const publicRoutes = [
   '/legal/terms',
   '/legal/aup',
   '/legal/refund',
+  '/tools',
 ] as const;
 
 function toLocalePath(locale: string, route: string) {
