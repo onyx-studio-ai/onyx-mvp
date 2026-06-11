@@ -1199,7 +1199,16 @@
     "placeholderContactEmail": "license-holder@company.com",
     "dialCode": "Code",
     "placeholderMobileNumber": "912 345 678",
-    "minuteUnitAbbr": "min"
+    "minuteUnitAbbr": "min",
+    "promoCode": "Promo Code",
+    "promoPlaceholder": "Enter code",
+    "promoApply": "Apply",
+    "promoApplying": "Checking...",
+    "promoInvalid": "Invalid or expired code",
+    "promoApplied": "{percent}% discount applied",
+    "promoDiscount": "Discount ({code})",
+    "promoRemove": "Remove",
+    "originalPrice": "Original"
   },
   "checkoutSuccess": {
     "paymentSuccessful": "Payment Successful!",

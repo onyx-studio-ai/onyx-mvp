@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { orderId, billingDetails, licenseeDetails, successUrl, cancelUrl } = body ?? {};
+    const { orderId, billingDetails, licenseeDetails, successUrl, cancelUrl, promoCode } = body ?? {};
 
     if (!orderId) {
       return NextResponse.json({ error: 'Missing orderId' }, { status: 400 });
@@ -84,11 +84,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order amount is invalid or missing' }, { status: 409 });
     }
 
+    // Apply promo code discount if provided and valid.
+    let discountPercent = 0;
+    if (typeof promoCode === 'string' && promoCode.trim()) {
+      const promoRes = await fetch(
+        `${request.nextUrl.origin}/api/promo/validate?code=${encodeURIComponent(promoCode.trim())}`,
+      );
+      if (promoRes.ok) {
+        const promoData = await promoRes.json();
+        if (promoData.valid && typeof promoData.discountPercent === 'number') {
+          discountPercent = promoData.discountPercent;
+        }
+      }
+    }
+    const finalAmount = discountPercent > 0
+      ? Math.round(amount * (1 - discountPercent / 100) * 100) / 100
+      : amount;
+
     const { checkoutUrl, transactionId } = await createHostedCheckout({
       orderId,
       orderNumber: order.order_number || orderId,
       orderType,
-      amount,
+      amount: finalAmount,
       billingDetails,
       licenseeDetails,
       checkoutBaseUrl: buildCheckoutLandingUrl(request, successUrl),
@@ -106,6 +123,8 @@ export async function POST(request: NextRequest) {
       checkoutUrl: hostedUrl.toString(),
       transactionId,
       orderId,
+      discountPercent,
+      finalAmount,
     });
   } catch (error) {
     console.error('[Paddle Checkout] Error:', error);

@@ -14,7 +14,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
 
-  const ogImage = { url: '/logo-og.png', width: 1200, height: 1200, alt: 'Onyx Studios' };
   return {
     metadataBase: new URL('https://www.onyxstudios.ai'),
     title: t('homeTitle'),
@@ -24,14 +23,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       siteName: 'Onyx Studios',
       title: t('homeTitle'),
       description: t('homeDescription'),
-      images: [ogImage],
+      // opengraph-image.tsx at this route segment auto-generates 1200×630
     },
     twitter: {
       card: 'summary_large_image' as const,
       site: '@onyxstudios',
       title: t('homeTitle'),
       description: t('homeDescription'),
-      images: [ogImage],
     },
     icons: {
       icon: [

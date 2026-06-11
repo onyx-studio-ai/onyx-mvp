@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useRouter, Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { Loader2, AlertCircle, CheckCircle, Lock, Building, User, Shield } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Lock, Building, User, Shield, Tag, X } from 'lucide-react';
 import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.config';
 import { COUNTRIES, getDialCode } from '@/lib/countries';
 
@@ -95,6 +95,45 @@ export default function CheckoutPage() {
   const [phoneDialCode, setPhoneDialCode] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const [promoInput, setPromoInput] = useState('');
+  const [promoState, setPromoState] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
+  const [appliedCode, setAppliedCode] = useState('');
+  const [discountPercent, setDiscountPercent] = useState(0);
+
+  const effectivePrice = order
+    ? discountPercent > 0
+      ? Math.round(order.price * (1 - discountPercent / 100) * 100) / 100
+      : order.price
+    : 0;
+
+  const applyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoState('checking');
+    try {
+      const res = await fetch(`/api/promo/validate?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCode(data.code);
+        setDiscountPercent(data.discountPercent);
+        setPromoState('valid');
+      } else {
+        setPromoState('invalid');
+        setAppliedCode('');
+        setDiscountPercent(0);
+      }
+    } catch {
+      setPromoState('invalid');
+    }
+  };
+
+  const removePromo = () => {
+    setPromoInput('');
+    setPromoState('idle');
+    setAppliedCode('');
+    setDiscountPercent(0);
+  };
 
   const orderTypeLabel =
     orderType === 'orchestra'
@@ -216,6 +255,7 @@ export default function CheckoutPage() {
           licenseeDetails: effectiveLicensee,
           successUrl,
           cancelUrl,
+          promoCode: appliedCode || undefined,
         }),
       });
 
@@ -652,7 +692,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      {t('payNowAmount', { amount: Number(order.price).toLocaleString() })}
+                      {t('payNowAmount', { amount: effectivePrice.toLocaleString() })}
                     </>
                   )}
                 </button>
@@ -721,11 +761,63 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
+                {/* Promo code */}
                 <div className="pt-4 border-t border-white/10">
+                  <label className="block text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5" />
+                    {t('promoCode')}
+                  </label>
+                  {promoState !== 'valid' ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoInput}
+                        onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoState('idle'); }}
+                        onKeyDown={e => e.key === 'Enter' && applyPromo()}
+                        placeholder={t('promoPlaceholder')}
+                        className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={applyPromo}
+                        disabled={!promoInput.trim() || promoState === 'checking'}
+                        className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {promoState === 'checking' ? t('promoApplying') : t('promoApply')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                      <span className="text-xs text-green-400 font-medium">
+                        {t('promoApplied', { percent: discountPercent })}
+                      </span>
+                      <button type="button" onClick={removePromo} className="text-gray-500 hover:text-white transition-colors ml-2">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  {promoState === 'invalid' && (
+                    <p className="mt-1.5 text-xs text-red-400">{t('promoInvalid')}</p>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-white/10">
+                  {discountPercent > 0 && (
+                    <>
+                      <div className="flex justify-between items-center mb-1.5 text-sm">
+                        <span className="text-gray-500">{t('originalPrice')}</span>
+                        <span className="text-gray-500 line-through">US${Number(order.price).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2 text-sm">
+                        <span className="text-green-400">{t('promoDiscount', { code: appliedCode })}</span>
+                        <span className="text-green-400">−{discountPercent}%</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-white font-bold">{t('total')}</span>
                     <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                      US${Number(order.price).toLocaleString()}
+                      US${effectivePrice.toLocaleString()}
                     </span>
                   </div>
                   <p className="text-xs text-gray-400">{t('includesAllFees')}</p>

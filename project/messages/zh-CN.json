@@ -1199,7 +1199,16 @@
     "placeholderContactEmail": "license-holder@company.com",
     "dialCode": "区号",
     "placeholderMobileNumber": "912 345 678",
-    "minuteUnitAbbr": "分钟"
+    "minuteUnitAbbr": "分钟",
+    "promoCode": "优惠码",
+    "promoPlaceholder": "输入优惠码",
+    "promoApply": "使用",
+    "promoApplying": "验证中…",
+    "promoInvalid": "无效或已过期的优惠码",
+    "promoApplied": "已使用 {percent}% 折扣",
+    "promoDiscount": "折扣（{code}）",
+    "promoRemove": "移除",
+    "originalPrice": "原价"
   },
   "checkoutSuccess": {
     "paymentSuccessful": "支付成功！",

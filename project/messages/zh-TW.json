@@ -1199,7 +1199,16 @@
     "placeholderContactEmail": "license-holder@company.com",
     "dialCode": "區碼",
     "placeholderMobileNumber": "912 345 678",
-    "minuteUnitAbbr": "分鐘"
+    "minuteUnitAbbr": "分鐘",
+    "promoCode": "優惠碼",
+    "promoPlaceholder": "輸入優惠碼",
+    "promoApply": "套用",
+    "promoApplying": "驗證中…",
+    "promoInvalid": "無效或已過期的優惠碼",
+    "promoApplied": "已套用 {percent}% 折扣",
+    "promoDiscount": "折扣（{code}）",
+    "promoRemove": "移除",
+    "originalPrice": "原價"
   },
   "checkoutSuccess": {
     "paymentSuccessful": "付款成功！",
