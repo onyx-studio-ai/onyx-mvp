@@ -47,14 +47,14 @@ export default async function BlogIndex({ params }: { params: Promise<{ locale: 
               {tx('部落格', '博客', 'Blog')}
             </span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight leading-tight">
-            {tx('觀點與研究', '观点与研究', 'Perspectives & Research')}
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-[1.02]">
+            The Signal
           </h1>
           <p className="text-lg text-gray-400 leading-relaxed">
             {tx(
-              'AI 配音、多語在地化與語音品質的深度觀點。AI 生成,真人把關。',
-              'AI 配音、多语本地化与语音质量的深度观点。AI 生成,真人把关。',
-              'In-depth takes on AI voice, multilingual localization, and audio quality. AI-Generated. Human-Perfected.'
+              '穿過 AI 配音、在地化與音樂的喧嘩,只談有數據撐腰的事。AI 生成,真人把關。',
+              '穿过 AI 配音、本地化与音乐的喧哗,只谈有数据撑腰的事。AI 生成,真人把关。',
+              'Signal over noise on AI voice, localization, and music — every claim backed by data. AI-Generated. Human-Perfected.'
             )}
           </p>
         </div>
@@ -62,12 +62,12 @@ export default async function BlogIndex({ params }: { params: Promise<{ locale: 
 
       {/* Post list */}
       <section className="pb-24 px-4">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-2">
           {posts.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group block rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden hover:border-white/20 hover:bg-white/[0.04] transition-colors"
+              className="group flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden hover:border-white/20 hover:bg-white/[0.04] transition-colors"
             >
               <div className="aspect-video bg-black/40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -77,17 +77,17 @@ export default async function BlogIndex({ params }: { params: Promise<{ locale: 
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 />
               </div>
-              <div className="p-6 md:p-8">
+              <div className="p-6 flex flex-col flex-1">
                 <div className="text-xs text-gray-500 mb-3">
                   {fmtDate(post.date)} · {post.readMins} {tx('分鐘閱讀', '分钟阅读', 'min read')}
                 </div>
-                <h2 className="text-xl md:text-2xl font-bold leading-snug mb-3 group-hover:text-white">
+                <h2 className="text-lg md:text-xl font-bold leading-snug mb-2.5 group-hover:text-white">
                   {pick(post.title, locale)}
                 </h2>
-                <p className="text-gray-400 text-[15px] leading-relaxed line-clamp-3">
+                <p className="text-gray-400 text-[14px] leading-relaxed line-clamp-3">
                   {pick(post.dek, locale)}
                 </p>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-purple-300">
+                <span className="mt-auto pt-5 inline-flex items-center gap-1.5 text-sm font-medium text-purple-300">
                   {tx('閱讀全文', '阅读全文', 'Read article')}
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                 </span>
