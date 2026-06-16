@@ -3,8 +3,9 @@ import Footer from '@/components/landing/Footer';
 import { getAllPosts, pick } from '@/lib/blog/posts';
 import { ArrowRight } from 'lucide-react';
 
-// Revalidate hourly so scheduled (future-dated) posts appear without a redeploy.
-export const revalidate = 3600;
+// Render per-request so scheduled (future-dated) posts appear exactly on their
+// publish date (Asia/Taipei), with no stale CDN cache serving the wrong set.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

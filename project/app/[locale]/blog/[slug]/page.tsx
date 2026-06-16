@@ -1,17 +1,14 @@
 import { notFound } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import Footer from '@/components/landing/Footer';
-import { getAllPosts, getPost, pick } from '@/lib/blog/posts';
+import { getPost, pick } from '@/lib/blog/posts';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 const BASE_URL = 'https://www.onyxstudios.ai';
 
-// Revalidate hourly so scheduled (future-dated) posts go live without a redeploy.
-export const revalidate = 3600;
-
-export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }));
-}
+// Render per-request so a post 404s until its publish date (Asia/Taipei) and
+// goes live exactly on it — no stale CDN cache serving it early or late.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
