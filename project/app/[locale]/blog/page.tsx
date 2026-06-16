@@ -69,30 +69,28 @@ export default async function BlogIndex({ params }: { params: Promise<{ locale: 
               href={`/blog/${post.slug}`}
               className="group block rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden hover:border-white/20 hover:bg-white/[0.04] transition-colors"
             >
-              <div className="md:flex">
-                <div className="md:w-2/5 aspect-[16/10] md:aspect-auto bg-black/40 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={post.cover}
-                    alt={pick(post.title, locale)}
-                    className="w-full h-full object-cover"
-                  />
+              <div className="aspect-video bg-black/40 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.cover}
+                  alt={pick(post.title, locale)}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+              </div>
+              <div className="p-6 md:p-8">
+                <div className="text-xs text-gray-500 mb-3">
+                  {fmtDate(post.date)} · {post.readMins} {tx('分鐘閱讀', '分钟阅读', 'min read')}
                 </div>
-                <div className="p-6 md:p-8 md:w-3/5 flex flex-col">
-                  <div className="text-xs text-gray-500 mb-3">
-                    {fmtDate(post.date)} · {post.readMins} {tx('分鐘閱讀', '分钟阅读', 'min read')}
-                  </div>
-                  <h2 className="text-xl md:text-2xl font-bold leading-snug mb-3 group-hover:text-white">
-                    {pick(post.title, locale)}
-                  </h2>
-                  <p className="text-gray-400 text-[15px] leading-relaxed line-clamp-3">
-                    {pick(post.dek, locale)}
-                  </p>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-purple-300">
-                    {tx('閱讀全文', '阅读全文', 'Read article')}
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </div>
+                <h2 className="text-xl md:text-2xl font-bold leading-snug mb-3 group-hover:text-white">
+                  {pick(post.title, locale)}
+                </h2>
+                <p className="text-gray-400 text-[15px] leading-relaxed line-clamp-3">
+                  {pick(post.dek, locale)}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-purple-300">
+                  {tx('閱讀全文', '阅读全文', 'Read article')}
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
               </div>
             </Link>
           ))}
