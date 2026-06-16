@@ -12,7 +12,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const isZh = locale.startsWith('zh');
   const isZhCN = locale === 'zh-CN';
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
-  const title = tx('部落格 | Onyx Studios', '博客 | Onyx Studios', 'Blog | Onyx Studios');
+  const title = tx(
+    'AI 配音、音樂與在地化的觀點 | Onyx Studios 部落格',
+    'AI 配音、音乐与本地化的观点 | Onyx Studios 博客',
+    'AI Voice, Music & Localization — Onyx Studios Blog'
+  );
   const description = tx(
     'AI 配音、多語在地化與語音品質的觀點與研究。AI 生成,真人把關。',
     'AI 配音、多语本地化与语音质量的观点与研究。AI 生成,真人把关。',
@@ -52,13 +56,13 @@ export default async function BlogIndex({ params }: { params: Promise<{ locale: 
             </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-[1.02]">
-            The Signal
+            {tx('Onyx 誌', 'Onyx 志', 'The Onyx Journal')}
           </h1>
           <p className="text-lg text-gray-400 leading-relaxed">
             {tx(
-              '穿過 AI 配音、在地化與音樂的喧嘩,只談有數據撐腰的事。AI 生成,真人把關。',
-              '穿过 AI 配音、本地化与音乐的喧哗,只谈有数据撑腰的事。AI 生成,真人把关。',
-              'Signal over noise on AI voice, localization, and music — every claim backed by data. AI-Generated. Human-Perfected.'
+              'AI 配音、音樂、影片與在地化的觀點——只談有數據撐腰的事。AI 生成,真人把關。',
+              'AI 配音、音乐、视频与本地化的观点——只谈有数据撑腰的事。AI 生成,真人把关。',
+              'Perspectives on AI voice, music, video and localization — every claim backed by data. AI-Generated. Human-Perfected.'
             )}
           </p>
         </div>
