@@ -221,9 +221,9 @@ export default async function BlogPostPage({
             </h2>
             <p className="text-gray-400 mb-8 text-[15px] md:text-base leading-relaxed">
               {tx(
-                '錄音室級 AI 配音、客製 TTS、配音與音樂 —— 國語、粵語與 40+ 語言,每筆交付由母語真人把關。',
-                '录音室级 AI 配音、定制 TTS、配音与音乐 —— 普通话、粤语与 40+ 语言,每笔交付由母语真人把关。',
-                'Studio-grade AI voices, custom TTS, dubbing & music — Mandarin, Cantonese & 40+ languages, every delivery verified by a native human.'
+                '錄音室級 AI 配音、客製 TTS、配音與音樂 —— 國語、粵語與 40+ 語言,每筆交付由母語人士把關。',
+                '录音室级 AI 配音、定制 TTS、配音与音乐 —— 普通话、粤语与 40+ 语言,每笔交付由母语人士把关。',
+                'Studio-grade AI voices, custom TTS, dubbing & music — Mandarin, Cantonese & 40+ languages, every delivery verified by a native speaker.'
               )}
             </p>
             <Link
