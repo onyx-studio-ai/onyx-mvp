@@ -30,7 +30,7 @@ const langQA: BlogPost = {
   slug: 'quality-check-ai-voice-language-you-dont-speak',
   date: '2026-06-14',
   readMins: 4,
-  cover: '/blog/lang-qa.png',
+  cover: '/blog/lang-qa-hero.png',
   tags: ['AI Voice', 'Localization', 'Text-to-Speech', 'Quality Assurance'],
   title: {
     en: 'AI Can Speak 40 Languages. The Data Says It Still Gets Them Wrong.',

@@ -31,7 +31,7 @@ export async function generateMetadata({
       title,
       description,
       url: `${BASE_URL}${url}`,
-      images: [{ url: post.cover }],
+      images: [{ url: post.cover, width: 1600, height: 900 }],
       publishedTime: post.date,
       tags: post.tags,
     },
@@ -48,7 +48,7 @@ export async function generateMetadata({
 function renderInline(text: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
     part.startsWith('**') && part.endsWith('**') ? (
-      <strong key={i} className="text-white font-semibold">
+      <strong key={i} className="font-semibold text-white">
         {part.slice(2, -2)}
       </strong>
     ) : (
@@ -98,6 +98,9 @@ export default async function BlogPostPage({
     keywords: post.tags.join(', '),
   };
 
+  // First paragraph gets a larger "lead" treatment.
+  let leadUsed = false;
+
   return (
     <>
       <script
@@ -106,56 +109,78 @@ export default async function BlogPostPage({
       />
 
       <main className="min-h-screen bg-black text-white">
-        <article className="pt-28 pb-16 px-4">
-          <div className="max-w-2xl mx-auto">
-            {/* Back */}
+        {/* Header — narrow, editorial */}
+        <header className="px-5 pt-28 md:pt-36 pb-10">
+          <div className="max-w-[720px] mx-auto">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors mb-8"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors mb-10"
             >
               <ArrowLeft className="w-4 h-4" />
               {tx('回部落格', '回博客', 'Back to blog')}
             </Link>
 
-            {/* Header */}
-            <div className="text-xs text-gray-500 mb-4">
-              {fmtDate(post.date)} · {post.readMins} {tx('分鐘閱讀', '分钟阅读', 'min read')}
+            <div className="flex items-center gap-3 text-xs font-medium tracking-wide text-purple-300/90 uppercase mb-5">
+              <span>{post.tags[0]}</span>
+              <span className="w-1 h-1 rounded-full bg-gray-600" />
+              <span className="text-gray-500 normal-case tracking-normal">
+                {fmtDate(post.date)} · {post.readMins} {tx('分鐘閱讀', '分钟阅读', 'min read')}
+              </span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight tracking-tight mb-5">
+
+            <h1 className="text-[2.1rem] leading-[1.12] md:text-[3.25rem] md:leading-[1.08] font-bold tracking-tight">
               {title}
             </h1>
-            <p className="text-lg md:text-xl text-gray-400 leading-relaxed mb-8">{dek}</p>
+            <p className="mt-6 text-lg md:text-2xl text-gray-400 leading-relaxed font-light">
+              {dek}
+            </p>
+          </div>
+        </header>
 
-            {/* Cover */}
-            <div className="rounded-2xl overflow-hidden border border-white/10 mb-12">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.cover} alt={title} className="w-full" />
-            </div>
+        {/* Wide hero */}
+        <div className="px-5 mb-14 md:mb-20">
+          <div className="max-w-[940px] mx-auto rounded-2xl overflow-hidden border border-white/10 aspect-video bg-white/[0.02]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={post.cover} alt={title} className="w-full h-full object-cover" />
+          </div>
+        </div>
 
-            {/* Body */}
-            <div className="space-y-6">
-              {post.body.map((block, i) =>
-                block.t === 'h2' ? (
-                  <h2 key={i} className="text-2xl font-bold text-white pt-4">
+        {/* Body — narrow readable measure */}
+        <article className="px-5">
+          <div className="max-w-[680px] mx-auto">
+            {post.body.map((block, i) => {
+              if (block.t === 'h2') {
+                return (
+                  <h2
+                    key={i}
+                    className="text-2xl md:text-3xl font-bold text-white mt-14 mb-4 tracking-tight"
+                  >
                     {pick(block.text, locale)}
                   </h2>
-                ) : (
-                  <p
-                    key={i}
-                    className="text-gray-300 leading-[1.85] text-[17px] md:text-lg"
-                  >
-                    {renderInline(pick(block.text, locale))}
-                  </p>
-                )
-              )}
-            </div>
+                );
+              }
+              const isLead = !leadUsed;
+              leadUsed = true;
+              return (
+                <p
+                  key={i}
+                  className={
+                    isLead
+                      ? 'text-xl md:text-[1.4rem] leading-[1.7] text-gray-200 font-light mb-8'
+                      : 'text-[17px] md:text-[1.18rem] leading-[1.85] text-gray-300/95 mb-7'
+                  }
+                >
+                  {renderInline(pick(block.text, locale))}
+                </p>
+              );
+            })}
 
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mt-12 pt-8 border-t border-white/10">
+            <div className="flex flex-wrap gap-2 mt-14 pt-8 border-t border-white/10">
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs text-gray-400 bg-white/[0.04] border border-white/10 rounded-full px-3 py-1"
+                  className="text-xs text-gray-400 bg-white/[0.04] border border-white/10 rounded-full px-3 py-1.5"
                 >
                   {tag}
                 </span>
@@ -165,12 +190,12 @@ export default async function BlogPostPage({
         </article>
 
         {/* CTA */}
-        <section className="py-20 px-4 border-t border-white/5 text-center">
+        <section className="py-20 md:py-28 px-5 mt-12 border-t border-white/5 text-center">
           <div className="max-w-xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white tracking-tight">
               {tx('聽聽我們的 AI 聲音', '听听我们的 AI 声音', 'Hear our AI voices')}
             </h2>
-            <p className="text-gray-400 mb-8 text-[15px] leading-relaxed">
+            <p className="text-gray-400 mb-8 text-[15px] md:text-base leading-relaxed">
               {tx(
                 '錄音室級 AI 配音、客製 TTS、配音與音樂 —— 國語、粵語與 40+ 語言,每筆交付由母語真人把關。',
                 '录音室级 AI 配音、定制 TTS、配音与音乐 —— 普通话、粤语与 40+ 语言,每笔交付由母语真人把关。',
