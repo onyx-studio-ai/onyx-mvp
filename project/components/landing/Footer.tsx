@@ -63,6 +63,10 @@ export default function Footer() {
               <Link href="/tools" className="hover:text-gray-300 transition-colors">
                 {t('aiTools')}
               </Link>
+              <span>·</span>
+              <Link href="/blog" className="hover:text-gray-300 transition-colors">
+                {t('blog')}
+              </Link>
             </div>
 
             <div className="flex items-center justify-center gap-6 text-xs text-gray-600 flex-wrap">
