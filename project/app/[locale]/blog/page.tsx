@@ -3,6 +3,9 @@ import Footer from '@/components/landing/Footer';
 import { getAllPosts, pick } from '@/lib/blog/posts';
 import { ArrowRight } from 'lucide-react';
 
+// Revalidate hourly so scheduled (future-dated) posts appear without a redeploy.
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const isZh = locale.startsWith('zh');

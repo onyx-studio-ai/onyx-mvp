@@ -6,6 +6,9 @@ import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 const BASE_URL = 'https://www.onyxstudios.ai';
 
+// Revalidate hourly so scheduled (future-dated) posts go live without a redeploy.
+export const revalidate = 3600;
+
 export function generateStaticParams() {
   return getAllPosts().map((p) => ({ slug: p.slug }));
 }

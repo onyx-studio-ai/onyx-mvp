@@ -2,6 +2,9 @@ import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
 import { getAllPosts } from '@/lib/blog/posts';
 
+// Revalidate hourly so scheduled blog posts enter the sitemap on their date.
+export const revalidate = 3600;
+
 const BASE_URL = 'https://www.onyxstudios.ai';
 const PRELAUNCH_MODE = process.env.PRELAUNCH_MODE === 'true' || process.env.VERCEL_ENV === 'preview';
 const publicRoutes = [

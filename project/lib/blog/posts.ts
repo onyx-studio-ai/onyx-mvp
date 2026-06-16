@@ -113,7 +113,7 @@ const langQA: BlogPost = {
 const morePosts: BlogPost[] = [
   {
     slug: "ai-voice-tool-landscape-2026",
-    date: '2026-06-16',
+    date: '2026-06-17',
     readMins: 6,
     cover: "/blog/ai-voice-tool-landscape-2026-hero.png",
     tags: ["AI Voice", "Text-to-Speech", "Buyer Guide", "Tools"],
@@ -151,7 +151,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "cloning-a-voice-5-things",
-    date: '2026-06-16',
+    date: '2026-06-20',
     readMins: 6,
     cover: "/blog/cloning-a-voice-5-things-hero.png",
     tags: ["Voice Cloning", "AI Ethics", "Legal", "How-To"],
@@ -170,7 +170,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "ai-music-commercial-licensing",
-    date: '2026-06-16',
+    date: '2026-06-21',
     readMins: 6,
     cover: "/blog/ai-music-commercial-licensing-hero.png",
     tags: ["AI Music", "Copyright", "Licensing", "Music Production"],
@@ -189,7 +189,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "dub-one-video-into-10-languages",
-    date: '2026-06-16',
+    date: '2026-06-19',
     readMins: 5,
     cover: "/blog/dub-one-video-into-10-languages-hero.png",
     tags: ["AI Dubbing", "Localization", "Video", "Workflow"],
@@ -209,7 +209,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "how-generative-voice-ai-works",
-    date: '2026-06-16',
+    date: '2026-06-23',
     readMins: 5,
     cover: "/blog/how-generative-voice-ai-works-hero.png",
     tags: ["Text-to-Speech", "AI Explained", "Technology", "Education"],
@@ -228,7 +228,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "ai-music-generators-suno-udio",
-    date: '2026-06-16',
+    date: '2026-06-24',
     readMins: 5,
     cover: "/blog/ai-music-generators-suno-udio-hero.png",
     tags: ["AI Music", "Suno", "Tools", "Music Production"],
@@ -247,7 +247,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "why-ai-mandarin-sounds-mainland",
-    date: '2026-06-16',
+    date: '2026-06-22',
     readMins: 5,
     cover: "/blog/why-ai-mandarin-sounds-mainland-hero.png",
     tags: ["AI Voice", "Mandarin", "Taiwan", "Localization"],
@@ -266,7 +266,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "that-ad-voice-might-be-borrowed",
-    date: '2026-06-16',
+    date: '2026-06-18',
     readMins: 6,
     cover: "/blog/that-ad-voice-might-be-borrowed-hero.png",
     tags: ["AI Voice", "Ethics", "Consent", "Legal"],
@@ -285,7 +285,7 @@ const morePosts: BlogPost[] = [
   },
   {
     slug: "hidden-cost-of-free-ai-voices",
-    date: '2026-06-16',
+    date: '2026-06-25',
     readMins: 5,
     cover: "/blog/hidden-cost-of-free-ai-voices-hero.png",
     tags: ["AI Voice", "Cost", "Quality Assurance", "Localization"],
@@ -307,10 +307,19 @@ const morePosts: BlogPost[] = [
 
 export const posts: BlogPost[] = [langQA, ...morePosts];
 
+// Server-evaluated "today" in Asia/Taipei (UTC+8) so posts go live on their
+// date in Taiwan time. With ISR revalidate on the pages, future-dated posts
+// appear automatically — one per day, no redeploy needed.
+function todayTaipei(): string {
+  return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 export function getAllPosts(): BlogPost[] {
-  return [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const today = todayTaipei();
+  return posts.filter((p) => p.date <= today).sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
 export function getPost(slug: string): BlogPost | undefined {
-  return posts.find((p) => p.slug === slug);
+  const today = todayTaipei();
+  return posts.find((p) => p.slug === slug && p.date <= today);
 }
