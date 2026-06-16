@@ -17,6 +17,7 @@ export interface BlogPost {
   title: L;
   dek: L; // subtitle / excerpt
   body: Block[];
+  sources?: { label: string; url: string }[];
 }
 
 export function pick(l: L | undefined, locale: string): string {
@@ -38,17 +39,17 @@ const langQA: BlogPost = {
     'zh-CN': 'AI 会讲 40 种语言。但数据说,它还是会讲错。',
   },
   dek: {
-    en: "Generative voice AI is fast and fluent. But accuracy in a language you can't hear is a measurable risk — here are the numbers, and why we built our whole process around a human.",
-    'zh-TW': '生成式語音 AI 又快又流利。但在你聽不懂的語言裡,「正確性」是可量化的風險 —— 這是數字,以及我們為什麼把整套流程建在「真人」上。',
-    'zh-CN': '生成式语音 AI 又快又流利。但在你听不懂的语言里,「正确性」是可量化的风险 —— 这是数字,以及我们为什么把整套流程建在「真人」上。',
+    en: "Fast, fluent, and — in a language you can’t hear — wrong more often than you’d expect. Here are the numbers, and why catching it shouldn’t be your job.",
+    'zh-TW': '又快又流利,但在你聽不懂的語言裡,出錯的機率比你以為的高。這是數字——以及為什麼「抓出這些錯」不該是你的工作。',
+    'zh-CN': '又快又流利,但在你听不懂的语言里,出错的概率比你以为的高。这是数字——以及为什么「抓出这些错」不该是你的工作。',
   },
   body: [
     {
       t: 'p',
       text: {
-        en: 'Generative voice AI has a genuinely impressive trick: type a script, choose a language, and seconds later you have a fluent voice in Japanese, Cantonese, Arabic, or Brazilian Portuguese. The speed is real. So is the blind spot hiding inside it — because if you don’t speak the language you just generated, you have no way of knowing whether it’s actually correct. And neither does the model. It simply sounds confident, which is not the same thing as being right.',
-        'zh-TW': '生成式語音 AI 有個確實厲害的本事:打一段稿、選個語言,幾秒後就有一段流利的配音 —— 日文、粵語、阿拉伯文、巴西葡萄牙文都行。速度是真的;但藏在裡面的盲點也是真的 —— 因為你剛生成的那個語言,如果你自己不會,你就無從判斷它到底對不對。而模型也不知道。它只是「聽起來」很有自信,而那跟「正確」是兩回事。',
-        'zh-CN': '生成式语音 AI 有个确实厉害的本事:打一段稿、选个语言,几秒后就有一段流利的配音 —— 日文、粤语、阿拉伯文、巴西葡萄牙文都行。速度是真的;但藏在里面的盲点也是真的 —— 因为你刚生成的那个语言,如果你自己不会,你就无从判断它到底对不对。而模型也不知道。它只是「听起来」很有自信,而那跟「正确」是两回事。',
+        en: 'You found a tool. It’s fast, it’s cheap, and it speaks the language you need — Japanese, Cantonese, Arabic, whatever the project calls for. You paste in your script, it reads it back sounding completely sure of itself, and you ship it. The catch is the one thing you can’t do from where you’re sitting: tell whether it’s actually right. If you don’t speak the language, you’re trusting a machine that is, in effect, also guessing — it just guesses in a very confident voice. And confident is not the same as correct.',
+        'zh-TW': '你找到了一個工具。它快、它便宜,而且會講你要的語言——日文、粵語、阿拉伯文,專案要什麼它就講什麼。你把稿子貼進去,它用一種完全有把握的口氣唸給你聽,你就出貨了。問題出在你坐在這個位置上唯一做不到的那件事:判斷它到底對不對。如果你不會那個語言,你信任的其實是一台同樣在「猜」的機器——它只是猜得很有自信而已。而有自信,跟正確,是兩回事。',
+        'zh-CN': '你找到了一个工具。它快、它便宜,而且会讲你要的语言——日文、粤语、阿拉伯文,项目要什么它就讲什么。你把稿子粘进去,它用一种完全有把握的口气念给你听,你就发布了。问题出在你坐在这个位置上唯一做不到的那件事:判断它到底对不对。如果你不会那门语言,你信任的其实是一台同样在「猜」的机器——它只是猜得很有自信罢了。而有自信,和正确,是两回事。',
       },
     },
     {
@@ -86,27 +87,32 @@ const langQA: BlogPost = {
     {
       t: 'p',
       text: {
-        en: 'For anyone buying multilingual audio, that difference is the whole point. You can confidently ship ads, dubbing, e-learning or audiobooks in languages you will never personally verify, knowing a real native speaker signed off on every second. You get the speed of AI without paying the silent-error tax that comes with trusting a model you can’t audit.',
-        'zh-TW': '對任何要買多語配音的人來說,這個差別就是重點。你可以放心地把廣告、配音、線上課程、有聲書,交付在你這輩子都不會親自驗證的語言上 —— 因為你知道,每一秒都有一位真正的母語者簽了名。你得到 AI 的速度,卻不必付出「信任一個你無法稽核的模型」所帶來的靜默錯誤稅。',
-        'zh-CN': '对任何要买多语配音的人来说,这个差别就是重点。你可以放心地把广告、配音、在线课程、有声书,交付在你这辈子都不会亲自验证的语言上 —— 因为你知道,每一秒都有一位真正的母语者签了名。你得到 AI 的速度,却不必付出「信任一个你无法稽核的模型」所带来的静默错误税。',
+        en: 'Here is why that matters to you specifically. You did not come to AI voice to become an expert in it — you came because you have an ad, a course, an audiobook to get out the door, fast and on budget, and you would rather not spend the week auditioning tools or re-listening to a language you can’t even parse. That is completely reasonable. But “fast and cheap” quietly hands you a second job you never asked for: quality control in a language you don’t speak. Most tools leave that job sitting on your desk. We take it off.',
+        'zh-TW': '這對你的具體意義在這裡。你不是為了成為 AI 語音專家才來用它的——你來,是因為手上有支廣告、一堂課、一本有聲書要趕出去,要快、要在預算內,而你實在不想把一整週耗在試工具,或反覆聽一段你根本拆解不了的語言。這完全合理。但「又快又便宜」會悄悄塞給你一份你從沒要過的兼差:用一種你不會的語言做品管。大多數工具把這份差事留在你桌上,我們則是把它接走。',
+        'zh-CN': '这对你的具体意义在这里。你不是为了成为 AI 语音专家才来用它的——你来,是因为手上有支广告、一门课、一本有声书要赶出去,要快、要在预算内,而你实在不想把一整周耗在试工具,或反复听一段你根本拆解不了的语言。这完全合理。但「又快又便宜」会悄悄塞给你一份你从没要过的兼职:用一门你不会的语言做品控。大多数工具把这份差事留在你桌上,我们则是把它接走。',
       },
     },
     {
       t: 'p',
       text: {
-        en: 'A quality layer is only as strong as the people in it, and we’re expanding ours. Onyx is building a Language QA network of fast, reliable native proofreaders — Mandarin (Taiwan), Cantonese, Japanese, Korean, Thai, Spanish and more. If you have a native ear for natural delivery, or work as a professional translator or proofreader and turn jobs around quickly, we’d like to hear from you at onyxstudios.ai.',
-        'zh-TW': '把關層的強度,取決於裡面的人,而我們正在擴大它。Onyx 正在建立一個 Language QA 網絡,徵求快速、可靠的母語校對 —— 台灣國語、粵語、日文、韓文、泰文、西班牙文等等。如果你對自然的語感有耳朵,或你是專業翻譯/校對而且回件迅速,我們很想在 onyxstudios.ai 認識你。',
-        'zh-CN': '把关层的强度,取决于里面的人,而我们正在扩大它。Onyx 正在建立一个 Language QA 网络,招募快速、可靠的母语校对 —— 台湾普通话、粤语、日文、韩文、泰文、西班牙文等等。如果你对自然的语感有耳朵,或你是专业翻译/校对而且交件迅速,我们很想在 onyxstudios.ai 认识你。',
+        en: 'That human layer is only as strong as the people in it, and we are expanding it — building a Language QA network of fast, reliable native proofreaders across Mandarin, Cantonese, Japanese, Korean, Thai, Spanish and more. If you have a native ear for how a line should really land, or you work as a translator or proofreader and turn jobs around quickly, we’d like to meet you.',
+        'zh-TW': '這層把關,強度取決於裡面的人,而我們正在擴大它——建立一個橫跨國語、粵語、日文、韓文、泰文、西班牙文等語種、由快速可靠的母語校對組成的 Language QA 網絡。如果你對「一句話該怎麼落地才對」有母語者的耳朵,或你是翻譯、校對而且回件迅速,我們很想認識你。',
+        'zh-CN': '这层把关,强度取决于里面的人,而我们正在扩大它——建立一个横跨普通话、粤语、日文、韩文、泰文、西班牙文等语种、由快速可靠的母语校对组成的 Language QA 网络。如果你对「一句话该怎么落地才对」有母语者的耳朵,或你是翻译、校对而且交件迅速,我们很想认识你。',
       },
     },
     {
       t: 'p',
       text: {
-        en: 'AI can now generate a voice in almost any language. Making sure that voice is actually right still takes a human who speaks it — and that is the part we refuse to skip.',
-        'zh-TW': 'AI 如今幾乎能用任何語言生出一個聲音。但要確定那個聲音「是對的」,仍然需要一個真的會這個語言的人 —— 而這一塊,我們不省。',
-        'zh-CN': 'AI 如今几乎能用任何语言生出一个声音。但要确定那个声音「是对的」,仍然需要一个真的会这个语言的人 —— 而这一块,我们不省。',
+        en: 'So here is what it comes down to. You turned to AI for speed and a price that works — not to become the person who has to verify whether the Cantonese is right. You shouldn’t have to be. Send us the script; what comes back is already checked by someone who speaks it, and ready to use. That is the difference between a tool you have to babysit and a studio you can hand things to: you stay out of the weeds, and the voice still lands. Tell us what you need voiced — we’ll take it from there.',
+        'zh-TW': '所以,歸根結柢就是這件事。你會找上 AI,是為了快、為了划算的價格——不是為了變成那個要去確認「這句粵語到底對不對」的人。那本來就不該是你的事。把稿子交給我們,拿回去的版本,已經有會這個語言的人確認過、可以直接用。這就是「要你盯著的工具」跟「可以放心丟過去的工作室」的差別:你不用跳進細節裡,聲音照樣到位。把你要配的內容告訴我們,剩下的交給我們。',
+        'zh-CN': '所以,归根结底就是这件事。你会用 AI,是为了快、为了划算的价格——不是为了变成那个要去核对「这句粤语到底对不对」的人。这本来就不该是你的事。把稿子交给我们,拿回去的版本已经有会这门语言的人确认过、可以直接用。这就是「要你盯着的工具」和「可以放心丢过去的工作室」的区别:你不用钻进细节,声音照样到位。把你要配的内容告诉我们,剩下的交给我们。',
       },
     },
+  ],
+  sources: [
+    { label: "Polyphone BERT — Mandarin polyphone disambiguation tops out around 94.1% accuracy (Interspeech 2022)", url: "https://arxiv.org/abs/2207.12089" },
+    { label: "CSA Research — “Can’t Read, Won’t Buy”: 8,709 consumers across 29 countries (76% prefer their own language; 40% won’t buy without it)", url: "https://csa-research.com/l/media/Consumers-Prefer-their-Own-Language" },
+    { label: "BreezyVoice — text-to-speech built for Taiwanese Mandarin; treats polyphone disambiguation as still unsolved (2025)", url: "https://arxiv.org/abs/2501.17790" },
   ],
 };
 
@@ -147,6 +153,13 @@ const morePosts: BlogPost[] = [
         { t: 'p', text: { en: "This is precisely the world Onyx Studios was built for. We are not a lab betting against people, and we are not a studio pretending AI does not exist. We are both at once. More than 1,500 professional voice actors work alongside our AI systems, and every single delivery—voice, dubbing, or music—is verified by a native human before it ships. That is what \"AI-Generated, Human-Perfected\" means in practice: the machine drafts at the speed clients need, and a human ear catches the mispronounced name, the wrong emotional register, the line that reads fine but lands wrong. The AI is fast. The human is right.", 'zh-TW': "而這,正是 Onyx Studios 為之而生的世界。我們不是一間賭人類會輸的實驗室,也不是一間假裝 AI 不存在的工作室。我們同時是這兩者。超過 1,500 位專業配音員與我們的 AI 系統並肩工作,而每一份交付——無論是配音、譯製還是音樂——在出貨之前,都會由一位母語人類親自驗收。這就是「AI 生成,真人臻善」在實務上的意思:機器以客戶需要的速度起草,而一雙人類的耳朵會抓出唸錯的名字、用錯的情緒層次、那句讀起來沒問題卻聽起來不對勁的台詞。AI 很快,人,才會對。", 'zh-CN': "而这,正是 Onyx Studios 为之而生的世界。我们不是一间赌人类会输的实验室,也不是一间假装 AI 不存在的工作室。我们同时是这两者。超过 1,500 位专业配音演员与我们的 AI 系统并肩工作,而每一份交付——无论是配音、译制还是音乐——在出货之前,都会由一位母语人类亲自验收。这就是“AI 生成,真人臻善”在实务上的意思:机器以客户需要的速度起草,而一双人类的耳朵会抓出念错的名字、用错的情绪层次、那句读起来没问题却听起来不对劲的台词。AI 很快,人,才会对。" } },
         { t: 'p', text: { en: "Consent runs through the whole operation, not as a legal footnote but as a foundation. Every AI voice in the Onyx catalog is built from a recording the actor agreed to, on terms the actor understands. We specialize in Taiwan Mandarin and Cantonese across more than forty languages, and we offer Onyx Live Strings—real string sections recorded by human musicians with rights fully cleared. The thread is the same in every studio we run: technology amplifies human talent; it never quietly stands in for it. Augmentation is not a slogan here. It is the operating model.", 'zh-TW': "「同意」貫穿了整個營運,它不是法律上的小字註腳,而是地基。Onyx 目錄裡的每一個 AI 聲音,都建立在配音員同意的錄音之上,並依照配音員理解的條款。我們專精台灣國語與粵語,涵蓋四十多種語言;我們也提供 Onyx Live Strings——由真人樂手錄製、版權完全清理的真實弦樂編制。在我們經營的每一個工作室裡,主軸都是同一條:科技放大人的才華,而絕不悄悄取而代之。在這裡,擴增不是一句口號,它就是營運模式本身。", 'zh-CN': "“同意”贯穿了整个运营,它不是法律上的小字注脚,而是地基。Onyx 目录里的每一个 AI 声音,都建立在配音演员同意的录音之上,并依照配音演员理解的条款。我们专精台湾普通话与粤语,涵盖四十多种语言;我们也提供 Onyx Live Strings——由真人乐手录制、版权完全清理的真实弦乐编制。在我们经营的每一个工作室里,主轴都是同一条:科技放大人的才华,而绝不悄悄取而代之。在这里,增强不是一句口号,它就是运营模式本身。" } },
         { t: 'p', text: { en: "So will AI replace voice actors? The data answers no, and it answers something more useful than no: the work is shifting toward the parts only humans can hold. If you are a brand, the question worth asking is not whether your voice content was made fast, but whether anyone you trust verified it before it reached your audience. Talk to us about voice, dubbing, and music where a human signs off on every second. And if you are a voice actor wondering where you fit in this future, the answer is at the center of it. Join the Onyx roster—your consent respected, your craft amplified, your name on the work.", 'zh-TW': "那麼,AI 究竟會不會取代配音員?數據的答案是不會;而它還給了一個比「不會」更有用的答案:工作正在往那些唯有人類能承擔的環節移動。如果你是品牌方,真正該問的不是你的聲音內容做得快不快,而是在它送到受眾耳邊之前,有沒有一個你信得過的人驗收過。來跟我們聊聊配音、譯製與音樂——每一秒,都有真人簽字負責。而如果你是一位配音員,正在思考自己在這個未來裡的位置,答案就在它的正中央。加入 Onyx 名冊吧——你的同意被尊重,你的手藝被放大,你的名字,留在作品上。", 'zh-CN': "那么,AI 究竟会不会取代配音演员?数据的答案是不会;而它还给了一个比“不会”更有用的答案:工作正在往那些唯有人类能承担的环节移动。如果你是品牌方,真正该问的不是你的声音内容做得快不快,而是在它送到受众耳边之前,有没有一个你信得过的人验收过。来跟我们聊聊配音、译制与音乐——每一秒,都有真人签字负责。而如果你是一位配音演员,正在思考自己在这个未来里的位置,答案就在它的正中央。加入 Onyx 名册吧——你的同意被尊重,你的手艺被放大,你的名字,留在作品上。" } },
+    ],
+    sources: [
+      { label: "Market.us — Dubbing & Voice-over Market (USD 4.2B in 2024 → 8.6B by 2034; human-based services >58%)", url: "https://market.us/report/dubbing-and-voice-over-market/" },
+      { label: "Market.us — AI-Powered Dubbing Tools Market (~USD 1.15B in 2025 → 2.56B by 2030)", url: "https://market.us/report/ai-powered-dubbing-tools-market/" },
+      { label: "Audacy — “Audio: A Beacon of Trust in the Age of AI”, Innovation Tracker, June 2024 (55% trust human vs 23% AI)", url: "https://audacyinc.com/insights/audio-a-beacon-of-trust-in-the-age-of-ai/" },
+      { label: "Perkins Coie — How the 2023 SAG-AFTRA & WGA contracts address generative AI", url: "https://perkinscoie.com/insights/blog/generative-ai-movies-and-tv-how-2023-sag-aftra-and-wga-contracts-address-generative" },
+      { label: "SAG-AFTRA — Members approve the 2025 Interactive Media (video game) Agreement, ~95% in favor", url: "https://www.sagaftra.org/sag-aftra-members-approve-2025-video-game-agreement" },
     ],
   },
   {

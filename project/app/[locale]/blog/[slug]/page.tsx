@@ -175,8 +175,32 @@ export default async function BlogPostPage({
               );
             })}
 
+            {/* Sources */}
+            {post.sources && post.sources.length > 0 && (
+              <div className="mt-14 pt-8 border-t border-white/10">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4">
+                  {tx('資料來源', '资料来源', 'Sources')}
+                </h2>
+                <ol className="space-y-2.5">
+                  {post.sources.map((s, i) => (
+                    <li key={i} className="flex gap-2.5 text-sm leading-relaxed">
+                      <span className="text-gray-600 tabular-nums shrink-0">{i + 1}.</span>
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-purple-300 underline underline-offset-2 decoration-white/20 transition-colors break-words"
+                      >
+                        {s.label}
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mt-14 pt-8 border-t border-white/10">
+            <div className="flex flex-wrap gap-2 mt-10">
               {post.tags.map((tag) => (
                 <span
                   key={tag}
