@@ -288,24 +288,24 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-500">Languages: </span>
-                    <span className="text-gray-200">{app.languages.join(', ')}</span>
+                    <span className="text-gray-900">{app.languages.join(', ')}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">Voice Types: </span>
-                    <span className="text-gray-200">{app.voice_types.join(', ')}</span>
+                    <span className="text-gray-900">{app.voice_types.join(', ')}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">Specialties: </span>
-                    <span className="text-gray-200">{app.specialties.join(', ')}</span>
+                    <span className="text-gray-900">{app.specialties.join(', ')}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">Experience: </span>
-                    <span className="text-gray-200">{app.experience_years}</span>
+                    <span className="text-gray-900">{app.experience_years}</span>
                   </div>
                   {app.notable_clients && (
                     <div>
                       <span className="text-gray-500">Notable Clients: </span>
-                      <span className="text-gray-200">{app.notable_clients}</span>
+                      <span className="text-gray-900">{app.notable_clients}</span>
                     </div>
                   )}
                   {app.bio && (
@@ -335,9 +335,9 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                       {app.can_deliver_dry_audio ? 'Yes' : 'No'}
                     </span>
                   </div>
-                  {app.microphone_model && <div><span className="text-gray-500">Mic: </span><span className="text-gray-200">{app.microphone_model}</span></div>}
-                  {app.daw_software && <div><span className="text-gray-500">DAW: </span><span className="text-gray-200">{app.daw_software}</span></div>}
-                  <div><span className="text-gray-500">Environment: </span><span className="text-gray-200">{app.recording_environment}</span></div>
+                  {app.microphone_model && <div><span className="text-gray-500">Mic: </span><span className="text-gray-900">{app.microphone_model}</span></div>}
+                  {app.daw_software && <div><span className="text-gray-500">DAW: </span><span className="text-gray-900">{app.daw_software}</span></div>}
+                  <div><span className="text-gray-500">Environment: </span><span className="text-gray-900">{app.recording_environment}</span></div>
                 </div>
               </div>
             </div>
@@ -369,10 +369,10 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                 </h4>
                 <div className="space-y-1.5 text-sm">
                   {(app.rate_lead_vocal || app.expected_rate_voice) && (
-                    <div><span className="text-gray-500">Lead Vocal (Full Buyout): </span><span className="text-gray-200">US${(app.rate_lead_vocal ?? app.expected_rate_voice)?.toLocaleString()}</span></div>
+                    <div><span className="text-gray-500">Lead Vocal (Full Buyout): </span><span className="text-gray-900">US${(app.rate_lead_vocal ?? app.expected_rate_voice)?.toLocaleString()}</span></div>
                   )}
                   {(app.rate_hook_chorus || app.expected_rate_music) && (
-                    <div><span className="text-gray-500">Hook / Chorus (Buyout): </span><span className="text-gray-200">US${(app.rate_hook_chorus ?? app.expected_rate_music)?.toLocaleString()}</span></div>
+                    <div><span className="text-gray-500">Hook / Chorus (Buyout): </span><span className="text-gray-900">US${(app.rate_hook_chorus ?? app.expected_rate_music)?.toLocaleString()}</span></div>
                   )}
                   {!app.rate_lead_vocal && !app.expected_rate_voice && !app.rate_hook_chorus && !app.expected_rate_music && (
                     <p className="text-gray-500">Not specified</p>
@@ -517,7 +517,7 @@ export default function AdminApplicationsPage() {
         </div>
         <button
           onClick={fetchApplications}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-white text-sm rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -527,7 +527,7 @@ export default function AdminApplicationsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         {[
-          { label: 'Total', value: counts.total, color: 'text-white' },
+          { label: 'Total', value: counts.total, color: 'text-gray-900' },
           { label: 'Pending', value: counts.pending, color: 'text-yellow-700' },
           { label: 'Reviewing', value: counts.under_review, color: 'text-blue-700' },
           { label: 'Approved', value: counts.approved, color: 'text-green-700' },
