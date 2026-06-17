@@ -125,9 +125,41 @@ export async function PATCH(request: NextRequest) {
 
           const demoUrls: Array<{ name: string; url: string }> = [];
           if (application.demo_file_url) {
+            // The submission lives in the (soon-to-be-private) talent-submissions
+            // bucket. Copy it into the PUBLIC talent-demos bucket so /voices can
+            // still play it once talent-submissions is locked down.
+            let publicUrl = '';
+            try {
+              const SUB = 'talent-submissions';
+              let srcPath = String(application.demo_file_url);
+              const marker = `/${SUB}/`;
+              const mi = srcPath.indexOf(marker);
+              if (mi !== -1) srcPath = srcPath.slice(mi + marker.length);
+              try { srcPath = decodeURIComponent(srcPath); } catch { /* keep */ }
+              srcPath = srcPath.replace(/^\/+/, '');
+
+              if (srcPath.startsWith('http')) {
+                publicUrl = String(application.demo_file_url);
+              } else {
+                const { data: blob, error: dlErr } = await db.storage.from(SUB).download(srcPath);
+                if (!dlErr && blob) {
+                  const namePart = srcPath.split('/').pop() || 'demo.wav';
+                  const destPath = `approved/${id}/${namePart}`;
+                  const buf = Buffer.from(await blob.arrayBuffer());
+                  const { error: upErr } = await db.storage
+                    .from('talent-demos')
+                    .upload(destPath, buf, { contentType: blob.type || 'audio/wav', upsert: true });
+                  if (!upErr) {
+                    publicUrl = db.storage.from('talent-demos').getPublicUrl(destPath).data.publicUrl;
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('[Applications] demo copy to public bucket failed:', e);
+            }
             demoUrls.push({
               name: application.demo_file_name || 'Application Demo',
-              url: application.demo_file_url,
+              url: publicUrl || String(application.demo_file_url),
             });
           }
 

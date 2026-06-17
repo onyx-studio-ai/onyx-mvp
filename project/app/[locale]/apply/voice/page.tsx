@@ -420,17 +420,26 @@ export default function ApplyVoicePage() {
     setUploading(true);
     try {
       const fileName = buildFileName();
-      const folder = form.role_type === 'Singer' ? 'singers' : 'voice-actors';
-      const path = `${folder}/${Date.now()}_${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // Request a one-time signed upload URL from the server, then upload
+      // directly to it. This lets the talent-submissions bucket be private
+      // with no anon-write policy — the token authorizes this single upload.
+      const urlRes = await fetch('/api/apply/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName, role: form.role_type }),
+      });
+      const urlJson = await urlRes.json();
+      if (!urlRes.ok) throw new Error(urlJson.error || '上傳準備失敗,請重試');
+
+      const { error: uploadError } = await supabase.storage
         .from('talent-submissions')
-        .upload(path, file, { upsert: false });
+        .uploadToSignedUrl(urlJson.path, urlJson.token, file);
 
       if (uploadError) throw new Error(`上傳失敗 (${uploadError.statusCode ?? ''}): ${uploadError.message}`);
 
-      const { data: urlData } = supabase.storage.from('talent-submissions').getPublicUrl(uploadData.path);
-      const fileUrl = urlData.publicUrl;
+      // Store the storage PATH; admin mints a signed URL on read.
+      const fileUrl = urlJson.path as string;
 
       const rateNotesParts = [
         form.consent_ai_twin ? '[AI Twin Agreement: Accepted]' : '',
