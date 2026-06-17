@@ -30,7 +30,41 @@ export async function GET(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json(data);
+
+    // Sign demo URLs on read so the bucket can be private. Handles both a
+    // bare storage path and a legacy full public URL; leaves anything that
+    // isn't a talent-submissions reference untouched. Works on public buckets
+    // too, so this is safe to ship before the bucket is switched to private.
+    const SUBMISSIONS_BUCKET = 'talent-submissions';
+    const marker = `/${SUBMISSIONS_BUCKET}/`;
+    const signed = await Promise.all(
+      (data || []).map(async (app) => {
+        const ref: string | null = app?.demo_file_url || null;
+        if (!ref) return app;
+        const isExternal = ref.startsWith('http') && !ref.includes(marker);
+        if (isExternal) return app;
+        let path = ref;
+        const idx = ref.indexOf(marker);
+        if (idx !== -1) path = ref.slice(idx + marker.length);
+        try {
+          path = decodeURIComponent(path);
+        } catch {
+          /* keep as-is */
+        }
+        path = path.replace(/^\/+/, '');
+        if (!path) return app;
+        try {
+          const { data: s } = await db.storage
+            .from(SUBMISSIONS_BUCKET)
+            .createSignedUrl(path, 3600);
+          if (s?.signedUrl) return { ...app, demo_file_url: s.signedUrl };
+        } catch {
+          /* fall back to original on any error */
+        }
+        return app;
+      })
+    );
+    return NextResponse.json(signed);
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
