@@ -342,6 +342,23 @@ export default function AdminTalentsPage() {
   const headshotRef = useRef<HTMLInputElement>(null);
   const demoRef = useRef<HTMLInputElement>(null);
 
+  // Open a voice-affidavit file via a short-lived admin signed URL, so the
+  // bucket can be private (no public URLs). Accepts a stored path or legacy URL.
+  const openSigned = async (u?: string) => {
+    if (!u) return;
+    try {
+      const res = await fetch(`/api/admin/voice-id/signed-url?u=${encodeURIComponent(u)}`);
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.open(data.url, '_blank', 'noopener,noreferrer');
+      } else {
+        toast.error(data.error || 'Could not open file');
+      }
+    } catch {
+      toast.error('Could not open file');
+    }
+  };
+
   const handleVerifyVoiceId = async (talentId: string) => {
     setVerifyingVoiceId(talentId);
     try {
@@ -1176,14 +1193,14 @@ export default function AdminTalentsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           {vid.voice_id_file_url && (
-                            <a href={vid.voice_id_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
+                            <button type="button" onClick={() => openSigned(vid.voice_id_file_url)} className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
                               <Music className="w-3 h-3" /> Play
-                            </a>
+                            </button>
                           )}
                           {vid.voice_id_signature_url && (
-                            <a href={vid.voice_id_signature_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
+                            <button type="button" onClick={() => openSigned(vid.voice_id_signature_url)} className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
                               <ExternalLink className="w-3 h-3" /> Signature
-                            </a>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -1196,14 +1213,14 @@ export default function AdminTalentsPage() {
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           {vid.voice_id_file_url && (
-                            <a href={vid.voice_id_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
+                            <button type="button" onClick={() => openSigned(vid.voice_id_file_url)} className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
                               <Music className="w-3 h-3" /> Play
-                            </a>
+                            </button>
                           )}
                           {vid.voice_id_signature_url && (
-                            <a href={vid.voice_id_signature_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
+                            <button type="button" onClick={() => openSigned(vid.voice_id_signature_url)} className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
                               <ExternalLink className="w-3 h-3" /> Signature
-                            </a>
+                            </button>
                           )}
                           <Button
                             variant="ghost"
