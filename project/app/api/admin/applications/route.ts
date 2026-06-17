@@ -214,3 +214,32 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'Admin database config missing' }, { status: 500 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    }
+
+    const db = getAdminClient();
+    // Unlink any talent created from / pointing at this application first, so
+    // the talents.application_id foreign key doesn't block the delete.
+    await db.from('talents').update({ application_id: null }).eq('application_id', id);
+
+    const { error } = await db.from('talent_applications').delete().eq('id', id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

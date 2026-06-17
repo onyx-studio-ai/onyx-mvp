@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import {
   Mic, Music, Search, Filter, RefreshCw, Play, Pause,
-  ChevronDown, ChevronUp, Download, Check, Clock, Eye,
+  ChevronDown, ChevronUp, Download, Check, Clock, Eye, Trash2,
   XCircle, User, Globe, Settings, DollarSign, FileAudio,
   Calendar, Phone, Mail
 } from 'lucide-react';
@@ -191,6 +191,27 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
     if (!res.ok) toast.error('Failed to save notes');
     else toast.success('Notes saved');
     setSavingNotes(false);
+  };
+
+  const deleteApplication = async () => {
+    const ok = window.confirm(
+      `Delete this application — ${app.full_name || ''} (${app.application_number || app.id})?\n\nThis permanently removes the application record. It cannot be undone.`
+    );
+    if (!ok) return;
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/applications?id=${app.id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to delete application');
+      } else {
+        toast.success('Application deleted');
+        onStatusChange();
+      }
+    } catch {
+      toast.error('Network error');
+    }
+    setUpdating(false);
   };
 
   return (
@@ -457,6 +478,17 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Delete */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={deleteApplication}
+                  disabled={updating}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete application
+                </button>
               </div>
             </div>
           </div>
