@@ -123,6 +123,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     const db = getAdminClient();
+
+    // Unlink any applications pointing at this talent first — otherwise the
+    // talent_applications.talent_id foreign key blocks the delete (which is
+    // why any talent auto-created from an approved application couldn't be
+    // removed). The application records are kept as history, just unlinked.
+    await db.from('talent_applications').update({ talent_id: null }).eq('talent_id', id);
+
     const { error } = await db
       .from('talents')
       .delete()
