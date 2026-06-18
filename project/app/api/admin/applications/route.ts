@@ -1,27 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/mail';
 import { applicationStatusEmail } from '@/lib/mail-templates';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-function getAdminClient() {
-  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import {
+  getSupabaseServiceClient,
+  supabaseErrorResponse,
+  storagePathFromRef,
+} from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: 'Admin database config missing' }, { status: 500 });
-  }
 
   try {
-    const db = getAdminClient();
+    const db = getSupabaseServiceClient();
     const { data, error } = await db
       .from('talent_applications')
       .select('*, talents:talent_id(id, name, is_active, voice_id_status)')
@@ -41,17 +33,9 @@ export async function GET(request: NextRequest) {
       (data || []).map(async (app) => {
         const ref: string | null = app?.demo_file_url || null;
         if (!ref) return app;
-        const isExternal = ref.startsWith('http') && !ref.includes(marker);
-        if (isExternal) return app;
-        let path = ref;
-        const idx = ref.indexOf(marker);
-        if (idx !== -1) path = ref.slice(idx + marker.length);
-        try {
-          path = decodeURIComponent(path);
-        } catch {
-          /* keep as-is */
-        }
-        path = path.replace(/^\/+/, '');
+        // Leave external (non-storage) URLs untouched.
+        if (ref.startsWith('http') && !ref.includes(marker)) return app;
+        const path = storagePathFromRef(ref, SUBMISSIONS_BUCKET);
         if (!path) return app;
         try {
           const { data: s } = await db.storage
@@ -66,16 +50,13 @@ export async function GET(request: NextRequest) {
     );
     return NextResponse.json(signed);
   } catch (err) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return supabaseErrorResponse(err, 'admin/applications GET');
   }
 }
 
 export async function PATCH(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: 'Admin database config missing' }, { status: 500 });
-  }
 
   try {
     const body = await request.json();
@@ -85,7 +66,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    const db = getAdminClient();
+    const db = getSupabaseServiceClient();
     const { error } = await db
       .from('talent_applications')
       .update(updateData)
@@ -131,14 +112,9 @@ export async function PATCH(request: NextRequest) {
             let publicUrl = '';
             try {
               const SUB = 'talent-submissions';
-              let srcPath = String(application.demo_file_url);
-              const marker = `/${SUB}/`;
-              const mi = srcPath.indexOf(marker);
-              if (mi !== -1) srcPath = srcPath.slice(mi + marker.length);
-              try { srcPath = decodeURIComponent(srcPath); } catch { /* keep */ }
-              srcPath = srcPath.replace(/^\/+/, '');
+              const srcPath = storagePathFromRef(String(application.demo_file_url), SUB);
 
-              if (srcPath.startsWith('http')) {
+              if (!srcPath || srcPath.startsWith('http')) {
                 publicUrl = String(application.demo_file_url);
               } else {
                 const { data: blob, error: dlErr } = await db.storage.from(SUB).download(srcPath);
@@ -211,16 +187,13 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return supabaseErrorResponse(err, 'admin/applications PATCH');
   }
 }
 
 export async function DELETE(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: 'Admin database config missing' }, { status: 500 });
-  }
 
   try {
     const { searchParams } = new URL(request.url);
@@ -229,7 +202,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
-    const db = getAdminClient();
+    const db = getSupabaseServiceClient();
     // Unlink any talent created from / pointing at this application first, so
     // the talents.application_id foreign key doesn't block the delete.
     await db.from('talents').update({ application_id: null }).eq('application_id', id);
@@ -239,7 +212,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err) {
+    return supabaseErrorResponse(err, 'admin/applications DELETE');
   }
 }

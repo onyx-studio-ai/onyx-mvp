@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-function getAdminClient() {
-  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
 
   try {
-    const db = getAdminClient();
+    const db = getSupabaseServiceClient();
     const { data: talents, error } = await db
       .from('talents')
       .select('*')
@@ -47,8 +38,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(enriched);
   } catch (err) {
-    console.error('[Admin Talents] GET error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return supabaseErrorResponse(err, 'admin/talents GET');
   }
 }
 
@@ -58,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const db = getAdminClient();
+    const db = getSupabaseServiceClient();
 
     const { data, error } = await db
       .from('talents')
@@ -73,8 +63,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (err) {
-    console.error('[Admin Talents] POST error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return supabaseErrorResponse(err, 'admin/talents POST');
   }
 }
 
@@ -90,7 +79,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Missing talent id' }, { status: 400 });
     }
 
-    const db = getAdminClient();
+    const db = getSupabaseServiceClient();
     const { data, error } = await db
       .from('talents')
       .update(updateData)
@@ -105,8 +94,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (err) {
-    console.error('[Admin Talents] PATCH error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return supabaseErrorResponse(err, 'admin/talents PATCH');
   }
 }
 
@@ -122,7 +110,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Missing talent id' }, { status: 400 });
     }
 
-    const db = getAdminClient();
+    const db = getSupabaseServiceClient();
 
     // Unlink any applications pointing at this talent first — otherwise the
     // talent_applications.talent_id foreign key blocks the delete (which is
@@ -142,7 +130,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[Admin Talents] DELETE error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return supabaseErrorResponse(err, 'admin/talents DELETE');
   }
 }

@@ -101,3 +101,23 @@ export function supabaseErrorResponse(err: unknown, routeName: string) {
   console.error(`[${routeName}] Unexpected error:`, message);
   return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
 }
+
+/**
+ * Given a stored reference (a bare storage path OR a full public/signed URL)
+ * and a bucket name, return the bare object path inside that bucket: strips
+ * everything up to and including `/<bucket>/`, URL-decodes, and trims leading
+ * slashes. Returns '' if nothing usable remains. Callers decide how to handle
+ * external (non-storage) URLs before calling this.
+ */
+export function storagePathFromRef(ref: string, bucket: string): string {
+  let path = ref;
+  const marker = `/${bucket}/`;
+  const idx = ref.indexOf(marker);
+  if (idx !== -1) path = ref.slice(idx + marker.length);
+  try {
+    path = decodeURIComponent(path);
+  } catch {
+    /* keep as-is if not percent-encoded */
+  }
+  return path.replace(/^\/+/, '');
+}
