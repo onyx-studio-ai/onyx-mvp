@@ -214,9 +214,6 @@ export default function LobbyPage() {
             <p className="text-xs font-semibold tracking-[0.25em] uppercase text-sky-300 mb-3">
               {tx('服務', '服务', 'Services')}
             </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              {tx('四條服務線，一個團隊', '四条服务线，一个团队', 'Four service lines, one team')}
-            </h2>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

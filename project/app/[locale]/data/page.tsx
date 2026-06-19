@@ -227,11 +227,8 @@ export default function DataPage() {
             className="mb-10 text-center"
           >
             <p className="text-xs font-semibold tracking-[0.25em] uppercase text-amber-300 mb-3">
-              {tx('服務範圍', '服务范围', 'Service Lines')}
+              {tx('服務', '服务', 'Services')}
             </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
-              {tx('四條語音資料服務線', '四条语音资料服务线', 'Four voice-data service lines')}
-            </h2>
             <p className="text-gray-400 text-base max-w-3xl mx-auto">
               {tx(
                 '從 TTS 訓練語料、聲線克隆、對話資料到標註清理 — 一個窗口收齊。',
