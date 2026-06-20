@@ -365,7 +365,7 @@ export default function TalentApply() {
                 )}
                 {codeMsg && <p className="text-xs mt-1.5 text-gray-400">{codeMsg}</p>}
               </div>
-              <div className="mt-4"><Label hint={tx('只留存,不驗證', '只留存,不验证', 'Stored, not verified')}>{tx('手機', '手机', 'Phone')}</Label><input className={inputCls} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+886 …" /></div>
+              <div className="mt-4"><Label hint={tx('只留存', '只留存', 'Stored only')}>{tx('手機', '手机', 'Phone')}</Label><input className={inputCls} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+886 …" /></div>
               <div className="mt-4">
                 <Label hint={tx('選填,填任一即可', '选填,填任一即可', 'Optional — any one is fine')}>{tx('通訊軟體 ID', '通讯软体 ID', 'Messaging ID')}</Label>
                 <div className="grid grid-cols-3 gap-2">
