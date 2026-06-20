@@ -28,6 +28,7 @@ type Brief = {
 type Quote = {
   id: string;
   brief_id: string;
+  talent_id: string;
   gross_amount: number;
   net_amount: number;
   commission_rate: number;
@@ -51,6 +52,7 @@ export default function AdminMarketplace() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [phase, setPhase] = useState<'loading' | 'unauth' | 'ready'>('loading');
   const [unavailable, setUnavailable] = useState(false);
+  const [openThread, setOpenThread] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/marketplace', { credentials: 'include' });
@@ -131,33 +133,103 @@ export default function AdminMarketplace() {
             {/* quotes */}
             <div className="border-t border-white/10 pt-3 space-y-2">
               {quotesFor(b.id).length === 0 && <p className="text-xs text-gray-600">尚無報價</p>}
-              {quotesFor(b.id).map((q) => (
-                <div key={q.id} className="flex items-center justify-between gap-3 text-sm bg-white/[0.02] rounded-lg px-3 py-2">
-                  <div className="min-w-0">
-                    <span className="text-gray-200">{q.talents?.name || '配音員'}</span>
-                    <span className="text-gray-500 ml-2">
-                      客戶付 {q.currency} {q.gross_amount} · 淨得 {q.currency} {q.net_amount}{' '}
-                      <span className="text-gray-600">({Math.round(q.commission_rate * 100)}%)</span>
-                    </span>
-                    {q.message && <p className="text-xs text-gray-500 truncate">{q.message}</p>}
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className={`text-xs ${q.status === 'accepted' ? 'text-blue-300' : q.status === 'rejected' || q.status === 'withdrawn' ? 'text-gray-500' : 'text-green-300'}`}>{q.status}</span>
-                    {['submitted', 'shortlisted'].includes(q.status) && (
-                      <>
-                        {q.status === 'submitted' && (
-                          <button onClick={() => patch('quote', q.id, 'shortlisted')} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded px-2 py-0.5">入圍</button>
+              {quotesFor(b.id).map((q) => {
+                const tkey = `${b.id}:${q.talent_id}`;
+                return (
+                  <div key={q.id}>
+                    <div className="flex items-center justify-between gap-3 text-sm bg-white/[0.02] rounded-lg px-3 py-2">
+                      <div className="min-w-0">
+                        <span className="text-gray-200">{q.talents?.name || '配音員'}</span>
+                        <span className="text-gray-500 ml-2">
+                          客戶付 {q.currency} {q.gross_amount} · 淨得 {q.currency} {q.net_amount}{' '}
+                          <span className="text-gray-600">({Math.round(q.commission_rate * 100)}%)</span>
+                        </span>
+                        {q.message && <p className="text-xs text-gray-500 truncate">{q.message}</p>}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => setOpenThread(openThread === tkey ? null : tkey)} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded px-2 py-0.5" title="訊息">💬</button>
+                        <span className={`text-xs ${q.status === 'accepted' ? 'text-blue-300' : q.status === 'rejected' || q.status === 'withdrawn' ? 'text-gray-500' : 'text-green-300'}`}>{q.status}</span>
+                        {['submitted', 'shortlisted'].includes(q.status) && (
+                          <>
+                            {q.status === 'submitted' && (
+                              <button onClick={() => patch('quote', q.id, 'shortlisted')} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded px-2 py-0.5">入圍</button>
+                            )}
+                            <button onClick={() => patch('quote', q.id, 'accepted')} className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded px-2 py-0.5">採用</button>
+                            <button onClick={() => patch('quote', q.id, 'rejected')} className="text-xs bg-white/5 hover:bg-white/10 text-gray-400 rounded px-2 py-0.5">婉拒</button>
+                          </>
                         )}
-                        <button onClick={() => patch('quote', q.id, 'accepted')} className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded px-2 py-0.5">採用</button>
-                        <button onClick={() => patch('quote', q.id, 'rejected')} className="text-xs bg-white/5 hover:bg-white/10 text-gray-400 rounded px-2 py-0.5">婉拒</button>
-                      </>
-                    )}
+                      </div>
+                    </div>
+                    {openThread === tkey && <AdminThread briefId={b.id} talentId={q.talent_id} />}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function AdminThread({ briefId, talentId }: { briefId: string; talentId: string }) {
+  const [messages, setMessages] = useState<{ id: string; sender_type: string; sender_name: string | null; body: string }[]>([]);
+  const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/admin/marketplace/messages?brief_id=${briefId}&talent_id=${talentId}`, { credentials: 'include' });
+    const j = await res.json().catch(() => ({}));
+    setMessages(j.messages || []);
+  }, [briefId, talentId]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function send() {
+    const body = draft.trim();
+    if (!body) return;
+    setBusy(true);
+    await fetch('/api/admin/marketplace/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ brief_id: briefId, talent_id: talentId, body }),
+    });
+    setBusy(false);
+    setDraft('');
+    load();
+  }
+
+  return (
+    <div className="ml-3 mt-1 mb-2 border-l-2 border-white/10 pl-3">
+      <div className="space-y-1.5 max-h-60 overflow-y-auto py-1">
+        {messages.length === 0 && <p className="text-xs text-gray-600">尚無訊息</p>}
+        {messages.map((m) => (
+          <div key={m.id} className="text-xs">
+            <span className={m.sender_type === 'admin' ? 'text-blue-300' : m.sender_type === 'talent' ? 'text-green-300' : 'text-gray-300'}>
+              {m.sender_type === 'admin' ? 'Onyx' : m.sender_name || m.sender_type}:
+            </span>{' '}
+            <span className="text-gray-200 whitespace-pre-wrap">{m.body}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-1.5">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              send();
+            }
+          }}
+          placeholder="以 Onyx 身分回覆…"
+          className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white"
+        />
+        <button onClick={send} disabled={busy || !draft.trim()} className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded px-2 disabled:opacity-50">
+          送出
+        </button>
       </div>
     </div>
   );
