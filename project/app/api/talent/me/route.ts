@@ -59,16 +59,24 @@ export async function PATCH(request: NextRequest) {
 
     // demo_urls: only accept {name,url} items whose url lives in OUR public
     // demos bucket — prevents injecting arbitrary external audio onto the roster.
+    // Validate via URL parsing (host + path), robust to trailing-slash env
+    // differences between getPublicUrl and a string-concatenated prefix.
     if ('demo_urls' in body) {
       const arr = body.demo_urls;
       if (!Array.isArray(arr)) return NextResponse.json({ error: 'demo_urls must be an array' }, { status: 400 });
       if (arr.length > 8) return NextResponse.json({ error: 'Too many demos (max 8)' }, { status: 400 });
-      const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/talent-demos/`;
+      let ourHost = '';
+      try { ourHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').host; } catch { /* leaves ourHost empty → all rejected */ }
       const clean: Array<{ name: string; url: string }> = [];
       for (const d of arr) {
-        const url = typeof d?.url === 'string' ? d.url : '';
-        if (!url.startsWith(prefix)) return NextResponse.json({ error: 'Invalid demo url' }, { status: 400 });
-        clean.push({ name: String(d?.name || 'Demo').slice(0, 120), url });
+        const raw = typeof d?.url === 'string' ? d.url : '';
+        let valid = false;
+        try {
+          const u = new URL(raw);
+          valid = !!ourHost && u.host === ourHost && u.pathname.startsWith('/storage/v1/object/public/talent-demos/');
+        } catch { valid = false; }
+        if (!valid) return NextResponse.json({ error: 'Invalid demo url' }, { status: 400 });
+        clean.push({ name: String(d?.name || 'Demo').slice(0, 120), url: raw });
       }
       updates.demo_urls = clean;
     }
