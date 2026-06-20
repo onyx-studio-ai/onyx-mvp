@@ -794,7 +794,7 @@ export function applicationTeamNotifyEmail(p: { applicantName: string; applicati
   };
 }
 
-export function applicationStatusEmail(p: { applicantName: string; applicationNumber: string; status: 'approved' | 'rejected'; locale?: string }): { subject: string; html: string } {
+export function applicationStatusEmail(p: { applicantName: string; applicationNumber: string; status: 'approved' | 'rejected'; locale?: string; onboardUrl?: string }): { subject: string; html: string } {
   // Localized approve/reject email. Approved = warm welcome (we accept most);
   // rejected = gracious. Defaults to English when no locale stored.
   const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
@@ -881,14 +881,19 @@ export function applicationStatusEmail(p: { applicantName: string; applicationNu
     <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${desc}</p></td></tr>`;
 
   const a = C.ap, r = C.rj;
-  const body = approved
-    ? `${P(C.greet)}${P(a.intro)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 20px;">${a.next}</p>
+  const ctaLabel = { tw: '完成報名 · 開通帳號', cn: '完成报名 · 开通账号', en: 'Complete onboarding' }[L];
+  const ctaIntro = { tw: '請點下方完成報名,確認合作條款後即開通帳號、正式進入人才庫:', cn: '请点下方完成报名,确认合作条款后即开通账号、正式进入人才库:', en: 'Click below to complete onboarding — confirm the cooperation terms and your profile goes live on the roster:' }[L];
+  const approvedBody = p.onboardUrl
+    ? `${P(C.greet)}${P(a.intro)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 4px;">${ctaIntro}</p>${ctaRow(ctaLabel, p.onboardUrl, BRAND_GREEN)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${a.outro}</p>`
+    : `${P(C.greet)}${P(a.intro)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 20px;">${a.next}</p>
        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
          ${stepCard('#10b981', a.s1t, a.s1d)}
          <tr><td style="height:8px;"></td></tr>
          ${stepCard('#3b82f6', a.s2t, a.s2d)}
        </table>
-       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${a.outro}</p>`
+       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${a.outro}</p>`;
+  const body = approved
+    ? approvedBody
     : `${P(C.greet)}${P(r.l1)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${r.l2}</p>`;
 
   const meta = approved ? a : r;

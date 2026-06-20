@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/mail';
 import { applicationStatusEmail } from '@/lib/mail-templates';
+import { signOnboardToken } from '@/lib/onboard-token';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import {
   getSupabaseServiceClient,
@@ -83,11 +84,18 @@ export async function PATCH(request: NextRequest) {
         .single();
 
       if (application?.email) {
+        // Approval email carries a token onboarding link (keyed on the
+        // application id; the talent row created below carries application_id).
+        const locPrefix = application.locale && application.locale !== 'en' ? `/${application.locale}` : '';
+        const onboardUrl = updateData.status === 'approved'
+          ? `https://www.onyxstudios.ai${locPrefix}/onboard?t=${signOnboardToken(id)}`
+          : undefined;
         const { subject, html } = applicationStatusEmail({
           applicantName: application.full_name || 'Applicant',
           applicationNumber: application.application_number || id,
           status: updateData.status as 'approved' | 'rejected',
           locale: application.locale,
+          onboardUrl,
         });
         await sendEmail({ category: 'HELLO', to: application.email, subject, html });
       }
