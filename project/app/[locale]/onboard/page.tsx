@@ -22,7 +22,8 @@ function OnboardInner() {
 
   const [state, setState] = useState<'loading' | 'invalid' | 'ready' | 'done'>('loading');
   const [name, setName] = useState('');
-  const [agree, setAgree] = useState(false);
+  const [agreeList, setAgreeList] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,7 +44,7 @@ function OnboardInner() {
     try {
       const r = await fetch('/api/talents/onboard', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, agree }),
+        body: JSON.stringify({ token, agree: agreeList && agreeTerms }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || tx('開通失敗,請重試', '开通失败,请重试', 'Activation failed — please try again'));
@@ -100,16 +101,22 @@ function OnboardInner() {
         </ul>
       </div>
 
-      <div onClick={() => setAgree(!agree)} className="flex gap-2.5 text-sm text-gray-300 mb-5 cursor-pointer">
-        <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${agree ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{agree && <Check className="w-3.5 h-3.5 text-black" />}</div>
+      <div onClick={() => setAgreeList(!agreeList)} className="flex gap-2.5 text-sm text-gray-300 mb-3 cursor-pointer">
+        <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${agreeList ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{agreeList && <Check className="w-3.5 h-3.5 text-black" />}</div>
+        <span>{tx('我同意 Onyx 將我的個人檔案與 demo 上架、展示於平台,並依上述合作條款合作。', '我同意 Onyx 将我的个人档案与 demo 上架、展示于平台,并依上述合作条款合作。', 'I agree that Onyx may list and display my profile and demos on the platform, on the cooperation terms above.')}</span>
+      </div>
+      <div onClick={() => setAgreeTerms(!agreeTerms)} className="flex gap-2.5 text-sm text-gray-300 mb-5 cursor-pointer">
+        <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${agreeTerms ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{agreeTerms && <Check className="w-3.5 h-3.5 text-black" />}</div>
         <span onClick={(e) => e.stopPropagation()}>
-          {tx('本人已閱讀並同意上述合作條款與 ', '本人已阅读并同意上述合作条款与 ', 'I have read and agree to the cooperation terms and ')}
-          <a href={`/${locale}/legal/terms`} target="_blank" className="text-amber-300 underline">{tx('平台條款', '平台条款', 'Platform Terms')}</a>。
+          {tx('我已閱讀並同意 ', '我已阅读并同意 ', 'I have read and agree to the ')}
+          <a href={`/${locale}/legal/terms`} target="_blank" className="text-amber-300 underline">{tx('服務條款', '服务条款', 'Terms of Service')}</a>
+          {tx(' 與 ', ' 与 ', ' and ')}
+          <a href={`/${locale}/legal/privacy`} target="_blank" className="text-amber-300 underline">{tx('隱私政策', '隐私政策', 'Privacy Policy')}</a>。
         </span>
       </div>
 
       {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
-      <button type="button" disabled={!agree || submitting} onClick={submit}
+      <button type="button" disabled={!agreeList || !agreeTerms || submitting} onClick={submit}
         className="w-full py-3 rounded-xl bg-amber-500 text-black font-medium flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
         <Check className="w-4 h-4" /> {submitting ? tx('開通中…', '开通中…', 'Activating…') : tx('確認並開通帳號', '确认并开通账号', 'Confirm & activate')}
       </button>
