@@ -24,6 +24,17 @@ interface Application {
   email: string;
   phone: string;
   country: string;
+  // /apply/talent (new form) fields
+  display_name?: string;
+  messaging_contacts?: { line?: string; whatsapp?: string; telegram?: string };
+  coop_accept_jobs?: boolean;
+  coop_open_buyout?: boolean;
+  coop_ai_clone?: boolean;
+  coop_ai_training?: boolean;
+  coop_proofread?: boolean;
+  low_price_data_optin?: boolean;
+  excluded_countries?: string[];
+  locale?: string;
   languages: string[];
   gender: string;
   age_range: string;
@@ -235,6 +246,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-gray-900">{app.full_name}</p>
             <span className="text-xs text-gray-500 font-mono">{app.application_number}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${app.locale ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>{app.locale ? '配音員報名' : 'AI / 語音'}</span>
           </div>
           <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-600 flex-wrap">
             <span>{app.email}</span>
@@ -361,6 +373,25 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   <div><span className="text-gray-500">Environment: </span><span className="text-gray-900">{app.recording_environment}</span></div>
                 </div>
               </div>
+
+              {/* 配音員報名表（新表單 /apply/talent)專屬欄位 */}
+              {app.locale && (
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5" /> 配音員報名表（新)
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {app.display_name && <div><span className="text-gray-500">顯示名稱(公開): </span><span className="text-gray-900">{app.display_name}</span></div>}
+                    {app.messaging_contacts && (app.messaging_contacts.line || app.messaging_contacts.whatsapp || app.messaging_contacts.telegram) && (
+                      <div><span className="text-gray-500">通訊軟體: </span><span className="text-gray-900">{[app.messaging_contacts.line && `Line: ${app.messaging_contacts.line}`, app.messaging_contacts.whatsapp && `WhatsApp: ${app.messaging_contacts.whatsapp}`, app.messaging_contacts.telegram && `Telegram: ${app.messaging_contacts.telegram}`].filter(Boolean).join(' · ')}</span></div>
+                    )}
+                    <div><span className="text-gray-500">合作意願: </span><span className="text-gray-900">{[app.coop_accept_jobs && '接案配音', app.coop_open_buyout && '開放買斷', app.coop_ai_clone && 'AI複製(會用聲音)', app.coop_ai_training && 'AI訓練(不用聲音)', app.coop_proofread && '語音校對'].filter(Boolean).join('、') || '—'}</span></div>
+                    <div><span className="text-gray-500">低價數據採集案: </span><span className="text-gray-900">{app.low_price_data_optin ? '願意收資訊' : '否'}</span></div>
+                    {app.excluded_countries && app.excluded_countries.length > 0 && <div><span className="text-gray-500">不接案國家: </span><span className="text-gray-900">{app.excluded_countries.join('、')}</span></div>}
+                    <div><span className="text-gray-500">表單語言: </span><span className="text-gray-900">{app.locale}</span></div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right Column */}

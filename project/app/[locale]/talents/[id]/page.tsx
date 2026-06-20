@@ -50,13 +50,15 @@ export default function TalentProfile() {
   // bio may be a plain string, a JSON-encoded {en,zh-TW,zh-CN} string, or an object
   const bioText = (() => {
     if (!t?.bio) return '';
-    let b: string | Record<string, string> = t.bio;
-    if (typeof b === 'string') {
-      const s = b.trim();
-      if (!s.startsWith('{')) return b;
-      try { b = JSON.parse(s); } catch { return b; }
+    let obj: Record<string, string>;
+    if (typeof t.bio === 'string') {
+      const s = t.bio.trim();
+      if (!s.startsWith('{')) return t.bio;
+      try { obj = JSON.parse(s) as Record<string, string>; } catch { return t.bio; }
+    } else {
+      obj = t.bio as Record<string, string>;
     }
-    return b[locale] || b['en'] || Object.values(b)[0] || '';
+    return obj[locale] || obj['en'] || Object.values(obj)[0] || '';
   })();
 
   const demos = t?.demo_urls?.length ? t.demo_urls : t?.sample_url ? [{ url: t.sample_url }] : [];
