@@ -320,7 +320,7 @@ export default function TalentApply() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="max-w-2xl mx-auto px-4 py-12">
+      <div className="max-w-2xl mx-auto px-4 pt-28 pb-12">
         <p className="text-xs tracking-widest text-gray-400 mb-1">{tx('ONYX · 配音員報名', 'ONYX · 配音员报名', 'ONYX · Voice Talent Application')}</p>
         <h1 className="text-2xl font-bold mb-1">{tx('歡迎加入 Onyx 配音陣容', '欢迎加入 Onyx 配音阵容', 'Join the Onyx voice roster')}</h1>
         <p className="text-sm text-gray-400 mb-8">{tx('填好基本資料就能開始接案,約 2 分鐘。', '填好基本资料就能开始接案,约 2 分钟。', 'Fill in the basics and you can start taking work — about 2 minutes.')}</p>
