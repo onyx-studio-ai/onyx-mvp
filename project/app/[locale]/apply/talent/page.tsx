@@ -136,10 +136,10 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-function Label({ children, hint }: { children: React.ReactNode; hint?: string }) {
+function Label({ children, hint, req }: { children: React.ReactNode; hint?: string; req?: boolean }) {
   return (
     <label className="block text-sm text-gray-200 mb-1">
-      {children} {hint && <span className="text-xs text-gray-500">{hint}</span>}
+      {children}{req && <span className="text-red-400 ml-0.5">＊</span>} {hint && <span className="text-xs text-gray-500">{hint}</span>}
     </label>
   );
 }
@@ -238,8 +238,11 @@ export default function TalentApply() {
 
   const handleSubmit = async () => {
     setError('');
-    if (!form.full_name || !form.email) { setError(tx('請填寫真實姓名與 Email', '请填写真实姓名与 Email', 'Please fill in your legal name and email')); setStep(0); return; }
+    if (!form.display_name || !form.full_name || !form.email) { setError(tx('請填寫顯示名稱、真實姓名與 Email', '请填写显示名称、真实姓名与 Email', 'Please fill in your display name, legal name and email')); setStep(0); return; }
     if (!emailVerified) { setError(tx('請先驗證 Email', '请先验证 Email', 'Please verify your email first')); setStep(0); return; }
+    if (langs.length === 0) { setError(tx('「可配語言與口音」請至少選 1 項', '「可配语言与口音」请至少选 1 项', 'Please select at least one language / accent')); setStep(1); return; }
+    if (cats.length === 0) { setError(tx('「能接的案件類型」請至少選 1 項', '「能接的案件类型」请至少选 1 项', 'Please select at least one job type')); setStep(1); return; }
+    if (!Object.values(coop).some(Boolean)) { setError(tx('「合作意願」請至少選 1 項', '「合作意愿」请至少选 1 项', 'Please select at least one way to collaborate')); setStep(3); return; }
     if (!agreeOwn || !agreeTerms) { setError(tx('請勾選下方兩項聲明與同意', '请勾选下方两项声明与同意', 'Please tick both statements below')); return; }
     setSubmitting(true);
     try {
@@ -324,7 +327,8 @@ export default function TalentApply() {
       <div className="max-w-2xl mx-auto px-4 pt-28 pb-12">
         <p className="text-xs tracking-widest text-gray-400 mb-1">{tx('ONYX · 配音員報名', 'ONYX · 配音员报名', 'ONYX · Voice Talent Application')}</p>
         <h1 className="text-2xl font-bold mb-1">{tx('歡迎加入 Onyx 配音陣容', '欢迎加入 Onyx 配音阵容', 'Join the Onyx voice roster')}</h1>
-        <p className="text-sm text-gray-400 mb-8">{tx('請完整填寫以下資料,約需 2 分鐘。', '请完整填写以下资料,约需 2 分钟。', 'Please complete the form below — it takes about 2 minutes.')}</p>
+        <p className="text-sm text-gray-400 mb-1">{tx('請完整填寫以下資料,約需 2 分鐘。', '请完整填写以下资料,约需 2 分钟。', 'Please complete the form below — it takes about 2 minutes.')}</p>
+        <p className="text-xs text-gray-500 mb-8">{tx('標示 ＊ 為必填項目,其餘皆為選填。', '标示 ＊ 为必填项目,其余皆为选填。', 'Fields marked ＊ are required; all others are optional.')}</p>
 
         <div className="flex gap-1.5 mb-8">
           {STEPS.map((s, i) => (
@@ -341,11 +345,11 @@ export default function TalentApply() {
           {step === 0 && (
             <div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label hint={tx('公開', '公开', 'Public')}>{tx('顯示名稱', '显示名称', 'Display name')}</Label><input className={inputCls} value={form.display_name} onChange={(e) => set('display_name', e.target.value)} placeholder={tx('客戶端顯示的名稱', '客户端显示的名称', 'Shown to clients')} /></div>
-                <div><Label hint={tx('不公開', '不公开', 'Private')}>{tx('真實姓名', '真实姓名', 'Legal name')}</Label><input className={inputCls} value={form.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder={tx('合約/付款用', '合约/付款用', 'For contracts & payment')} /></div>
+                <div><Label req hint={tx('公開', '公开', 'Public')}>{tx('顯示名稱', '显示名称', 'Display name')}</Label><input className={inputCls} value={form.display_name} onChange={(e) => set('display_name', e.target.value)} placeholder={tx('客戶端顯示的名稱', '客户端显示的名称', 'Shown to clients')} /></div>
+                <div><Label req hint={tx('不公開', '不公开', 'Private')}>{tx('真實姓名', '真实姓名', 'Legal name')}</Label><input className={inputCls} value={form.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder={tx('合約/付款用', '合约/付款用', 'For contracts & payment')} /></div>
               </div>
               <div className="mt-4">
-                <Label>Email {emailVerified && <span className="text-emerald-400 text-xs">✓ {tx('已驗證', '已验证', 'Verified')}</span>}</Label>
+                <Label req>Email {emailVerified && <span className="text-emerald-400 text-xs">✓ {tx('已驗證', '已验证', 'Verified')}</span>}</Label>
                 <div className="flex gap-2">
                   <input className={inputCls} type="email" value={form.email} onChange={(e) => onEmailChange(e.target.value)} disabled={emailVerified} placeholder={tx('案件通知將寄送至此', '案件通知将寄送至此', 'Job notifications are sent here')} />
                   {!emailVerified && (
@@ -395,7 +399,7 @@ export default function TalentApply() {
                 </div>
               </div>
               <div className="mt-4">
-                <Label hint={tx('打字搜尋,沒有的可新增', '打字搜寻,没有的可新增', 'Search; add your own if missing')}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</Label>
+                <Label req hint={tx('至少 1 項;可搜尋或自訂', '至少 1 项;可搜寻或自订', 'At least 1; search or add your own')}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</Label>
                 <div className="mb-2">{langs.map((v) => (<Chip key={v} active onClick={() => setLangs(langs.filter((x) => x !== v))}>{langLabel(v)} <X className="w-3 h-3" /></Chip>))}</div>
                 <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx('搜尋語言或口音…', '搜寻语言或口音…', 'Search a language or accent…')} />
                 {trimmed && (
@@ -406,7 +410,7 @@ export default function TalentApply() {
                   </div>
                 )}
               </div>
-              <div className="mt-4"><Label hint={tx('可多選', '可多选', 'Multi-select')}>{tx('能接的案件類型', '能接的案件类型', 'Job types you take')}</Label><div>{CATEGORIES.map((c) => <Chip key={c.v} active={cats.includes(c.v)} onClick={() => toggleIn(cats, setCats, c.v)}>{lbl(c)}</Chip>)}</div></div>
+              <div className="mt-4"><Label req hint={tx('至少 1 項,可複選', '至少 1 项,可复选', 'At least 1; multi-select')}>{tx('能接的案件類型', '能接的案件类型', 'Job types you take')}</Label><div>{CATEGORIES.map((c) => <Chip key={c.v} active={cats.includes(c.v)} onClick={() => toggleIn(cats, setCats, c.v)}>{lbl(c)}</Chip>)}</div></div>
               <div className="mt-4">
                 <Label hint={tx('複選,可自填', '复选,可自填', 'Multi-select; add your own')}>{tx('聲音給人的感覺', '声音给人的感觉', 'How your voice feels')}</Label>
                 <div>
@@ -433,7 +437,7 @@ export default function TalentApply() {
           {step === 3 && (
             <div>
               <p className="text-sm text-gray-300 mb-1">{tx('您希望以哪些方式與我們合作?', '您希望以哪些方式与我们合作?', 'In what ways would you like to work with us?')}</p>
-              <p className="text-xs text-gray-500 mb-4">{tx('可複選,亦可僅擇一;完全自願。', '可复选,亦可仅择一;完全自愿。', 'Select any, all, or none — entirely optional.')}</p>
+              <p className="text-xs text-gray-500 mb-4">{tx('請至少選擇一項,可複選。', '请至少选择一项,可复选。', 'Select at least one; you may choose several.')}</p>
               {COOP.map((c) => {
                 const on = (coop as Record<string, boolean>)[c.key];
                 const t = c[L];

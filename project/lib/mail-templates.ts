@@ -295,7 +295,7 @@ export function orderConfirmationEmail(p: OrderConfirmationPayload): { subject: 
   ];
   const stepsMusic = [
     'Music production begins immediately with our in-house team',
-    'Estimated delivery within 7\u201314 business days',
+    'Estimated delivery within 7–14 business days',
     'High-quality audio files ready for download in your dashboard',
   ];
   const stepsOrchestra = [
@@ -322,7 +322,7 @@ export function orderConfirmationEmail(p: OrderConfirmationPayload): { subject: 
       <td style="background:linear-gradient(135deg,rgba(74,222,128,0.05) 0%,rgba(34,197,94,0.1) 100%);border:1px solid rgba(74,222,128,0.2);border-radius:16px;padding:28px 32px;">
         <p style="margin:0 0 4px;color:${BRAND_GREEN};font-size:16px;font-weight:700;">Access Your Dashboard</p>
         <p style="margin:0 0 20px;color:#9ca3af;font-size:14px;line-height:1.6;">
-          Click the button below to access your personal dashboard. Track your order progress, download deliverables, and manage your account \u2014 all in one place.
+          Click the button below to access your personal dashboard. Track your order progress, download deliverables, and manage your account — all in one place.
         </p>
         ${ctaButton('Go to My Dashboard', p.dashboardLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}
         <p style="margin:16px 0 0;color:#6b7280;font-size:12px;">This link is valid for 24 hours. You can set your own password from your dashboard settings.</p>
@@ -340,7 +340,7 @@ export function orderConfirmationEmail(p: OrderConfirmationPayload): { subject: 
   const accent = p.orderType === 'orchestra' ? BRAND_AMBER : BRAND_GREEN;
 
   return {
-    subject: `Your Onyx Studios ${typeLabel} Order Is Confirmed \u2014 #${p.orderNumber}`,
+    subject: `Your Onyx Studios ${typeLabel} Order Is Confirmed — #${p.orderNumber}`,
     html: baseLayout(content, brandName, accent, locale),
   };
 }
@@ -394,7 +394,7 @@ export function paymentReceiptEmail(p: PaymentReceiptPayload): { subject: string
     `)}`;
 
   return {
-    subject: `Onyx Studios \u2014 Payment Receipt #${p.orderNumber}`,
+    subject: `Onyx Studios — Payment Receipt #${p.orderNumber}`,
     html: baseLayout(content),
   };
 }
@@ -444,18 +444,18 @@ export function musicWorkflowEmail(p: MusicWorkflowPayload): { subject: string; 
       cta: 'Track Progress',
     },
     demos_ready: {
-      subject: `Your Demo Sketches Are Ready \u2014 #${orderNumber}`,
+      subject: `Your Demo Sketches Are Ready — #${orderNumber}`,
       headline: 'Your Demos Are Ready to Review',
       sub: 'We have prepared multiple creative directions for your project.',
       accent: '#3b82f6',
       body: `
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Our producers have crafted several demo sketches for your consideration. Head to your dashboard to listen to each option and select the creative direction you would like us to develop further.</p>
-        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">For each demo, you can leave time-stamped feedback \u2014 highlight sections you love, flag areas for adjustment, and ask questions. This ensures our producers deliver exactly what you envision.</p>
+        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">For each demo, you can leave time-stamped feedback — highlight sections you love, flag areas for adjustment, and ask questions. This ensures our producers deliver exactly what you envision.</p>
         ${extraMessage ? `<p style="color:#9ca3af;font-size:14px;font-style:italic;margin:0;">${extraMessage}</p>` : ''}`,
       cta: 'Review My Demos',
     },
     client_feedback_received: {
-      subject: `Client Feedback Received \u2014 Order #${orderNumber}`,
+      subject: `Client Feedback Received — Order #${orderNumber}`,
       headline: 'Client Has Submitted Feedback',
       sub: 'Review their annotations and begin production.',
       accent: '#f59e0b',
@@ -463,7 +463,7 @@ export function musicWorkflowEmail(p: MusicWorkflowPayload): { subject: string; 
       cta: 'View Order in Admin',
     },
     direction_confirmed: {
-      subject: `Client Confirmed Direction \u2014 Music Order #${orderNumber}`,
+      subject: `Client Confirmed Direction — Music Order #${orderNumber}`,
       headline: 'Direction Confirmed',
       sub: 'The client has locked in their creative direction.',
       accent: BRAND_GREEN,
@@ -471,7 +471,7 @@ export function musicWorkflowEmail(p: MusicWorkflowPayload): { subject: string; 
       cta: 'Begin Full Production',
     },
     version_confirmed: {
-      subject: `Client Confirmed Version \u2014 Music Order #${orderNumber}`,
+      subject: `Client Confirmed Version — Music Order #${orderNumber}`,
       headline: 'Version Confirmed by Client',
       sub: 'The client has approved this version for final delivery.',
       accent: BRAND_GREEN,
@@ -479,7 +479,7 @@ export function musicWorkflowEmail(p: MusicWorkflowPayload): { subject: string; 
       cta: 'Prepare Final Files',
     },
     changes_requested: {
-      subject: `Revision Requested \u2014 Music Order #${orderNumber}`,
+      subject: `Revision Requested — Music Order #${orderNumber}`,
       headline: 'Client Requested Changes',
       sub: 'The client has submitted a revision request.',
       accent: BRAND_AMBER,
@@ -487,13 +487,13 @@ export function musicWorkflowEmail(p: MusicWorkflowPayload): { subject: string; 
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">The client has requested changes to the current version for Music order #${orderNumber}.</p>
         ${extraMessage ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 18px;margin:0 0 16px;">
           <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;">Client Revision Notes</p>
-          <p style="margin:0;font-size:14px;color:#d1d5db;font-style:italic;">\u201C${extraMessage.substring(0, 500)}${extraMessage.length >= 500 ? '\u2026' : ''}\u201D</p>
+          <p style="margin:0;font-size:14px;color:#d1d5db;font-style:italic;">“${extraMessage.substring(0, 500)}${extraMessage.length >= 500 ? '…' : ''}”</p>
         </div>` : ''}
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">Please review the feedback and upload a revised version at your earliest convenience.</p>`,
       cta: 'View in Admin Panel',
     },
     revision_ready: {
-      subject: `Revision Update Ready \u2014 #${orderNumber}`,
+      subject: `Revision Update Ready — #${orderNumber}`,
       headline: 'Your Revision Is Ready',
       sub: 'We have incorporated the changes you requested.',
       accent: '#06b6d4',
@@ -507,17 +507,17 @@ export function musicWorkflowEmail(p: MusicWorkflowPayload): { subject: string; 
       cta: 'Listen to Updated Track',
     },
     final_ready: {
-      subject: `Your Final Track Is Ready \u2014 #${orderNumber}`,
+      subject: `Your Final Track Is Ready — #${orderNumber}`,
       headline: 'Your Music Is Complete',
       sub: 'Download your final high-quality files now.',
       accent: BRAND_GREEN,
       body: `
-        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Excellent news \u2014 your music production is complete. Your final high-quality audio files are ready for download in your dashboard.</p>
+        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Excellent news — your music production is complete. Your final high-quality audio files are ready for download in your dashboard.</p>
         ${extraMessage ? `<p style="color:#9ca3af;font-size:14px;font-style:italic;margin:0;">${extraMessage}</p>` : ''}`,
       cta: 'Download My Files',
     },
     order_complete: {
-      subject: `Order Complete \u2014 #${orderNumber}`,
+      subject: `Order Complete — #${orderNumber}`,
       headline: 'Order Complete',
       sub: 'Thank you for choosing Onyx Studios.',
       accent: BRAND_GREEN,
@@ -557,7 +557,7 @@ export function stringsWorkflowEmail(p: StringsWorkflowPayload): { subject: stri
 
   const configs: Record<StringsNotificationType, { subject: string; headline: string; sub: string; accent: string; body: string; cta: string }> = {
     order_confirmed: {
-      subject: `Your Live Strings Order Is Confirmed \u2014 #${orderNumber}`,
+      subject: `Your Live Strings Order Is Confirmed — #${orderNumber}`,
       headline: 'Order Confirmed',
       sub: 'Please upload your MIDI or score file to get started.',
       accent: BRAND_AMBER,
@@ -567,7 +567,7 @@ export function stringsWorkflowEmail(p: StringsWorkflowPayload): { subject: stri
       cta: 'Upload Your Files',
     },
     files_uploaded: {
-      subject: `Client Uploaded Files \u2014 Strings Order #${orderNumber}`,
+      subject: `Client Uploaded Files — Strings Order #${orderNumber}`,
       headline: 'Client Files Received',
       sub: 'A client has uploaded their MIDI/score for review.',
       accent: '#3b82f6',
@@ -575,25 +575,25 @@ export function stringsWorkflowEmail(p: StringsWorkflowPayload): { subject: stri
       cta: 'Review in Admin Panel',
     },
     new_message: {
-      subject: `New Message \u2014 Strings Order #${orderNumber}`,
+      subject: `New Message — Strings Order #${orderNumber}`,
       headline: 'New Message Received',
       sub: `${senderRole === 'admin' ? 'The ONYX team' : 'Your client'} sent a message.`,
       accent: '#8b5cf6',
       body: `
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">You have a new message regarding Strings order #${orderNumber}:</p>
         ${messagePreview ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 18px;margin:0 0 16px;">
-          <p style="margin:0;font-size:14px;color:#d1d5db;font-style:italic;">\u201C${messagePreview.substring(0, 200)}${messagePreview.length >= 200 ? '\u2026' : ''}\u201D</p>
+          <p style="margin:0;font-size:14px;color:#d1d5db;font-style:italic;">“${messagePreview.substring(0, 200)}${messagePreview.length >= 200 ? '…' : ''}”</p>
         </div>` : ''}
         <p style="color:#9ca3af;font-size:14px;margin:0;">Head to your dashboard to view the full message and reply.</p>`,
       cta: 'View Message',
     },
     production_started: {
-      subject: `Recording Has Begun \u2014 #${orderNumber}`,
+      subject: `Recording Has Begun — #${orderNumber}`,
       headline: 'Production Started',
       sub: 'Your live string recording is now in production.',
       accent: '#f97316',
       body: `
-        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Great news \u2014 our conservatory musicians have begun recording your piece for order #${orderNumber}.</p>
+        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Great news — our conservatory musicians have begun recording your piece for order #${orderNumber}.</p>
         ${estimatedDate ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 18px;margin:0 0 16px;">
           <p style="margin:0;font-size:13px;color:#9ca3af;">Estimated Delivery</p>
           <p style="margin:4px 0 0;font-size:16px;color:${BRAND_AMBER};font-weight:700;">${estimatedDate}</p>
@@ -602,7 +602,7 @@ export function stringsWorkflowEmail(p: StringsWorkflowPayload): { subject: stri
       cta: 'Track Progress',
     },
     delivery_ready: {
-      subject: `Your Stems Are Ready \u2014 #${orderNumber}`,
+      subject: `Your Stems Are Ready — #${orderNumber}`,
       headline: 'Delivery Ready',
       sub: 'Your recorded stems and files are ready for download.',
       accent: BRAND_GREEN,
@@ -612,7 +612,7 @@ export function stringsWorkflowEmail(p: StringsWorkflowPayload): { subject: stri
       cta: 'Download Files',
     },
     delivery_accepted: {
-      subject: `Delivery Accepted \u2014 Strings Order #${orderNumber}`,
+      subject: `Delivery Accepted — Strings Order #${orderNumber}`,
       headline: 'Client Accepted Delivery',
       sub: 'The order has been marked as complete.',
       accent: BRAND_GREEN,
@@ -620,7 +620,7 @@ export function stringsWorkflowEmail(p: StringsWorkflowPayload): { subject: stri
       cta: 'View in Admin Panel',
     },
     auto_complete_warning: {
-      subject: `Action Required \u2014 Strings Order #${orderNumber}`,
+      subject: `Action Required — Strings Order #${orderNumber}`,
       headline: 'Please Review Your Delivery',
       sub: 'Your order will auto-close soon if no action is taken.',
       accent: BRAND_AMBER,
@@ -663,7 +663,7 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
 
   const configs: Record<VoiceNotificationType, { subject: string; headline: string; sub: string; accent: string; body: string; cta: string }> = {
     version_delivered: {
-      subject: `Your Voiceover Is Ready for Review \u2014 #${orderNumber}`,
+      subject: `Your Voiceover Is Ready for Review — #${orderNumber}`,
       headline: `Version ${versionNumber} Ready`,
       sub: 'Your voiceover has been delivered for your review.',
       accent: '#06b6d4',
@@ -673,7 +673,7 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
       cta: 'Review Voiceover',
     },
     version_approved: {
-      subject: `Client Approved Version \u2014 Voice Order #${orderNumber}`,
+      subject: `Client Approved Version — Voice Order #${orderNumber}`,
       headline: 'Client Approved',
       sub: `Version ${versionNumber} has been approved by the client.`,
       accent: BRAND_GREEN,
@@ -681,7 +681,7 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
       cta: 'Prepare Final Files',
     },
     revision_requested: {
-      subject: `Revision Requested \u2014 Voice Order #${orderNumber}`,
+      subject: `Revision Requested — Voice Order #${orderNumber}`,
       headline: 'Revision Requested',
       sub: 'The client has requested changes to the current version.',
       accent: BRAND_AMBER,
@@ -689,13 +689,13 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">The client has requested a revision for Voice order #${orderNumber}.</p>
         ${clientFeedback ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 18px;margin:0 0 16px;">
           <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;">Client Feedback</p>
-          <p style="margin:0;font-size:14px;color:#d1d5db;font-style:italic;">\u201C${clientFeedback.substring(0, 500)}${clientFeedback.length >= 500 ? '\u2026' : ''}\u201D</p>
+          <p style="margin:0;font-size:14px;color:#d1d5db;font-style:italic;">“${clientFeedback.substring(0, 500)}${clientFeedback.length >= 500 ? '…' : ''}”</p>
         </div>` : ''}
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">Please review the feedback and upload a revised version at your earliest convenience.</p>`,
       cta: 'View in Admin Panel',
     },
     final_ready: {
-      subject: `Your Final Voiceover Is Ready \u2014 #${orderNumber}`,
+      subject: `Your Final Voiceover Is Ready — #${orderNumber}`,
       headline: 'Your Voiceover Is Complete',
       sub: 'Download your final high-quality audio files.',
       accent: BRAND_GREEN,
@@ -703,7 +703,7 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
       cta: 'Download Files',
     },
     order_complete: {
-      subject: `Order Complete \u2014 #${orderNumber}`,
+      subject: `Order Complete — #${orderNumber}`,
       headline: 'Order Complete',
       sub: 'Thank you for choosing Onyx Studios.',
       accent: BRAND_GREEN,
@@ -741,7 +741,7 @@ export function applicationReceivedEmail(p: { applicantName: string; application
       greeting: `${name ? name + ' ' : ''}您好:`,
       paras: [
         `謝謝您撥空填寫報名資料,也很高興您有興趣加入 Onyx 的配音陣容。`,
-        `您的報名我們已經收到,會仔細看過。若有需要補充的地方,我們會再與您聯繫;條件合適的話,也會主動通知您後續的安排。`,
+        `您的報名我們已經收到,將進行審核。若有需要補充的地方,我們會再與您聯繫;審核通過後,會主動通知您並說明後續的合作方式。`,
         `您的報名編號是 <strong style="color:#ffffff;">#${n}</strong>,再麻煩您留存。`,
         `再次謝謝您撥冗,期待有機會與您合作。`,
       ],
@@ -754,7 +754,7 @@ export function applicationReceivedEmail(p: { applicantName: string; application
       greeting: `${name ? name + ' ' : ''}您好:`,
       paras: [
         `您的配音员报名我们已收到,感谢您抽空填写。`,
-        `我们会认真评估。如需补充信息,会与您联系;若合适,将主动通知您后续的安排。`,
+        `我们会认真审核。如需补充资料,会再与您联系;审核通过后,会主动通知您并说明后续的合作方式。`,
         `报名编号:<strong style="color:#ffffff;">#${n}</strong>,请留存。`,
         `再次感谢,期待与您合作。`,
       ],
@@ -767,7 +767,7 @@ export function applicationReceivedEmail(p: { applicantName: string; application
       greeting: `Dear ${name || 'Applicant'},`,
       paras: [
         `Thank you for submitting your application to join the Onyx Studios voice roster. We appreciate your interest and the time you've taken to share your details.`,
-        `We have received your submission and will review it carefully. Should we need any further information, we'll be in touch — and if your profile is a fit, we'll reach out about next steps.`,
+        `We have received your submission and will review it carefully. If we need any further information, we will be in touch; once your application is approved, we will contact you and explain how to proceed.`,
         `Your reference number is <strong style="color:#ffffff;">#${n}</strong> — please keep it for your records.`,
         `Thank you again for your time and interest.`,
       ],
@@ -796,7 +796,7 @@ export function applicationTeamNotifyEmail(p: { applicantName: string; applicati
     ${ctaRow('Review Application', `${SITE_URL}/admin/applications`, '#3b82f6')}`;
 
   return {
-    subject: `New Talent Application \u2014 ${p.applicantName} (#${p.applicationNumber})`,
+    subject: `New Talent Application — ${p.applicantName} (#${p.applicationNumber})`,
     html: baseLayout(content),
   };
 }
