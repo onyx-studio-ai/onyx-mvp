@@ -356,18 +356,25 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   <Settings className="w-3.5 h-3.5" /> Technical Setup
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Home Studio:</span>
-                    <span className={app.has_home_studio ? 'text-green-700' : 'text-red-700'}>
-                      {app.has_home_studio ? 'Yes' : 'No'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Dry Audio:</span>
-                    <span className={app.can_deliver_dry_audio ? 'text-green-700' : 'text-red-700'}>
-                      {app.can_deliver_dry_audio ? 'Yes' : 'No'}
-                    </span>
-                  </div>
+                  {/* Home Studio / Dry Audio are only asked on the old /apply/voice form.
+                      The new talent form (has locale) doesn't collect them, so they'd show
+                      misleading DB defaults — hide them there; rely on Environment instead. */}
+                  {!app.locale && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">Home Studio:</span>
+                        <span className={app.has_home_studio ? 'text-green-700' : 'text-red-700'}>
+                          {app.has_home_studio ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">Dry Audio:</span>
+                        <span className={app.can_deliver_dry_audio ? 'text-green-700' : 'text-red-700'}>
+                          {app.can_deliver_dry_audio ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   {app.microphone_model && <div><span className="text-gray-500">Mic: </span><span className="text-gray-900">{app.microphone_model}</span></div>}
                   {app.daw_software && <div><span className="text-gray-500">DAW: </span><span className="text-gray-900">{app.daw_software}</span></div>}
                   <div><span className="text-gray-500">Environment: </span><span className="text-gray-900">{app.recording_environment}</span></div>
