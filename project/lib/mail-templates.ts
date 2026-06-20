@@ -725,19 +725,47 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
 // 6. Talent Application Emails (NEW)
 // ---------------------------------------------------------------------------
 
-export function applicationReceivedEmail(p: { applicantName: string; applicationNumber: string; email: string }): { subject: string; html: string } {
+export function applicationReceivedEmail(p: { applicantName: string; applicationNumber: string; email: string; locale?: string }): { subject: string; html: string } {
+  // Localized applicant-facing confirmation. Defaults to English so existing
+  // callers (e.g. /apply/voice) that pass no locale stay unchanged.
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
+  const name = p.applicantName || { tw: '\u914d\u97f3\u54e1', cn: '\u914d\u97f3\u5458', en: 'Applicant' }[L];
+  const t = {
+    tw: {
+      subject: `\u5831\u540d\u5df2\u6536\u5230 \u2014 Onyx Studios #${p.applicationNumber}`,
+      headline: '\u5831\u540d\u5df2\u6536\u5230', sub: '\u611f\u8b1d\u4f60\u7533\u8acb\u52a0\u5165 Onyx Studios\u3002',
+      card: `\u5831\u540d\u7de8\u865f #${p.applicationNumber}`,
+      l1: `\u89aa\u611b\u7684 ${name}:`,
+      l2: '\u6211\u5011\u5df2\u6536\u5230\u4f60\u7684\u914d\u97f3\u54e1\u5831\u540d,\u5718\u968a\u6b63\u5728\u5be9\u6838\u3002\u5be9\u6838\u5b8c\u6210\u5f8c\u6703\u4ee5 email \u901a\u77e5\u4f60\u3002',
+      l3: (n: string) => `\u4f60\u7684\u5831\u540d\u7de8\u865f\u70ba <strong style="color:#ffffff;">#${n}</strong>,\u8acb\u59a5\u5584\u4fdd\u5b58\u3002`,
+    },
+    cn: {
+      subject: `\u62a5\u540d\u5df2\u6536\u5230 \u2014 Onyx Studios #${p.applicationNumber}`,
+      headline: '\u62a5\u540d\u5df2\u6536\u5230', sub: '\u611f\u8c22\u4f60\u7533\u8bf7\u52a0\u5165 Onyx Studios\u3002',
+      card: `\u62a5\u540d\u7f16\u53f7 #${p.applicationNumber}`,
+      l1: `\u4eb2\u7231\u7684 ${name}:`,
+      l2: '\u6211\u4eec\u5df2\u6536\u5230\u4f60\u7684\u914d\u97f3\u5458\u62a5\u540d,\u56e2\u961f\u6b63\u5728\u5ba1\u6838\u3002\u5ba1\u6838\u5b8c\u6210\u540e\u4f1a\u4ee5 email \u901a\u77e5\u4f60\u3002',
+      l3: (n: string) => `\u4f60\u7684\u62a5\u540d\u7f16\u53f7\u4e3a <strong style="color:#ffffff;">#${n}</strong>,\u8bf7\u59a5\u5584\u4fdd\u5b58\u3002`,
+    },
+    en: {
+      subject: `Application Received \u2014 Onyx Studios #${p.applicationNumber}`,
+      headline: 'Application Received', sub: 'Thank you for your interest in joining Onyx Studios.',
+      card: `Application #${p.applicationNumber}`,
+      l1: `Dear ${name},`,
+      l2: 'We have received your talent application and our team is currently reviewing your submission. You will be notified by email once a decision has been made.',
+      l3: (n: string) => `Your reference number is <strong style="color:#ffffff;">#${n}</strong>. Please keep this for your records.`,
+    },
+  }[L];
+
   const content = `
-    ${headlineBlock('Application Received', 'Thank you for your interest in joining Onyx Studios.', BRAND_GREEN)}
-    ${bodyCard(`Application #${p.applicationNumber}`, `
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Dear ${p.applicantName || 'Applicant'},</p>
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">We have received your talent application and our team is currently reviewing your submission. You will be notified by email once a decision has been made.</p>
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">Your reference number is <strong style="color:#ffffff;">#${p.applicationNumber}</strong>. Please keep this for your records.</p>
+    ${headlineBlock(t.headline, t.sub, BRAND_GREEN)}
+    ${bodyCard(t.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t.l1}</p>
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t.l2}</p>
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${t.l3(p.applicationNumber)}</p>
     `)}`;
 
-  return {
-    subject: `Application Received \u2014 Onyx Studios #${p.applicationNumber}`,
-    html: baseLayout(content),
-  };
+  return { subject: t.subject, html: baseLayout(content) };
 }
 
 export function applicationTeamNotifyEmail(p: { applicantName: string; applicationNumber: string; email: string; category: string }): { subject: string; html: string } {

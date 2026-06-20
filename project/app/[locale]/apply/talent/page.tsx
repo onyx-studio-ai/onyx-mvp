@@ -1,0 +1,493 @@
+'use client';
+
+/*
+  Independent NEW talent-onboarding form — lives at /apply/talent and is its
+  OWN form (Wing's decision: SEPARATE from /apply/voice, never merged).
+  Tri-lingual (zh-TW / zh-CN / en-US) via the same useLocale()+tx() idiom as
+  app/[locale]/page.tsx. Option lists store ENGLISH canonical values (`v`) to
+  stay consistent with /apply/voice + filterable casting data; only the labels
+  are localized. Reuses /api/apply/upload-url + /api/apply/submit.
+  New DB columns (display_name, messaging_contacts, coop_*, low_price_data_optin,
+  excluded_countries, coop_proofread) come from migration 20260619000000.
+*/
+
+import { useState } from 'react';
+import { useLocale } from 'next-intl';
+import { Check, X, Plus, ArrowRight, Upload } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
+const STEPS = [
+  { tw: '基本資料', cn: '基本资料', en: 'Basics' },
+  { tw: '你的聲音', cn: '你的声音', en: 'Your voice' },
+  { tw: '錄音環境', cn: '录音环境', en: 'Recording' },
+  { tw: '合作意願', cn: '合作意愿', en: 'Collaboration' },
+  { tw: '作品', cn: '作品', en: 'Demo' },
+  { tw: '同意', cn: '同意', en: 'Consent' },
+];
+
+// `v` = English canonical stored in DB; tw/cn = localized labels (en falls back to v).
+const LANG_OPTIONS = [
+  { v: 'Chinese · Taiwan', tw: '中文 · 台灣', cn: '中文 · 台湾' },
+  { v: 'Cantonese · Hong Kong', tw: '中文 · 香港粵語', cn: '中文 · 香港粤语' },
+  { v: 'Mandarin · Mainland', tw: '中文 · 普通話 / 大陸', cn: '中文 · 普通话 / 大陆' },
+  { v: 'Mandarin · Malaysia', tw: '中文 · 馬來西亞', cn: '中文 · 马来西亚' },
+  { v: 'English · American', tw: '英文 · 美國', cn: '英文 · 美国' },
+  { v: 'English · British', tw: '英文 · 英國', cn: '英文 · 英国' },
+  { v: 'English · Australian', tw: '英文 · 澳洲', cn: '英文 · 澳洲' },
+  { v: 'English · Indian', tw: '英文 · 印度', cn: '英文 · 印度' },
+  { v: 'English · Singapore', tw: '英文 · 新加坡', cn: '英文 · 新加坡' },
+  { v: 'Japanese', tw: '日文', cn: '日文' },
+  { v: 'Korean', tw: '韓文', cn: '韩文' },
+  { v: 'Taiwanese Hokkien', tw: '台語', cn: '台语' },
+  { v: 'Hakka', tw: '客家話', cn: '客家话' },
+  { v: 'Vietnamese', tw: '越南文', cn: '越南文' },
+  { v: 'Indonesian', tw: '印尼文', cn: '印尼文' },
+  { v: 'Thai', tw: '泰文', cn: '泰文' },
+  { v: 'Malay', tw: '馬來文', cn: '马来文' },
+  { v: 'Spanish', tw: '西班牙文', cn: '西班牙文' },
+  { v: 'French · France', tw: '法文 · 法國', cn: '法文 · 法国' },
+  { v: 'French · Canadian', tw: '法文 · 加拿大', cn: '法文 · 加拿大' },
+  { v: 'German', tw: '德文', cn: '德文' },
+  { v: 'Russian', tw: '俄文', cn: '俄文' },
+  { v: 'Arabic', tw: '阿拉伯文', cn: '阿拉伯文' },
+  { v: 'Portuguese · Brazil', tw: '葡萄牙文 · 巴西', cn: '葡萄牙文 · 巴西' },
+];
+const CATEGORIES = [
+  { v: 'Commercial', tw: '廣告', cn: '广告' },
+  { v: 'Narration', tw: '旁白', cn: '旁白' },
+  { v: 'Audiobook', tw: '有聲書', cn: '有声书' },
+  { v: 'Corporate', tw: '工商簡介', cn: '工商简介' },
+  { v: 'E-Learning', tw: '教育教學', cn: '教育教学' },
+  { v: 'Documentary', tw: '紀錄片', cn: '纪录片' },
+  { v: 'TV', tw: '電視', cn: '电视' },
+  { v: 'Radio', tw: '廣播電台', cn: '广播电台' },
+  { v: 'Movie Trailer', tw: '電影預告', cn: '电影预告' },
+  { v: 'Web Video', tw: '網路影片', cn: '网络视频' },
+  { v: 'Podcast', tw: 'Podcast', cn: '播客' },
+  { v: 'IVR / Phone System', tw: '來電語音 / IVR', cn: '来电语音 / IVR' },
+  { v: 'Voice Assistant', tw: '語音助理', cn: '语音助理' },
+  { v: 'News', tw: '新聞播報', cn: '新闻播报' },
+  { v: 'Video Game', tw: '遊戲', cn: '游戏' },
+  { v: 'Animation / Character', tw: '動畫', cn: '动画' },
+  { v: 'Drama / Character', tw: '戲劇 · 角色配音', cn: '戏剧 · 角色配音' },
+  { v: 'Pop Singing', tw: '流行歌配唱', cn: '流行歌配唱' },
+  { v: 'Character Singing', tw: '角色配唱', cn: '角色配唱' },
+];
+const FEELS = [
+  { v: 'Warm', tw: '溫暖', cn: '温暖' },
+  { v: 'Calm', tw: '沉穩', cn: '沉稳' },
+  { v: 'Energetic', tw: '活潑', cn: '活泼' },
+  { v: 'Friendly', tw: '親切', cn: '亲切' },
+  { v: 'Smooth', tw: '磁性', cn: '磁性' },
+  { v: 'Authoritative', tw: '自信', cn: '自信' },
+  { v: 'Bright', tw: '年輕', cn: '年轻' },
+  { v: 'Deep', tw: '成熟', cn: '成熟' },
+];
+const ENVS = [
+  { v: 'Professional Studio', tw: '有專業錄音室', cn: '有专业录音棚', en: 'I have a professional studio' },
+  { v: 'Home Studio', tw: '有安靜的居家錄音空間', cn: '有安静的居家录音空间', en: 'I have a quiet home setup' },
+  { v: '', tw: '目前沒有,需要協助', cn: '目前没有,需要协助', en: "Not yet — I'd need help" },
+];
+const AGES = [
+  { v: 'Youth', tw: '青年', cn: '青年' },
+  { v: 'Young Adult', tw: '輕熟齡', cn: '轻熟龄' },
+  { v: 'Middle-aged', tw: '中年', cn: '中年' },
+  { v: 'Mature', tw: '成熟 / 年長', cn: '成熟 / 年长' },
+];
+const GENDERS = [
+  { v: 'Male', tw: '男', cn: '男' },
+  { v: 'Female', tw: '女', cn: '女' },
+  { v: 'Non-binary', tw: '其他 / 不透露', cn: '其他 / 不透露', en: 'Other / prefer not to say' },
+];
+const COOP = [
+  { key: 'jobs',
+    tw: { t: '① 接案配音', d: '有合適案件就通知你,接不接由你。完成後取得酬勞,平台收 20% 服務費。' },
+    cn: { t: '① 接案配音', d: '有合适案件就通知你,接不接由你。完成后取得酬劳,平台收 20% 服务费。' },
+    en: { t: '① Take voice jobs', d: 'We notify you when a fitting job comes up — accept or pass, your call. You get paid on delivery; the platform takes a 20% service fee.' } },
+  { key: 'buyout',
+    tw: { t: '② 開放聲音買斷', d: '客戶一次買斷某段錄音;只買那段聲音、非獨家,你照樣接別的案。' },
+    cn: { t: '② 开放声音买断', d: '客户一次买断某段录音;只买那段声音、非独家,你照样接别的案。' },
+    en: { t: '② Allow buyouts', d: 'A client buys out a specific recording in one payment — just that audio, non-exclusive. You keep taking other work.' } },
+  { key: 'aiClone',
+    tw: { t: '③ 將聲音製作為 AI(會用到你的聲音)', d: '客戶以你的聲音做成 AI;非獨家,你仍可錄其他 TTS 或配音。真要做時才另外簽授權書。' },
+    cn: { t: '③ 将声音制作为 AI(会用到你的声音)', d: '客户以你的声音做成 AI;非独家,你仍可录其他 TTS 或配音。真要做时才另外签授权书。' },
+    en: { t: '③ Turn my voice into an AI (uses your voice)', d: 'A client builds an AI from your voice. Non-exclusive — you can still record other TTS or VO. A separate licence is signed only when a project actually goes ahead.' } },
+  { key: 'aiTrain',
+    tw: { t: '④ 錄製 AI 訓練素材(不會用到你的聲音)', d: '錄句子/對話當訓練素材;你的聲音不會被複製或對外呈現。' },
+    cn: { t: '④ 录制 AI 训练素材(不会用到你的声音)', d: '录句子/对话当训练素材;你的声音不会被复制或对外呈现。' },
+    en: { t: '④ Record AI training data (does not use your voice)', d: 'You record sentences / dialogue as training material. Your voice itself is never cloned or made public.' } },
+  { key: 'proofread',
+    tw: { t: '⑤ 語音校對', d: '聽一段音檔,抓出唸錯/讀錯的字、提供正確讀音(同音字),通常很快。字多或較長的(如 30 秒以上)要花點時間聽。有案子才找你,費用按長度另談。' },
+    cn: { t: '⑤ 语音校对', d: '听一段音档,抓出念错/读错的字、提供正确读音(同音字),通常很快。字多或较长的(如 30 秒以上)要花点时间听。有案子才找你,费用按长度另谈。' },
+    en: { t: '⑤ Audio proofreading', d: 'Listen to a clip, catch mispronounced / misread words and give the correct reading (homophones) — usually quick. Longer clips (30s+) take more time. Only when there is work; the fee depends on length.' } },
+] as const;
+
+const inputCls =
+  'w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-amber-500 focus:outline-none placeholder:text-gray-600';
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm border transition-all mr-2 mb-2 ${
+        active ? 'bg-amber-500/15 text-amber-300 border-amber-500/40' : 'bg-zinc-900 text-gray-400 border-zinc-700 hover:border-zinc-500'
+      }`}>
+      {children}
+    </button>
+  );
+}
+
+function Label({ children, hint }: { children: React.ReactNode; hint?: string }) {
+  return (
+    <label className="block text-sm text-gray-200 mb-1">
+      {children} {hint && <span className="text-xs text-gray-500">{hint}</span>}
+    </label>
+  );
+}
+
+export default function TalentApply() {
+  const locale = useLocale();
+  const isZh = locale.startsWith('zh');
+  const isZhCN = locale === 'zh-CN';
+  const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
+  const L: 'tw' | 'cn' | 'en' = isZhCN ? 'cn' : isZh ? 'tw' : 'en';
+  // option label: localized field, falling back to canonical `v` (English)
+  const lbl = (o: { v: string; tw: string; cn: string; en?: string }) => o[L] ?? o.v;
+  const langLabel = (v: string) => { const o = LANG_OPTIONS.find((x) => x.v === v); return o ? lbl(o) : v; };
+
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState({
+    display_name: '', full_name: '', email: '', phone: '',
+    msg_line: '', msg_whatsapp: '', msg_telegram: '',
+    gender: '', age_range: '',
+    microphone_model: '', excluded_countries: '',
+  });
+  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const [langs, setLangs] = useState<string[]>([]);
+  const [q, setQ] = useState('');
+  const [cats, setCats] = useState<string[]>([]);
+  const [feels, setFeels] = useState<string[]>([]);
+  const [env, setEnv] = useState<string | null>(null);
+  const [coop, setCoop] = useState({ jobs: true, buyout: false, aiClone: false, aiTrain: false, proofread: false });
+  const [lowData, setLowData] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState('');
+  const [agreeOwn, setAgreeOwn] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [doneNo, setDoneNo] = useState<string | null>(null);
+
+  // Email verification (stateless OTP via /api/apply/email-code)
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [codeMeta, setCodeMeta] = useState<{ token: string; exp: number } | null>(null);
+  const [code, setCode] = useState('');
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeMsg, setCodeMsg] = useState('');
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
+
+  const onEmailChange = (v: string) => { set('email', v); setEmailVerified(false); setCodeMeta(null); setCode(''); setCodeMsg(''); };
+
+  const sendCode = async () => {
+    setCodeBusy(true); setCodeMsg('');
+    try {
+      const r = await fetch('/api/apply/email-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', email: form.email, locale }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || tx('寄送失敗', '发送失败', 'Failed to send'));
+      setCodeMeta({ token: j.token, exp: j.exp });
+      setCodeMsg(tx('驗證碼已寄到你的 Email', '验证码已寄到你的 Email', 'Code sent to your email'));
+    } catch (e) { setCodeMsg(e instanceof Error ? e.message : tx('寄送失敗', '发送失败', 'Failed to send')); }
+    finally { setCodeBusy(false); }
+  };
+
+  const verifyCode = async () => {
+    if (!codeMeta) return;
+    setCodeBusy(true); setCodeMsg('');
+    try {
+      const r = await fetch('/api/apply/email-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', email: form.email, code, token: codeMeta.token, exp: codeMeta.exp }),
+      });
+      const j = await r.json();
+      if (j.ok) { setEmailVerified(true); setCodeMeta(null); setCodeMsg(''); }
+      else setCodeMsg(j.expired ? tx('驗證碼已過期,請重新傳送', '验证码已过期,请重新发送', 'Code expired — please resend') : tx('驗證碼不正確', '验证码不正确', 'Incorrect code'));
+    } catch (e) { setCodeMsg(e instanceof Error ? e.message : tx('驗證失敗', '验证失败', 'Verification failed')); }
+    finally { setCodeBusy(false); }
+  };
+
+  const toggleIn = (arr: string[], setA: (v: string[]) => void, v: string) =>
+    setA(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+
+  const trimmed = q.trim();
+  const matches = trimmed ? LANG_OPTIONS.filter((o) => !langs.includes(o.v) && lbl(o).includes(trimmed)) : [];
+  const canAddCustom = !!trimmed && !LANG_OPTIONS.some((o) => lbl(o) === trimmed) && !langs.includes(trimmed);
+  const addLang = (v: string) => { if (!langs.includes(v)) setLangs([...langs, v]); setQ(''); };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; setFileError('');
+    if (!f) { setFile(null); return; }
+    const ok = ['wav', 'wave', 'mp3', 'm4a', 'aac', 'ogg', 'flac'].some((x) => f.name.toLowerCase().endsWith('.' + x));
+    if (!ok) { setFileError(tx('請上傳音檔(wav / mp3 / m4a / aac / ogg / flac)', '请上传音档(wav / mp3 / m4a / aac / ogg / flac)', 'Please upload an audio file (wav / mp3 / m4a / aac / ogg / flac)')); setFile(null); return; }
+    if (f.size > 50 * 1024 * 1024) { setFileError(tx('檔案請小於 50MB', '档案请小于 50MB', 'File must be under 50 MB')); setFile(null); return; }
+    setFile(f);
+  };
+
+  const handleSubmit = async () => {
+    setError('');
+    if (!form.full_name || !form.email) { setError(tx('請填寫真實姓名與 Email', '请填写真实姓名与 Email', 'Please fill in your legal name and email')); setStep(0); return; }
+    if (!emailVerified) { setError(tx('請先驗證 Email', '请先验证 Email', 'Please verify your email first')); setStep(0); return; }
+    if (!agreeOwn || !agreeTerms) { setError(tx('請勾選下方兩項聲明與同意', '请勾选下方两项声明与同意', 'Please tick both statements below')); return; }
+    setSubmitting(true);
+    try {
+      let fileUrl = '', fileName = '', fileSize = 0;
+      if (file) {
+        const safe = (form.display_name || form.full_name).replace(/\s+/g, '');
+        fileName = `${safe || 'talent'}_demo.${file.name.split('.').pop()}`;
+        const urlRes = await fetch('/api/apply/upload-url', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName, role: 'Voice' }),
+        });
+        const urlJson = await urlRes.json();
+        if (!urlRes.ok) throw new Error(urlJson.error || tx('上傳準備失敗,請重試', '上传准备失败,请重试', 'Upload prep failed — please try again'));
+        const { error: upErr } = await supabase.storage
+          .from('talent-submissions')
+          .uploadToSignedUrl(urlJson.path, urlJson.token, file);
+        if (upErr) throw new Error(`${tx('上傳失敗', '上传失败', 'Upload failed')}: ${upErr.message}`);
+        fileUrl = urlJson.path as string; fileSize = file.size;
+      }
+
+      const payload = {
+        role_type: 'VO',
+        locale,
+        full_name: form.full_name,
+        display_name: form.display_name,
+        email: form.email,
+        phone: form.phone,
+        country: '',
+        messaging_contacts: { line: form.msg_line, whatsapp: form.msg_whatsapp, telegram: form.msg_telegram },
+        gender: form.gender,
+        age_range: form.age_range,
+        languages: langs,
+        specialties: cats,
+        voice_types: feels,
+        recording_environment: env ?? '',
+        microphone_model: form.microphone_model,
+        coop_accept_jobs: coop.jobs,
+        coop_open_buyout: coop.buyout,
+        coop_ai_clone: coop.aiClone,
+        coop_ai_training: coop.aiTrain,
+        coop_proofread: coop.proofread,
+        low_price_data_optin: lowData,
+        excluded_countries: form.excluded_countries ? [form.excluded_countries] : [],
+        consent_data_processing: agreeTerms,
+        consent_terms: agreeOwn,
+        consent_moral_rights: agreeOwn,
+        consent_voice_id: false,
+        consent_age_verified: agreeTerms,
+        consent_legal_agreement: agreeTerms,
+        fileUrl, fileName, fileSize,
+      };
+
+      const res = await fetch('/api/apply/submit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || tx('送出失敗,請重試', '送出失败,请重试', 'Submission failed — please try again'));
+      setDoneNo(data.application_number || tx('已送出', '已送出', 'Submitted'));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : tx('發生錯誤,請重試', '发生错误,请重试', 'Something went wrong — please try again'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (doneNo) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center mx-auto mb-5"><Check className="w-8 h-8 text-black" /></div>
+          <h1 className="text-2xl font-bold mb-2">{tx('報名完成!', '报名完成!', 'Application received!')}</h1>
+          <p className="text-gray-400 text-sm">{tx('你的報名編號:', '你的报名编号:', 'Your application number: ')}<span className="text-amber-300">{doneNo}</span></p>
+          <p className="text-gray-500 text-xs mt-4 leading-relaxed">{tx('我們已收到你的資料,確認信會寄到你的 Email。有合適的案子會主動通知你。', '我们已收到你的资料,确认信会寄到你的 Email。有合适的案子会主动通知你。', "We've got your details — a confirmation email is on its way. We'll reach out when a fitting job comes up.")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <p className="text-xs tracking-widest text-gray-400 mb-1">{tx('ONYX · 配音員報名', 'ONYX · 配音员报名', 'ONYX · Voice Talent Application')}</p>
+        <h1 className="text-2xl font-bold mb-1">{tx('歡迎加入 Onyx 配音陣容', '欢迎加入 Onyx 配音阵容', 'Join the Onyx voice roster')}</h1>
+        <p className="text-sm text-gray-400 mb-8">{tx('填好基本資料就能開始接案,約 2 分鐘。', '填好基本资料就能开始接案,约 2 分钟。', 'Fill in the basics and you can start taking work — about 2 minutes.')}</p>
+
+        <div className="flex gap-1.5 mb-8">
+          {STEPS.map((s, i) => (
+            <button key={s.en} type="button" onClick={() => setStep(i)}
+              className={`flex-1 text-[11px] py-1.5 rounded-md border transition-all ${
+                i === step ? 'bg-amber-500 text-black border-amber-500' : i < step ? 'bg-zinc-800 text-gray-300 border-zinc-700' : 'bg-zinc-900 text-gray-500 border-zinc-800'
+              }`}>
+              {i + 1} {s[L]}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 min-h-[340px]">
+          {step === 0 && (
+            <div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label hint={tx('公開', '公开', 'Public')}>{tx('顯示名稱', '显示名称', 'Display name')}</Label><input className={inputCls} value={form.display_name} onChange={(e) => set('display_name', e.target.value)} placeholder={tx('客戶會看到的名字', '客户会看到的名字', 'Shown to clients')} /></div>
+                <div><Label hint={tx('不公開', '不公开', 'Private')}>{tx('真實姓名', '真实姓名', 'Legal name')}</Label><input className={inputCls} value={form.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder={tx('合約/付款用', '合约/付款用', 'For contracts & payment')} /></div>
+              </div>
+              <div className="mt-4">
+                <Label>Email {emailVerified && <span className="text-emerald-400 text-xs">✓ {tx('已驗證', '已验证', 'Verified')}</span>}</Label>
+                <div className="flex gap-2">
+                  <input className={inputCls} type="email" value={form.email} onChange={(e) => onEmailChange(e.target.value)} disabled={emailVerified} placeholder={tx('案件通知會寄到這裡', '案件通知会寄到这里', 'Job notifications go here')} />
+                  {!emailVerified && (
+                    <button type="button" onClick={sendCode} disabled={!emailOk || codeBusy}
+                      className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-xs text-amber-300 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                      {codeMeta ? tx('重新傳送', '重新发送', 'Resend') : tx('傳送驗證碼', '发送验证码', 'Send code')}
+                    </button>
+                  )}
+                </div>
+                {codeMeta && !emailVerified && (
+                  <div className="flex gap-2 mt-2">
+                    <input className={inputCls} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder={tx('輸入 6 位驗證碼', '输入 6 位验证码', 'Enter 6-digit code')} />
+                    <button type="button" onClick={verifyCode} disabled={code.length !== 6 || codeBusy}
+                      className="px-4 py-2 rounded-lg bg-amber-500 text-black text-xs font-medium whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                      {tx('確認', '确认', 'Verify')}
+                    </button>
+                  </div>
+                )}
+                {codeMsg && <p className="text-xs mt-1.5 text-gray-400">{codeMsg}</p>}
+              </div>
+              <div className="mt-4"><Label hint={tx('只留存,不驗證', '只留存,不验证', 'Stored, not verified')}>{tx('手機', '手机', 'Phone')}</Label><input className={inputCls} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+886 …" /></div>
+              <div className="mt-4">
+                <Label hint={tx('選填,填任一即可', '选填,填任一即可', 'Optional — any one is fine')}>{tx('通訊軟體 ID', '通讯软体 ID', 'Messaging ID')}</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <input className={inputCls} placeholder="Line ID" value={form.msg_line} onChange={(e) => set('msg_line', e.target.value)} />
+                  <input className={inputCls} placeholder={tx('WhatsApp 號碼', 'WhatsApp 号码', 'WhatsApp number')} value={form.msg_whatsapp} onChange={(e) => set('msg_whatsapp', e.target.value)} />
+                  <input className={inputCls} placeholder={tx('Telegram @用戶名', 'Telegram @用户名', 'Telegram @username')} value={form.msg_telegram} onChange={(e) => set('msg_telegram', e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{tx('性別', '性别', 'Gender')}</Label>
+                  <select className={inputCls} value={form.gender} onChange={(e) => set('gender', e.target.value)}>
+                    <option value="">{tx('— 選擇 —', '— 选择 —', '— Select —')}</option>
+                    {GENDERS.map((g) => <option key={g.v} value={g.v}>{lbl(g)}</option>)}
+                  </select>
+                </div>
+                <div><Label hint={tx('聲音聽起來的年齡', '声音听起来的年龄', 'How your voice sounds')}>{tx('年齡感', '年龄感', 'Voice age')}</Label>
+                  <select className={inputCls} value={form.age_range} onChange={(e) => set('age_range', e.target.value)}>
+                    <option value="">{tx('— 選擇 —', '— 选择 —', '— Select —')}</option>
+                    {AGES.map((a) => <option key={a.v} value={a.v}>{lbl(a)}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Label hint={tx('打字搜尋,沒有的可新增', '打字搜寻,没有的可新增', 'Search; add your own if missing')}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</Label>
+                <div className="mb-2">{langs.map((v) => (<Chip key={v} active onClick={() => setLangs(langs.filter((x) => x !== v))}>{langLabel(v)} <X className="w-3 h-3" /></Chip>))}</div>
+                <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx('搜尋語言或口音…', '搜寻语言或口音…', 'Search a language or accent…')} />
+                {trimmed && (
+                  <div className="mt-1.5 border border-zinc-700 rounded-lg p-1 bg-zinc-900">
+                    {matches.map((m) => (<button key={m.v} type="button" onClick={() => addLang(m.v)} className="block w-full text-left px-2.5 py-1.5 text-sm text-gray-200 rounded-md hover:bg-zinc-800">{lbl(m)}</button>))}
+                    {canAddCustom && (<button type="button" onClick={() => addLang(trimmed)} className="block w-full text-left px-2.5 py-1.5 text-sm text-amber-300 rounded-md hover:bg-zinc-800"><Plus className="w-3.5 h-3.5 inline -mt-0.5" /> {tx('新增', '新增', 'Add')}「{trimmed}」</button>)}
+                    {matches.length === 0 && !canAddCustom && <p className="px-2.5 py-1.5 text-sm text-gray-500">{tx('換個關鍵字', '换个关键字', 'Try another keyword')}</p>}
+                  </div>
+                )}
+              </div>
+              <div className="mt-4"><Label hint={tx('可多選', '可多选', 'Multi-select')}>{tx('能接的案件類型', '能接的案件类型', 'Job types you take')}</Label><div>{CATEGORIES.map((c) => <Chip key={c.v} active={cats.includes(c.v)} onClick={() => toggleIn(cats, setCats, c.v)}>{lbl(c)}</Chip>)}</div></div>
+              <div className="mt-4"><Label hint={tx('複選', '复选', 'Multi-select')}>{tx('聲音給人的感覺', '声音给人的感觉', 'How your voice feels')}</Label><div>{FEELS.map((f) => <Chip key={f.v} active={feels.includes(f.v)} onClick={() => toggleIn(feels, setFeels, f.v)}>{lbl(f)}</Chip>)}</div></div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('高品質的案子(尤其 AI 語音)需要乾淨無雜音的錄音。台灣・香港的配音員,Onyx 可協助安排錄音室。', '高品质的案子(尤其 AI 语音)需要干净无杂音的录音。台湾・香港的配音员,Onyx 可协助安排录音室。', 'High-quality jobs (especially AI voice) need clean, noise-free recordings. For talents in Taiwan & Hong Kong, Onyx can help arrange a studio.')}</p>
+              <Label>{tx('你目前的錄音環境', '你目前的录音环境', 'Your current recording setup')}</Label>
+              <div className="mb-4">{ENVS.map((e) => <Chip key={e.v || 'none'} active={env === e.v} onClick={() => setEnv(e.v)}>{lbl(e)}</Chip>)}</div>
+              <Label hint={tx('選填', '选填', 'Optional')}>{tx('主要器材', '主要器材', 'Main gear')}</Label>
+              <input className={inputCls} value={form.microphone_model} onChange={(e) => set('microphone_model', e.target.value)} placeholder={tx('例:Rode NT1 + Focusrite 2i2', '例:Rode NT1 + Focusrite 2i2', 'e.g. Rode NT1 + Focusrite 2i2')} />
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <p className="text-sm text-gray-300 mb-1">{tx('你希望如何與我們合作?', '你希望如何与我们合作?', 'How would you like to work with us?')}</p>
+              <p className="text-xs text-gray-500 mb-4">{tx('可全選、也可只選一項 — 完全自願。', '可全选、也可只选一项 — 完全自愿。', 'Pick all, some, or one — entirely up to you.')}</p>
+              {COOP.map((c) => {
+                const on = (coop as Record<string, boolean>)[c.key];
+                const t = c[L];
+                return (
+                  <div key={c.key} onClick={() => setCoop({ ...coop, [c.key]: !on })}
+                    className={`p-3.5 rounded-xl border cursor-pointer mb-2 transition-all ${on ? 'bg-amber-500/10 border-amber-500/40' : 'bg-zinc-900 border-zinc-700 hover:border-zinc-500'}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${on ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{on && <Check className="w-3.5 h-3.5 text-black" />}</div>
+                      <div><p className="text-sm font-medium text-white">{t.t}</p><p className="text-xs text-gray-400 leading-relaxed mt-1">{t.d}</p></div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div onClick={() => setLowData(!lowData)} className={`p-3 rounded-lg border cursor-pointer mt-1 mb-4 text-sm flex items-start gap-2.5 ${lowData ? 'bg-zinc-800 border-zinc-600 text-gray-200' : 'bg-zinc-900 border-zinc-700 text-gray-400'}`}>
+                <div className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border ${lowData ? 'bg-amber-500 border-amber-500' : 'border-zinc-600'}`}>{lowData && <Check className="w-3 h-3 text-black" />}</div>
+                <span>{tx('另外:願意收到較低價、量大的「數據採集案」資訊嗎?', '另外:愿意收到较低价、量大的「数据采集案」资讯吗?', 'Also: open to hearing about lower-paid, high-volume data-collection jobs?')}</span>
+              </div>
+              <Label hint={tx('選填', '选填', 'Optional')}>{tx('有沒有不接案的國家 / 地區?', '有没有不接案的国家 / 地区?', "Any countries / regions you won't work with?")}</Label>
+              <input className={inputCls} value={form.excluded_countries} onChange={(e) => set('excluded_countries', e.target.value)} placeholder={tx('(選填)', '(选填)', '(optional)')} />
+            </div>
+          )}
+
+          {step === 4 && (
+            <div>
+              <p className="text-xs text-gray-400 mb-4">{tx('上傳一段你的 demo,讓客戶認識你的聲音(選填,可日後補)。支援 wav / mp3 / m4a / aac / ogg / flac,50MB 內。', '上传一段你的 demo,让客户认识你的声音(选填,可日后补)。支援 wav / mp3 / m4a / aac / ogg / flac,50MB 内。', 'Upload a demo so clients can hear your voice (optional, can add later). wav / mp3 / m4a / aac / ogg / flac, under 50 MB.')}</p>
+              <label className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-zinc-600 text-sm text-gray-300 cursor-pointer hover:border-amber-500 w-fit">
+                <Upload className="w-4 h-4" /> {file ? tx('更換檔案', '更换档案', 'Replace file') : tx('選擇 demo 檔案', '选择 demo 档案', 'Choose a demo file')}
+                <input type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.ogg,.flac,audio/*" className="hidden" onChange={handleFile} />
+              </label>
+              {file && <p className="text-xs text-amber-300 mt-2">{tx('已選:', '已选:', 'Selected: ')}{file.name}（{Math.round(file.size / 1024)} KB）</p>}
+              {fileError && <p className="text-xs text-red-400 mt-2">{fileError}</p>}
+            </div>
+          )}
+
+          {step === 5 && (
+            <div>
+              <div onClick={() => setAgreeOwn(!agreeOwn)} className="flex gap-2.5 text-sm text-gray-300 mb-3 cursor-pointer">
+                <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${agreeOwn ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{agreeOwn && <Check className="w-3.5 h-3.5 text-black" />}</div>
+                {tx('我確認上傳的聲音為本人錄製,且擁有授權使用之權利。', '我确认上传的声音为本人录制,且拥有授权使用之权利。', 'I confirm the audio I uploaded was recorded by me and that I hold the rights to license it.')}
+              </div>
+              <div onClick={() => setAgreeTerms(!agreeTerms)} className="flex gap-2.5 text-sm text-gray-300 mb-6 cursor-pointer">
+                <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${agreeTerms ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{agreeTerms && <Check className="w-3.5 h-3.5 text-black" />}</div>
+                <span onClick={(e) => e.stopPropagation()}>
+                  {tx('我已閱讀並同意', '我已阅读并同意', 'I have read and agree to the')} <a href={`/${locale}/legal/terms`} target="_blank" className="text-amber-300 underline">{tx('平台合作條款', '平台合作条款', 'Platform Terms')}</a> {tx('與', '与', 'and')} <a href={`/${locale}/legal/privacy`} target="_blank" className="text-amber-300 underline">{tx('隱私政策', '隐私政策', 'Privacy Policy')}</a>{tx('。', '。', '.')}
+                </span>
+              </div>
+              {!emailVerified && <p className="text-xs text-amber-400/80 mb-3">{tx('提醒:請先回到第一步驗證 Email 才能送出。', '提醒:请先回到第一步验证 Email 才能送出。', 'Heads up: verify your email in step 1 before you can submit.')}</p>}
+              {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+              <button type="button" disabled={submitting || !agreeOwn || !agreeTerms || !emailVerified} onClick={handleSubmit}
+                className="w-full py-3 rounded-xl bg-amber-500 text-black font-medium flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                <Check className="w-4 h-4" /> {submitting ? tx('送出中…', '送出中…', 'Submitting…') : tx('完成,送出報名', '完成,送出报名', 'Finish & submit')}
+              </button>
+              <p className="text-center text-xs text-gray-500 mt-3">{tx('收款資料(銀行/證件)等首次接到付費案再填。', '收款资料(银行/证件)等首次接到付费案再填。', 'Banking & ID details come later, when you land your first paid job.')}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-between mt-6">
+          <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} className={`px-4 py-2 rounded-lg border border-zinc-700 text-sm text-gray-300 ${step === 0 ? 'invisible' : ''}`}>{tx('上一步', '上一步', 'Back')}</button>
+          {step < STEPS.length - 1 && (
+            <button type="button" onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="px-5 py-2 rounded-lg bg-amber-500 text-black text-sm font-medium flex items-center gap-1.5">{tx('下一步', '下一步', 'Next')} <ArrowRight className="w-4 h-4" /></button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

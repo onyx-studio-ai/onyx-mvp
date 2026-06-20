@@ -23,7 +23,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { fileUrl, fileName, fileSize, ...formData } = body;
+    // `locale` is pulled out (like the file fields) so it drives the email
+    // language but never reaches the insert — talent_applications has no such column.
+    const { fileUrl, fileName, fileSize, locale, ...formData } = body;
 
     const payload = {
       ...formData,
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
         applicantName,
         applicationNumber: appNumber,
         email: applicantEmail,
+        locale,
       });
       await sendEmail({ category: 'HELLO', to: applicantEmail, subject: confirmSubject, html: confirmHtml });
 
