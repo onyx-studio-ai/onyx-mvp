@@ -70,10 +70,12 @@ export default function Hire() {
   const lbl = (o: Opt) => (L === 'en' ? o.v : o[L]);
   const localePath = (p: string) => (locale === 'en' ? p : `/${locale}${p}`);
 
-  const [form, setForm] = useState({ name: '', company: '', email: '', language: '', length: '', budget: '', deadline: '', refUrl: '', brief: '' });
+  const [form, setForm] = useState({ name: '', company: '', email: '', language: '', length: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [contentType, setContentType] = useState('');
   const [hasSinging, setHasSinging] = useState(false);
+  const [wantsDirector, setWantsDirector] = useState(false);
+  const [wantsLiveSession, setWantsLiveSession] = useState(false);
   const [media, setMedia] = useState('');
   const [territory, setTerritory] = useState('');
   const [license, setLicense] = useState('');
@@ -117,6 +119,9 @@ export default function Hire() {
           license_term: license,
           script_status: scriptStatus,
           ref_audio_url: form.refUrl,
+          audition_deadline: form.auditionDeadline,
+          wants_director: wantsDirector,
+          wants_live_session: wantsLiveSession,
           locale,
         }),
       });
@@ -199,10 +204,20 @@ export default function Hire() {
                 <div><label className="block text-sm text-gray-200 mb-1">{tx('長度 / 字數', '长度 / 字数', 'Length / word count')}</label><input className={inputCls} value={form.length} onChange={(e) => set('length', e.target.value)} placeholder={tx('例:30 秒 / 約 200 字', '例:30 秒 / 约 200 字', 'e.g. 30 sec / ~200 words')} /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('預算', '预算', 'Budget')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('有預算範圍最好媒合', '有预算范围最好媒合', 'A range helps us match')} /></div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('截止日', '截止日', 'Deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} placeholder={tx('例:6/30 前', '例:6/30 前', 'e.g. by 6/30')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('試音 / Demo 截止', '试音 / Demo 截止', 'Audition / demo deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} placeholder={tx('例:6/15 前收試音', '例:6/15 前收试音', 'e.g. auditions by 6/15')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('完成 / 交付截止', '完成 / 交付截止', 'Delivery deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} placeholder={tx('例:6/30 前交件', '例:6/30 前交件', 'e.g. final by 6/30')} /></div>
               </div>
-              <div><label className="block text-sm text-gray-200 mb-1">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼一個您喜歡的聲音 / 參考 demo 連結', '贴一个您喜欢的声音 / 参考 demo 链接', 'Link to a voice / demo you like')} /></div>
+              <div>
+                <label className="block text-sm text-gray-200 mb-1">{tx('錄製需求', '录制需求', 'Recording options')} <span className="text-xs text-gray-500">{tx('選填 · 加值', '选填 · 加值', 'Optional · add-on')}</span></label>
+                <div className="flex flex-wrap gap-x-5 gap-y-2 mt-1">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={wantsDirector} onChange={(e) => setWantsDirector(e.target.checked)} className="accent-amber-500" />{tx('需要聲音導演(現場指導語氣、節奏)', '需要声音导演(现场指导语气、节奏)', 'Voice director (live coaching of tone & pacing)')}</label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={wantsLiveSession} onChange={(e) => setWantsLiveSession(e.target.checked)} className="accent-amber-500" />{tx('線上同步指導錄音(您可線上即時加入)', '线上同步指导录音(您可线上即时加入)', 'Live online session (join to direct in real time)')}</label>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('預算', '预算', 'Budget')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('有預算範圍最好媒合', '有预算范围最好媒合', 'A range helps us match')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼您喜歡的聲音 / 參考 demo 連結', '贴您喜欢的声音 / 参考 demo 链接', 'Link to a voice / demo you like')} /></div>
+              </div>
               <div><label className="block text-sm text-gray-200 mb-1">{tx('需求說明 / 稿件', '需求说明 / 稿件', 'Brief / script')} <span className="text-red-400">＊</span></label><textarea className={`${inputCls} min-h-[120px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣、參考、稿件內容…越清楚我們越好媒合。', '用途、语气、参考、稿件内容…越清楚我们越好媒合。', 'Use case, tone, references, the script… the clearer, the better we can match.')} /></div>
 
               {error && <p className="text-sm text-red-400">{error}</p>}

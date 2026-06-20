@@ -29,6 +29,9 @@ type Brief = {
   license_term: string | null;
   script_status: string | null;
   has_singing: boolean | null;
+  wants_director: boolean | null;
+  wants_live_session: boolean | null;
+  audition_deadline: string | null;
   language: string | null;
   length: string | null;
   budget: string | null;
@@ -167,6 +170,8 @@ function BriefCard({
       <div className="flex flex-wrap gap-1.5 mb-2">
         {brief.content_type && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{brief.content_type}</span>}
         {brief.has_singing && <span className="text-xs bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', '+ Singing')}</span>}
+        {brief.wants_live_session && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('線上同步錄音', '线上同步录音', 'Live session')}</span>}
+        {brief.wants_director && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('聲音導演', '声音导演', 'Director')}</span>}
         {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
         {!brief.content_type && (brief.categories || []).map((c, i) => (
           <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{c}</span>
@@ -177,6 +182,7 @@ function BriefCard({
         {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
         {brief.territory && <span>{tx('地區', '地区', 'Territory')}: {brief.territory}</span>}
         {brief.license_term && <span>{tx('授權', '授权', 'License')}: {brief.license_term}</span>}
+        {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')}: {brief.audition_deadline}</span>}
         {brief.length && <span>{tx('長度', '长度', 'Length')}: {brief.length}</span>}
         {brief.budget && <span>{tx('預算', '预算', 'Budget')}: {brief.budget}</span>}
       </div>

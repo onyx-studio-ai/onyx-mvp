@@ -22,6 +22,9 @@ type Brief = {
   license_term: string | null;
   script_status: string | null;
   has_singing: boolean | null;
+  wants_director: boolean | null;
+  wants_live_session: boolean | null;
+  audition_deadline: string | null;
   language: string | null;
   length: string | null;
   budget: string | null;
@@ -117,6 +120,8 @@ export default function AdminMarketplace() {
             <div className="flex flex-wrap gap-1.5 my-2">
               {b.content_type && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{b.content_type}</span>}
               {b.has_singing && <span className="text-xs bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">含唱歌</span>}
+              {b.wants_live_session && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">線上同步錄音</span>}
+              {b.wants_director && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">聲音導演</span>}
               {!b.content_type && (b.categories || []).map((c, i) => (
                 <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-400 px-2 py-0.5 rounded-full">{c}</span>
               ))}
@@ -129,7 +134,8 @@ export default function AdminMarketplace() {
               {b.license_term && <span>授權 {b.license_term}</span>}
               {b.length && <span>長度 {b.length}</span>}
               {b.budget && <span>預算 {b.budget}</span>}
-              {b.deadline && <span>截止 {b.deadline}</span>}
+              {b.audition_deadline && <span>試音截止 {b.audition_deadline}</span>}
+              {b.deadline && <span>交付截止 {b.deadline}</span>}
               {b.script_status && <span>稿件 {b.script_status}</span>}
             </div>
 
