@@ -32,6 +32,7 @@ function codeEmail(code: string, locale?: string): { subject: string; html: stri
   return {
     subject: t.subject,
     html: `<div style="font-family:system-ui,sans-serif;background:#000;color:#fff;padding:32px;border-radius:12px;max-width:420px;margin:auto;text-align:center;">
+      <img src="https://www.onyxstudios.ai/logo-email.png" alt="Onyx Studios" width="180" style="display:block;width:180px;max-width:60%;height:auto;margin:0 auto 24px;border:0;" />
       <p style="color:#d1d5db;font-size:15px;margin:0 0 16px;">${t.line}</p>
       <p style="font-size:34px;letter-spacing:8px;font-weight:700;color:#f59e0b;margin:0 0 16px;">${code}</p>
       <p style="color:#6b7280;font-size:12px;margin:0;">${t.note}</p>

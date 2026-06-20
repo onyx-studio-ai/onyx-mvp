@@ -83,18 +83,11 @@ function emailT(locale: SupportedLocale, key: string, replacements?: Record<stri
   return str;
 }
 
-function brandHeader(brandLabel = 'Studios', accentColor = BRAND_GREEN): string {
+function brandHeader(_brandLabel = 'Studios', _accentColor = BRAND_GREEN): string {
   return `
     <tr>
       <td align="center" style="padding-bottom:32px;">
-        <table cellpadding="0" cellspacing="0" role="presentation">
-          <tr>
-            <td style="background:linear-gradient(135deg,#111 0%,#1a1a1a 100%);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 24px;">
-              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">ONYX</span>
-              <span style="color:${accentColor};font-size:20px;font-weight:300;letter-spacing:2px;text-transform:uppercase;"> ${brandLabel}</span>
-            </td>
-          </tr>
-        </table>
+        <img src="${SITE_URL}/logo-email.png" alt="Onyx Studios" width="200" style="display:block;width:200px;max-width:62%;height:auto;border:0;" />
       </td>
     </tr>`;
 }
