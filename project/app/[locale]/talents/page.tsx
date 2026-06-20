@@ -30,6 +30,13 @@ interface Talent {
 const demoUrl = (t: Talent) => t.demo_urls?.[0]?.url || t.sample_url || '';
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase();
 
+// Service-classification tags (set on approval from collaboration choices).
+const SERVICE: Record<string, { tw: string; cn: string; en: string }> = {
+  'AI Voice': { tw: 'AI 聲音', cn: 'AI 声音', en: 'AI Voice' },
+  'TTS Data': { tw: 'TTS 訓練', cn: 'TTS 训练', en: 'TTS Data' },
+  'Proofreading': { tw: '語音校對', cn: '语音校对', en: 'Proofreading' },
+};
+
 export default function TalentRoster() {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
@@ -132,11 +139,24 @@ export default function TalentRoster() {
                       {(t.languages || []).slice(0, 4).map((l) => <span key={l} className="text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-gray-300">{l}</span>)}
                     </div>
                   )}
-                  {(t.tags || []).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {(t.tags || []).slice(0, 5).map((g) => <span key={g} className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300/90">{g}</span>)}
-                    </div>
-                  )}
+                  {(() => {
+                    const svc = (t.tags || []).filter((g) => SERVICE[g]);
+                    const voice = (t.tags || []).filter((g) => !SERVICE[g]);
+                    return (
+                      <>
+                        {svc.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {svc.map((g) => <span key={g} className="text-[11px] px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">{tx(SERVICE[g].tw, SERVICE[g].cn, SERVICE[g].en)}</span>)}
+                          </div>
+                        )}
+                        {voice.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {voice.slice(0, 5).map((g) => <span key={g} className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300/90">{g}</span>)}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   <Link href={`/${locale}/talents/${t.id}`} className="mt-auto inline-flex items-center gap-1 text-sm text-amber-300 hover:text-amber-200">
                     {tx('查看 / 洽詢', '查看 / 洽询', 'View / enquire')} <ArrowRight className="w-3.5 h-3.5" />

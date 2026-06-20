@@ -148,7 +148,16 @@ export async function PATCH(request: NextRequest) {
             });
           }
 
+          // Service classification (from collaboration choices) — prepended so
+          // it shows first in the roster. Lets clients see who does AI/TTS and
+          // lets us target broadcasts by service type. Canonical English; the
+          // gallery localizes the display.
+          const serviceTags: string[] = [];
+          if (application.coop_ai_clone) serviceTags.push('AI Voice');
+          if (application.coop_ai_training) serviceTags.push('TTS Data');
+          if (application.coop_proofread) serviceTags.push('Proofreading');
           const tags: string[] = [
+            ...serviceTags,
             ...(application.voice_types || []),
             ...(application.specialties || []),
           ];

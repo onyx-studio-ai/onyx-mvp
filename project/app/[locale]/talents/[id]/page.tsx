@@ -28,6 +28,12 @@ interface Talent {
 
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase();
 
+const SERVICE: Record<string, { tw: string; cn: string; en: string }> = {
+  'AI Voice': { tw: 'AI 聲音', cn: 'AI 声音', en: 'AI Voice' },
+  'TTS Data': { tw: 'TTS 訓練', cn: 'TTS 训练', en: 'TTS Data' },
+  'Proofreading': { tw: '語音校對', cn: '语音校对', en: 'Proofreading' },
+};
+
 export default function TalentProfile() {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
@@ -99,12 +105,26 @@ export default function TalentProfile() {
                 <div className="flex flex-wrap gap-1.5">{(t.languages || []).map((l) => <span key={l} className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-gray-200">{l}</span>)}</div>
               </div>
             )}
-            {(t.tags || []).length > 0 && (
-              <div className="mb-6">
-                <p className="text-xs text-gray-500 mb-1.5">{tx('聲線 / 專長', '声线 / 专长', 'Voice & specialties')}</p>
-                <div className="flex flex-wrap gap-1.5">{(t.tags || []).map((g) => <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300/90">{g}</span>)}</div>
-              </div>
-            )}
+            {(() => {
+              const svc = (t.tags || []).filter((g) => SERVICE[g]);
+              const voice = (t.tags || []).filter((g) => !SERVICE[g]);
+              return (
+                <>
+                  {svc.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500 mb-1.5">{tx('可提供的服務', '可提供的服务', 'Services offered')}</p>
+                      <div className="flex flex-wrap gap-1.5">{svc.map((g) => <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">{tx(SERVICE[g].tw, SERVICE[g].cn, SERVICE[g].en)}</span>)}</div>
+                    </div>
+                  )}
+                  {voice.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-xs text-gray-500 mb-1.5">{tx('聲線 / 專長', '声线 / 专长', 'Voice & specialties')}</p>
+                      <div className="flex flex-wrap gap-1.5">{voice.map((g) => <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300/90">{g}</span>)}</div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 whitespace-pre-line">{bioText}</p>}
 
