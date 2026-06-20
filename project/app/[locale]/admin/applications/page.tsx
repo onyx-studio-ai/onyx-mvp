@@ -535,6 +535,7 @@ export default function AdminApplicationsPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'VO' | 'Singer'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | Application['status']>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'talent' | 'voice'>('all');
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -553,6 +554,8 @@ export default function AdminApplicationsPage() {
   const filtered = applications.filter(a => {
     if (roleFilter !== 'all' && a.role_type !== roleFilter) return false;
     if (statusFilter !== 'all' && a.status !== statusFilter) return false;
+    if (sourceFilter === 'talent' && !a.locale) return false;
+    if (sourceFilter === 'voice' && a.locale) return false;
     if (search) {
       const q = search.toLowerCase();
       return a.full_name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) || a.application_number.toLowerCase().includes(q);
@@ -637,6 +640,15 @@ export default function AdminApplicationsPage() {
             <option value="under_review">Under Review</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+          </select>
+          <select
+            value={sourceFilter}
+            onChange={e => setSourceFilter(e.target.value as typeof sourceFilter)}
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-300 focus:outline-none"
+          >
+            <option value="all">所有來源</option>
+            <option value="talent">配音員報名(新)</option>
+            <option value="voice">AI / 語音(舊)</option>
           </select>
         </div>
       </div>
