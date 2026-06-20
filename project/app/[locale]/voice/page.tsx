@@ -1,4 +1,5 @@
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import HeroSection from '@/components/home/HeroSection';
 import VoiceTierComparison from '@/components/home/VoiceTierComparison';
 import CompactPricing from '@/components/home/CompactPricing';
@@ -52,6 +53,10 @@ export default function VoicePage() {
 
 async function VoicePageContent() {
   const t = await getTranslations('voice.landing');
+  const locale = await getLocale();
+  const isZh = locale.startsWith('zh');
+  const isZhCN = locale === 'zh-CN';
+  const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
   const serviceJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -99,6 +104,34 @@ async function VoicePageContent() {
             <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-4 py-3 text-gray-200">
               {t('clarityPoint3')}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 sm:px-6 lg:px-8 pb-10">
+        <div className="max-w-6xl mx-auto rounded-2xl bg-white/[0.03] border border-white/[0.08] p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          <div>
+            <p className="text-xs md:text-sm uppercase tracking-[0.18em] text-teal-300 mb-2">
+              {tx('真人配音', '真人配音', 'Human voice talent')}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              {tx('想要真人配音員?', '想要真人配音员?', 'Prefer a real human voice?')}
+            </h2>
+            <p className="text-gray-300 leading-relaxed max-w-2xl">
+              {tx(
+                '1,500+ 配音員、30+ 語種。瀏覽試聽後直接發案,由我們居中為您協調報價與排程。',
+                '1,500+ 配音员、30+ 语种。浏览试听后直接发案,由我们居中为您协调报价与排程。',
+                '1,500+ voice actors across 30+ languages. Browse and listen, then post a brief — we coordinate quotes and scheduling for you.'
+              )}
+            </p>
+          </div>
+          <div className="flex gap-3 shrink-0">
+            <Link href="/talents" className="inline-flex items-center justify-center rounded-lg bg-teal-400 text-black font-medium px-5 py-3 text-sm hover:bg-teal-300 transition-colors">
+              {tx('瀏覽人才庫', '浏览人才库', 'Browse talent')}
+            </Link>
+            <Link href="/hire" className="inline-flex items-center justify-center rounded-lg border border-white/15 text-white px-5 py-3 text-sm hover:bg-white/5 transition-colors">
+              {tx('發案', '发案', 'Post a brief')}
+            </Link>
           </div>
         </div>
       </section>
