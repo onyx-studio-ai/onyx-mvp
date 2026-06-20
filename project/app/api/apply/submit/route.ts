@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
 
     const payload = {
       ...formData,
+      locale: locale || '',
       demo_file_url: fileUrl || '',
       demo_file_name: fileName || '',
       demo_file_size: fileSize || 0,

@@ -87,6 +87,7 @@ export async function PATCH(request: NextRequest) {
           applicantName: application.full_name || 'Applicant',
           applicationNumber: application.application_number || id,
           status: updateData.status as 'approved' | 'rejected',
+          locale: application.locale,
         });
         await sendEmail({ category: 'HELLO', to: application.email, subject, html });
       }

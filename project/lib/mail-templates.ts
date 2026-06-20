@@ -727,42 +727,58 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
 
 export function applicationReceivedEmail(p: { applicantName: string; applicationNumber: string; email: string; locale?: string }): { subject: string; html: string } {
   // Localized applicant-facing confirmation. Defaults to English so existing
-  // callers (e.g. /apply/voice) that pass no locale stay unchanged.
+  // callers (e.g. /apply/voice) stay unchanged. Copy registers researched per
+  // region: US measured/formal, TW warm/relational, CN concise.
   const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
-  const name = p.applicantName || { tw: '\u914d\u97f3\u54e1', cn: '\u914d\u97f3\u5458', en: 'Applicant' }[L];
+  const n = p.applicationNumber;
+  const name = (p.applicantName || '').trim();
   const t = {
     tw: {
-      subject: `\u5831\u540d\u5df2\u6536\u5230 \u2014 Onyx Studios #${p.applicationNumber}`,
-      headline: '\u5831\u540d\u5df2\u6536\u5230', sub: '\u611f\u8b1d\u4f60\u7533\u8acb\u52a0\u5165 Onyx Studios\u3002',
-      card: `\u5831\u540d\u7de8\u865f #${p.applicationNumber}`,
-      l1: `\u89aa\u611b\u7684 ${name}:`,
-      l2: '\u6211\u5011\u5df2\u6536\u5230\u4f60\u7684\u914d\u97f3\u54e1\u5831\u540d,\u5718\u968a\u6b63\u5728\u5be9\u6838\u3002\u5be9\u6838\u5b8c\u6210\u5f8c\u6703\u4ee5 email \u901a\u77e5\u4f60\u3002',
-      l3: (n: string) => `\u4f60\u7684\u5831\u540d\u7de8\u865f\u70ba <strong style="color:#ffffff;">#${n}</strong>,\u8acb\u59a5\u5584\u4fdd\u5b58\u3002`,
+      subject: `我們已收到您的報名 — Onyx Studios #${n}`,
+      headline: `報名已收到`,
+      sub: `謝謝您願意加入 Onyx Studios。`,
+      card: `報名編號 #${n}`,
+      greeting: `${name ? name + ' ' : ''}您好:`,
+      paras: [
+        `謝謝您撥空填寫報名資料,也很高興您有興趣加入 Onyx 的配音陣容。`,
+        `您的報名我們已經收到,會仔細看過。若有需要補充的地方,我們會再與您聯繫;條件合適的話,也會主動通知您後續的安排。`,
+        `您的報名編號是 <strong style="color:#ffffff;">#${n}</strong>,再麻煩您留存。`,
+        `再次謝謝您撥冗,期待有機會與您合作。`,
+      ],
     },
     cn: {
-      subject: `\u62a5\u540d\u5df2\u6536\u5230 \u2014 Onyx Studios #${p.applicationNumber}`,
-      headline: '\u62a5\u540d\u5df2\u6536\u5230', sub: '\u611f\u8c22\u4f60\u7533\u8bf7\u52a0\u5165 Onyx Studios\u3002',
-      card: `\u62a5\u540d\u7f16\u53f7 #${p.applicationNumber}`,
-      l1: `\u4eb2\u7231\u7684 ${name}:`,
-      l2: '\u6211\u4eec\u5df2\u6536\u5230\u4f60\u7684\u914d\u97f3\u5458\u62a5\u540d,\u56e2\u961f\u6b63\u5728\u5ba1\u6838\u3002\u5ba1\u6838\u5b8c\u6210\u540e\u4f1a\u4ee5 email \u901a\u77e5\u4f60\u3002',
-      l3: (n: string) => `\u4f60\u7684\u62a5\u540d\u7f16\u53f7\u4e3a <strong style="color:#ffffff;">#${n}</strong>,\u8bf7\u59a5\u5584\u4fdd\u5b58\u3002`,
+      subject: `已收到您的报名 — Onyx Studios #${n}`,
+      headline: `报名已收到`,
+      sub: `感谢您申请加入 Onyx Studios。`,
+      card: `报名编号 #${n}`,
+      greeting: `${name ? name + ' ' : ''}您好:`,
+      paras: [
+        `您的配音员报名我们已收到,感谢您抽空填写。`,
+        `我们会认真评估。如需补充信息,会与您联系;若合适,将主动通知您后续的安排。`,
+        `报名编号:<strong style="color:#ffffff;">#${n}</strong>,请留存。`,
+        `再次感谢,期待与您合作。`,
+      ],
     },
     en: {
-      subject: `Application Received \u2014 Onyx Studios #${p.applicationNumber}`,
-      headline: 'Application Received', sub: 'Thank you for your interest in joining Onyx Studios.',
-      card: `Application #${p.applicationNumber}`,
-      l1: `Dear ${name},`,
-      l2: 'We have received your talent application and our team is currently reviewing your submission. You will be notified by email once a decision has been made.',
-      l3: (n: string) => `Your reference number is <strong style="color:#ffffff;">#${n}</strong>. Please keep this for your records.`,
+      subject: `We've received your application — Onyx Studios #${n}`,
+      headline: `Application Received`,
+      sub: `Thank you for your interest in joining Onyx Studios.`,
+      card: `Application #${n}`,
+      greeting: `Dear ${name || 'Applicant'},`,
+      paras: [
+        `Thank you for submitting your application to join the Onyx Studios voice roster. We appreciate your interest and the time you've taken to share your details.`,
+        `We have received your submission and will review it carefully. Should we need any further information, we'll be in touch — and if your profile is a fit, we'll reach out about next steps.`,
+        `Your reference number is <strong style="color:#ffffff;">#${n}</strong> — please keep it for your records.`,
+        `Thank you again for your time and interest.`,
+      ],
     },
   }[L];
 
   const content = `
     ${headlineBlock(t.headline, t.sub, BRAND_GREEN)}
     ${bodyCard(t.card, `
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t.l1}</p>
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t.l2}</p>
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${t.l3(p.applicationNumber)}</p>
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t.greeting}</p>
+      ${t.paras.map((para) => `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${para}</p>`).join('')}
     `)}`;
 
   return { subject: t.subject, html: baseLayout(content) };
@@ -785,43 +801,109 @@ export function applicationTeamNotifyEmail(p: { applicantName: string; applicati
   };
 }
 
-export function applicationStatusEmail(p: { applicantName: string; applicationNumber: string; status: 'approved' | 'rejected' }): { subject: string; html: string } {
+export function applicationStatusEmail(p: { applicantName: string; applicationNumber: string; status: 'approved' | 'rejected'; locale?: string }): { subject: string; html: string } {
+  // Localized approve/reject email. Approved = warm welcome (we accept most);
+  // rejected = gracious. Defaults to English when no locale stored.
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
   const approved = p.status === 'approved';
-  const headline = approved ? 'Welcome to Onyx Studios' : 'Application Update';
-  const sub = approved
-    ? 'Congratulations \u2014 your application has been approved.'
-    : 'Thank you for your interest in Onyx Studios.';
+  const n = p.applicationNumber;
+  const name = (p.applicantName || '').trim();
   const accent = approved ? BRAND_GREEN : '#6b7280';
+
+  const C = {
+    tw: {
+      card: `報名編號 #${n}`,
+      greet: `${name ? name + ' ' : ''}您好:`,
+      ap: {
+        subject: `歡迎加入 Onyx Studios — 報名 #${n} 已通過`,
+        headline: `歡迎加入 Onyx Studios`,
+        sub: `很高興邀請您加入我們的配音陣容。`,
+        intro: `很高興通知您,您的報名(#${n})已經通過 —— 歡迎加入 Onyx 的配音陣容!`,
+        next: `接下來只要兩個步驟:`,
+        s1t: `步驟一 — 合作同意書`,
+        s1d: `我們會另外寄一封合作同意書給您,請線上閱讀並簽署,完成正式的合作關係。`,
+        s2t: `步驟二 — 聲音身分驗證`,
+        s2d: `您會收到一個聲音驗證連結,請錄一段約 10 秒、唸出指定文字的音檔,用來確認身分並保障您的聲音權利。`,
+        outro: `兩個步驟完成後,您的個人檔案就會在平台上線。期待很快與您一起完成精彩的作品。`,
+      },
+      rj: {
+        subject: `Onyx Studios 報名結果通知 — #${n}`,
+        headline: `報名結果通知`,
+        sub: `謝謝您對 Onyx Studios 的興趣。`,
+        l1: `謝謝您撥空報名。經過仔細評估,這次我們暫時無法與您進一步合作(報名編號 #${n})。`,
+        l2: `這並不代表對您能力的否定,我們的需求也經常變動,非常歡迎您日後再次報名。祝您一切順利。`,
+      },
+    },
+    cn: {
+      card: `报名编号 #${n}`,
+      greet: `${name ? name + ' ' : ''}您好:`,
+      ap: {
+        subject: `欢迎加入 Onyx Studios — 报名 #${n} 已通过`,
+        headline: `欢迎加入 Onyx Studios`,
+        sub: `欢迎您加入我们的配音阵容。`,
+        intro: `很高兴通知您,您的报名(#${n})已通过,欢迎加入 Onyx 配音阵容。`,
+        next: `接下来只需两步:`,
+        s1t: `第一步 — 合作协议`,
+        s1d: `我们会另外发送合作协议邮件,请在线阅读并签署,以正式建立合作关系。`,
+        s2t: `第二步 — 声音身份验证`,
+        s2d: `您会收到声音验证链接,请录制一段约 10 秒、朗读指定文稿的音频,用于确认身份并保障您的声音权利。`,
+        outro: `两步完成后,您的资料即在平台上线。期待与您合作。`,
+      },
+      rj: {
+        subject: `Onyx Studios 报名结果通知 — #${n}`,
+        headline: `报名结果通知`,
+        sub: `感谢您对 Onyx Studios 的关注。`,
+        l1: `感谢您抽空报名。经认真评估,本次暂未能与您进一步合作(报名编号 #${n})。`,
+        l2: `这并非对您能力的否定,我们的需求也时常变化,欢迎日后再次报名。祝您顺利。`,
+      },
+    },
+    en: {
+      card: `Application #${n}`,
+      greet: `Dear ${name || 'Applicant'},`,
+      ap: {
+        subject: `Welcome to Onyx Studios — Application #${n} Approved`,
+        headline: `Welcome to Onyx Studios`,
+        sub: `We're glad to have you on the roster.`,
+        intro: `We're pleased to let you know that your application (#${n}) has been approved — welcome to the Onyx Studios voice roster.`,
+        next: `Here's what happens next:`,
+        s1t: `Step 1 — Talent Engagement Agreement`,
+        s1d: `You'll receive a separate email with your Talent Engagement Agreement. Please review and sign it electronically to formalize your partnership with Onyx Studios.`,
+        s2t: `Step 2 — Voice ID Verification`,
+        s2d: `You'll receive a Voice ID link by email. Please record a 10-second sample reading the provided script — this verifies your identity and secures your voice rights.`,
+        outro: `Once both steps are complete, your profile will go live on the ONYX platform. We look forward to creating great work together.`,
+      },
+      rj: {
+        subject: `Onyx Studios Application Update — #${n}`,
+        headline: `Application Update`,
+        sub: `Thank you for your interest in Onyx Studios.`,
+        l1: `Thank you for taking the time to apply. After careful review, we won't be moving forward with your application (#${n}) at this time.`,
+        l2: `This isn't a reflection of your ability, and our needs change often — you're welcome to apply again in the future. We wish you all the best.`,
+      },
+    },
+  }[L];
+
+  const P = (txt: string) => `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${txt}</p>`;
+  const stepCard = (color: string, title: string, desc: string) => `<tr><td style="padding:12px 16px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+    <p style="color:${color};font-size:14px;font-weight:600;margin:0 0 8px;">${title}</p>
+    <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${desc}</p></td></tr>`;
+
+  const a = C.ap, r = C.rj;
   const body = approved
-    ? `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Dear ${p.applicantName || 'Applicant'},</p>
-       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">We are delighted to inform you that your talent application (#${p.applicationNumber}) has been approved. Welcome to the Onyx Studios roster.</p>
-       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 20px;">To complete your onboarding, please follow these next steps:</p>
+    ? `${P(C.greet)}${P(a.intro)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 20px;">${a.next}</p>
        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
-         <tr><td style="padding:12px 16px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
-           <p style="color:#10b981;font-size:14px;font-weight:600;margin:0 0 8px;">Step 1 — Talent Engagement Agreement</p>
-           <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">You will receive a separate email with your Talent Engagement Agreement. Please review and sign it electronically to formalize your partnership with Onyx Studios.</p>
-         </td></tr>
+         ${stepCard('#10b981', a.s1t, a.s1d)}
          <tr><td style="height:8px;"></td></tr>
-         <tr><td style="padding:12px 16px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
-           <p style="color:#3b82f6;font-size:14px;font-weight:600;margin:0 0 8px;">Step 2 — Voice ID Verification</p>
-           <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">You will receive a Voice ID verification link via email. Please record a 10-second voice sample reading the provided script. This verifies your identity and secures your voice rights.</p>
-         </td></tr>
+         ${stepCard('#3b82f6', a.s2t, a.s2d)}
        </table>
-       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">Once both steps are complete, your profile will be activated on the ONYX platform. We look forward to creating exceptional work together.</p>`
-    : `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Dear ${p.applicantName || 'Applicant'},</p>
-       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">After careful consideration, we regret to inform you that your application (#${p.applicationNumber}) has not been selected at this time.</p>
-       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">This decision does not reflect on your talent. We encourage you to apply again in the future as our needs evolve. Thank you for your interest in Onyx Studios.</p>`;
+       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${a.outro}</p>`
+    : `${P(C.greet)}${P(r.l1)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${r.l2}</p>`;
 
+  const meta = approved ? a : r;
   const content = `
-    ${headlineBlock(headline, sub, accent)}
-    ${bodyCard(`Application #${p.applicationNumber}`, body)}`;
+    ${headlineBlock(meta.headline, meta.sub, accent)}
+    ${bodyCard(C.card, body)}`;
 
-  return {
-    subject: approved
-      ? `Congratulations \u2014 Your Onyx Studios Application Is Approved`
-      : `Onyx Studios Application Update \u2014 #${p.applicationNumber}`,
-    html: baseLayout(content),
-  };
+  return { subject: meta.subject, html: baseLayout(content) };
 }
 
 // ---------------------------------------------------------------------------
