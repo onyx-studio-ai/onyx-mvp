@@ -6,11 +6,10 @@
   Self-contained auth gate: if not logged in, shows an inline email+password
   login (no dependency on the client /auth routing). Once logged in, loads the
   talent's own profile from /api/talent/me (scoped to their auth_user_id) and
-  lets them edit the high-value personal fields — name, bio, languages, accent,
-  gender. Service classification, demos and pricing are read-only here (managed
-  by Onyx); demo self-upload is a planned follow-up.
-
-  Tri-lingual via the same useLocale()+tx() idiom used across the site.
+  lets them edit name, bio, languages, accent, gender, their voice-type /
+  specialty tags, and their demos (upload / remove). Service classification
+  tags (AI Voice / TTS Data / Proofreading) and pricing stay read-only —
+  Onyx-managed. Tri-lingual via the same useLocale()+tx() idiom used site-wide.
 */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -44,6 +43,7 @@ const GENDER_OPTIONS = [
   { v: 'Female', tw: '女', cn: '女' },
   { v: 'Other', tw: '其他', cn: '其他' },
 ];
+const SERVICE_TAGS = new Set(['AI Voice', 'TTS Data', 'Proofreading']);
 
 type Demo = { name?: string; url?: string };
 type Talent = {
@@ -59,7 +59,7 @@ type Talent = {
   email: string | null;
   is_active: boolean;
 };
-type Form = { name: string; bio: string; accent: string; gender: string; languages: string[] };
+type Form = { name: string; bio: string; accent: string; gender: string; languages: string[]; tags: string[]; demos: Demo[] };
 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60 transition';
@@ -78,7 +78,7 @@ export default function TalentDashboard() {
   const [phase, setPhase] = useState<'loading' | 'login' | 'dashboard' | 'notalent'>('loading');
   const [token, setToken] = useState('');
   const [t, setT] = useState<Talent | null>(null);
-  const [form, setForm] = useState<Form>({ name: '', bio: '', accent: '', gender: '', languages: [] });
+  const [form, setForm] = useState<Form>({ name: '', bio: '', accent: '', gender: '', languages: [], tags: [], demos: [] });
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -87,6 +87,9 @@ export default function TalentDashboard() {
   const [saved, setSaved] = useState(false);
   const [saveErr, setSaveErr] = useState('');
   const [langQ, setLangQ] = useState('');
+  const [tagQ, setTagQ] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState('');
 
   const loadProfile = useCallback(async (accessToken: string) => {
     setToken(accessToken);
@@ -101,6 +104,8 @@ export default function TalentDashboard() {
       accent: talent.accent || '',
       gender: talent.gender || '',
       languages: Array.isArray(talent.languages) ? talent.languages : [],
+      tags: (Array.isArray(talent.tags) ? talent.tags : []).filter((x) => !SERVICE_TAGS.has(x)),
+      demos: Array.isArray(talent.demo_urls) ? talent.demo_urls : [],
     });
     setPhase('dashboard');
   }, []);
@@ -133,7 +138,15 @@ export default function TalentDashboard() {
     const res = await fetch('/api/talent/me', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        name: form.name,
+        bio: form.bio,
+        accent: form.accent,
+        gender: form.gender,
+        languages: form.languages,
+        tags: form.tags,
+        demo_urls: form.demos,
+      }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -156,6 +169,36 @@ export default function TalentDashboard() {
     setLangQ('');
   };
   const removeLang = (v: string) => setForm((f) => ({ ...f, languages: f.languages.filter((x) => x !== v) }));
+
+  const addTag = (v: string) => {
+    const tag = v.trim();
+    if (tag && !form.tags.includes(tag) && !SERVICE_TAGS.has(tag)) setForm((f) => ({ ...f, tags: [...f.tags, tag] }));
+    setTagQ('');
+  };
+  const removeTag = (v: string) => setForm((f) => ({ ...f, tags: f.tags.filter((x) => x !== v) }));
+
+  async function handleDemoUpload(file: File) {
+    setUploadErr('');
+    setUploading(true);
+    try {
+      const res = await fetch('/api/talent/demo-upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || 'upload prep failed');
+      // Uploaded to storage immediately; persisted to demo_urls on Save below.
+      const up = await supabase.storage.from('talent-demos').uploadToSignedUrl(j.path, j.token, file);
+      if (up.error) throw new Error(up.error.message);
+      setForm((f) => ({ ...f, demos: [...f.demos, { name: file.name, url: j.publicUrl }] }));
+    } catch (e) {
+      setUploadErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed'));
+    } finally {
+      setUploading(false);
+    }
+  }
+  const removeDemo = (url: string) => setForm((f) => ({ ...f, demos: f.demos.filter((d) => d.url !== url) }));
 
   // -------- render --------
   const shell = (inner: React.ReactNode) => (
@@ -231,8 +274,7 @@ export default function TalentDashboard() {
   }
 
   // dashboard
-  const tags = Array.isArray(t?.tags) ? t!.tags : [];
-  const demos = Array.isArray(t?.demo_urls) ? t!.demo_urls : [];
+  const serviceTags = (Array.isArray(t?.tags) ? t!.tags : []).filter((x) => SERVICE_TAGS.has(x));
   const langMatches = langQ.trim()
     ? LANG_OPTIONS.filter((o) => !form.languages.includes(o.v) && lbl(o).toLowerCase().includes(langQ.trim().toLowerCase()))
     : [];
@@ -316,6 +358,74 @@ export default function TalentDashboard() {
           )}
         </div>
 
+        <div>
+          <label className="block text-sm text-gray-300 mb-1.5">{tx('聲線 / 專長標籤', '声线 / 专长标签', 'Voice types & specialties')}</label>
+          {form.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {form.tags.map((v) => (
+                <span key={v} className="inline-flex items-center gap-1.5 bg-white/10 text-gray-200 text-xs px-2.5 py-1 rounded-full">
+                  {v}
+                  <button onClick={() => removeTag(v)} className="text-gray-400 hover:text-white" aria-label="remove">
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              className={inputCls}
+              value={tagQ}
+              onChange={(e) => setTagQ(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addTag(tagQ);
+                }
+              }}
+              placeholder={tx('輸入後按 Enter,例如:廣告、旁白、溫暖', '输入后按 Enter,例如:广告、旁白、温暖', 'Type + Enter — e.g. Commercial, Narration, Warm')}
+            />
+            <button onClick={() => addTag(tagQ)} className="shrink-0 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 transition">
+              {tx('新增', '新增', 'Add')}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-300 mb-1.5">{tx('試聽 demo', '试听 demo', 'Demos')}</label>
+          {form.demos.length > 0 && (
+            <div className="space-y-2 mb-2">
+              {form.demos.map((d, i) => (
+                <div key={d.url || i} className="flex items-center gap-2 bg-white/5 rounded-lg p-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-400 truncate mb-1">{d.name || `Demo ${i + 1}`}</p>
+                    {d.url && <audio controls src={d.url} className="w-full h-8" />}
+                  </div>
+                  <button onClick={() => removeDemo(d.url!)} className="shrink-0 text-gray-400 hover:text-red-400 text-xs px-1" aria-label="remove">
+                    {tx('移除', '移除', 'Remove')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label className={`inline-flex items-center gap-2 text-sm cursor-pointer ${uploading ? 'text-gray-500' : 'text-green-400 hover:text-green-300'}`}>
+            <input
+              type="file"
+              accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.currentTarget.value = '';
+                if (f) handleDemoUpload(f);
+              }}
+            />
+            {uploading ? tx('上傳中…', '上传中…', 'Uploading…') : tx('＋ 上傳新 demo', '＋ 上传新 demo', '＋ Upload a demo')}
+          </label>
+          {uploadErr && <p className="text-red-400 text-xs mt-1">{uploadErr}</p>}
+          <p className="text-gray-600 text-xs mt-1">{tx('上傳後記得按下方「儲存變更」。', '上传后记得按下方「保存更改」。', 'Remember to Save changes below after uploading.')}</p>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-300 mb-1.5">{tx('性別', '性别', 'Gender')}</label>
@@ -339,7 +449,7 @@ export default function TalentDashboard() {
         <div className="flex items-center gap-3 pt-1">
           <button
             onClick={handleSave}
-            disabled={busy}
+            disabled={busy || uploading}
             className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2.5 text-sm transition"
           >
             {busy ? tx('儲存中…', '保存中…', 'Saving…') : tx('儲存變更', '保存更改', 'Save changes')}
@@ -349,37 +459,19 @@ export default function TalentDashboard() {
         </div>
       </div>
 
-      {/* Read-only: managed by Onyx */}
-      {(tags.length > 0 || demos.length > 0) && (
+      {/* Read-only: Onyx-managed service classification */}
+      {serviceTags.length > 0 && (
         <div className="mt-6 bg-white/[0.02] border border-white/10 rounded-2xl p-6">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">
-            {tx('由 Onyx 管理(如需調整請聯絡我們)', '由 Onyx 管理(如需调整请联系我们)', 'Managed by Onyx — contact us to change')}
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">
+            {tx('服務類型(由 Onyx 管理)', '服务类型(由 Onyx 管理)', 'Services — managed by Onyx')}
           </p>
-          {tags.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-400 mb-2">{tx('服務類型 / 標籤', '服务类型 / 标签', 'Services / tags')}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((tag, i) => (
-                  <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2.5 py-1 rounded-full">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {demos.length > 0 && (
-            <div>
-              <p className="text-sm text-gray-400 mb-2">{tx('試聽檔', '试听档', 'Demos')}</p>
-              <div className="space-y-2">
-                {demos.map((d, i) => (
-                  <div key={i}>
-                    <p className="text-xs text-gray-500 mb-1">{d.name || `Demo ${i + 1}`}</p>
-                    {d.url && /^https?:\/\//.test(d.url) && <audio controls src={d.url} className="w-full h-9" />}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-1.5">
+            {serviceTags.map((tag, i) => (
+              <span key={i} className="text-xs bg-sky-500/15 border border-sky-400/20 text-sky-200 px-2.5 py-1 rounded-full">
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </>

@@ -56,6 +56,39 @@ export async function PATCH(request: NextRequest) {
     if ('languages' in updates && !Array.isArray(updates.languages)) {
       return NextResponse.json({ error: 'languages must be an array' }, { status: 400 });
     }
+
+    // demo_urls: only accept {name,url} items whose url lives in OUR public
+    // demos bucket — prevents injecting arbitrary external audio onto the roster.
+    if ('demo_urls' in body) {
+      const arr = body.demo_urls;
+      if (!Array.isArray(arr)) return NextResponse.json({ error: 'demo_urls must be an array' }, { status: 400 });
+      if (arr.length > 8) return NextResponse.json({ error: 'Too many demos (max 8)' }, { status: 400 });
+      const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/talent-demos/`;
+      const clean: Array<{ name: string; url: string }> = [];
+      for (const d of arr) {
+        const url = typeof d?.url === 'string' ? d.url : '';
+        if (!url.startsWith(prefix)) return NextResponse.json({ error: 'Invalid demo url' }, { status: 400 });
+        clean.push({ name: String(d?.name || 'Demo').slice(0, 120), url });
+      }
+      updates.demo_urls = clean;
+    }
+
+    // tags: the talent manages their own voice-type / specialty tags. Service
+    // tags (AI Voice / TTS Data / Proofreading) are Onyx-controlled — preserved
+    // from the current row and stripped from user input either way.
+    if ('tags' in body) {
+      if (!Array.isArray(body.tags)) return NextResponse.json({ error: 'tags must be an array' }, { status: 400 });
+      const SERVICE = new Set(['AI Voice', 'TTS Data', 'Proofreading']);
+      const currentService = (Array.isArray(r.talent.tags) ? r.talent.tags : []).filter((t: string) => SERVICE.has(t));
+      const userTags = body.tags
+        .filter((t: unknown): t is string => typeof t === 'string')
+        .map((t: string) => t.trim())
+        .filter((t: string) => t && !SERVICE.has(t))
+        .slice(0, 30)
+        .map((t: string) => t.slice(0, 60));
+      updates.tags = [...new Set([...currentService, ...userTags])];
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
@@ -64,7 +97,7 @@ export async function PATCH(request: NextRequest) {
       .from('talents')
       .update(updates)
       .eq('id', r.talent.id)
-      .select('id, name, bio, languages, accent, gender')
+      .select('id, name, bio, languages, accent, gender, tags, demo_urls')
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
