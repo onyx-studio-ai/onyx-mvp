@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/mail';
+import { getSupabaseServiceClient } from '@/lib/supabase-server';
 
 /*
-  Phase 2 (MVP) — client brief intake. No DB yet: emails the brief to Onyx for
-  manual matching + a localized confirmation to the client. A jobs table + admin
-  view come when we automate matching (Phase 3).
+  Client brief intake. Persists the brief to marketplace_briefs (Phase 3c) so
+  active talents can quote on it, AND emails Onyx + a localized confirmation to
+  the client. The DB write is best-effort: if the table isn't migrated yet, the
+  Phase 2 email-only behaviour still works.
 */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,6 +22,27 @@ export async function POST(request: NextRequest) {
     if (!String(b.brief || '').trim()) return NextResponse.json({ error: 'Brief is required' }, { status: 400 });
 
     const cats = Array.isArray(b.categories) ? b.categories.join(', ') : '';
+
+    // Persist to the talent marketplace (best-effort; non-fatal pre-migration).
+    try {
+      const db = getSupabaseServiceClient();
+      const { error: insErr } = await db.from('marketplace_briefs').insert({
+        client_email: email,
+        client_name: b.name || null,
+        company: b.company || null,
+        categories: Array.isArray(b.categories) ? b.categories : [],
+        language: b.language || null,
+        length: b.length || null,
+        budget: b.budget || null,
+        deadline: b.deadline || null,
+        brief: String(b.brief),
+        locale: b.locale || '',
+      });
+      if (insErr) console.error('[hire] brief persist failed (non-fatal):', insErr.message);
+    } catch (e) {
+      console.error('[hire] brief persist threw (non-fatal):', e);
+    }
+
     const row = (label: string, val: unknown) =>
       val ? `<tr><td style="padding:4px 12px 4px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:4px 0;color:#111;">${esc(val)}</td></tr>` : '';
 
