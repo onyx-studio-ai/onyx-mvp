@@ -238,11 +238,7 @@ export default function TalentApply() {
 
   const handleSubmit = async () => {
     setError('');
-    if (!form.display_name || !form.full_name || !form.email) { setError(tx('請填寫顯示名稱、真實姓名與 Email', '请填写显示名称、真实姓名与 Email', 'Please fill in your display name, legal name and email')); setStep(0); return; }
-    if (!emailVerified) { setError(tx('請先驗證 Email', '请先验证 Email', 'Please verify your email first')); setStep(0); return; }
-    if (langs.length === 0) { setError(tx('「可配語言與口音」請至少選 1 項', '「可配语言与口音」请至少选 1 项', 'Please select at least one language / accent')); setStep(1); return; }
-    if (cats.length === 0) { setError(tx('「能接的案件類型」請至少選 1 項', '「能接的案件类型」请至少选 1 项', 'Please select at least one job type')); setStep(1); return; }
-    if (!Object.values(coop).some(Boolean)) { setError(tx('「合作意願」請至少選 1 項', '「合作意愿」请至少选 1 项', 'Please select at least one way to collaborate')); setStep(3); return; }
+    for (let s = 0; s < STEPS.length - 1; s++) { const e = stepError(s); if (e) { setError(e); setStep(s); return; } }
     if (!agreeOwn || !agreeTerms) { setError(tx('請勾選下方兩項聲明與同意', '请勾选下方两项声明与同意', 'Please tick both statements below')); return; }
     setSubmitting(true);
     try {
@@ -309,6 +305,29 @@ export default function TalentApply() {
     }
   };
 
+  // Per-step required-field check. Returns an error message, or '' if the step is OK.
+  const stepError = (s: number): string => {
+    if (s === 0) {
+      if (!form.display_name || !form.full_name || !form.email) return tx('請填寫顯示名稱、真實姓名與 Email', '请填写显示名称、真实姓名与 Email', 'Please fill in your display name, legal name and email');
+      if (!emailVerified) return tx('請先完成 Email 驗證', '请先完成 Email 验证', 'Please verify your email first');
+    }
+    if (s === 1) {
+      if (!form.gender) return tx('請選擇性別', '请选择性别', 'Please select a gender');
+      if (langs.length === 0) return tx('「可配語言與口音」請至少選 1 項', '「可配语言与口音」请至少选 1 项', 'Please select at least one language / accent');
+      if (cats.length === 0) return tx('「能接的案件類型」請至少選 1 項', '「能接的案件类型」请至少选 1 项', 'Please select at least one job type');
+    }
+    if (s === 2 && env === null) return tx('請選擇您目前的錄音環境', '请选择您目前的录音环境', 'Please select your recording setup');
+    if (s === 3 && !Object.values(coop).some(Boolean)) return tx('「合作意願」請至少選 1 項', '「合作意愿」请至少选 1 项', 'Please select at least one way to collaborate');
+    return '';
+  };
+
+  // Navigate to a step; going forward requires all earlier steps to pass.
+  const goTo = (target: number) => {
+    for (let k = 0; k < target; k++) { const e = stepError(k); if (e) { setError(e); setStep(k); return; } }
+    setError('');
+    setStep(target);
+  };
+
   if (doneNo) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
@@ -332,7 +351,7 @@ export default function TalentApply() {
 
         <div className="flex gap-1.5 mb-8">
           {STEPS.map((s, i) => (
-            <button key={s.en} type="button" onClick={() => setStep(i)}
+            <button key={s.en} type="button" onClick={() => goTo(i)}
               className={`flex-1 text-[11px] py-1.5 rounded-md border transition-all ${
                 i === step ? 'bg-amber-500 text-black border-amber-500' : i < step ? 'bg-zinc-800 text-gray-300 border-zinc-700' : 'bg-zinc-900 text-gray-500 border-zinc-800'
               }`}>
@@ -385,7 +404,7 @@ export default function TalentApply() {
           {step === 1 && (
             <div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>{tx('性別', '性别', 'Gender')}</Label>
+                <div><Label req>{tx('性別', '性别', 'Gender')}</Label>
                   <select className={inputCls} value={form.gender} onChange={(e) => set('gender', e.target.value)}>
                     <option value="">{tx('— 選擇 —', '— 选择 —', '— Select —')}</option>
                     {GENDERS.map((g) => <option key={g.v} value={g.v}>{lbl(g)}</option>)}
@@ -427,7 +446,7 @@ export default function TalentApply() {
           {step === 2 && (
             <div>
               <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('高品質案件(尤其 AI 語音)需要乾淨、無雜訊的錄音。台灣與香港的配音員,Onyx 可協助安排錄音室。', '高品质案件(尤其 AI 语音)需要干净、无杂讯的录音。台湾与香港的配音员,Onyx 可协助安排录音室。', 'High-quality projects — particularly AI voice — require clean, noise-free recordings. For talents in Taiwan and Hong Kong, Onyx can help arrange studio access.')}</p>
-              <Label>{tx('您目前的錄音環境', '您目前的录音环境', 'Your current recording setup')}</Label>
+              <Label req>{tx('您目前的錄音環境', '您目前的录音环境', 'Your current recording setup')}</Label>
               <div className="mb-4">{ENVS.map((e) => <Chip key={e.v || 'none'} active={env === e.v} onClick={() => setEnv(e.v)}>{lbl(e)}</Chip>)}</div>
               <Label hint={tx('選填', '选填', 'Optional')}>{tx('主要器材', '主要器材', 'Main gear')}</Label>
               <input className={inputCls} value={form.microphone_model} onChange={(e) => set('microphone_model', e.target.value)} placeholder={tx('例:Rode NT1 + Focusrite 2i2', '例:Rode NT1 + Focusrite 2i2', 'e.g. Rode NT1 + Focusrite 2i2')} />
@@ -485,7 +504,6 @@ export default function TalentApply() {
                 </span>
               </div>
               {!emailVerified && <p className="text-xs text-amber-400/80 mb-3">{tx('提醒:送出前請先於「基本資料」完成 Email 驗證。', '提醒:送出前请先于「基本资料」完成 Email 验证。', 'Note: please verify your email under “Basics” before submitting.')}</p>}
-              {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
               <button type="button" disabled={submitting || !agreeOwn || !agreeTerms || !emailVerified} onClick={handleSubmit}
                 className="w-full py-3 rounded-xl bg-amber-500 text-black font-medium flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                 <Check className="w-4 h-4" /> {submitting ? tx('送出中…', '送出中…', 'Submitting…') : tx('完成,送出報名', '完成,送出报名', 'Finish & submit')}
@@ -495,10 +513,11 @@ export default function TalentApply() {
           )}
         </div>
 
+        {error && <p className="text-sm text-red-400 mt-4 text-center">{error}</p>}
         <div className="flex justify-between mt-6">
           <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} className={`px-4 py-2 rounded-lg border border-zinc-700 text-sm text-gray-300 ${step === 0 ? 'invisible' : ''}`}>{tx('上一步', '上一步', 'Back')}</button>
           {step < STEPS.length - 1 && (
-            <button type="button" onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="px-5 py-2 rounded-lg bg-amber-500 text-black text-sm font-medium flex items-center gap-1.5">{tx('下一步', '下一步', 'Next')} <ArrowRight className="w-4 h-4" /></button>
+            <button type="button" onClick={() => goTo(step + 1)} className="px-5 py-2 rounded-lg bg-amber-500 text-black text-sm font-medium flex items-center gap-1.5">{tx('下一步', '下一步', 'Next')} <ArrowRight className="w-4 h-4" /></button>
           )}
         </div>
       </div>
