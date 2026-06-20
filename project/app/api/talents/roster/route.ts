@@ -20,11 +20,17 @@ export async function GET(request: NextRequest) {
     const id = new URL(request.url).searchParams.get('id');
     const db = getSupabaseServiceClient();
 
+    // REAL HUMANS ONLY: this roster is the human talent pool. Our own AI/TTS
+    // voices (Onyx Alpha/Bravo/Delta) live in the AI catalogue (/voices) and
+    // must never appear here. They were created manually (application_id null);
+    // real talents always come from an approved application, so we require
+    // application_id to be present.
     let query = db
       .from('talents')
       .select(PUBLIC_COLUMNS)
       .eq('is_active', true)
       .in('type', ['VO', 'voice_actor'])
+      .not('application_id', 'is', null)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false });
 
