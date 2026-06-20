@@ -91,10 +91,12 @@ function OnboardInner() {
       <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 mb-5">
         <p className="text-sm font-medium text-white mb-3 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-amber-400" /> {tx('配音員合作條款', '配音员合作条款', 'Talent cooperation terms')}</p>
         <ul className="text-sm text-gray-300 space-y-2 leading-relaxed">
-          <li>· {tx('接案完成後取得酬勞,平台收取 20% 服務費。', '接案完成后取得酬劳,平台收取 20% 服务费。', 'You’re paid on completion; the platform retains a 20% service fee.')}</li>
-          <li>· {tx('合作為非獨家 —— 您仍可自由承接其他案件。', '合作为非独家 —— 您仍可自由承接其他案件。', 'Non-exclusive — you remain free to take on other work.')}</li>
-          <li>· {tx('遵守平台行為準則,聲音為本人所有並有權授權使用。', '遵守平台行为准则,声音为本人所有并有权授权使用。', 'You follow the conduct guidelines and own / hold the rights to your voice.')}</li>
-          <li>· {tx('買斷或 AI 聲音等授權,於實際合作時另行簽署。', '买断或 AI 声音等授权,于实际合作时另行签署。', 'Buyout or AI-voice licences are signed separately, only when a project goes ahead.')}</li>
+          <li>· {tx('聲音展示:您同意 Onyx 在平台上公開展示您的個人檔案與 demo,向客戶介紹您的聲音。', '声音展示:您同意 Onyx 在平台上公开展示您的个人档案与 demo,向客户介绍您的声音。', 'Display: you agree that Onyx may publicly show your profile and demos on the platform to present your voice to clients.')}</li>
+          <li>· {tx('接案與酬勞:客戶透過平台與您成交時,您於案件完成後取得酬勞,平台就您的報價收取 20% 服務費。', '接案与酬劳:客户透过平台与您成交时,您于案件完成后取得酬劳,平台就您的报价收取 20% 服务费。', 'Jobs & pay: when a client hires you through the platform, you’re paid on completion and the platform charges a 20% service fee on your quote.')}</li>
+          <li>· {tx('非獨家:本合作為非獨家,您仍可自由承接平台外的其他案件。', '非独家:本合作为非独家,您仍可自由承接平台外的其他案件。', 'Non-exclusive: you remain free to take on work outside the platform.')}</li>
+          <li>· {tx('聲音權利:您聲明所上傳的聲音與 demo 為本人錄製,並擁有合法授權使用之權利。', '声音权利:您声明所上传的声音与 demo 为本人录制,并拥有合法授权使用之权利。', 'Rights: you confirm the voice and demos you upload were recorded by you and that you hold the rights to license them.')}</li>
+          <li>· {tx('個案授權另簽:每一個實際案件的聲音使用、買斷、或將聲音製作為 AI 等授權,均於該案成立時另行簽署授權書。', '个案授权另签:每一个实际案件的声音使用、买断、或将声音制作为 AI 等授权,均于该案成立时另行签署授权书。', 'Per-project licences: usage, buyout, or AI-voice licences for each actual project are signed separately when that project goes ahead.')}</li>
+          <li>· {tx('行為準則:遵守平台行為準則,並誠實提供資料。', '行为准则:遵守平台行为准则,并诚实提供资料。', 'Conduct: follow the platform guidelines and provide accurate information.')}</li>
         </ul>
       </div>
 
