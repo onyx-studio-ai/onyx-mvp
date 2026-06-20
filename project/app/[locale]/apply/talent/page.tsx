@@ -167,6 +167,7 @@ export default function TalentApply() {
   const [q, setQ] = useState('');
   const [cats, setCats] = useState<string[]>([]);
   const [feels, setFeels] = useState<string[]>([]);
+  const [feelQ, setFeelQ] = useState('');
   const [env, setEnv] = useState<string | null>(null);
   const [coop, setCoop] = useState({ jobs: true, buyout: false, aiClone: false, aiTrain: false, proofread: false });
   const [lowData, setLowData] = useState(false);
@@ -406,7 +407,16 @@ export default function TalentApply() {
                 )}
               </div>
               <div className="mt-4"><Label hint={tx('可多選', '可多选', 'Multi-select')}>{tx('能接的案件類型', '能接的案件类型', 'Job types you take')}</Label><div>{CATEGORIES.map((c) => <Chip key={c.v} active={cats.includes(c.v)} onClick={() => toggleIn(cats, setCats, c.v)}>{lbl(c)}</Chip>)}</div></div>
-              <div className="mt-4"><Label hint={tx('複選', '复选', 'Multi-select')}>{tx('聲音給人的感覺', '声音给人的感觉', 'How your voice feels')}</Label><div>{FEELS.map((f) => <Chip key={f.v} active={feels.includes(f.v)} onClick={() => toggleIn(feels, setFeels, f.v)}>{lbl(f)}</Chip>)}</div></div>
+              <div className="mt-4">
+                <Label hint={tx('複選,可自填', '复选,可自填', 'Multi-select; add your own')}>{tx('聲音給人的感覺', '声音给人的感觉', 'How your voice feels')}</Label>
+                <div>
+                  {FEELS.map((f) => <Chip key={f.v} active={feels.includes(f.v)} onClick={() => toggleIn(feels, setFeels, f.v)}>{lbl(f)}</Chip>)}
+                  {feels.filter((f) => !FEELS.some((o) => o.v === f)).map((f) => <Chip key={f} active onClick={() => setFeels(feels.filter((x) => x !== f))}>{f} <X className="w-3 h-3" /></Chip>)}
+                </div>
+                <input className={inputCls} value={feelQ} onChange={(e) => setFeelQ(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const v = feelQ.trim(); if (v && !feels.includes(v)) setFeels([...feels, v]); setFeelQ(''); } }}
+                  placeholder={tx('其他?自己打,按 Enter 新增', '其他?自己打,按 Enter 新增', 'Other? Type it and press Enter')} />
+              </div>
             </div>
           )}
 
@@ -439,7 +449,7 @@ export default function TalentApply() {
               })}
               <div onClick={() => setLowData(!lowData)} className={`p-3 rounded-lg border cursor-pointer mt-1 mb-4 text-sm flex items-start gap-2.5 ${lowData ? 'bg-zinc-800 border-zinc-600 text-gray-200' : 'bg-zinc-900 border-zinc-700 text-gray-400'}`}>
                 <div className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border ${lowData ? 'bg-amber-500 border-amber-500' : 'border-zinc-600'}`}>{lowData && <Check className="w-3 h-3 text-black" />}</div>
-                <span>{tx('另外:願意收到較低價、量大的「數據採集案」資訊嗎?', '另外:愿意收到较低价、量大的「数据采集案」资讯吗?', 'Also: open to hearing about lower-paid, high-volume data-collection jobs?')}</span>
+                <span>{tx('另外:願意收到用手機錄製的「數據採集案」資訊嗎?', '另外:愿意收到用手机录制的「数据采集案」资讯吗?', 'Also: open to hearing about phone-recorded data-collection jobs?')}</span>
               </div>
               <Label hint={tx('選填', '选填', 'Optional')}>{tx('有沒有不接案的國家 / 地區?', '有没有不接案的国家 / 地区?', "Any countries / regions you won't work with?")}</Label>
               <input className={inputCls} value={form.excluded_countries} onChange={(e) => set('excluded_countries', e.target.value)} placeholder={tx('(選填)', '(选填)', '(optional)')} />
