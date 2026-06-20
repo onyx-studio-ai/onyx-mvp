@@ -989,12 +989,12 @@ export function briefReceivedEmail(p: { clientName?: string; briefNumber?: strin
   const name = mpEsc((p.clientName || '').trim());
   const n = (p.briefNumber || '').trim();
   const C = {
-    tw: { subject: `Onyx Studios 已收到您的配音需求${n ? ` — ${n}` : ''}`, headline: '已收到您的需求', sub: '我們會盡快為您配對合適的配音員。', card: n ? `需求編號 ${n}` : '配音需求',
-      greet: `${name ? name + ' ' : ''}您好:`, l1: '謝謝您的需求,我們已經收到。團隊會盡快從合適的配音員中為您挑選,並帶著報價與試聽與您聯繫。', l2: '若有任何補充,直接回覆這封信即可。', sign: '— Onyx Studios 團隊' },
-    cn: { subject: `Onyx Studios 已收到您的配音需求${n ? ` — ${n}` : ''}`, headline: '已收到您的需求', sub: '我们会尽快为您匹配合适的配音员。', card: n ? `需求编号 ${n}` : '配音需求',
-      greet: `${name ? name + ' ' : ''}您好:`, l1: '谢谢您的需求,我们已经收到。团队会尽快从合适的配音员中为您挑选,并带着报价与试听与您联系。', l2: '若有任何补充,直接回复这封邮件即可。', sign: '— Onyx Studios 团队' },
-    en: { subject: `Onyx Studios — we received your brief${n ? ` (${n})` : ''}`, headline: 'Brief received', sub: "We'll match you with the right voices shortly.", card: n ? `Brief ${n}` : 'Voiceover brief',
-      greet: `Dear ${name || 'there'},`, l1: "Thanks for your brief — we've received it. Our team will shortlist suitable voices and get back to you with quotes and samples soon.", l2: 'If you have anything to add, just reply to this email.', sign: '— The Onyx Studios team' },
+    tw: { subject: `Onyx Studios 已收到您的配音需求${n ? `(${n})` : ''}`, headline: '已收到您的配音需求', sub: '我們將盡快為您安排合適的配音人選。', card: n ? `案件編號 ${n}` : '配音需求',
+      greet: `${name ? name + ' ' : ''}您好,`, l1: '感謝您的委託與信任。您的配音需求我們已收到,專案團隊將盡快為您篩選合適的配音員,並備妥報價與試聽供您參考。', l2: '若有任何補充說明,或希望優先指定的聲音風格,歡迎直接回覆本信,我們將儘速為您處理。', sign: 'Onyx Studios 團隊 敬上' },
+    cn: { subject: `Onyx Studios 已收到您的配音需求${n ? `(${n})` : ''}`, headline: '已收到您的配音需求', sub: '我们将尽快为您安排合适的配音人选。', card: n ? `案件编号 ${n}` : '配音需求',
+      greet: `${name ? name + ' ' : ''}您好,`, l1: '感谢您的委托与信任。您的配音需求我们已收到,项目团队将尽快为您筛选合适的配音员,并备妥报价与试听供您参考。', l2: '若有任何补充说明,或希望优先指定的声音风格,欢迎直接回复本邮件,我们将尽快为您处理。', sign: 'Onyx Studios 团队 敬上' },
+    en: { subject: `Onyx Studios — your voiceover brief has been received${n ? ` (${n})` : ''}`, headline: 'Your brief has been received', sub: 'We will arrange the right voices for you shortly.', card: n ? `Brief ${n}` : 'Voiceover brief',
+      greet: `Dear ${name || 'there'},`, l1: 'Thank you for your enquiry. We have received your voiceover brief, and our team will shortlist suitable voice talent and prepare quotes and samples for your review shortly.', l2: 'If there is anything you would like to add, or a particular voice style you have in mind, simply reply to this email and we will be glad to assist.', sign: 'Kind regards,<br/>The Onyx Studios Team' },
   }[L];
   const content = `
     ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
@@ -1007,9 +1007,9 @@ export function newMessageEmail(p: { briefNumber?: string; locale?: string; url:
   const L = mpLocale(p.locale);
   const n = (p.briefNumber || '').trim();
   const C = {
-    tw: { subject: `Onyx — 您有一則新訊息${n ? ` (${n})` : ''}`, headline: '您有一則新訊息', sub: '對方在平台上回覆了您。', card: n ? `案件 ${n}` : '案件訊息', l1: '您在 Onyx 平台的案件有一則新訊息。點下方按鈕即可查看並回覆。', cta: '查看訊息', note: '為保障雙方權益並方便我們協助,請於平台內回覆。' },
-    cn: { subject: `Onyx — 您有一条新消息${n ? ` (${n})` : ''}`, headline: '您有一条新消息', sub: '对方在平台上回复了您。', card: n ? `案件 ${n}` : '案件消息', l1: '您在 Onyx 平台的案件有一条新消息。点下方按钮即可查看并回复。', cta: '查看消息', note: '为保障双方权益并方便我们协助,请在平台内回复。' },
-    en: { subject: `Onyx — you have a new message${n ? ` (${n})` : ''}`, headline: 'You have a new message', sub: 'The other party replied on the platform.', card: n ? `Project ${n}` : 'Project message', l1: 'There is a new message on your Onyx project. Click below to view and reply.', cta: 'View messages', note: 'Please reply on-platform so we can support you and protect both parties.' },
+    tw: { subject: `Onyx Studios — 您有一則新訊息${n ? `(${n})` : ''}`, headline: '您有一則新訊息', sub: '對方已於平台回覆您的案件。', card: n ? `案件 ${n}` : '案件訊息', l1: '您在 Onyx Studios 平台的案件收到一則新訊息,敬請點選下方按鈕查看並回覆。', cta: '查看訊息', note: '為保障雙方權益並利我們從旁協助,煩請於平台內回覆。' },
+    cn: { subject: `Onyx Studios — 您有一条新消息${n ? `(${n})` : ''}`, headline: '您有一条新消息', sub: '对方已在平台回复您的案件。', card: n ? `案件 ${n}` : '案件消息', l1: '您在 Onyx Studios 平台的案件收到一条新消息,请点击下方按钮查看并回复。', cta: '查看消息', note: '为保障双方权益并便于我们从旁协助,烦请在平台内回复。' },
+    en: { subject: `Onyx Studios — you have a new message${n ? ` (${n})` : ''}`, headline: 'You have a new message', sub: 'The other party has replied on your project.', card: n ? `Project ${n}` : 'Project message', l1: 'There is a new message on your Onyx Studios project. Please click below to view and reply.', cta: 'View message', note: 'To protect both parties and allow us to assist, kindly keep your correspondence on the platform.' },
   }[L];
   const content = `
     ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
