@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase';
 
 const STEPS = [
   { tw: '基本資料', cn: '基本资料', en: 'Basics' },
-  { tw: '你的聲音', cn: '你的声音', en: 'Your voice' },
+  { tw: '您的聲音', cn: '您的声音', en: 'Your voice' },
   { tw: '錄音環境', cn: '录音环境', en: 'Recording' },
   { tw: '合作意願', cn: '合作意愿', en: 'Collaboration' },
   { tw: '作品', cn: '作品', en: 'Demo' },
@@ -101,25 +101,25 @@ const GENDERS = [
 ];
 const COOP = [
   { key: 'jobs',
-    tw: { t: '① 接案配音', d: '有合適案件就通知你,接不接由你。完成後取得酬勞,平台收 20% 服務費。' },
-    cn: { t: '① 接案配音', d: '有合适案件就通知你,接不接由你。完成后取得酬劳,平台收 20% 服务费。' },
-    en: { t: '① Take voice jobs', d: 'We notify you when a fitting job comes up — accept or pass, your call. You get paid on delivery; the platform takes a 20% service fee.' } },
+    tw: { t: '① 承接配音案件', d: '當有合適案件時,我們會主動通知您,是否承接由您決定。案件完成後即可獲得酬勞,平台收取 20% 服務費。' },
+    cn: { t: '① 承接配音案件', d: '当有合适案件时,我们会主动通知您,是否承接由您决定。案件完成后即可获得酬劳,平台收取 20% 服务费。' },
+    en: { t: '① Accept voiceover work', d: 'When a suitable project arises, we will notify you; whether to accept is entirely your decision. You receive payment on completion, and the platform retains a 20% service fee.' } },
   { key: 'buyout',
-    tw: { t: '② 開放聲音買斷', d: '客戶一次買斷某段錄音;只買那段聲音、非獨家,你照樣接別的案。' },
-    cn: { t: '② 开放声音买断', d: '客户一次买断某段录音;只买那段声音、非独家,你照样接别的案。' },
-    en: { t: '② Allow buyouts', d: 'A client buys out a specific recording in one payment — just that audio, non-exclusive. You keep taking other work.' } },
+    tw: { t: '② 開放聲音買斷', d: '客戶可一次性買斷特定一段錄音的使用權,僅限該段聲音、屬非獨家授權,您仍可自由承接其他案件。' },
+    cn: { t: '② 开放声音买断', d: '客户可一次性买断特定一段录音的使用权,仅限该段声音、属非独家授权,您仍可自由承接其他案件。' },
+    en: { t: '② Allow voice buyouts', d: 'A client may acquire full rights to a specific recording in a one-time buyout — limited to that audio and non-exclusive. You remain free to take on other work.' } },
   { key: 'aiClone',
-    tw: { t: '③ 將聲音製作為 AI(會用到你的聲音)', d: '客戶以你的聲音做成 AI;非獨家,你仍可錄其他 TTS 或配音。真要做時才另外簽授權書。' },
-    cn: { t: '③ 将声音制作为 AI(会用到你的声音)', d: '客户以你的声音做成 AI;非独家,你仍可录其他 TTS 或配音。真要做时才另外签授权书。' },
-    en: { t: '③ Turn my voice into an AI (uses your voice)', d: 'A client builds an AI from your voice. Non-exclusive — you can still record other TTS or VO. A separate licence is signed only when a project actually goes ahead.' } },
+    tw: { t: '③ 將聲音製作為 AI(會使用您的聲音)', d: '客戶以您的聲音建立 AI 語音,屬非獨家授權,您仍可錄製其他 TTS 或配音案件。實際執行前將另行簽署授權書。' },
+    cn: { t: '③ 将声音制作为 AI(会使用您的声音)', d: '客户以您的声音建立 AI 语音,属非独家授权,您仍可录制其他 TTS 或配音案件。实际执行前将另行签署授权书。' },
+    en: { t: '③ Develop an AI voice from your voice (uses your voice)', d: 'A client builds an AI voice based on your voice, under a non-exclusive licence; you may still record other TTS or voiceover work. A separate licence agreement is signed before any project proceeds.' } },
   { key: 'aiTrain',
-    tw: { t: '④ 錄製 AI 訓練素材(不會用到你的聲音)', d: '錄句子/對話當訓練素材;你的聲音不會被複製或對外呈現。' },
-    cn: { t: '④ 录制 AI 训练素材(不会用到你的声音)', d: '录句子/对话当训练素材;你的声音不会被复制或对外呈现。' },
-    en: { t: '④ Record AI training data (does not use your voice)', d: 'You record sentences / dialogue as training material. Your voice itself is never cloned or made public.' } },
+    tw: { t: '④ 錄製 AI 訓練素材(不會使用您的聲音)', d: '依指示錄製語句或對話作為訓練素材;您的聲音不會被複製,也不會對外呈現。' },
+    cn: { t: '④ 录制 AI 训练素材(不会使用您的声音)', d: '依指示录制语句或对话作为训练素材;您的声音不会被复制,也不会对外呈现。' },
+    en: { t: '④ Record AI training data (does not use your voice)', d: 'You record sentences or dialogue as training material; your voice is neither cloned nor made public.' } },
   { key: 'proofread',
-    tw: { t: '⑤ 語音校對', d: '聽一段音檔,抓出唸錯/讀錯的字、提供正確讀音(同音字),通常很快。字多或較長的(如 30 秒以上)要花點時間聽。有案子才找你,費用按長度另談。' },
-    cn: { t: '⑤ 语音校对', d: '听一段音档,抓出念错/读错的字、提供正确读音(同音字),通常很快。字多或较长的(如 30 秒以上)要花点时间听。有案子才找你,费用按长度另谈。' },
-    en: { t: '⑤ Audio proofreading', d: 'Listen to a clip, catch mispronounced / misread words and give the correct reading (homophones) — usually quick. Longer clips (30s+) take more time. Only when there is work; the fee depends on length.' } },
+    tw: { t: '⑤ 語音校對', d: '聆聽指定音檔,標示唸錯或讀錯之處,並提供正確讀音(含同音字判讀)。一般可快速完成,內容較長者(約 30 秒以上)需較多時間。僅於有需求時邀約,費用依長度另行議定。' },
+    cn: { t: '⑤ 语音校对', d: '聆听指定音档,标示念错或读错之处,并提供正确读音(含同音字判读)。一般可快速完成,内容较长者(约 30 秒以上)需较多时间。仅于有需求时邀约,费用依长度另行议定。' },
+    en: { t: '⑤ Audio proofreading', d: 'Listen to a supplied recording, flag mispronounced or misread words, and provide the correct reading (including homophones). Usually quick; longer pieces (30s+) require more time. Engaged on a per-project basis, with fees agreed by length.' } },
 ] as const;
 
 const inputCls =
@@ -324,7 +324,7 @@ export default function TalentApply() {
       <div className="max-w-2xl mx-auto px-4 pt-28 pb-12">
         <p className="text-xs tracking-widest text-gray-400 mb-1">{tx('ONYX · 配音員報名', 'ONYX · 配音员报名', 'ONYX · Voice Talent Application')}</p>
         <h1 className="text-2xl font-bold mb-1">{tx('歡迎加入 Onyx 配音陣容', '欢迎加入 Onyx 配音阵容', 'Join the Onyx voice roster')}</h1>
-        <p className="text-sm text-gray-400 mb-8">{tx('填好基本資料就能開始接案,約 2 分鐘。', '填好基本资料就能开始接案,约 2 分钟。', 'Fill in the basics and you can start taking work — about 2 minutes.')}</p>
+        <p className="text-sm text-gray-400 mb-8">{tx('請完整填寫以下資料,約需 2 分鐘。', '请完整填写以下资料,约需 2 分钟。', 'Please complete the form below — it takes about 2 minutes.')}</p>
 
         <div className="flex gap-1.5 mb-8">
           {STEPS.map((s, i) => (
@@ -341,13 +341,13 @@ export default function TalentApply() {
           {step === 0 && (
             <div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label hint={tx('公開', '公开', 'Public')}>{tx('顯示名稱', '显示名称', 'Display name')}</Label><input className={inputCls} value={form.display_name} onChange={(e) => set('display_name', e.target.value)} placeholder={tx('客戶會看到的名字', '客户会看到的名字', 'Shown to clients')} /></div>
+                <div><Label hint={tx('公開', '公开', 'Public')}>{tx('顯示名稱', '显示名称', 'Display name')}</Label><input className={inputCls} value={form.display_name} onChange={(e) => set('display_name', e.target.value)} placeholder={tx('客戶端顯示的名稱', '客户端显示的名称', 'Shown to clients')} /></div>
                 <div><Label hint={tx('不公開', '不公开', 'Private')}>{tx('真實姓名', '真实姓名', 'Legal name')}</Label><input className={inputCls} value={form.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder={tx('合約/付款用', '合约/付款用', 'For contracts & payment')} /></div>
               </div>
               <div className="mt-4">
                 <Label>Email {emailVerified && <span className="text-emerald-400 text-xs">✓ {tx('已驗證', '已验证', 'Verified')}</span>}</Label>
                 <div className="flex gap-2">
-                  <input className={inputCls} type="email" value={form.email} onChange={(e) => onEmailChange(e.target.value)} disabled={emailVerified} placeholder={tx('案件通知會寄到這裡', '案件通知会寄到这里', 'Job notifications go here')} />
+                  <input className={inputCls} type="email" value={form.email} onChange={(e) => onEmailChange(e.target.value)} disabled={emailVerified} placeholder={tx('案件通知將寄送至此', '案件通知将寄送至此', 'Job notifications are sent here')} />
                   {!emailVerified && (
                     <button type="button" onClick={sendCode} disabled={!emailOk || codeBusy}
                       className="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-xs text-amber-300 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
@@ -422,8 +422,8 @@ export default function TalentApply() {
 
           {step === 2 && (
             <div>
-              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('高品質的案子(尤其 AI 語音)需要乾淨無雜音的錄音。台灣・香港的配音員,Onyx 可協助安排錄音室。', '高品质的案子(尤其 AI 语音)需要干净无杂音的录音。台湾・香港的配音员,Onyx 可协助安排录音室。', 'High-quality jobs (especially AI voice) need clean, noise-free recordings. For talents in Taiwan & Hong Kong, Onyx can help arrange a studio.')}</p>
-              <Label>{tx('你目前的錄音環境', '你目前的录音环境', 'Your current recording setup')}</Label>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('高品質案件(尤其 AI 語音)需要乾淨、無雜訊的錄音。台灣與香港的配音員,Onyx 可協助安排錄音室。', '高品质案件(尤其 AI 语音)需要干净、无杂讯的录音。台湾与香港的配音员,Onyx 可协助安排录音室。', 'High-quality projects — particularly AI voice — require clean, noise-free recordings. For talents in Taiwan and Hong Kong, Onyx can help arrange studio access.')}</p>
+              <Label>{tx('您目前的錄音環境', '您目前的录音环境', 'Your current recording setup')}</Label>
               <div className="mb-4">{ENVS.map((e) => <Chip key={e.v || 'none'} active={env === e.v} onClick={() => setEnv(e.v)}>{lbl(e)}</Chip>)}</div>
               <Label hint={tx('選填', '选填', 'Optional')}>{tx('主要器材', '主要器材', 'Main gear')}</Label>
               <input className={inputCls} value={form.microphone_model} onChange={(e) => set('microphone_model', e.target.value)} placeholder={tx('例:Rode NT1 + Focusrite 2i2', '例:Rode NT1 + Focusrite 2i2', 'e.g. Rode NT1 + Focusrite 2i2')} />
@@ -432,8 +432,8 @@ export default function TalentApply() {
 
           {step === 3 && (
             <div>
-              <p className="text-sm text-gray-300 mb-1">{tx('你希望如何與我們合作?', '你希望如何与我们合作?', 'How would you like to work with us?')}</p>
-              <p className="text-xs text-gray-500 mb-4">{tx('可全選、也可只選一項 — 完全自願。', '可全选、也可只选一项 — 完全自愿。', 'Pick all, some, or one — entirely up to you.')}</p>
+              <p className="text-sm text-gray-300 mb-1">{tx('您希望以哪些方式與我們合作?', '您希望以哪些方式与我们合作?', 'In what ways would you like to work with us?')}</p>
+              <p className="text-xs text-gray-500 mb-4">{tx('可複選,亦可僅擇一;完全自願。', '可复选,亦可仅择一;完全自愿。', 'Select any, all, or none — entirely optional.')}</p>
               {COOP.map((c) => {
                 const on = (coop as Record<string, boolean>)[c.key];
                 const t = c[L];
@@ -449,16 +449,16 @@ export default function TalentApply() {
               })}
               <div onClick={() => setLowData(!lowData)} className={`p-3 rounded-lg border cursor-pointer mt-1 mb-4 text-sm flex items-start gap-2.5 ${lowData ? 'bg-zinc-800 border-zinc-600 text-gray-200' : 'bg-zinc-900 border-zinc-700 text-gray-400'}`}>
                 <div className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border ${lowData ? 'bg-amber-500 border-amber-500' : 'border-zinc-600'}`}>{lowData && <Check className="w-3 h-3 text-black" />}</div>
-                <span>{tx('另外:願意收到用手機錄製的「數據採集案」資訊嗎?', '另外:愿意收到用手机录制的「数据采集案」资讯吗?', 'Also: open to hearing about phone-recorded data-collection jobs?')}</span>
+                <span>{tx('此外:是否願意收到以手機錄製的「語音數據採集案」相關資訊?', '此外:是否愿意收到以手机录制的「语音数据采集案」相关资讯?', 'In addition: would you like to receive information about phone-recorded voice data-collection projects?')}</span>
               </div>
-              <Label hint={tx('選填', '选填', 'Optional')}>{tx('有沒有不接案的國家 / 地區?', '有没有不接案的国家 / 地区?', "Any countries / regions you won't work with?")}</Label>
+              <Label hint={tx('選填', '选填', 'Optional')}>{tx('是否有不承接案件的國家 / 地區?', '是否有不承接案件的国家 / 地区?', 'Any countries or regions you do not work with?')}</Label>
               <input className={inputCls} value={form.excluded_countries} onChange={(e) => set('excluded_countries', e.target.value)} placeholder={tx('(選填)', '(选填)', '(optional)')} />
             </div>
           )}
 
           {step === 4 && (
             <div>
-              <p className="text-xs text-gray-400 mb-4">{tx('上傳一段你的 demo,讓客戶認識你的聲音(選填,可日後補)。支援 wav / mp3 / m4a / aac / ogg / flac,50MB 內。', '上传一段你的 demo,让客户认识你的声音(选填,可日后补)。支援 wav / mp3 / m4a / aac / ogg / flac,50MB 内。', 'Upload a demo so clients can hear your voice (optional, can add later). wav / mp3 / m4a / aac / ogg / flac, under 50 MB.')}</p>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('請上傳一段個人配音 demo,供客戶了解您的聲音特質。建議優先提供以居家設備、於居家環境錄製的純人聲樣本(無需配樂或其他效果);如需保護權益,可自行加註浮水印。若暫無上述錄音條件,提供一般 demo 亦可。本欄為選填,亦可日後補件。檔案支援 wav / mp3 / m4a / aac / ogg / flac,單檔請勿超過 50MB。', '请上传一段个人配音 demo,供客户了解您的声音特质。建议优先提供以居家设备、于居家环境录制的纯人声样本(无需配乐或其他效果);如需保护权益,可自行加注浮水印。若暂无上述录音条件,提供一般 demo 亦可。本栏为选填,亦可日后补件。档案支援 wav / mp3 / m4a / aac / ogg / flac,单档请勿超过 50MB。', 'Please upload a voiceover demo so clients can assess your voice. A clean, voice-only sample recorded with your home equipment in a home setting is preferred (no background music or effects); you may add a watermark to protect your work if you wish. If such a setup is not currently available, a standard demo is also acceptable. This field is optional and may be added later. Supported formats: wav / mp3 / m4a / aac / ogg / flac, up to 50MB per file.')}</p>
               <label className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-zinc-600 text-sm text-gray-300 cursor-pointer hover:border-amber-500 w-fit">
                 <Upload className="w-4 h-4" /> {file ? tx('更換檔案', '更换档案', 'Replace file') : tx('選擇 demo 檔案', '选择 demo 档案', 'Choose a demo file')}
                 <input type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.ogg,.flac,audio/*" className="hidden" onChange={handleFile} />
@@ -472,21 +472,21 @@ export default function TalentApply() {
             <div>
               <div onClick={() => setAgreeOwn(!agreeOwn)} className="flex gap-2.5 text-sm text-gray-300 mb-3 cursor-pointer">
                 <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${agreeOwn ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{agreeOwn && <Check className="w-3.5 h-3.5 text-black" />}</div>
-                {tx('我確認上傳的聲音為本人錄製,且擁有授權使用之權利。', '我确认上传的声音为本人录制,且拥有授权使用之权利。', 'I confirm the audio I uploaded was recorded by me and that I hold the rights to license it.')}
+                {tx('本人確認所上傳之聲音樣本為本人錄製,並擁有合法授權使用之權利。', '本人确认所上传之声音样本为本人录制,并拥有合法授权使用之权利。', 'I confirm that the audio I have uploaded was recorded by me and that I hold the rights to license it.')}
               </div>
               <div onClick={() => setAgreeTerms(!agreeTerms)} className="flex gap-2.5 text-sm text-gray-300 mb-6 cursor-pointer">
                 <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border ${agreeTerms ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-zinc-800'}`}>{agreeTerms && <Check className="w-3.5 h-3.5 text-black" />}</div>
                 <span onClick={(e) => e.stopPropagation()}>
-                  {tx('我已閱讀並同意', '我已阅读并同意', 'I have read and agree to the')} <a href={`/${locale}/legal/terms`} target="_blank" className="text-amber-300 underline">{tx('平台合作條款', '平台合作条款', 'Platform Terms')}</a> {tx('與', '与', 'and')} <a href={`/${locale}/legal/privacy`} target="_blank" className="text-amber-300 underline">{tx('隱私政策', '隐私政策', 'Privacy Policy')}</a>{tx('。', '。', '.')}
+                  {tx('本人已閱讀並同意', '本人已阅读并同意', 'I have read and agree to the')} <a href={`/${locale}/legal/terms`} target="_blank" className="text-amber-300 underline">{tx('平台合作條款', '平台合作条款', 'Platform Terms')}</a> {tx('與', '与', 'and')} <a href={`/${locale}/legal/privacy`} target="_blank" className="text-amber-300 underline">{tx('隱私政策', '隐私政策', 'Privacy Policy')}</a>{tx('。', '。', '.')}
                 </span>
               </div>
-              {!emailVerified && <p className="text-xs text-amber-400/80 mb-3">{tx('提醒:請先回到第一步驗證 Email 才能送出。', '提醒:请先回到第一步验证 Email 才能送出。', 'Heads up: verify your email in step 1 before you can submit.')}</p>}
+              {!emailVerified && <p className="text-xs text-amber-400/80 mb-3">{tx('提醒:送出前請先於「基本資料」完成 Email 驗證。', '提醒:送出前请先于「基本资料」完成 Email 验证。', 'Note: please verify your email under “Basics” before submitting.')}</p>}
               {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
               <button type="button" disabled={submitting || !agreeOwn || !agreeTerms || !emailVerified} onClick={handleSubmit}
                 className="w-full py-3 rounded-xl bg-amber-500 text-black font-medium flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                 <Check className="w-4 h-4" /> {submitting ? tx('送出中…', '送出中…', 'Submitting…') : tx('完成,送出報名', '完成,送出报名', 'Finish & submit')}
               </button>
-              <p className="text-center text-xs text-gray-500 mt-3">{tx('收款資料(銀行/證件)等首次接到付費案再填。', '收款资料(银行/证件)等首次接到付费案再填。', 'Banking & ID details come later, when you land your first paid job.')}</p>
+              <p className="text-center text-xs text-gray-500 mt-3 leading-relaxed">{tx('送出後我們將盡快審核,並以 Email 通知後續。收款資料(銀行帳戶 / 證件)將於您首次承接付費案件時再行提供。', '送出后我们将尽快审核,并以 Email 通知后续。收款资料(银行账户 / 证件)将于您首次承接付费案件时再行提供。', 'After you submit, we will review your application and notify you by email. Banking and identification details are collected when you take on your first paid project.')}</p>
             </div>
           )}
         </div>
