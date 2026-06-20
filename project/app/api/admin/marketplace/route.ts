@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
-import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
+import { requireAdmin, requireAdminOnly } from '@/app/api/admin/_utils/requireAdmin';
 
 /*
   Admin marketplace view — Onyx mediates briefs + quotes (managed model).
@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const unauthorized = requireAdmin(request);
+  // Awarding a brief decides who gets paid — restrict to the admin role.
+  const unauthorized = requireAdminOnly(request);
   if (unauthorized) return unauthorized;
   try {
     const db = getSupabaseServiceClient();
@@ -47,30 +48,54 @@ export async function PATCH(request: NextRequest) {
 
     if (kind === 'brief') {
       if (!BRIEF_STATUSES.includes(status)) return NextResponse.json({ error: 'Invalid brief status' }, { status: 400 });
-      const { error } = await db.from('marketplace_briefs').update({ status, updated_at: now }).eq('id', id);
+      // Reopening/cancelling clears the stale award pointer so it can't linger.
+      const patch: Record<string, unknown> = { status, updated_at: now };
+      if (['open', 'reviewing', 'cancelled'].includes(status)) patch.awarded_quote_id = null;
+      const { error } = await db.from('marketplace_briefs').update(patch).eq('id', id);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
     }
 
     if (kind === 'quote') {
       if (!QUOTE_STATUSES.includes(status)) return NextResponse.json({ error: 'Invalid quote status' }, { status: 400 });
-      const { data: q, error } = await db
-        .from('marketplace_quotes')
-        .update({ status, updated_at: now })
-        .eq('id', id)
-        .select('brief_id')
-        .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      if (status === 'accepted' && q) {
-        // Award the brief to this quote; reject the other still-live quotes.
-        await db.from('marketplace_briefs').update({ awarded_quote_id: id, status: 'awarded', updated_at: now }).eq('id', q.brief_id);
+
+      if (status === 'accepted') {
+        // Accept only a quote that is still live (can't resurrect a withdrawn/rejected one).
+        const { data: q } = await db
+          .from('marketplace_quotes')
+          .update({ status: 'accepted', updated_at: now })
+          .eq('id', id)
+          .in('status', ['submitted', 'shortlisted'])
+          .select('brief_id')
+          .maybeSingle();
+        if (!q) return NextResponse.json({ error: 'Quote is no longer available to accept' }, { status: 409 });
+
+        // Award the brief only if it isn't already awarded — prevents double-award.
+        const { data: awarded } = await db
+          .from('marketplace_briefs')
+          .update({ awarded_quote_id: id, status: 'awarded', updated_at: now })
+          .eq('id', q.brief_id)
+          .is('awarded_quote_id', null)
+          .select('id')
+          .maybeSingle();
+        if (!awarded) {
+          await db.from('marketplace_quotes').update({ status: 'submitted', updated_at: now }).eq('id', id);
+          return NextResponse.json({ error: 'This brief is already awarded' }, { status: 409 });
+        }
+
+        // Reject the remaining live quotes on this brief.
         await db
           .from('marketplace_quotes')
           .update({ status: 'rejected', updated_at: now })
           .eq('brief_id', q.brief_id)
           .neq('id', id)
           .in('status', ['submitted', 'shortlisted']);
+        return NextResponse.json({ ok: true });
       }
+
+      // Non-accept transitions (shortlist / reject / withdraw).
+      const { error } = await db.from('marketplace_quotes').update({ status, updated_at: now }).eq('id', id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
     }
 

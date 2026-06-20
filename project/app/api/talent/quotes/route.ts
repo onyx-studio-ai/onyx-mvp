@@ -14,6 +14,7 @@ import { sendEmail } from '@/lib/mail';
 */
 
 const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
+const esc = (s: unknown) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string));
 
 export async function POST(request: NextRequest) {
   const r = await resolveTalentFromRequest(request, 'id, name');
@@ -54,9 +55,9 @@ export async function POST(request: NextRequest) {
       category: 'PRODUCTION',
       to: 'produce@onyxstudios.ai',
       subject: `新報價 ${brief.brief_number} — ${talent.name}`,
-      html: `<p>配音員 <b>${talent.name}</b> 對 brief <b>${brief.brief_number}</b> 報價:</p>
-             <p>客戶支付 ${currency} ${gross} · 配音員淨得 ${currency} ${data.net_amount}</p>
-             ${message ? `<p style="white-space:pre-wrap;background:#f4f4f5;padding:10px;border-radius:8px;">${message.replace(/[<>&]/g, '')}</p>` : ''}`,
+      html: `<p>配音員 <b>${esc(talent.name)}</b> 對 brief <b>${esc(brief.brief_number)}</b> 報價:</p>
+             <p>客戶支付 ${esc(currency)} ${gross} · 配音員淨得 ${esc(currency)} ${esc(data.net_amount)}</p>
+             ${message ? `<p style="white-space:pre-wrap;background:#f4f4f5;padding:10px;border-radius:8px;">${esc(message)}</p>` : ''}`,
     }).catch(() => {});
 
     return NextResponse.json({ quote: data });
