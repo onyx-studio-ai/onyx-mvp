@@ -923,6 +923,58 @@ export function signupConfirmationEmail(p: { confirmLink: string }): { subject: 
   };
 }
 
+export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; dashboardUrl: string; locale?: string }): { subject: string; html: string } {
+  // Sent after onboarding: the talent's account is created and they set a
+  // password to log in at /talent and self-manage their profile. Tri-lingual.
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
+  const name = (p.name || '').trim();
+  const C = {
+    tw: {
+      subject: '設定密碼 · 開通您的 Onyx 配音員後台',
+      headline: '開通您的配音員後台',
+      sub: '設定密碼,隨時自行管理檔案。',
+      card: '帳號設定',
+      greet: `${name ? name + ' ' : ''}您好:`,
+      l1: '您的配音員檔案已在 Onyx Studios 平台上線。我們為您開設了專屬後台,您可隨時登入、自行更新個人簡介、語言、口音等資料。',
+      l2: '請點下方按鈕設定您的登入密碼:',
+      cta: '設定密碼',
+      l3: `設定完成後,日後可隨時於 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音員後台</a> 登入管理。`,
+      note: '此連結 24 小時內有效。若您並未報名 Onyx Studios,請忽略此信。',
+    },
+    cn: {
+      subject: '设置密码 · 开通您的 Onyx 配音员后台',
+      headline: '开通您的配音员后台',
+      sub: '设置密码,随时自行管理资料。',
+      card: '账号设置',
+      greet: `${name ? name + ' ' : ''}您好:`,
+      l1: '您的配音员资料已在 Onyx Studios 平台上线。我们为您开设了专属后台,您可随时登录、自行更新个人简介、语言、口音等资料。',
+      l2: '请点下方按钮设置您的登录密码:',
+      cta: '设置密码',
+      l3: `设置完成后,日后可随时在 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音员后台</a> 登录管理。`,
+      note: '此链接 24 小时内有效。若您并未报名 Onyx Studios,请忽略此邮件。',
+    },
+    en: {
+      subject: 'Set Your Password · Activate Your Onyx Talent Dashboard',
+      headline: 'Activate Your Talent Dashboard',
+      sub: 'Set a password and manage your profile anytime.',
+      card: 'Account Setup',
+      greet: `Dear ${name || 'Talent'},`,
+      l1: 'Your talent profile is now live on the Onyx Studios platform. We have created a personal dashboard where you can log in anytime to update your bio, languages, accent and other details.',
+      l2: 'Click the button below to set your login password:',
+      cta: 'Set Password',
+      l3: `Once set, you can log in anytime at your <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">Talent Dashboard</a>.`,
+      note: 'This link is valid for 24 hours. If you did not apply to Onyx Studios, please ignore this email.',
+    },
+  }[L];
+  const P = (t: string) => `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t}</p>`;
+  const content = `
+    ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
+    ${bodyCard(C.card, `${P(C.greet)}${P(C.l1)}${P(C.l2)}`)}
+    ${ctaRow(C.cta, p.setupUrl, BRAND_GREEN)}
+    ${bodyCard('', `${P(C.l3)}<p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${C.note}</p>`)}`;
+  return { subject: C.subject, html: baseLayout(content) };
+}
+
 export function passwordResetEmail(p: { resetLink: string }): { subject: string; html: string } {
   const content = `
     ${headlineBlock('Reset Your Password', 'We received a request to reset your password.', '#3b82f6')}
