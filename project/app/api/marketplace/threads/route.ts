@@ -42,11 +42,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Client side — briefs this user posted, one thread per talent who quoted.
-    const { data: myBriefs } = await c.db
-      .from('marketplace_briefs')
-      .select('id, brief_number, brief, status')
-      .or(`client_user_id.eq.${c.userId},client_email.ilike.${c.email}`);
-    const myIds = (myBriefs || []).map((b) => b.id);
+    // Two parameterized .eq queries merged — NOT a .or() string with the email
+    // interpolated (that allowed ilike %/_ wildcards + filter break-out, leaking
+    // other clients' briefs). Exact eq; relies on client_email stored lowercased
+    // at /hire insert (c.email is already lowercased).
+    const cols = 'id, brief_number, brief, status';
+    const byId = c.userId
+      ? (await c.db.from('marketplace_briefs').select(cols).eq('client_user_id', c.userId)).data || []
+      : [];
+    const byEmail = (await c.db.from('marketplace_briefs').select(cols).eq('client_email', c.email)).data || [];
+    const myBriefs = [...byId, ...byEmail].filter((b, i, arr) => arr.findIndex((x) => x.id === b.id) === i);
+    const myIds = myBriefs.map((b) => b.id);
     if (myIds.length) {
       const { data: qs } = await c.db
         .from('marketplace_quotes')

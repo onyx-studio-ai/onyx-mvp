@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     try {
       const db = getSupabaseServiceClient();
       const { error: insErr } = await db.from('marketplace_briefs').insert({
-        client_email: email,
+        client_email: email.toLowerCase(), // normalized for exact-match thread lookup
         client_name: b.name || null,
         company: b.company || null,
         categories: Array.isArray(b.categories) ? b.categories : [],
