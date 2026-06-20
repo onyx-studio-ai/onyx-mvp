@@ -16,6 +16,12 @@ type Brief = {
   client_name: string | null;
   company: string | null;
   categories: string[] | null;
+  content_type: string | null;
+  media_scope: string | null;
+  territory: string | null;
+  license_term: string | null;
+  script_status: string | null;
+  has_singing: boolean | null;
   language: string | null;
   length: string | null;
   budget: string | null;
@@ -109,16 +115,22 @@ export default function AdminMarketplace() {
               {b.client_name || '—'} {b.company ? `· ${b.company}` : ''} · <span className="text-gray-500">{b.client_email}</span>
             </p>
             <div className="flex flex-wrap gap-1.5 my-2">
-              {(b.categories || []).map((c, i) => (
+              {b.content_type && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{b.content_type}</span>}
+              {b.has_singing && <span className="text-xs bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">含唱歌</span>}
+              {!b.content_type && (b.categories || []).map((c, i) => (
                 <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-400 px-2 py-0.5 rounded-full">{c}</span>
               ))}
               {b.language && <span className="text-xs text-green-300">{b.language}</span>}
             </div>
             <p className="text-sm text-gray-200 whitespace-pre-wrap mb-2">{b.brief}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+              {b.media_scope && <span>媒體 {b.media_scope}</span>}
+              {b.territory && <span>地區 {b.territory}</span>}
+              {b.license_term && <span>授權 {b.license_term}</span>}
               {b.length && <span>長度 {b.length}</span>}
               {b.budget && <span>預算 {b.budget}</span>}
               {b.deadline && <span>截止 {b.deadline}</span>}
+              {b.script_status && <span>稿件 {b.script_status}</span>}
             </div>
 
             {/* brief status controls */}

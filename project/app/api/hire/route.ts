@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (!EMAIL_RE.test(email)) return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
     if (!String(b.brief || '').trim()) return NextResponse.json({ error: 'Brief is required' }, { status: 400 });
 
-    const cats = Array.isArray(b.categories) ? b.categories.join(', ') : '';
+    const typeLabel = b.content_type || (Array.isArray(b.categories) ? b.categories.join(', ') : '');
 
     // Persist to the talent marketplace (best-effort; non-fatal pre-migration).
     let briefNumber = '';
@@ -33,6 +33,13 @@ export async function POST(request: NextRequest) {
           client_name: b.name || null,
           company: b.company || null,
           categories: Array.isArray(b.categories) ? b.categories : [],
+          content_type: b.content_type || null,
+          media_scope: b.media_scope || null,
+          territory: b.territory || null,
+          license_term: b.license_term || null,
+          script_status: b.script_status || null,
+          ref_audio_url: b.ref_audio_url || null,
+          has_singing: !!b.has_singing,
           language: b.language || null,
           length: b.length || null,
           budget: b.budget || null,
@@ -58,17 +65,23 @@ export async function POST(request: NextRequest) {
         ${row('Email', email)}
         ${row('稱呼 Name', b.name)}
         ${row('公司 Company', b.company)}
-        ${row('類型 Type', cats)}
+        ${row('類型 Type', typeLabel)}
+        ${row('含唱歌 Singing', b.has_singing ? 'Yes' : '')}
+        ${row('媒體 Media', b.media_scope)}
+        ${row('地區 Territory', b.territory)}
+        ${row('授權 License', b.license_term)}
         ${row('語言 Language', b.language)}
         ${row('長度 Length', b.length)}
         ${row('預算 Budget', b.budget)}
         ${row('截止 Deadline', b.deadline)}
+        ${row('稿件 Script', b.script_status)}
+        ${row('參考聲音 Ref', b.ref_audio_url)}
         ${row('語系 Locale', b.locale)}
       </table>
       <p style="margin:14px 0 4px;color:#6b7280;font-size:13px;">需求說明 / Brief:</p>
       <p style="white-space:pre-wrap;background:#f4f4f5;border-radius:8px;padding:12px;font-size:14px;color:#111;">${esc(b.brief)}</p>
     </div>`;
-    await sendEmail({ category: 'HELLO', to: 'hello@onyxstudios.ai', subject: `新配音需求 — ${b.name || email}${cats ? ` (${cats})` : ''}`, html: teamHtml, replyTo: email });
+    await sendEmail({ category: 'HELLO', to: 'hello@onyxstudios.ai', subject: `新配音需求 — ${b.name || email}${typeLabel ? ` (${typeLabel})` : ''}`, html: teamHtml, replyTo: email });
 
     // 2) Confirm to the client (branded + localized)
     const confirm = briefReceivedEmail({ clientName: b.name, briefNumber, locale: b.locale });

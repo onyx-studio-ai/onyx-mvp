@@ -23,6 +23,12 @@ type Brief = {
   id: string;
   brief_number: string;
   categories: string[] | null;
+  content_type: string | null;
+  media_scope: string | null;
+  territory: string | null;
+  license_term: string | null;
+  script_status: string | null;
+  has_singing: boolean | null;
   language: string | null;
   length: string | null;
   budget: string | null;
@@ -159,13 +165,18 @@ function BriefCard({
         {brief.deadline && <span className="text-xs text-amber-300/80">{tx('截止', '截止', 'Due')}: {brief.deadline}</span>}
       </div>
       <div className="flex flex-wrap gap-1.5 mb-2">
-        {(brief.categories || []).map((c, i) => (
+        {brief.content_type && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{brief.content_type}</span>}
+        {brief.has_singing && <span className="text-xs bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', '+ Singing')}</span>}
+        {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
+        {!brief.content_type && (brief.categories || []).map((c, i) => (
           <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{c}</span>
         ))}
-        {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
       </div>
       <p className="text-sm text-gray-200 whitespace-pre-wrap mb-2">{brief.brief}</p>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+        {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
+        {brief.territory && <span>{tx('地區', '地区', 'Territory')}: {brief.territory}</span>}
+        {brief.license_term && <span>{tx('授權', '授权', 'License')}: {brief.license_term}</span>}
         {brief.length && <span>{tx('長度', '长度', 'Length')}: {brief.length}</span>}
         {brief.budget && <span>{tx('預算', '预算', 'Budget')}: {brief.budget}</span>}
       </div>
