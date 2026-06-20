@@ -975,6 +975,67 @@ export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; da
   return { subject: C.subject, html: baseLayout(content) };
 }
 
+// ---------------------------------------------------------------------------
+// Marketplace emails (briefs / quotes / messages) — branded + tri-lingual
+// ---------------------------------------------------------------------------
+
+const mp = (t: string) => `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t}</p>`;
+const mpLocale = (locale?: string) => (locale === 'zh-CN' ? 'cn' : locale?.startsWith('zh') ? 'tw' : 'en');
+const mpEsc = (s: unknown) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string));
+
+/** Client confirmation after posting a brief via /hire. */
+export function briefReceivedEmail(p: { clientName?: string; briefNumber?: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const name = mpEsc((p.clientName || '').trim());
+  const n = (p.briefNumber || '').trim();
+  const C = {
+    tw: { subject: `Onyx Studios 已收到您的配音需求${n ? ` — ${n}` : ''}`, headline: '已收到您的需求', sub: '我們會盡快為您配對合適的配音員。', card: n ? `需求編號 ${n}` : '配音需求',
+      greet: `${name ? name + ' ' : ''}您好:`, l1: '謝謝您的需求,我們已經收到。團隊會盡快從合適的配音員中為您挑選,並帶著報價與試聽與您聯繫。', l2: '若有任何補充,直接回覆這封信即可。', sign: '— Onyx Studios 團隊' },
+    cn: { subject: `Onyx Studios 已收到您的配音需求${n ? ` — ${n}` : ''}`, headline: '已收到您的需求', sub: '我们会尽快为您匹配合适的配音员。', card: n ? `需求编号 ${n}` : '配音需求',
+      greet: `${name ? name + ' ' : ''}您好:`, l1: '谢谢您的需求,我们已经收到。团队会尽快从合适的配音员中为您挑选,并带着报价与试听与您联系。', l2: '若有任何补充,直接回复这封邮件即可。', sign: '— Onyx Studios 团队' },
+    en: { subject: `Onyx Studios — we received your brief${n ? ` (${n})` : ''}`, headline: 'Brief received', sub: "We'll match you with the right voices shortly.", card: n ? `Brief ${n}` : 'Voiceover brief',
+      greet: `Dear ${name || 'there'},`, l1: "Thanks for your brief — we've received it. Our team will shortlist suitable voices and get back to you with quotes and samples soon.", l2: 'If you have anything to add, just reply to this email.', sign: '— The Onyx Studios team' },
+  }[L];
+  const content = `
+    ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
+    ${bodyCard(C.card, `${mp(C.greet)}${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}`;
+  return { subject: C.subject, html: baseLayout(content) };
+}
+
+/** New-message notification to the counterpart in a marketplace thread. */
+export function newMessageEmail(p: { briefNumber?: string; locale?: string; url: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const n = (p.briefNumber || '').trim();
+  const C = {
+    tw: { subject: `Onyx — 您有一則新訊息${n ? ` (${n})` : ''}`, headline: '您有一則新訊息', sub: '對方在平台上回覆了您。', card: n ? `案件 ${n}` : '案件訊息', l1: '您在 Onyx 平台的案件有一則新訊息。點下方按鈕即可查看並回覆。', cta: '查看訊息', note: '為保障雙方權益並方便我們協助,請於平台內回覆。' },
+    cn: { subject: `Onyx — 您有一条新消息${n ? ` (${n})` : ''}`, headline: '您有一条新消息', sub: '对方在平台上回复了您。', card: n ? `案件 ${n}` : '案件消息', l1: '您在 Onyx 平台的案件有一条新消息。点下方按钮即可查看并回复。', cta: '查看消息', note: '为保障双方权益并方便我们协助,请在平台内回复。' },
+    en: { subject: `Onyx — you have a new message${n ? ` (${n})` : ''}`, headline: 'You have a new message', sub: 'The other party replied on the platform.', card: n ? `Project ${n}` : 'Project message', l1: 'There is a new message on your Onyx project. Click below to view and reply.', cta: 'View messages', note: 'Please reply on-platform so we can support you and protect both parties.' },
+  }[L];
+  const content = `
+    ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
+    ${bodyCard(C.card, mp(C.l1))}
+    ${ctaRow(C.cta, p.url, BRAND_GREEN)}
+    ${bodyCard('', `<p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${C.note}</p>`)}`;
+  return { subject: C.subject, html: baseLayout(content) };
+}
+
+/** Internal (Onyx) notification that a talent submitted a quote. */
+export function quoteReceivedEmail(p: { talentName: string; briefNumber?: string; currency: string; gross: number; net: number; message?: string }): { subject: string; html: string } {
+  const n = (p.briefNumber || '').trim();
+  const rows = [
+    { label: '配音員 Talent', value: mpEsc(p.talentName) },
+    { label: '案件 Brief', value: mpEsc(n) || '—' },
+    { label: '客戶支付 Client pays', value: `${mpEsc(p.currency)} ${p.gross}` },
+    { label: '配音員淨得 Talent net', value: `${mpEsc(p.currency)} ${p.net}` },
+  ];
+  const content = `
+    ${headlineBlock('新報價 New quote', '配音員對案件提出報價,請至後台審閱。', BRAND_GREEN)}
+    ${infoCard('QUOTE', rows)}
+    ${p.message ? bodyCard('附註 Note', `<p style="color:#d1d5db;font-size:14px;line-height:1.6;margin:0;white-space:pre-wrap;">${mpEsc(p.message)}</p>`) : ''}
+    ${ctaRow('後台審閱 Review', `${SITE_URL}/admin/marketplace`, BRAND_GREEN)}`;
+  return { subject: `新報價 ${n} — ${p.talentName}`, html: baseLayout(content) };
+}
+
 export function passwordResetEmail(p: { resetLink: string }): { subject: string; html: string } {
   const content = `
     ${headlineBlock('Reset Your Password', 'We received a request to reset your password.', '#3b82f6')}

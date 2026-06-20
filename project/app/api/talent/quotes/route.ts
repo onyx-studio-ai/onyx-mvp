@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
+import { quoteReceivedEmail } from '@/lib/mail-templates';
 
 /*
   POST /api/talent/quotes — a talent submits a quote on an open brief.
@@ -14,7 +15,6 @@ import { sendEmail } from '@/lib/mail';
 */
 
 const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
-const esc = (s: unknown) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string));
 
 export async function POST(request: NextRequest) {
   const r = await resolveTalentFromRequest(request, 'id, name');
@@ -50,15 +50,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Notify Onyx so it can review + mediate (best-effort).
-    sendEmail({
-      category: 'PRODUCTION',
-      to: 'produce@onyxstudios.ai',
-      subject: `新報價 ${brief.brief_number} — ${talent.name}`,
-      html: `<p>配音員 <b>${esc(talent.name)}</b> 對 brief <b>${esc(brief.brief_number)}</b> 報價:</p>
-             <p>客戶支付 ${esc(currency)} ${gross} · 配音員淨得 ${esc(currency)} ${esc(data.net_amount)}</p>
-             ${message ? `<p style="white-space:pre-wrap;background:#f4f4f5;padding:10px;border-radius:8px;">${esc(message)}</p>` : ''}`,
-    }).catch(() => {});
+    // Notify Onyx so it can review + mediate (best-effort, branded).
+    const note = quoteReceivedEmail({ talentName: talent.name, briefNumber: brief.brief_number, currency, gross, net: data.net_amount, message });
+    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: note.subject, html: note.html }).catch(() => {});
 
     return NextResponse.json({ quote: data });
   } catch (err) {

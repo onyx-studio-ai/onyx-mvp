@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveCaller, threadRole } from '@/lib/marketplace-auth';
 import { sendEmail } from '@/lib/mail';
+import { newMessageEmail } from '@/lib/mail-templates';
 
 /*
   Thread messages for a (brief, talent) pairing.
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Sender display name + the counterpart to notify.
     const { data: brief } = await c.db
       .from('marketplace_briefs')
-      .select('brief_number, client_name, client_email')
+      .select('brief_number, client_name, client_email, locale')
       .eq('id', briefId)
       .maybeSingle();
     const { data: talent } = await c.db.from('talents').select('name, email').eq('id', talentId).maybeSingle();
@@ -67,19 +68,11 @@ export async function POST(request: NextRequest) {
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Notify the counterpart (best-effort, non-blocking).
+    // Notify the counterpart (best-effort, non-blocking, branded + localized).
     const to = role === 'talent' ? brief?.client_email : talent?.email;
     if (to) {
-      sendEmail({
-        category: 'PRODUCTION',
-        to,
-        subject: `Onyx — 新訊息 / New message (${brief?.brief_number || 'brief'})`,
-        html: `<div style="font-family:system-ui,sans-serif;max-width:520px;">
-          <p style="color:#374151;">您在案件 <b>${(brief?.brief_number || '').replace(/[<>&]/g, '')}</b> 有一則新訊息 / You have a new message.</p>
-          <p style="margin:16px 0;"><a href="${SITE}/messages" style="background:#16a34a;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">查看訊息 / View messages</a></p>
-          <p style="color:#9ca3af;font-size:12px;">請於平台內回覆,以便我們協助處理。/ Please reply on-platform.</p>
-        </div>`,
-      }).catch(() => {});
+      const note = newMessageEmail({ briefNumber: brief?.brief_number, url: `${SITE}/messages`, locale: brief?.locale });
+      sendEmail({ category: 'PRODUCTION', to, subject: note.subject, html: note.html }).catch(() => {});
     }
 
     return NextResponse.json({ message: msg });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/mail';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { briefReceivedEmail } from '@/lib/mail-templates';
 
 /*
   Client brief intake. Persists the brief to marketplace_briefs (Phase 3c) so
@@ -12,8 +13,6 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const esc = (s: unknown) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string));
 
-const LOGO = 'https://www.onyxstudios.ai/logo-email.png';
-
 export async function POST(request: NextRequest) {
   try {
     const b = await request.json();
@@ -24,21 +23,27 @@ export async function POST(request: NextRequest) {
     const cats = Array.isArray(b.categories) ? b.categories.join(', ') : '';
 
     // Persist to the talent marketplace (best-effort; non-fatal pre-migration).
+    let briefNumber = '';
     try {
       const db = getSupabaseServiceClient();
-      const { error: insErr } = await db.from('marketplace_briefs').insert({
-        client_email: email.toLowerCase(), // normalized for exact-match thread lookup
-        client_name: b.name || null,
-        company: b.company || null,
-        categories: Array.isArray(b.categories) ? b.categories : [],
-        language: b.language || null,
-        length: b.length || null,
-        budget: b.budget || null,
-        deadline: b.deadline || null,
-        brief: String(b.brief),
-        locale: b.locale || '',
-      });
+      const { data: inserted, error: insErr } = await db
+        .from('marketplace_briefs')
+        .insert({
+          client_email: email.toLowerCase(), // normalized for exact-match thread lookup
+          client_name: b.name || null,
+          company: b.company || null,
+          categories: Array.isArray(b.categories) ? b.categories : [],
+          language: b.language || null,
+          length: b.length || null,
+          budget: b.budget || null,
+          deadline: b.deadline || null,
+          brief: String(b.brief),
+          locale: b.locale || '',
+        })
+        .select('brief_number')
+        .single();
       if (insErr) console.error('[hire] brief persist failed (non-fatal):', insErr.message);
+      else briefNumber = inserted?.brief_number || '';
     } catch (e) {
       console.error('[hire] brief persist threw (non-fatal):', e);
     }
@@ -65,21 +70,9 @@ export async function POST(request: NextRequest) {
     </div>`;
     await sendEmail({ category: 'HELLO', to: 'hello@onyxstudios.ai', subject: `新配音需求 — ${b.name || email}${cats ? ` (${cats})` : ''}`, html: teamHtml, replyTo: email });
 
-    // 2) Confirm to the client (localized)
-    const L = b.locale === 'zh-CN' ? 'cn' : String(b.locale || '').startsWith('zh') ? 'tw' : 'en';
-    const t = {
-      tw: { subject: 'Onyx Studios 已收到您的配音需求', line: '謝謝您的需求,我們已收到。團隊會盡快為您挑選合適的配音員並與您聯繫報價。', sign: '— Onyx Studios' },
-      cn: { subject: 'Onyx Studios 已收到您的配音需求', line: '谢谢您的需求,我们已收到。团队会尽快为您挑选合适的配音员并与您联系报价。', sign: '— Onyx Studios' },
-      en: { subject: 'Onyx Studios has received your voiceover brief', line: 'Thanks for your brief — we’ve received it. Our team will shortlist suitable voices and get back to you with a quote shortly.', sign: '— Onyx Studios' },
-    }[L];
-    const clientHtml = `<div style="background:#0a0a0a;padding:32px 16px;font-family:system-ui,sans-serif;">
-      <div style="max-width:440px;margin:0 auto;">
-        <img src="${LOGO}" alt="Onyx Studios" width="180" style="display:block;width:180px;max-width:60%;height:auto;margin:0 0 24px;border:0;" />
-        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t.line}</p>
-        <p style="color:#9ca3af;font-size:13px;margin:0;">${t.sign}</p>
-      </div>
-    </div>`;
-    await sendEmail({ category: 'HELLO', to: email, subject: t.subject, html: clientHtml });
+    // 2) Confirm to the client (branded + localized)
+    const confirm = briefReceivedEmail({ clientName: b.name, briefNumber, locale: b.locale });
+    await sendEmail({ category: 'HELLO', to: email, subject: confirm.subject, html: confirm.html });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
