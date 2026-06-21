@@ -817,7 +817,7 @@ export function applicationStatusEmail(p: { applicantName: string; applicationNu
         s1d: `我們會另外寄一封合作同意書給您,請線上閱讀並簽署,完成正式的合作關係。`,
         s2t: `步驟二 — 聲音身分驗證`,
         s2d: `您會收到一個聲音驗證連結,請錄一段約 10 秒、唸出指定文字的音檔,用來確認身分並保障您的聲音權利。`,
-        outro: `兩個步驟完成後,您的個人檔案就會在平台上線。期待很快與您一起完成精彩的作品。`,
+        outro: `確認後,您的個人檔案就會在平台上線。期待很快與您一起完成精彩的作品。`,
       },
       rj: {
         subject: `Onyx Studios 報名結果通知 — #${n}`,
@@ -840,7 +840,7 @@ export function applicationStatusEmail(p: { applicantName: string; applicationNu
         s1d: `我们会另外发送合作协议邮件,请在线阅读并签署,以正式建立合作关系。`,
         s2t: `第二步 — 声音身份验证`,
         s2d: `您会收到声音验证链接,请录制一段约 10 秒、朗读指定文稿的音频,用于确认身份并保障您的声音权利。`,
-        outro: `两步完成后,您的资料即在平台上线。期待与您合作。`,
+        outro: `确认后,您的资料即在平台上线。期待与您合作。`,
       },
       rj: {
         subject: `Onyx Studios 报名结果通知 — #${n}`,
@@ -863,7 +863,7 @@ export function applicationStatusEmail(p: { applicantName: string; applicationNu
         s1d: `You'll receive a separate email with your Talent Engagement Agreement. Please review and sign it electronically to formalize your partnership with Onyx Studios.`,
         s2t: `Step 2 — Voice ID Verification`,
         s2d: `You'll receive a Voice ID link by email. Please record a 10-second sample reading the provided script — this verifies your identity and secures your voice rights.`,
-        outro: `Once both steps are complete, your profile will go live on the ONYX platform. We look forward to creating great work together.`,
+        outro: `Once confirmed, your profile will go live on the ONYX platform. We look forward to creating great work together.`,
       },
       rj: {
         subject: `Onyx Studios Application Update — #${n}`,
