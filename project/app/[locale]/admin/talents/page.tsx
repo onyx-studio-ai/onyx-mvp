@@ -338,6 +338,8 @@ export default function AdminTalentsPage() {
   const [newDemoName, setNewDemoName] = useState("");
   const [sendingVoiceId, setSendingVoiceId] = useState<string | null>(null);
   const [verifyingVoiceId, setVerifyingVoiceId] = useState<string | null>(null);
+  const [sendingLiveness, setSendingLiveness] = useState<string | null>(null);
+  const [reviewingLiveness, setReviewingLiveness] = useState<string | null>(null);
 
   const headshotRef = useRef<HTMLInputElement>(null);
   const demoRef = useRef<HTMLInputElement>(null);
@@ -397,6 +399,46 @@ export default function AdminTalentsPage() {
     } finally {
       setSendingVoiceId(null);
     }
+  };
+
+  // --- Human liveness verification (admin-selective; backend-only) ---
+  // Open a private liveness recording via a short-lived admin signed URL.
+  const playLiveness = async (path?: string) => {
+    if (!path) return;
+    try {
+      const res = await fetch(`/api/admin/liveness/signed-url?path=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      if (res.ok && data.url) window.open(data.url, '_blank', 'noopener,noreferrer');
+      else toast.error(data.error || 'Could not open recording');
+    } catch { toast.error('Could not open recording'); }
+  };
+
+  const handleSendLiveness = async (talentId: string) => {
+    setSendingLiveness(talentId);
+    try {
+      const res = await fetch('/api/admin/liveness', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ talentId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) { toast.success('真人驗證已寄出'); fetchTalents(); }
+      else toast.error(data.error || 'Failed to send verification');
+    } catch { toast.error('Failed to send verification'); }
+    finally { setSendingLiveness(null); }
+  };
+
+  const handleReviewLiveness = async (talentId: string, status: 'verified' | 'rejected') => {
+    setReviewingLiveness(talentId);
+    try {
+      const res = await fetch('/api/admin/talents', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: talentId, liveness_status: status, liveness_reviewed_at: new Date().toISOString() }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast.success(status === 'verified' ? '已標記真人驗證 ✓' : '已退回');
+      fetchTalents();
+    } catch { toast.error('Update failed'); }
+    finally { setReviewingLiveness(null); }
   };
 
   useEffect(() => {
@@ -1091,6 +1133,7 @@ export default function AdminTalentsPage() {
               <TableHead className="text-gray-600 font-semibold">Price</TableHead>
               <TableHead className="text-gray-600 font-semibold">Earnings</TableHead>
               <TableHead className="text-gray-600 font-semibold">Voice ID</TableHead>
+              <TableHead className="text-gray-600 font-semibold">真人驗證</TableHead>
               <TableHead className="text-gray-600 font-semibold">Status</TableHead>
               <TableHead className="text-gray-600 font-semibold">Actions</TableHead>
             </TableRow>
@@ -1259,6 +1302,50 @@ export default function AdminTalentsPage() {
                           <Send className="w-3 h-3 mr-1" />
                         )}
                         Send Request
+                      </Button>
+                    );
+                  })()}
+                </TableCell>
+                <TableCell>
+                  {(() => {
+                    const lv = talent as Talent & { liveness_status?: string; liveness_recording_path?: string };
+                    const s = lv.liveness_status || 'none';
+                    if (s === 'verified') return (
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-green-700" />
+                        <span className="text-green-700 text-xs font-medium">真人 ✓</span>
+                      </div>
+                    );
+                    if (s === 'submitted') return (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-blue-700" />
+                          <span className="text-blue-700 text-xs font-medium">待複審</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {lv.liveness_recording_path && (
+                            <button type="button" onClick={() => playLiveness(lv.liveness_recording_path)} className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 rounded px-2 py-0.5">
+                              <Music className="w-3 h-3" /> 聽
+                            </button>
+                          )}
+                          <Button variant="ghost" size="sm" onClick={() => handleReviewLiveness(talent.id, 'verified')} disabled={reviewingLiveness === talent.id} className="text-green-700 hover:text-green-700 hover:bg-green-50 h-6 px-2 text-[11px]">
+                            {reviewingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle className="w-3 h-3 mr-1" />} 真人
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleReviewLiveness(talent.id, 'rejected')} disabled={reviewingLiveness === talent.id} className="text-red-700 hover:text-red-700 hover:bg-red-50 h-6 px-2 text-[11px]">
+                            <X className="w-3 h-3 mr-1" /> 退回
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                    if (s === 'sent') return (
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-700" />
+                        <span className="text-amber-700 text-xs font-medium">已寄出</span>
+                      </div>
+                    );
+                    return (
+                      <Button variant="ghost" size="sm" onClick={() => handleSendLiveness(talent.id)} disabled={sendingLiveness === talent.id} className={`hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs ${s === 'rejected' ? 'text-red-600' : 'text-gray-500'}`}>
+                        {sendingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} {s === 'rejected' ? '退回·重發' : '發送驗證'}
                       </Button>
                     );
                   })()}

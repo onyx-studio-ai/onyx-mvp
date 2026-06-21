@@ -1256,6 +1256,72 @@ export function voiceIdRequestEmail(p: {
 }
 
 // ---------------------------------------------------------------------------
+// 12b. Human Liveness Verification (lightweight — live in-browser recording)
+// ---------------------------------------------------------------------------
+
+export function livenessRequestEmail(p: {
+  talentName: string;
+  recordLink: string;
+  locale?: string;
+}): { subject: string; html: string } {
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
+  const name = (p.talentName || '').trim();
+  const T = {
+    tw: {
+      subject: 'Onyx Studios — 真人聲音快速驗證',
+      headline: '真人聲音驗證',
+      sub: '一分鐘的快速驗證,確認您的聲音。',
+      card: '聲音驗證',
+      intro: `${name ? name + ' 您好,' : ''}為確保 Onyx 真人配音陣容的真實性,想請您做一個快速的聲音驗證。`,
+      how: '點下方連結,在瀏覽器裡「現場唸出畫面顯示的一句話」即可 —— 手機或電腦都行,約一分鐘,不需要上傳任何檔案。',
+      steps: ['找一個安靜的地方', '允許瀏覽器使用麥克風', '看著畫面那句話,用您自然的聲音唸出來', '確認後送出即可'],
+      cta: '開始聲音驗證',
+      note: '此連結 14 天內有效。',
+    },
+    cn: {
+      subject: 'Onyx Studios — 真人声音快速验证',
+      headline: '真人声音验证',
+      sub: '一分钟的快速验证,确认您的声音。',
+      card: '声音验证',
+      intro: `${name ? name + ' 您好,' : ''}为确保 Onyx 真人配音阵容的真实性,想请您做一个快速的声音验证。`,
+      how: '点下方链接,在浏览器里「现场朗读屏幕显示的一句话」即可 —— 手机或电脑都行,约一分钟,无需上传任何文件。',
+      steps: ['找一个安静的地方', '允许浏览器使用麦克风', '看着屏幕那句话,用您自然的声音读出来', '确认后提交即可'],
+      cta: '开始声音验证',
+      note: '此链接 14 天内有效。',
+    },
+    en: {
+      subject: 'Onyx Studios — Quick Voice Verification',
+      headline: 'Voice Verification',
+      sub: 'A quick, one-minute check to confirm your voice.',
+      card: 'Voice Verification',
+      intro: `${name ? 'Hi ' + name + ', ' : ''}to keep the Onyx human voice roster genuine, we'd like you to do a quick voice check.`,
+      how: 'Click the link below and simply read aloud — live, in your browser — the sentence shown on screen. Phone or computer is fine, it takes about a minute, and no file upload is needed.',
+      steps: ['Find a quiet spot', 'Allow the browser to use your microphone', 'Read the on-screen sentence in your natural voice', 'Confirm and submit'],
+      cta: 'Start Voice Verification',
+      note: 'This link is valid for 14 days.',
+    },
+  }[L];
+
+  const stepsHtml = T.steps
+    .map((s, i) => `<p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">${i + 1}. ${s}</p>`)
+    .join('');
+
+  const content = `
+    ${headlineBlock(T.headline, T.sub, BRAND_GREEN)}
+    ${bodyCard(T.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${T.intro}</p>
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${T.how}</p>
+      <div style="background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:18px 20px;margin:0 0 16px;">
+        ${stepsHtml}
+      </div>
+      <p style="color:#9ca3af;font-size:13px;margin:0;">${T.note}</p>
+    `)}
+    ${ctaRow(T.cta, p.recordLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}`;
+
+  return { subject: T.subject, html: baseLayout(content) };
+}
+
+// ---------------------------------------------------------------------------
 // 13. Internal Error Email
 // ---------------------------------------------------------------------------
 
