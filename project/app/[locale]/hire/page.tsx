@@ -59,7 +59,7 @@ const SCRIPT_STATUS: Opt[] = [
 ];
 
 const inputCls =
-  'w-full px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-amber-500 focus:outline-none placeholder:text-gray-600';
+  'w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:border-amber-500/60 focus:outline-none placeholder:text-gray-600';
 
 export default function Hire() {
   const locale = useLocale();
@@ -105,11 +105,19 @@ export default function Hire() {
     setRedirect({ to: localePath(a.to), label: L === 'en' ? a.s.en : a.s[L] });
   };
 
-  const Select = ({ value, onChange, opts, placeholder }: { value: string; onChange: (v: string) => void; opts: Opt[]; placeholder: string }) => (
-    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="" className="bg-zinc-900">{placeholder}</option>
-      {opts.map((o) => <option key={o.v} value={o.v} className="bg-zinc-900">{lbl(o)}</option>)}
-    </select>
+  // Single-select rendered as pills to match the music/data brief design.
+  // Keeps the same props (placeholder now unused) so call sites stay unchanged.
+  const Select = ({ value, onChange, opts }: { value: string; onChange: (v: string) => void; opts: Opt[]; placeholder?: string }) => (
+    <div className="flex flex-wrap">
+      {opts.map((o) => (
+        <button
+          key={o.v}
+          type="button"
+          onClick={() => onChange(o.v)}
+          className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm border transition mr-2 mb-2 ${value === o.v ? 'bg-amber-500 text-black border-amber-500' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`}
+        >{lbl(o)}</button>
+      ))}
+    </div>
   );
 
   const submit = async () => {
@@ -166,11 +174,11 @@ export default function Hire() {
   }
 
   const pill = (active: boolean) =>
-    `inline-flex items-center px-3 py-1.5 rounded-lg text-sm border transition-all mr-2 mb-2 ${active ? 'bg-amber-500/15 text-amber-300 border-amber-500/40' : 'bg-zinc-900 text-gray-400 border-zinc-700 hover:border-zinc-500'}`;
+    `inline-flex items-center px-3 py-1.5 rounded-full text-sm border transition mr-2 mb-2 ${active ? 'bg-amber-500 text-black border-amber-500' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`;
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="max-w-2xl mx-auto px-4 pt-28 pb-16">
+      <div className="max-w-3xl mx-auto px-4 pt-28 pb-16">
         <p className="text-xs tracking-[0.25em] uppercase text-amber-300 mb-2">{tx('ONYX · 找配音', 'ONYX · 找配音', 'ONYX · Find a voice')}</p>
         <h1 className="text-3xl font-bold mb-2">{tx('告訴我們您的配音需求', '告诉我们您的配音需求', 'Tell us about your voiceover project')}</h1>
         <p className="text-gray-400 text-sm mb-3">{tx('填好需求,我們會為您挑選合適的配音員並回覆報價。', '填好需求,我们会为您挑选合适的配音员并回复报价。', 'Share your brief and we’ll match you with the right voice and quote it.')}</p>
@@ -183,15 +191,15 @@ export default function Hire() {
           <p className="text-xs text-gray-500 mb-8">{tx('這裡是真人配音發案。需要 AI 配音 / TTS 或 AI 訓練資料?在「案件類型」選對應項,我們帶你去對的工作室。', '这里是真人配音发案。需要 AI 配音 / TTS 或 AI 训练资料?在「案件类型」选对应项,我们带你去对的工作室。', 'This is for human voiceover. Need AI / TTS or AI training data? Pick it under “Project type” and we’ll point you to the right studio.')}</p>
         )}
 
-        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-5">
+        <div className="space-y-8">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm text-gray-200 mb-1">{tx('您的稱呼', '您的称呼', 'Your name')}</label><input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
-            <div><label className="block text-sm text-gray-200 mb-1">{tx('公司 / 品牌', '公司 / 品牌', 'Company / brand')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.company} onChange={(e) => set('company', e.target.value)} /></div>
+            <div><label className="block text-sm font-semibold mb-2">{tx('您的稱呼', '您的称呼', 'Your name')}</label><input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
+            <div><label className="block text-sm font-semibold mb-2">{tx('公司 / 品牌', '公司 / 品牌', 'Company / brand')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.company} onChange={(e) => set('company', e.target.value)} /></div>
           </div>
-          <div><label className="block text-sm text-gray-200 mb-1">Email <span className="text-red-400">＊</span></label><input className={inputCls} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder={tx('我們會將報價回覆到這裡', '我们会将报价回复到这里', 'We’ll send the quote here')} /></div>
+          <div><label className="block text-sm font-semibold mb-2">Email <span className="text-red-400">＊</span></label><input className={inputCls} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder={tx('我們會將報價回覆到這裡', '我们会将报价回复到这里', 'We’ll send the quote here')} /></div>
 
           <div>
-            <label className="block text-sm text-gray-200 mb-1">{tx('案件類型', '案件类型', 'Project type')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('單選', '单选', 'Choose one')}</span></label>
+            <label className="block text-sm font-semibold mb-2">{tx('案件類型', '案件类型', 'Project type')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('單選', '单选', 'Choose one')}</span></label>
             <div>{CONTENT_TYPES.map((c) => (
               <button key={c.v} type="button" onClick={() => pickContent(c.v)} className={pill(contentType === c.v)}>{lbl(c)}</button>
             ))}</div>
@@ -220,24 +228,20 @@ export default function Hire() {
             </div>
           ) : (
             <>
+              <div><label className="block text-sm font-semibold mb-2">{tx('播放媒體', '播放媒体', 'Media')} <span className="text-red-400">＊</span></label><Select value={media} onChange={setMedia} opts={MEDIA} placeholder={tx('在哪裡播放?', '在哪里播放?', 'Where does it play?')} /></div>
+              <div><label className="block text-sm font-semibold mb-2">{tx('播放地區', '播放地区', 'Territory')} <span className="text-red-400">＊</span></label><Select value={territory} onChange={setTerritory} opts={TERRITORY} placeholder={tx('全球或單一地區?', '全球或单一地区?', 'Global or single region?')} /></div>
+              <div><label className="block text-sm font-semibold mb-2">{tx('授權期間', '授权期间', 'License term')} <span className="text-red-400">＊</span></label><Select value={license} onChange={setLicense} opts={LICENSE} placeholder={tx('使用多久?', '使用多久?', 'How long?')} /></div>
+              <div><label className="block text-sm font-semibold mb-2">{tx('稿件狀態', '稿件状态', 'Script status')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={scriptStatus} onChange={setScriptStatus} opts={SCRIPT_STATUS} placeholder={tx('有稿件嗎?', '有稿件吗?', 'Got a script?')} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('播放媒體', '播放媒体', 'Media')} <span className="text-red-400">＊</span></label><Select value={media} onChange={setMedia} opts={MEDIA} placeholder={tx('在哪裡播放?', '在哪里播放?', 'Where does it play?')} /></div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('播放地區', '播放地区', 'Territory')} <span className="text-red-400">＊</span></label><Select value={territory} onChange={setTerritory} opts={TERRITORY} placeholder={tx('全球或單一地區?', '全球或单一地区?', 'Global or single region?')} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('語言 / 口音', '语言 / 口音', 'Language / accent')}</label><input className={inputCls} value={form.language} onChange={(e) => set('language', e.target.value)} placeholder={tx('例:中文台灣 / 英文美國', '例:中文台湾 / 英文美国', 'e.g. Chinese (TW) / English (US)')} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('長度 / 字數', '长度 / 字数', 'Length / word count')}</label><input className={inputCls} value={form.length} onChange={(e) => set('length', e.target.value)} placeholder={tx('例:30 秒 / 約 200 字', '例:30 秒 / 约 200 字', 'e.g. 30 sec / ~200 words')} /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('授權期間', '授权期间', 'License term')} <span className="text-red-400">＊</span></label><Select value={license} onChange={setLicense} opts={LICENSE} placeholder={tx('使用多久?', '使用多久?', 'How long?')} /></div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('稿件狀態', '稿件状态', 'Script status')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={scriptStatus} onChange={setScriptStatus} opts={SCRIPT_STATUS} placeholder={tx('有稿件嗎?', '有稿件吗?', 'Got a script?')} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('語言 / 口音', '语言 / 口音', 'Language / accent')}</label><input className={inputCls} value={form.language} onChange={(e) => set('language', e.target.value)} placeholder={tx('例:中文台灣 / 英文美國', '例:中文台湾 / 英文美国', 'e.g. Chinese (TW) / English (US)')} /></div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('長度 / 字數', '长度 / 字数', 'Length / word count')}</label><input className={inputCls} value={form.length} onChange={(e) => set('length', e.target.value)} placeholder={tx('例:30 秒 / 約 200 字', '例:30 秒 / 约 200 字', 'e.g. 30 sec / ~200 words')} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('試音 / Demo 截止', '试音 / Demo 截止', 'Audition / demo deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} placeholder={tx('例:6/15 前收試音', '例:6/15 前收试音', 'e.g. auditions by 6/15')} /></div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('完成 / 交付截止', '完成 / 交付截止', 'Delivery deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} placeholder={tx('例:6/30 前交件', '例:6/30 前交件', 'e.g. final by 6/30')} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('試音 / Demo 截止', '试音 / Demo 截止', 'Audition / demo deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} placeholder={tx('例:6/15 前收試音', '例:6/15 前收试音', 'e.g. auditions by 6/15')} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('完成 / 交付截止', '完成 / 交付截止', 'Delivery deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} placeholder={tx('例:6/30 前交件', '例:6/30 前交件', 'e.g. final by 6/30')} /></div>
               </div>
               <div>
-                <label className="block text-sm text-gray-200 mb-1">{tx('錄製需求', '录制需求', 'Recording options')} <span className="text-xs text-gray-500">{tx('選填 · 加值', '选填 · 加值', 'Optional · add-on')}</span></label>
+                <label className="block text-sm font-semibold mb-2">{tx('錄製需求', '录制需求', 'Recording options')} <span className="text-xs text-gray-500">{tx('選填 · 加值', '选填 · 加值', 'Optional · add-on')}</span></label>
                 <div className="flex flex-wrap gap-x-5 gap-y-2 mt-1">
                   <label className="inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={wantsDirector} onChange={(e) => setWantsDirector(e.target.checked)} className="accent-amber-500" />{tx('需要聲音導演(現場指導語氣、節奏)', '需要声音导演(现场指导语气、节奏)', 'Voice director (live coaching of tone & pacing)')}</label>
                   <label className="inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={wantsLiveSession} onChange={(e) => setWantsLiveSession(e.target.checked)} className="accent-amber-500" />{tx('線上同步指導錄音(您可線上即時加入)', '线上同步指导录音(您可线上即时加入)', 'Live online session (join to direct in real time)')}</label>
@@ -245,31 +249,24 @@ export default function Hire() {
                 {wantsLiveSession && (
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <span className="text-xs text-gray-400">{tx('偏好平台', '偏好平台', 'Preferred tool')}</span>
-                    <select className="shrink-0 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-amber-500 focus:outline-none" value={liveSessionTool} onChange={(e) => setLiveSessionTool(e.target.value)}>
-                      <option value="" className="bg-zinc-900">{tx('請選擇', '请选择', 'Choose')}</option>
-                      <option value="Zoom" className="bg-zinc-900">Zoom</option>
-                      <option value="Google Meet" className="bg-zinc-900">Google Meet</option>
-                      <option value="Source-Connect" className="bg-zinc-900">Source-Connect</option>
-                      <option value="Other" className="bg-zinc-900">{tx('其他(自填)', '其他(自填)', 'Other')}</option>
-                    </select>
-                    {liveSessionTool === 'Other' && <input className={`${inputCls} flex-1 min-w-[140px]`} value={liveSessionOther} onChange={(e) => setLiveSessionOther(e.target.value)} placeholder={tx('自行填寫平台', '自行填写平台', 'Specify tool')} />}
+                    {['Zoom', 'Google Meet', 'Source-Connect', 'Other'].map((tool) => (
+                      <button key={tool} type="button" onClick={() => setLiveSessionTool(tool)} className={pill(liveSessionTool === tool)}>{tool === 'Other' ? tx('其他', '其他', 'Other') : tool}</button>
+                    ))}
+                    {liveSessionTool === 'Other' && <input className={`${inputCls} flex-1 min-w-[140px] mb-2`} value={liveSessionOther} onChange={(e) => setLiveSessionOther(e.target.value)} placeholder={tx('自行填寫平台', '自行填写平台', 'Specify tool')} />}
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-200 mb-1">{tx('預算', '预算', 'Budget')} <span className="text-red-400">＊</span></label>
-                  <div className="flex gap-2">
-                    <select className="shrink-0 w-[110px] px-2 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-amber-500 focus:outline-none" value={budgetType} onChange={(e) => setBudgetType(e.target.value)}>
-                      <option value="Up to" className="bg-zinc-900">{tx('上限 Up to', '上限 Up to', 'Up to')}</option>
-                      <option value="Fixed" className="bg-zinc-900">{tx('固定 Fixed', '固定 Fixed', 'Fixed')}</option>
-                    </select>
-                    <input className={inputCls} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('例:USD 500', '例:USD 500', 'e.g. USD 500')} />
-                  </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">{tx('預算', '预算', 'Budget')} <span className="text-red-400">＊</span></label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {([{ v: 'Up to', tw: '上限 Up to', cn: '上限 Up to' }, { v: 'Fixed', tw: '固定 Fixed', cn: '固定 Fixed' }] as Opt[]).map((o) => (
+                    <button key={o.v} type="button" onClick={() => setBudgetType(o.v)} className={pill(budgetType === o.v)}>{lbl(o)}</button>
+                  ))}
+                  <input className={`${inputCls} flex-1 min-w-[160px] mb-2`} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('例:USD 500', '例:USD 500', 'e.g. USD 500')} />
                 </div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼您喜歡的聲音 / 參考 demo 連結', '贴您喜欢的声音 / 参考 demo 链接', 'Link to a voice / demo you like')} /></div>
               </div>
-              <div><label className="block text-sm text-gray-200 mb-1">{tx('需求說明 / 稿件', '需求说明 / 稿件', 'Brief / script')} <span className="text-red-400">＊</span></label><textarea className={`${inputCls} min-h-[120px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣、參考、稿件內容…越清楚我們越好媒合。', '用途、语气、参考、稿件内容…越清楚我们越好媒合。', 'Use case, tone, references, the script… the clearer, the better we can match.')} /></div>
+              <div><label className="block text-sm font-semibold mb-2">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼您喜歡的聲音 / 參考 demo 連結', '贴您喜欢的声音 / 参考 demo 链接', 'Link to a voice / demo you like')} /></div>
+              <div><label className="block text-sm font-semibold mb-2">{tx('需求說明 / 稿件', '需求说明 / 稿件', 'Brief / script')} <span className="text-red-400">＊</span></label><textarea className={`${inputCls} min-h-[120px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣、參考、稿件內容…越清楚我們越好媒合。', '用途、语气、参考、稿件内容…越清楚我们越好媒合。', 'Use case, tone, references, the script… the clearer, the better we can match.')} /></div>
 
               {error && <p className="text-sm text-red-400">{error}</p>}
               <button type="button" disabled={submitting} onClick={submit} className="w-full py-3 rounded-xl bg-amber-500 text-black font-medium flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
