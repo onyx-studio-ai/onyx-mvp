@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Play, Loader2, Eye, EyeOff, ArrowLeft, Mail } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { toast } from 'sonner';
+import Turnstile from '@/components/Turnstile';
 
 type AuthMode = 'login' | 'signup' | 'forgot';
 
@@ -28,6 +29,7 @@ export default function AuthPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [signupEmailSent, setSignupEmailSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +50,12 @@ export default function AuthPage() {
 
     try {
       if (mode === 'login') {
+        const cap = await fetch('/api/auth/turnstile-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        });
+        if (!cap.ok) { const d = await cap.json().catch(() => ({})); throw new Error(d.error || 'Bot check failed'); }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         const isAdmin = email.toLowerCase() === 'admin@onyxstudios.ai';
@@ -56,7 +64,7 @@ export default function AuthPage() {
         const res = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, turnstileToken: captchaToken }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Signup failed');
@@ -68,7 +76,7 @@ export default function AuthPage() {
         const res = await fetch('/api/auth/reset-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, turnstileToken: captchaToken }),
         });
         if (!res.ok) {
           const data = await res.json();
@@ -95,6 +103,7 @@ export default function AuthPage() {
     setSignupEmailSent(false);
     setAgreedToTerms(false);
     setConfirmPassword('');
+    setCaptchaToken('');
   };
 
   const handleGoogleSignIn = async () => {
@@ -287,9 +296,11 @@ export default function AuthPage() {
                   </div>
                 )}
 
+                <Turnstile onToken={setCaptchaToken} />
+
                 <Button
                   type="submit"
-                  disabled={loading || (mode === 'signup' && !agreedToTerms)}
+                  disabled={loading || !captchaToken || (mode === 'signup' && !agreedToTerms)}
                   className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (

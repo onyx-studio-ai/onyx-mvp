@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/mail';
 import { signupConfirmationEmail } from '@/lib/mail-templates';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -14,7 +15,12 @@ function getAdminClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, turnstileToken } = await request.json();
+
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+    if (!(await verifyTurnstile(turnstileToken, ip))) {
+      return NextResponse.json({ error: 'Bot check failed — please try again.' }, { status: 400 });
+    }
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
