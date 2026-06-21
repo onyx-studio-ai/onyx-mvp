@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Mic, CheckCircle, AlertCircle, Loader2, Zap, Star, Crown, Lock, Check, Link2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, Link } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import Footer from '@/components/landing/Footer';
 import { supabase } from '@/lib/supabase';
@@ -159,6 +159,15 @@ export default function VoiceConfiguratorPage() {
   useEffect(() => {
     if (config.baseTier === 'tier-3') setRightsLevel('global');
   }, [config.baseTier]);
+
+  // 100% Live Studio (tier-3) is quote-based, not a fixed-price checkout item.
+  // Anyone arriving here with ?tier=tier-3 (old links/bookmarks) is routed to the
+  // human brief/quote flow instead of the AI checkout — the two models don't mix.
+  useEffect(() => {
+    if (preTier === 'tier-3' || config.baseTier === 'tier-3') {
+      router.replace('/hire?from=live-studio');
+    }
+  }, [preTier, config.baseTier, router]);
 
   const estimatedMinutes = estimateAudioMinutes(config.scriptText);
   const basePrice = config.baseTier && !isCustomTier
@@ -430,8 +439,8 @@ export default function VoiceConfiguratorPage() {
               </p>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {VOICE_TIERS.map((tier) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {VOICE_TIERS.filter((tier) => tier.id !== 'tier-3').map((tier) => {
                 const Icon = TIER_ICONS[tier.id] || Mic;
                 const isSelected = config.baseTier === tier.id;
                 const tierNameKey = tier.id === 'tier-1'
@@ -535,6 +544,16 @@ export default function VoiceConfiguratorPage() {
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-5 text-center text-sm text-gray-400">
+              {t('humanPrompt')}{' '}
+              <Link
+                href="/hire?from=live-studio"
+                className="text-amber-300 hover:text-amber-200 font-medium underline underline-offset-2"
+              >
+                {t('humanCta')}
+              </Link>
             </div>
           </motion.div>
 

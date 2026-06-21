@@ -410,6 +410,8 @@
       "saving": "儲存中...",
       "emailsMatch": "電子郵件一致",
       "contactForQuote": "聯繫取得報價",
+      "humanPrompt": "需要 100% 真人配音員現場錄製?",
+      "humanCta": "改走真人報價 →",
       "contactDefaultMessage": "我對配音服務有興趣，想了解最適合我專案的方案與時程。",
       "included": "已包含",
       "total": "合計",

@@ -410,6 +410,8 @@
       "saving": "保存中...",
       "emailsMatch": "电子邮箱一致",
       "contactForQuote": "联系获取报价",
+      "humanPrompt": "需要 100% 真人配音员现场录制?",
+      "humanCta": "改走真人报价 →",
       "contactDefaultMessage": "我对配音服务感兴趣，想了解最适合我项目的方案与时程。",
       "included": "已包含",
       "total": "合计",
