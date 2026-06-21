@@ -300,7 +300,7 @@ export default function AuthPage() {
 
                 <Button
                   type="submit"
-                  disabled={loading || !captchaToken || (mode === 'signup' && !agreedToTerms)}
+                  disabled={loading || (mode === 'signup' && !agreedToTerms)}
                   className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
