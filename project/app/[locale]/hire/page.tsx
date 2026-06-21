@@ -107,6 +107,12 @@ export default function Hire() {
     setError('');
     if (!form.email || !emailOk) return setError(tx('請填寫有效的 Email', '请填写有效的 Email', 'Please enter a valid email'));
     if (!contentType) return setError(tx('請選擇案件類型', '请选择案件类型', 'Please choose a project type'));
+    if (!media) return setError(tx('請選擇播放媒體', '请选择播放媒体', 'Please choose the media'));
+    if (!territory) return setError(tx('請選擇播放地區', '请选择播放地区', 'Please choose the territory'));
+    if (!license) return setError(tx('請選擇授權期間', '请选择授权期间', 'Please choose the license term'));
+    if (!form.auditionDeadline.trim()) return setError(tx('請填試音 / Demo 截止', '请填试音 / Demo 截止', 'Please enter the audition deadline'));
+    if (!form.deadline.trim()) return setError(tx('請填完成 / 交付截止', '请填完成 / 交付截止', 'Please enter the delivery deadline'));
+    if (!form.budget.trim()) return setError(tx('請填預算', '请填预算', 'Please enter a budget'));
     if (!form.brief.trim()) return setError(tx('請簡述您的需求', '请简述您的需求', 'Please describe your project'));
     setSubmitting(true);
     try {
@@ -197,11 +203,11 @@ export default function Hire() {
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('播放媒體', '播放媒体', 'Media')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={media} onChange={setMedia} opts={MEDIA} placeholder={tx('在哪裡播放?', '在哪里播放?', 'Where does it play?')} /></div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('播放地區', '播放地区', 'Territory')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={territory} onChange={setTerritory} opts={TERRITORY} placeholder={tx('全球或單一地區?', '全球或单一地区?', 'Global or single region?')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('播放媒體', '播放媒体', 'Media')} <span className="text-red-400">＊</span></label><Select value={media} onChange={setMedia} opts={MEDIA} placeholder={tx('在哪裡播放?', '在哪里播放?', 'Where does it play?')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('播放地區', '播放地区', 'Territory')} <span className="text-red-400">＊</span></label><Select value={territory} onChange={setTerritory} opts={TERRITORY} placeholder={tx('全球或單一地區?', '全球或单一地区?', 'Global or single region?')} /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('授權期間', '授权期间', 'License term')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={license} onChange={setLicense} opts={LICENSE} placeholder={tx('使用多久?', '使用多久?', 'How long?')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('授權期間', '授权期间', 'License term')} <span className="text-red-400">＊</span></label><Select value={license} onChange={setLicense} opts={LICENSE} placeholder={tx('使用多久?', '使用多久?', 'How long?')} /></div>
                 <div><label className="block text-sm text-gray-200 mb-1">{tx('稿件狀態', '稿件状态', 'Script status')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={scriptStatus} onChange={setScriptStatus} opts={SCRIPT_STATUS} placeholder={tx('有稿件嗎?', '有稿件吗?', 'Got a script?')} /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -209,8 +215,8 @@ export default function Hire() {
                 <div><label className="block text-sm text-gray-200 mb-1">{tx('長度 / 字數', '长度 / 字数', 'Length / word count')}</label><input className={inputCls} value={form.length} onChange={(e) => set('length', e.target.value)} placeholder={tx('例:30 秒 / 約 200 字', '例:30 秒 / 约 200 字', 'e.g. 30 sec / ~200 words')} /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('試音 / Demo 截止', '试音 / Demo 截止', 'Audition / demo deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} placeholder={tx('例:6/15 前收試音', '例:6/15 前收试音', 'e.g. auditions by 6/15')} /></div>
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('完成 / 交付截止', '完成 / 交付截止', 'Delivery deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} placeholder={tx('例:6/30 前交件', '例:6/30 前交件', 'e.g. final by 6/30')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('試音 / Demo 截止', '试音 / Demo 截止', 'Audition / demo deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} placeholder={tx('例:6/15 前收試音', '例:6/15 前收试音', 'e.g. auditions by 6/15')} /></div>
+                <div><label className="block text-sm text-gray-200 mb-1">{tx('完成 / 交付截止', '完成 / 交付截止', 'Delivery deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} placeholder={tx('例:6/30 前交件', '例:6/30 前交件', 'e.g. final by 6/30')} /></div>
               </div>
               <div>
                 <label className="block text-sm text-gray-200 mb-1">{tx('錄製需求', '录制需求', 'Recording options')} <span className="text-xs text-gray-500">{tx('選填 · 加值', '选填 · 加值', 'Optional · add-on')}</span></label>
@@ -234,7 +240,7 @@ export default function Hire() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-200 mb-1">{tx('預算', '预算', 'Budget')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
+                  <label className="block text-sm text-gray-200 mb-1">{tx('預算', '预算', 'Budget')} <span className="text-red-400">＊</span></label>
                   <div className="flex gap-2">
                     <select className="shrink-0 w-[110px] px-2 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-amber-500 focus:outline-none" value={budgetType} onChange={(e) => setBudgetType(e.target.value)}>
                       <option value="Up to" className="bg-zinc-900">{tx('上限 Up to', '上限 Up to', 'Up to')}</option>

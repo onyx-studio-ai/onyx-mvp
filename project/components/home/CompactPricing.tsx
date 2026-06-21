@@ -93,7 +93,7 @@ export default function CompactPricing() {
                 </p>
 
                 <Link
-                  href={plan.isCustom ? '/contact' : `/voice/create?tier=${plan.id}`}
+                  href={plan.isCustom ? '/hire' : `/voice/create?tier=${plan.id}`}
                   className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
                     plan.highlighted
                       ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white'
