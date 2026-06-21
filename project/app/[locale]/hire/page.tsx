@@ -7,7 +7,7 @@
   the right studio instead of submitting a human brief. Tri-lingual.
 */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 
@@ -87,6 +87,15 @@ export default function Hire() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  // Tailored entry: arriving from the "100% Live Studio" pricing card (?from=live-studio)
+  // pre-selects the live online session and hides the AI-routing options (they already chose human).
+  const [isLiveStudio, setIsLiveStudio] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'live-studio') {
+      setIsLiveStudio(true);
+      setWantsLiveSession(true);
+    }
+  }, []);
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
@@ -165,7 +174,14 @@ export default function Hire() {
         <p className="text-xs tracking-[0.25em] uppercase text-amber-300 mb-2">{tx('ONYX · 找配音', 'ONYX · 找配音', 'ONYX · Find a voice')}</p>
         <h1 className="text-3xl font-bold mb-2">{tx('告訴我們您的配音需求', '告诉我们您的配音需求', 'Tell us about your voiceover project')}</h1>
         <p className="text-gray-400 text-sm mb-3">{tx('填好需求,我們會為您挑選合適的配音員並回覆報價。', '填好需求,我们会为您挑选合适的配音员并回复报价。', 'Share your brief and we’ll match you with the right voice and quote it.')}</p>
-        <p className="text-xs text-gray-500 mb-8">{tx('這裡是真人配音發案。需要 AI 配音 / TTS 或 AI 訓練資料?在「案件類型」選對應項,我們帶你去對的工作室。', '这里是真人配音发案。需要 AI 配音 / TTS 或 AI 训练资料?在「案件类型」选对应项,我们带你去对的工作室。', 'This is for human voiceover. Need AI / TTS or AI training data? Pick it under “Project type” and we’ll point you to the right studio.')}</p>
+        {isLiveStudio ? (
+          <div className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3">
+            <p className="text-sm font-semibold text-amber-300">{tx('100% 真人錄音室 · 全真人現場錄製', '100% 真人录音室 · 全真人现场录制', '100% Live Studio · fully human, live-recorded')}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{tx('已為您預選「線上同步指導錄音」。填好需求,我們會回覆客製報價。', '已为您预选「线上同步指导录音」。填好需求,我们会回复客制报价。', 'Live online session is pre-selected. Share your brief and we’ll reply with a custom quote.')}</p>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500 mb-8">{tx('這裡是真人配音發案。需要 AI 配音 / TTS 或 AI 訓練資料?在「案件類型」選對應項,我們帶你去對的工作室。', '这里是真人配音发案。需要 AI 配音 / TTS 或 AI 训练资料?在「案件类型」选对应项,我们带你去对的工作室。', 'This is for human voiceover. Need AI / TTS or AI training data? Pick it under “Project type” and we’ll point you to the right studio.')}</p>
+        )}
 
         <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
@@ -179,12 +195,14 @@ export default function Hire() {
             <div>{CONTENT_TYPES.map((c) => (
               <button key={c.v} type="button" onClick={() => pickContent(c.v)} className={pill(contentType === c.v)}>{lbl(c)}</button>
             ))}</div>
-            <div className="mt-1">
-              <span className="text-xs text-gray-500 mr-2">{tx('以下由我們直接製作:', '以下由我们直接制作:', 'Handled by us directly:')}</span>
-              {AI_TYPES.map((a) => (
-                <button key={a.v} type="button" onClick={() => pickAi(a)} className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm border transition-all mr-2 mb-2 bg-zinc-900 text-sky-300/80 border-sky-700/40 hover:border-sky-500`}>{L === 'en' ? a.v : a[L]} →</button>
-              ))}
-            </div>
+            {!isLiveStudio && (
+              <div className="mt-1">
+                <span className="text-xs text-gray-500 mr-2">{tx('以下由我們直接製作:', '以下由我们直接制作:', 'Handled by us directly:')}</span>
+                {AI_TYPES.map((a) => (
+                  <button key={a.v} type="button" onClick={() => pickAi(a)} className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm border transition-all mr-2 mb-2 bg-zinc-900 text-sky-300/80 border-sky-700/40 hover:border-sky-500`}>{L === 'en' ? a.v : a[L]} →</button>
+                ))}
+              </div>
+            )}
             {contentType && ['Game', 'Animation', 'Film / Drama'].includes(contentType) && (
               <label className="mt-1 inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
                 <input type="checkbox" checked={hasSinging} onChange={(e) => setHasSinging(e.target.checked)} className="accent-amber-500" />

@@ -82,10 +82,16 @@ export default function CompactPricing() {
                 <h3 className="text-2xl font-bold text-white mb-1">{plan.title}</h3>
                 <p className="text-blue-400 text-sm font-medium mb-4">{plan.tagline}</p>
 
-                <div className="mb-4">
+                <div className="mb-3">
                   <span className="text-4xl font-bold text-white">{plan.price}</span>
                   {plan.unit && <span className="text-gray-500 text-sm ml-1.5">{plan.unit}</span>}
                 </div>
+
+                {plan.id === 'tier-3' && (
+                  <span className="inline-block mb-3 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30">
+                    {t('customQuoteTag')}
+                  </span>
+                )}
 
                 <p className="text-gray-400 text-sm mb-2 leading-relaxed">{plan.subtitle}</p>
                 <p className="text-xs text-slate-500 mb-6 leading-relaxed border-l-2 border-blue-500/30 pl-2">
@@ -93,7 +99,7 @@ export default function CompactPricing() {
                 </p>
 
                 <Link
-                  href={plan.id === 'tier-3' ? '/hire' : `/voice/create?tier=${plan.id}`}
+                  href={plan.id === 'tier-3' ? '/hire?from=live-studio' : `/voice/create?tier=${plan.id}`}
                   className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
                     plan.highlighted
                       ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white'
