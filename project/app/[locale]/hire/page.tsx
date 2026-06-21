@@ -76,6 +76,9 @@ export default function Hire() {
   const [hasSinging, setHasSinging] = useState(false);
   const [wantsDirector, setWantsDirector] = useState(false);
   const [wantsLiveSession, setWantsLiveSession] = useState(false);
+  const [budgetType, setBudgetType] = useState('Up to');
+  const [liveSessionTool, setLiveSessionTool] = useState('');
+  const [liveSessionOther, setLiveSessionOther] = useState('');
   const [media, setMedia] = useState('');
   const [territory, setTerritory] = useState('');
   const [license, setLicense] = useState('');
@@ -122,6 +125,8 @@ export default function Hire() {
           audition_deadline: form.auditionDeadline,
           wants_director: wantsDirector,
           wants_live_session: wantsLiveSession,
+          live_session_tool: wantsLiveSession ? (liveSessionTool === 'Other' ? liveSessionOther : liveSessionTool) : '',
+          budget_type: budgetType,
           locale,
         }),
       });
@@ -213,9 +218,31 @@ export default function Hire() {
                   <label className="inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={wantsDirector} onChange={(e) => setWantsDirector(e.target.checked)} className="accent-amber-500" />{tx('需要聲音導演(現場指導語氣、節奏)', '需要声音导演(现场指导语气、节奏)', 'Voice director (live coaching of tone & pacing)')}</label>
                   <label className="inline-flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={wantsLiveSession} onChange={(e) => setWantsLiveSession(e.target.checked)} className="accent-amber-500" />{tx('線上同步指導錄音(您可線上即時加入)', '线上同步指导录音(您可线上即时加入)', 'Live online session (join to direct in real time)')}</label>
                 </div>
+                {wantsLiveSession && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-gray-400">{tx('偏好平台', '偏好平台', 'Preferred tool')}</span>
+                    <select className="shrink-0 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-amber-500 focus:outline-none" value={liveSessionTool} onChange={(e) => setLiveSessionTool(e.target.value)}>
+                      <option value="" className="bg-zinc-900">{tx('請選擇', '请选择', 'Choose')}</option>
+                      <option value="Zoom" className="bg-zinc-900">Zoom</option>
+                      <option value="Google Meet" className="bg-zinc-900">Google Meet</option>
+                      <option value="Source-Connect" className="bg-zinc-900">Source-Connect</option>
+                      <option value="Other" className="bg-zinc-900">{tx('其他(自填)', '其他(自填)', 'Other')}</option>
+                    </select>
+                    {liveSessionTool === 'Other' && <input className={`${inputCls} flex-1 min-w-[140px]`} value={liveSessionOther} onChange={(e) => setLiveSessionOther(e.target.value)} placeholder={tx('自行填寫平台', '自行填写平台', 'Specify tool')} />}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-200 mb-1">{tx('預算', '预算', 'Budget')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('有預算範圍最好媒合', '有预算范围最好媒合', 'A range helps us match')} /></div>
+                <div>
+                  <label className="block text-sm text-gray-200 mb-1">{tx('預算', '预算', 'Budget')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
+                  <div className="flex gap-2">
+                    <select className="shrink-0 w-[110px] px-2 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-amber-500 focus:outline-none" value={budgetType} onChange={(e) => setBudgetType(e.target.value)}>
+                      <option value="Up to" className="bg-zinc-900">{tx('上限 Up to', '上限 Up to', 'Up to')}</option>
+                      <option value="Fixed" className="bg-zinc-900">{tx('固定 Fixed', '固定 Fixed', 'Fixed')}</option>
+                    </select>
+                    <input className={inputCls} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('例:USD 500', '例:USD 500', 'e.g. USD 500')} />
+                  </div>
+                </div>
                 <div><label className="block text-sm text-gray-200 mb-1">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼您喜歡的聲音 / 參考 demo 連結', '贴您喜欢的声音 / 参考 demo 链接', 'Link to a voice / demo you like')} /></div>
               </div>
               <div><label className="block text-sm text-gray-200 mb-1">{tx('需求說明 / 稿件', '需求说明 / 稿件', 'Brief / script')} <span className="text-red-400">＊</span></label><textarea className={`${inputCls} min-h-[120px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣、參考、稿件內容…越清楚我們越好媒合。', '用途、语气、参考、稿件内容…越清楚我们越好媒合。', 'Use case, tone, references, the script… the clearer, the better we can match.')} /></div>

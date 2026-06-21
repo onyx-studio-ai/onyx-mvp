@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
           audition_deadline: b.audition_deadline || null,
           wants_director: !!b.wants_director,
           wants_live_session: !!b.wants_live_session,
+          live_session_tool: b.live_session_tool || null,
+          budget_type: b.budget_type || null,
           language: b.language || null,
           length: b.length || null,
           budget: b.budget || null,
@@ -75,11 +77,11 @@ export async function POST(request: NextRequest) {
         ${row('授權 License', b.license_term)}
         ${row('語言 Language', b.language)}
         ${row('長度 Length', b.length)}
-        ${row('預算 Budget', b.budget)}
+        ${row('預算 Budget', b.budget ? `${b.budget_type || ''} ${b.budget}`.trim() : '')}
         ${row('試音截止 Audition', b.audition_deadline)}
         ${row('交付截止 Delivery', b.deadline)}
         ${row('聲音導演 Director', b.wants_director ? 'Yes' : '')}
-        ${row('線上同步錄音 Live', b.wants_live_session ? 'Yes' : '')}
+        ${row('線上同步錄音 Live', b.wants_live_session ? (b.live_session_tool ? `Yes (${b.live_session_tool})` : 'Yes') : '')}
         ${row('稿件 Script', b.script_status)}
         ${row('參考聲音 Ref', b.ref_audio_url)}
         ${row('語系 Locale', b.locale)}
