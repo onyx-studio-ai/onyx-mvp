@@ -233,6 +233,11 @@ export default function LobbyPage() {
                         {service.number}
                       </span>
                       <Icon className={`w-5 h-5 ${service.accent}`} />
+                      {service.id === 'voice' && (
+                        <span className="px-2.5 py-1 text-[10px] font-semibold rounded-full bg-teal-500/15 text-teal-200 border border-teal-500/30 uppercase tracking-wider">
+                          {tx('真人 + AI', '真人 + AI', 'Human + AI')}
+                        </span>
+                      )}
                     </div>
                     {service.featured && (
                       <span className="px-2.5 py-1 text-[10px] font-semibold rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/25 uppercase tracking-wider">
