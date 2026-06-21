@@ -164,7 +164,7 @@ export default function Hire() {
       <div className="max-w-2xl mx-auto px-4 pt-28 pb-16">
         <p className="text-xs tracking-[0.25em] uppercase text-amber-300 mb-2">{tx('ONYX · 找配音', 'ONYX · 找配音', 'ONYX · Find a voice')}</p>
         <h1 className="text-3xl font-bold mb-2">{tx('告訴我們您的配音需求', '告诉我们您的配音需求', 'Tell us about your voiceover project')}</h1>
-        <p className="text-gray-400 text-sm mb-3">{tx('填好需求,我們會為您挑選合適的配音員並回覆報價。約 2 分鐘。', '填好需求,我们会为您挑选合适的配音员并回复报价。约 2 分钟。', 'Share your brief and we’ll match you with the right voice and quote it. About 2 minutes.')}</p>
+        <p className="text-gray-400 text-sm mb-3">{tx('填好需求,我們會為您挑選合適的配音員並回覆報價。', '填好需求,我们会为您挑选合适的配音员并回复报价。', 'Share your brief and we’ll match you with the right voice and quote it.')}</p>
         <p className="text-xs text-gray-500 mb-8">{tx('這裡是真人配音發案。需要 AI 配音 / TTS 或 AI 訓練資料?在「案件類型」選對應項,我們帶你去對的工作室。', '这里是真人配音发案。需要 AI 配音 / TTS 或 AI 训练资料?在「案件类型」选对应项,我们带你去对的工作室。', 'This is for human voiceover. Need AI / TTS or AI training data? Pick it under “Project type” and we’ll point you to the right studio.')}</p>
 
         <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-5">
