@@ -57,10 +57,19 @@ export default function AuthPage() {
           body: JSON.stringify({ token: captchaToken }),
         });
         if (!cap.ok) { const d = await cap.json().catch(() => ({})); throw new Error(d.error || 'Bot check failed'); }
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        const isAdmin = email.toLowerCase() === 'admin@onyxstudios.ai';
-        router.push(isAdmin ? '/admin/dashboard' : '/dashboard');
+        if (email.toLowerCase() === 'admin@onyxstudios.ai') { router.push('/admin/dashboard'); return; }
+        // Route talents to their own dashboard, clients to the orders dashboard.
+        let dest = '/dashboard';
+        try {
+          const token = signInData.session?.access_token;
+          if (token) {
+            const meRes = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${token}` } });
+            if (meRes.ok) dest = '/talent';
+          }
+        } catch { /* default to /dashboard */ }
+        router.push(dest);
       } else if (mode === 'signup') {
         const res = await fetch('/api/auth/signup', {
           method: 'POST',
