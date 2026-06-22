@@ -1328,6 +1328,66 @@ export function livenessRequestEmail(p: {
 }
 
 // ---------------------------------------------------------------------------
+// Talent profile review result (approved / changes requested)
+// ---------------------------------------------------------------------------
+
+export function talentReviewEmail(p: {
+  talentName: string;
+  approved: boolean;
+  reason?: string;
+  profileLink?: string;
+  locale?: string;
+}): { subject: string; html: string } {
+  const slocale: SupportedLocale = p.locale === 'zh-CN' ? 'zh-CN' : p.locale?.startsWith('zh') ? 'zh-TW' : 'en';
+  const L = slocale === 'zh-CN' ? 'cn' : slocale === 'zh-TW' ? 'tw' : 'en';
+  const name = (p.talentName || '').trim();
+  const link = p.profileLink || `${SITE_URL}/talent`;
+  const reason = (p.reason || '').trim();
+  const T = {
+    tw: {
+      subjOk: 'Onyx Studios — 您的配音員檔案已上線', subjNo: 'Onyx Studios — 您的檔案需要稍作調整',
+      headOk: '檔案已通過審核', headNo: '檔案需要調整',
+      subOk: '您的個人檔案已公開在 Onyx 人才庫。', subNo: '差一點點就完成了。',
+      card: '審核結果',
+      okBody: `${name ? name + ' 您好,' : ''}您的配音員檔案已通過審核,現在已公開在 Onyx 人才庫,客戶可以瀏覽並洽詢。日後若有修改,一樣會再走一次快速審核。`,
+      noBody: `${name ? name + ' 您好,' : ''}感謝您更新檔案。在正式公開前,有幾個地方想請您調整:`,
+      ctaOk: '查看我的檔案', ctaNo: '回到後台調整',
+    },
+    cn: {
+      subjOk: 'Onyx Studios — 您的配音员档案已上线', subjNo: 'Onyx Studios — 您的档案需要稍作调整',
+      headOk: '档案已通过审核', headNo: '档案需要调整',
+      subOk: '您的个人档案已公开在 Onyx 人才库。', subNo: '差一点点就完成了。',
+      card: '审核结果',
+      okBody: `${name ? name + ' 您好,' : ''}您的配音员档案已通过审核,现在已公开在 Onyx 人才库,客户可以浏览并洽询。日后若有修改,同样会再走一次快速审核。`,
+      noBody: `${name ? name + ' 您好,' : ''}感谢您更新档案。在正式公开前,有几个地方想请您调整:`,
+      ctaOk: '查看我的档案', ctaNo: '回到后台调整',
+    },
+    en: {
+      subjOk: 'Onyx Studios — Your talent profile is live', subjNo: 'Onyx Studios — A small tweak needed on your profile',
+      headOk: 'Profile Approved', headNo: 'Profile Needs a Tweak',
+      subOk: 'Your profile is now public on the Onyx roster.', subNo: 'Almost there.',
+      card: 'Review Result',
+      okBody: `${name ? 'Hi ' + name + ', ' : ''}your talent profile has been approved and is now public on the Onyx roster, where clients can browse and enquire. Any future edits go through the same quick review.`,
+      noBody: `${name ? 'Hi ' + name + ', ' : ''}thanks for updating your profile. Before it goes public, could you adjust the following:`,
+      ctaOk: 'View my profile', ctaNo: 'Open my dashboard',
+    },
+  }[L];
+  const ok = p.approved;
+  const reasonHtml = !ok && reason
+    ? `<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:14px 18px;margin:8px 0 0;"><p style="color:#fcd34d;font-size:14px;line-height:1.7;margin:0;white-space:pre-line;">${reason}</p></div>`
+    : '';
+  const accent = ok ? BRAND_GREEN : '#f59e0b';
+  const content = `
+    ${headlineBlock(ok ? T.headOk : T.headNo, ok ? T.subOk : T.subNo, accent)}
+    ${bodyCard(T.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 12px;">${ok ? T.okBody : T.noBody}</p>
+      ${reasonHtml}
+    `)}
+    ${ctaRow(ok ? T.ctaOk : T.ctaNo, link, ok ? 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)' : accent)}`;
+  return { subject: ok ? T.subjOk : T.subjNo, html: baseLayout(content, 'Studios', accent, slocale) };
+}
+
+// ---------------------------------------------------------------------------
 // 13. Internal Error Email
 // ---------------------------------------------------------------------------
 

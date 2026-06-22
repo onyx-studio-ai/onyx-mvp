@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2 } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, ACCENTS, AVAILABILITY, COUNTRIES,
-  pickLabel, formatLangEntry, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
+  pickLabel, formatLangEntry, baseLangLabel, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
 } from '@/lib/talent-taxonomy';
 
 const GENDER_OPTIONS = [
@@ -110,6 +110,7 @@ export default function TalentDashboard() {
   const [saved, setSaved] = useState(false);
   const [saveErr, setSaveErr] = useState('');
   const [langPick, setLangPick] = useState('');
+  const [langQ, setLangQ] = useState('');
   const [accentPick, setAccentPick] = useState('native');
   const [traitCustom, setTraitCustom] = useState('');
   const [specCustom, setSpecCustom] = useState('');
@@ -265,9 +266,9 @@ export default function TalentDashboard() {
     setForm((f) => ({ ...f, [field]: f[field].filter((x) => x !== val) }));
   const addLang = () => {
     if (!langPick) return;
-    const entry = `${langPick}/${accentPick || 'native'}`;
+    const entry = `${langPick.replace(/\//g, ' ').trim()}/${accentPick || 'native'}`;
     if (!form.languages.includes(entry)) setForm((f) => ({ ...f, languages: [...f.languages, entry] }));
-    setLangPick('');
+    setLangPick(''); setLangQ(''); setAccentPick('native');
   };
   const removeLang = (v: string) => setForm((f) => ({ ...f, languages: f.languages.filter((x) => x !== v) }));
 
@@ -307,6 +308,9 @@ export default function TalentDashboard() {
   // ---- dashboard ----
   const serviceTags = (Array.isArray(t?.tags) ? t!.tags : []).filter((x) => SERVICE_TAGS.has(x));
   const sortedCountries = [...COUNTRIES].sort((a, b) => pickLabel(a, locale).localeCompare(pickLabel(b, locale)));
+  const lq = langQ.trim().toLowerCase();
+  const langMatches = lq ? BASE_LANGUAGES.filter((o) => pickLabel(o, locale).toLowerCase().includes(lq) || o.en.toLowerCase().includes(lq)) : [];
+  const canAddCustomLang = !!lq && !BASE_LANGUAGES.some((o) => pickLabel(o, locale).toLowerCase() === lq || o.en.toLowerCase() === lq);
   const demosByCat = USE_CASES.map((c) => ({ c, items: form.demos.filter((d) => d.category === c.key) })).filter((g) => g.items.length > 0);
 
   const statusBadge = !t?.is_active
@@ -352,7 +356,7 @@ export default function TalentDashboard() {
       </div>
       {photoErr && <p className="text-red-400 text-xs mb-3 -mt-2">{photoErr}</p>}
 
-      <p className="text-xs text-gray-500 mb-5">{tx('編輯後按「儲存變更」會送出審核;通過後才會更新到公開頁面。', '编辑后按「保存更改」会送出审核;通过后才会更新到公开页面。', 'Changes go to review when you save — they go public after approval.')}</p>
+      <p className="text-xs text-gray-500 mb-5">{tx('您的修改會先送審 —— 我們聽過 demo、確認資料後才會公開到前台;通過或需要調整都會 email 通知您。', '您的修改会先送审 —— 我们听过 demo、确认资料后才会公开到前台;通过或需要调整都会 email 通知您。', 'Your changes go to review first — we listen to the demos and check your details before they go public. We’ll email you when approved, or if anything needs a tweak.')}</p>
 
       <div className="space-y-8">
         {/* Bio */}
@@ -401,10 +405,10 @@ export default function TalentDashboard() {
           <textarea className={`${inputCls} min-h-[70px] resize-y`} value={form.special_skills} onChange={(e) => setForm({ ...form, special_skills: e.target.value })} placeholder={tx('例如:模仿名人/卡通角色、口技、方言、會唱歌、Rap…', '例如:模仿名人/卡通角色、口技、方言、会唱歌、Rap…', 'e.g. Celebrity/character impressions, beatbox, dialects, singing, rap…')} />
         </div>
 
-        {/* Languages — language + accent dropdowns */}
+        {/* Languages — searchable language + accent, with custom fallback */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</label>
-          <p className="text-xs text-gray-500 mb-2.5">{tx('選語言＋口音,每個語言都要有一段該語言的 demo 才能掛上。', '选语言＋口音,每个语言都要有一段该语言的 demo 才能挂上。', 'Pick a language + accent. Each needs at least one demo in it.')}</p>
+          <p className="text-xs text-gray-500 mb-2.5">{tx('搜尋語言(中/英),選口音;找不到可直接輸入。每個語言都要有一段該語言的 demo 才能掛上。', '搜寻语言(中/英),选口音;找不到可直接输入。每个语言都要有一段该语言的 demo 才能挂上。', 'Search a language (any name), pick an accent; type your own if not listed. Each needs a demo in it.')}</p>
           {form.languages.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {form.languages.map((v) => {
@@ -418,16 +422,25 @@ export default function TalentDashboard() {
               })}
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            <select className={`${inputCls} flex-1 min-w-[120px]`} value={langPick} onChange={(e) => setLangPick(e.target.value)}>
-              <option value="" className="bg-zinc-900">{tx('選語言…', '选语言…', 'Language…')}</option>
-              {BASE_LANGUAGES.map((o) => <option key={o.key} value={o.key} className="bg-zinc-900">{pickLabel(o, locale)}</option>)}
-            </select>
-            <select className={`${inputCls} flex-1 min-w-[120px]`} value={accentPick} onChange={(e) => setAccentPick(e.target.value)}>
-              {ACCENTS.map((o) => <option key={o.key} value={o.key} className="bg-zinc-900">{pickLabel(o, locale)}</option>)}
-            </select>
-            <button type="button" onClick={addLang} disabled={!langPick} className="shrink-0 text-sm bg-amber-500/90 hover:bg-amber-400 disabled:opacity-40 text-black font-medium rounded-lg px-4 transition">{tx('加入', '加入', 'Add')}</button>
-          </div>
+          {!langPick ? (
+            <div>
+              <input className={inputCls} value={langQ} onChange={(e) => setLangQ(e.target.value)} placeholder={tx('搜尋語言,例如:葡萄牙文 / Tagalog', '搜寻语言,例如:葡萄牙文 / Tagalog', 'Search a language, e.g. Portuguese / Tagalog')} />
+              {(langMatches.length > 0 || canAddCustomLang) && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {langMatches.slice(0, 12).map((o) => <button key={o.key} onClick={() => { setLangPick(o.key); setLangQ(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-2.5 py-1 transition">+ {pickLabel(o, locale)}</button>)}
+                  {canAddCustomLang && <button onClick={() => { setLangPick(langQ.trim()); setLangQ(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-full px-2.5 py-1 transition">{tx('其他', '其他', 'Other')}:“{langQ.trim()}”</button>}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="inline-flex items-center gap-1.5 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-200">{baseLangLabel(langPick, locale)}<button onClick={() => setLangPick('')} className="text-gray-400 hover:text-white" aria-label="change">×</button></span>
+              <select className={`${inputCls} flex-1 min-w-[120px]`} value={accentPick} onChange={(e) => setAccentPick(e.target.value)}>
+                {ACCENTS.map((o) => <option key={o.key} value={o.key} className="bg-zinc-900">{pickLabel(o, locale)}</option>)}
+              </select>
+              <button type="button" onClick={addLang} className="shrink-0 text-sm bg-amber-500/90 hover:bg-amber-400 text-black font-medium rounded-lg px-4 transition">{tx('加入', '加入', 'Add')}</button>
+            </div>
+          )}
         </div>
 
         {/* Demos — collapsed: only categories with demos, plus one add control */}
@@ -545,7 +558,7 @@ export default function TalentDashboard() {
         {/* Save */}
         <div className="flex items-center gap-3 pt-1">
           <button onClick={handleSave} disabled={busy || photoBusy || !!uploadingCat} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2.5 text-sm transition">
-            {busy ? tx('儲存中…', '保存中…', 'Saving…') : tx('儲存變更', '保存更改', 'Save changes')}
+            {busy ? tx('送出中…', '提交中…', 'Submitting…') : tx('儲存並送審', '保存并送审', 'Save & submit for review')}
           </button>
           {saved && <span className="text-emerald-400 text-sm">{tx('✓ 已送出審核', '✓ 已送出审核', '✓ Sent for review')}</span>}
           {saveErr && <span className="text-red-400 text-sm">{saveErr}</span>}

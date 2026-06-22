@@ -309,6 +309,10 @@ export default function AdminTalentsPage() {
   const [publishTarget, setPublishTarget] = useState<Talent | null>(null);
   const [pubBio, setPubBio] = useState<{ 'zh-TW': string; 'zh-CN': string; en: string }>({ 'zh-TW': '', 'zh-CN': '', en: '' });
   const [publishing, setPublishing] = useState(false);
+  // Changes-requested (reject) flow
+  const [rejectTarget, setRejectTarget] = useState<Talent | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
   const [formData, setFormData] = useState({
     type: "VO",
     name: "",
@@ -464,6 +468,21 @@ export default function AdminTalentsPage() {
       else toast.error(data.error || 'Publish failed');
     } catch { toast.error('Publish failed'); }
     finally { setPublishing(false); }
+  };
+
+  const handleReject = async () => {
+    if (!rejectTarget) return;
+    setRejecting(true);
+    try {
+      const res = await fetch('/api/admin/talents/reject', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ talentId: rejectTarget.id, reason: rejectReason }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) { toast.success('已寄出「需調整」通知 ✓'); setRejectTarget(null); setRejectReason(''); }
+      else toast.error(data.error || 'Send failed');
+    } catch { toast.error('Send failed'); }
+    finally { setRejecting(false); }
   };
 
   useEffect(() => {
@@ -1395,9 +1414,14 @@ export default function AdminTalentsPage() {
                       const needsPublish = (tt.onboarded_at && !talent.is_active) || tt.pending_review;
                       if (!needsPublish) return null;
                       return (
-                        <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700">
-                          <CheckCircle className="w-3.5 h-3.5 mr-1" /> {talent.is_active ? '審核發布' : '發布'}
-                        </Button>
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700">
+                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> {talent.is_active ? '審核發布' : '發布'}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => { setRejectTarget(talent); setRejectReason(''); }} className="h-8 px-3 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-700">
+                            <Send className="w-3.5 h-3.5 mr-1" /> 退回
+                          </Button>
+                        </>
                       );
                     })()}
                     <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900">
@@ -1448,6 +1472,25 @@ export default function AdminTalentsPage() {
               <Button variant="outline" onClick={() => setPublishTarget(null)} className="border-gray-300 text-gray-700">取消</Button>
               <Button onClick={handlePublish} disabled={publishing} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                 {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />} 確認發布
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject / changes-requested dialog — emails the talent what to fix */}
+      <Dialog open={!!rejectTarget} onOpenChange={(o) => !o && setRejectTarget(null)}>
+        <DialogContent className="max-w-lg bg-white border-gray-200 text-gray-900">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 text-lg">退回給配音員 — {rejectTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">寫下需要對方調整的地方,會 email 通知他(不會公開、不會動到他目前的前台版本)。</p>
+            <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="min-h-[120px]" placeholder="例如:廣告 demo 有背景雜音請重錄;粵語語言請補一段該語言的 demo…" />
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => setRejectTarget(null)} className="border-gray-300 text-gray-700">取消</Button>
+              <Button onClick={handleReject} disabled={rejecting || !rejectReason.trim()} className="bg-amber-600 hover:bg-amber-700 text-white">
+                {rejecting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />} 寄出通知
               </Button>
             </div>
           </div>

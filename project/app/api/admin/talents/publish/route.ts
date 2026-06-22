@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
+import { sendEmail } from '@/lib/mail';
+import { talentReviewEmail } from '@/lib/mail-templates';
 
 /*
   Admin publish: promote a talent's current DRAFT (the talents row) into the
@@ -18,7 +20,7 @@ import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-
 */
 
 const SNAPSHOT_COLS =
-  'id, name, languages, gender, accent, bio, tags, voice_traits, specialties, demos, demo_urls, ' +
+  'id, name, email, languages, gender, accent, bio, tags, voice_traits, specialties, demos, demo_urls, ' +
   'headshot_url, sample_url, location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, category';
 
 export async function POST(request: NextRequest) {
@@ -76,6 +78,22 @@ export async function POST(request: NextRequest) {
       .update({ published_snapshot: snapshot, pending_review: false, is_active: true })
       .eq('id', talentId);
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+
+    // Notify the talent their profile is live (best-effort; transactional, fired
+    // by the admin's own click). Skippable via { notify: false }.
+    const email = t.email as string | null;
+    if (body.notify !== false && email) {
+      try {
+        let locale = 'zh-TW';
+        const { data: appRow } = await db.from('talent_applications').select('locale').eq('email', email).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (appRow?.locale) locale = appRow.locale as string;
+        const { subject, html } = talentReviewEmail({
+          talentName: (t.name as string) || '', approved: true, locale,
+          profileLink: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai'}/talent`,
+        });
+        await sendEmail({ category: 'HELLO', to: email, subject, html });
+      } catch { /* email is best-effort */ }
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
