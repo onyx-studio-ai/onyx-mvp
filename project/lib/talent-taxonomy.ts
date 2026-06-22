@@ -77,7 +77,7 @@ export type DemoItem = { category: string; name: string; url: string; language?:
 // (no "/") are shown as-is.
 // World languages — searchable; anything missing can still be typed ("其他").
 export const BASE_LANGUAGES = [
-  { key: 'mandarin',  tw: '中文(華語)', cn: '中文(普通话)', en: 'Chinese (Mandarin)' },
+  { key: 'mandarin',  tw: '中文(國語)', cn: '普通话',       en: 'Mandarin Chinese' },
   { key: 'cantonese', tw: '粵語',       cn: '粤语',         en: 'Cantonese' },
   { key: 'hokkien',   tw: '台語(閩南語)', cn: '闽南语',     en: 'Hokkien' },
   { key: 'hakka',     tw: '客家話',     cn: '客家话',       en: 'Hakka' },
