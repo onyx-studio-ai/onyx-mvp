@@ -564,7 +564,7 @@ export default function TalentDashboard() {
           </div>
           <div className="mb-4">
             <label className={labelCls}>{tx('代表作', '代表作', 'Notable work')}</label>
-            <textarea className={`${inputCls} min-h-[70px] resize-y`} value={form.notable_works} onChange={(e) => setForm({ ...form, notable_works: e.target.value })} placeholder={tx('最具代表性的作品…', '最具代表性的作品…', 'Your most notable projects…')} />
+            <textarea className={`${inputCls} min-h-[90px] resize-y`} value={form.notable_works} onChange={(e) => setForm({ ...form, notable_works: e.target.value })} placeholder={tx('一行一個,作品 + 媒介/角色,例如:\nLINDOR 農曆新年電視廣告\n《XX》有聲書全集旁白\n《某遊戲》主角配音', '一行一个,作品 + 媒介/角色,例如:\nLINDOR 农历新年电视广告\n《XX》有声书全集旁白\n《某游戏》主角配音', 'One per line — work + medium/role, e.g.\nLINDOR Lunar New Year TV ad\nNarrator, “XX” audiobook series\nLead role, “Some Game”')} />
           </div>
           <div>
             <label className={labelCls}>{tx('獎項', '奖项', 'Awards')} <span className="font-normal text-gray-600">· {tx('選填', '选填', 'optional')}</span></label>
