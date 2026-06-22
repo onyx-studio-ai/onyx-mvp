@@ -53,13 +53,16 @@ export default function VoiceForm() {
 
   useEffect(() => {
     async function fetchTalents() {
-      const { data } = await supabase
-        .from('talents')
-        .select('id, name, email')
-        .in('type', ['voice_actor', 'VO', 'Singer'])
-        .eq('is_active', true)
-        .order('name');
-      if (data) setTalents(data);
+      // Via the admin service-role API (not the public anon key) so talent email
+      // isn't exposed publicly. Admin auth cookie rides the same-origin fetch.
+      const res = await fetch('/api/admin/talents');
+      if (!res.ok) return;
+      const all = (await res.json()) as Array<{ id: string; name: string; email: string | null; is_active: boolean; type: string }>;
+      const list = (Array.isArray(all) ? all : [])
+        .filter((t) => t.is_active && ['voice_actor', 'VO', 'Singer'].includes(t.type))
+        .map((t) => ({ id: t.id, name: t.name, email: t.email || '' }))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setTalents(list);
     }
     fetchTalents();
   }, []);
