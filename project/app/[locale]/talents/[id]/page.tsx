@@ -11,9 +11,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { ArrowLeft, MessageSquare, MapPin, Mic2, Clock } from 'lucide-react';
+import { ArrowLeft, MessageSquare, MapPin, Mic2 } from 'lucide-react';
 import CatalogAudioPlayer from '@/components/catalog/CatalogAudioPlayer';
-import { traitLabel, useCaseLabel, USE_CASES, type DemoItem } from '@/lib/talent-taxonomy';
+import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, type DemoItem } from '@/lib/talent-taxonomy';
 
 interface Talent {
   id: string;
@@ -32,6 +32,10 @@ interface Talent {
   location?: string;
   availability_note?: string;
   credits?: string;
+  clients?: string;
+  awards?: string;
+  notable_works?: string;
+  special_skills?: string;
   equipment?: string;
   studio_partner?: string;
 }
@@ -87,7 +91,8 @@ export default function TalentProfile() {
     const v = (g || '').toLowerCase();
     return v === 'male' ? tx('男聲', '男声', 'Male') : v === 'female' ? tx('女聲', '女声', 'Female') : g ? tx('其他', '其他', 'Other') : '';
   };
-  const metaLine = [genderLabel(t?.gender), t?.accent, t?.location].filter(Boolean).join(' · ');
+  const metaLine = [genderLabel(t?.gender), t?.location ? countryLabel(t.location, locale) : ''].filter(Boolean).join(' · ');
+  const availabilityKeys = (t?.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
 
   return (
     <main className="min-h-screen bg-[#050505] text-white">
@@ -118,7 +123,7 @@ export default function TalentProfile() {
             {(t.languages || []).length > 0 && (
               <div className="mb-4">
                 <p className="text-xs text-gray-500 mb-1.5">{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</p>
-                <div className="flex flex-wrap gap-1.5">{(t.languages || []).map((l) => <span key={l} className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-gray-200">{l}</span>)}</div>
+                <div className="flex flex-wrap gap-1.5">{(t.languages || []).map((l) => <span key={l} className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-gray-200">{formatLangEntry(l, locale)}</span>)}</div>
               </div>
             )}
 
@@ -147,20 +152,35 @@ export default function TalentProfile() {
               );
             })()}
 
-            {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 mt-2 whitespace-pre-line">{bioText}</p>}
-
-            {t.credits && (
-              <div className="mb-5">
-                <p className="text-xs text-gray-500 mb-1.5">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p>
-                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.credits}</p>
+            {t.special_skills && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-1.5">{tx('特殊技能 / 模仿', '特殊技能 / 模仿', 'Special skills & impressions')}</p>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.special_skills}</p>
               </div>
             )}
 
-            {(t.equipment || t.studio_partner || t.availability_note) && (
+            {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 mt-2 whitespace-pre-line">{bioText}</p>}
+
+            {(t.clients || t.awards || t.notable_works || t.credits) && (
+              <div className="mb-5 space-y-3">
+                {t.clients && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作品牌 / 客戶', '合作品牌 / 客户', 'Clients & brands')}</p><p className="text-sm text-gray-300 leading-relaxed">{t.clients}</p></div>)}
+                {t.notable_works && (<div><p className="text-xs text-gray-500 mb-1">{tx('代表作', '代表作', 'Notable work')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.notable_works}</p></div>)}
+                {t.awards && (<div><p className="text-xs text-gray-500 mb-1">{tx('獎項', '奖项', 'Awards')}</p><p className="text-sm text-gray-300 leading-relaxed">{t.awards}</p></div>)}
+                {!t.clients && !t.awards && !t.notable_works && t.credits && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.credits}</p></div>)}
+              </div>
+            )}
+
+            {availabilityKeys.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-1.5">{tx('可工作時段', '可工作时段', 'Availability')}</p>
+                <div className="flex flex-wrap gap-1.5">{availabilityKeys.map((k) => <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-zinc-800 text-gray-300">{availabilityLabel(k, locale)}</span>)}</div>
+              </div>
+            )}
+
+            {(t.equipment || t.studio_partner) && (
               <div className="mb-7 grid gap-2 text-sm text-gray-400">
                 {t.equipment && <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.equipment}</span></p>}
-                {t.studio_partner && <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.studio_partner}</span></p>}
-                {t.availability_note && <p className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.availability_note}</span></p>}
+                {t.studio_partner && <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><a href={t.studio_partner.startsWith('http') ? t.studio_partner : `https://${t.studio_partner}`} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 break-all">{tx('配合錄音室', '合作录音室', 'Partner studio')}</a></p>}
               </div>
             )}
 

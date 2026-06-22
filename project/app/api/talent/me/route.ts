@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
-import { TRAIT_KEYS, USE_CASE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem } from '@/lib/talent-taxonomy';
+import { USE_CASE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem } from '@/lib/talent-taxonomy';
 
 /*
   Talent self-service profile API. Authenticated by the talent's OWN Supabase
@@ -16,12 +16,20 @@ import { TRAIT_KEYS, USE_CASE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem }
 
 // Simple text fields the talent may edit. Identity (email), service tags,
 // is_active, pricing and the published_snapshot are intentionally excluded.
-const TEXT_FIELDS = ['name', 'bio', 'accent', 'gender', 'location', 'availability_note', 'credits', 'equipment', 'studio_partner'] as const;
+// location = country key, availability_note = comma-joined preset keys,
+// studio_partner = URL, clients/awards/notable_works = structured credits.
+const TEXT_FIELDS = ['name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills'] as const;
 
 const COLS =
   'id, name, bio, languages, accent, gender, tags, voice_traits, specialties, demos, demo_urls, headshot_url, ' +
-  'location, availability_note, credits, equipment, studio_partner, type, email, is_active, pending_review, ' +
-  'published_snapshot, liveness_status';
+  'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, type, email, is_active, ' +
+  'pending_review, published_snapshot, liveness_status';
+
+// traits/specialties accept preset keys AND free-text custom values ("其他").
+const cleanTags = (arr: unknown): string[] =>
+  Array.isArray(arr)
+    ? [...new Set(arr.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean).map((s) => s.slice(0, 40)))].slice(0, 30)
+    : [];
 
 // This project has no generated DB types, so a string select() yields a loose
 // row. Narrow to the fields we actually touch (the rest stay unknown).
@@ -103,14 +111,14 @@ export async function PATCH(request: NextRequest) {
       updates.headshot_url = h || null;
     }
 
-    // voice_traits / specialties: canonical keys from the shared taxonomy only.
+    // voice_traits / specialties: preset keys + free-text custom ("其他").
     if ('voice_traits' in body) {
       if (!Array.isArray(body.voice_traits)) return NextResponse.json({ error: 'voice_traits must be an array' }, { status: 400 });
-      updates.voice_traits = [...new Set(body.voice_traits.filter((t: unknown): t is string => typeof t === 'string' && TRAIT_KEYS.has(t)))];
+      updates.voice_traits = cleanTags(body.voice_traits);
     }
     if ('specialties' in body) {
       if (!Array.isArray(body.specialties)) return NextResponse.json({ error: 'specialties must be an array' }, { status: 400 });
-      updates.specialties = [...new Set(body.specialties.filter((s: unknown): s is string => typeof s === 'string' && USE_CASE_KEYS.has(s)))];
+      updates.specialties = cleanTags(body.specialties);
     }
 
     // demos: categorized [{category,name,url,language,seconds}]. Validate bucket,

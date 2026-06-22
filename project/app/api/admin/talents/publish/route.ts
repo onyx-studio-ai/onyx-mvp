@@ -19,7 +19,7 @@ import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-
 
 const SNAPSHOT_COLS =
   'id, name, languages, gender, accent, bio, tags, voice_traits, specialties, demos, demo_urls, ' +
-  'headshot_url, sample_url, location, availability_note, credits, equipment, studio_partner, category';
+  'headshot_url, sample_url, location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, category';
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
@@ -62,9 +62,12 @@ export async function POST(request: NextRequest) {
       sample_url: t.sample_url || null,
       location: t.location || null,
       availability_note: t.availability_note || null,
-      credits: t.credits || null,
       equipment: t.equipment || null,
       studio_partner: t.studio_partner || null,
+      clients: t.clients || null,
+      awards: t.awards || null,
+      notable_works: t.notable_works || null,
+      special_skills: t.special_skills || null,
       category: t.category || null,
     };
 
