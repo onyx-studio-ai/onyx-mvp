@@ -35,7 +35,19 @@ export async function GET(request: NextRequest) {
   try {
     const r = await resolveTalent(request);
     if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
-    return NextResponse.json({ talent: r.talent });
+    // Dual-role: is this person also a client (has placed voiceover orders)?
+    // Lets the dashboard offer a "switch to client area" link only when relevant.
+    let isClient = false;
+    try {
+      const { data: ord } = await r.db
+        .from('voice_orders')
+        .select('id')
+        .eq('email', r.talent.email)
+        .limit(1)
+        .maybeSingle();
+      isClient = !!ord;
+    } catch { /* non-fatal */ }
+    return NextResponse.json({ talent: r.talent, isClient });
   } catch (err) {
     return supabaseErrorResponse(err, 'api/talent/me:GET');
   }
