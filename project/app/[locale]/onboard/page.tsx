@@ -76,8 +76,11 @@ function OnboardInner() {
       <div className="text-center">
         <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center mx-auto mb-5"><Check className="w-8 h-8 text-black" /></div>
         <h1 className="text-2xl font-bold mb-2">{tx('帳號已開通!', '账号已开通!', "You're all set!")}</h1>
-        <p className="text-gray-400 text-sm leading-relaxed">{tx('歡迎正式加入 Onyx 配音陣容。有合適的案子我們會主動通知您。', '欢迎正式加入 Onyx 配音阵容。有合适的案子我们会主动通知您。', 'Welcome to the Onyx voice roster. We’ll reach out when a fitting job comes up.')}</p>
-        <Link href={`/${locale}/talents`} className="inline-block mt-5 text-amber-300 text-sm hover:text-amber-200">{tx('看看配音陣容 →', '看看配音阵容 →', 'Browse the roster →')}</Link>
+        <p className="text-gray-400 text-sm leading-relaxed">{tx('歡迎加入 Onyx 配音陣容。我們已寄一封「設定密碼」的信到你的信箱 —— 設好密碼後就能登入後台,管理你的個人檔案與 demo(我們審核後才會正式上架)。沒收到信?用下方「設定 / 重設密碼」也可以。', '欢迎加入 Onyx 配音阵容。我们已发送一封「设置密码」的邮件到你的邮箱 —— 设好密码后就能登录后台,管理你的个人档案与 demo(我们审核后才会正式上架)。没收到邮件?用下方「设置 / 重设密码」也可以。', 'Welcome to the Onyx roster. We’ve emailed you a link to set your password — once set, sign in to manage your profile and demos (they go live after our review). Didn’t get the email? Use “Set / reset password” below.')}</p>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <Link href={`/${locale}/auth`} className="text-amber-300 text-sm font-medium hover:text-amber-200">{tx('設定 / 重設密碼 →', '设置 / 重设密码 →', 'Set / reset password →')}</Link>
+          <Link href={`/${locale}/talent`} className="text-gray-500 text-sm hover:text-gray-300">{tx('前往我的後台 →', '前往我的后台 →', 'Go to my dashboard →')}</Link>
+        </div>
       </div>
     </Shell>
   );
