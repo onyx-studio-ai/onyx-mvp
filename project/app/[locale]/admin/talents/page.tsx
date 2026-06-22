@@ -36,6 +36,8 @@ import {
   FileText, DollarSign, ArrowUpRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocale } from "next-intl";
+import { formatLangEntry } from "@/lib/talent-taxonomy";
 
 const ALL_LANGUAGES = [
   "Afrikaans", "Albanian", "Amharic", "Arabic", "Arabic (Egyptian)", "Arabic (Gulf)", "Arabic (Levantine)", "Arabic (Maghreb)",
@@ -301,6 +303,7 @@ function SearchableSelect({
 }
 
 export default function AdminTalentsPage() {
+  const locale = useLocale();
   const [talents, setTalents] = useState<Talent[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -1232,10 +1235,10 @@ export default function AdminTalentsPage() {
                     {talent.languages && talent.languages.length > 0 ? (
                       <>
                         {talent.languages.slice(0, 2).map(lang => (
-                          <Badge key={lang} className="bg-gray-200 text-gray-200 border-gray-400 hover:bg-gray-300 text-[11px]">{lang}</Badge>
+                          <Badge key={lang} className="bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 text-[11px]">{formatLangEntry(lang, locale)}</Badge>
                         ))}
                         {talent.languages.length > 2 && (
-                          <Badge className="bg-gray-200 text-gray-200 border-gray-400 text-[11px]">+{talent.languages.length - 2}</Badge>
+                          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 text-[11px]">+{talent.languages.length - 2}</Badge>
                         )}
                       </>
                     ) : (
@@ -1244,8 +1247,16 @@ export default function AdminTalentsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-gray-900 font-semibold">$499</span>
-                  <span className="text-xs text-gray-500 block">(Cost: ${(talent.internal_cost || 0).toFixed(0)})</span>
+                  {(talent as Talent & { application_id?: string }).application_id ? (
+                    // Human marketplace talent — priced per project (quote), not a flat fee.
+                    <span className="text-gray-600 text-sm">報價制</span>
+                  ) : (
+                    // AI-voice catalogue entry — flat list price.
+                    <>
+                      <span className="text-gray-900 font-semibold">$499</span>
+                      <span className="text-xs text-gray-500 block">(Cost: ${(talent.internal_cost || 0).toFixed(0)})</span>
+                    </>
+                  )}
                 </TableCell>
                 <TableCell>
                   {(() => {
