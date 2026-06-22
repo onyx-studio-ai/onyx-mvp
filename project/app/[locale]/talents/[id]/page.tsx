@@ -1,29 +1,39 @@
 'use client';
 
 /*
-  Phase 1 — public talent profile page. Reads the public-safe single-talent
-  record from /api/talents/roster?id=. CTA leads to enquiry (manual matchmaking
-  for the MVP; Phase 2 will replace it with a real brief/quote flow).
+  Public talent profile page. Reads the admin-approved published_snapshot via
+  /api/talents/roster?id=. Voice traits / specialties / demo categories are stored
+  as canonical keys and localized here from the shared taxonomy. Demos are grouped
+  by category; bio is multilingual (string or {locale:text}). CTA leads to enquiry.
 */
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MessageSquare, MapPin, Mic2, Clock } from 'lucide-react';
 import CatalogAudioPlayer from '@/components/catalog/CatalogAudioPlayer';
+import { traitLabel, useCaseLabel, USE_CASES, type DemoItem } from '@/lib/talent-taxonomy';
 
 interface Talent {
   id: string;
   name: string;
   languages?: string[];
   tags?: string[];
+  voice_traits?: string[];
+  specialties?: string[];
   gender?: string;
   accent?: string;
+  demos?: DemoItem[];
   demo_urls?: { name?: string; url: string; label?: string }[];
   sample_url?: string;
   headshot_url?: string;
   bio?: string | Record<string, string>;
+  location?: string;
+  availability_note?: string;
+  credits?: string;
+  equipment?: string;
+  studio_partner?: string;
 }
 
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase();
@@ -53,7 +63,6 @@ export default function TalentProfile() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // bio may be a plain string, a JSON-encoded {en,zh-TW,zh-CN} string, or an object
   const bioText = (() => {
     if (!t?.bio) return '';
     let obj: Record<string, string>;
@@ -67,11 +76,18 @@ export default function TalentProfile() {
     return obj[locale] || obj['en'] || Object.values(obj)[0] || '';
   })();
 
-  const demos = t?.demo_urls?.length ? t.demo_urls : t?.sample_url ? [{ url: t.sample_url }] : [];
+  // Categorized demos take precedence; fall back to legacy flat demos.
+  const categorized = Array.isArray(t?.demos) && t!.demos!.length > 0 ? t!.demos! : [];
+  const flatDemos = !categorized.length
+    ? (t?.demo_urls?.length ? t.demo_urls : t?.sample_url ? [{ url: t.sample_url }] : [])
+    : [];
+  const demosByCat = USE_CASES.map((c) => ({ c, items: categorized.filter((d) => d.category === c.key) })).filter((g) => g.items.length > 0);
+
   const genderLabel = (g?: string) => {
     const v = (g || '').toLowerCase();
     return v === 'male' ? tx('男聲', '男声', 'Male') : v === 'female' ? tx('女聲', '女声', 'Female') : g ? tx('其他', '其他', 'Other') : '';
   };
+  const metaLine = [genderLabel(t?.gender), t?.accent, t?.location].filter(Boolean).join(' · ');
 
   return (
     <main className="min-h-screen bg-[#050505] text-white">
@@ -86,16 +102,16 @@ export default function TalentProfile() {
           <p className="text-gray-400">{tx('找不到這位配音員。', '找不到这位配音员。', 'Talent not found.')}</p>
         ) : (
           <>
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-5 mb-7">
               {t.headshot_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={t.headshot_url} alt={t.name} className="w-20 h-20 rounded-full object-cover" />
+                <img src={t.headshot_url} alt={t.name} className="w-28 h-28 rounded-2xl object-cover" />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/30 to-zinc-700 flex items-center justify-center text-2xl font-semibold text-amber-200">{initial(t.name)}</div>
+                <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-amber-500/30 to-zinc-700 flex items-center justify-center text-3xl font-semibold text-amber-200">{initial(t.name)}</div>
               )}
               <div>
                 <h1 className="text-2xl font-bold">{t.name}</h1>
-                <p className="text-sm text-gray-400">{[genderLabel(t.gender), t.accent].filter(Boolean).join(' · ')}</p>
+                {metaLine && <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 opacity-60" />{metaLine}</p>}
               </div>
             </div>
 
@@ -105,37 +121,77 @@ export default function TalentProfile() {
                 <div className="flex flex-wrap gap-1.5">{(t.languages || []).map((l) => <span key={l} className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-gray-200">{l}</span>)}</div>
               </div>
             )}
+
+            {(t.voice_traits || []).length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-1.5">{tx('聲線特質', '声线特质', 'Voice traits')}</p>
+                <div className="flex flex-wrap gap-1.5">{(t.voice_traits || []).map((k) => <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300/90">{traitLabel(k, locale)}</span>)}</div>
+              </div>
+            )}
+
+            {(t.specialties || []).length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-1.5">{tx('專長類型', '专长类型', 'Specialties')}</p>
+                <div className="flex flex-wrap gap-1.5">{(t.specialties || []).map((k) => <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-300/90">{useCaseLabel(k, locale)}</span>)}</div>
+              </div>
+            )}
+
             {(() => {
               const svc = (t.tags || []).filter((g) => SERVICE[g]);
-              const voice = (t.tags || []).filter((g) => !SERVICE[g]);
+              if (!svc.length) return null;
               return (
-                <>
-                  {svc.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-1.5">{tx('可提供的服務', '可提供的服务', 'Services offered')}</p>
-                      <div className="flex flex-wrap gap-1.5">{svc.map((g) => <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">{tx(SERVICE[g].tw, SERVICE[g].cn, SERVICE[g].en)}</span>)}</div>
-                    </div>
-                  )}
-                  {voice.length > 0 && (
-                    <div className="mb-6">
-                      <p className="text-xs text-gray-500 mb-1.5">{tx('聲線 / 專長', '声线 / 专长', 'Voice & specialties')}</p>
-                      <div className="flex flex-wrap gap-1.5">{voice.map((g) => <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300/90">{g}</span>)}</div>
-                    </div>
-                  )}
-                </>
+                <div className="mb-4">
+                  <p className="text-xs text-gray-500 mb-1.5">{tx('可提供的服務', '可提供的服务', 'Services offered')}</p>
+                  <div className="flex flex-wrap gap-1.5">{svc.map((g) => <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">{tx(SERVICE[g].tw, SERVICE[g].cn, SERVICE[g].en)}</span>)}</div>
+                </div>
               );
             })()}
 
-            {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 whitespace-pre-line">{bioText}</p>}
+            {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 mt-2 whitespace-pre-line">{bioText}</p>}
 
-            {demos.length > 0 && (
+            {t.credits && (
+              <div className="mb-5">
+                <p className="text-xs text-gray-500 mb-1.5">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.credits}</p>
+              </div>
+            )}
+
+            {(t.equipment || t.studio_partner || t.availability_note) && (
+              <div className="mb-7 grid gap-2 text-sm text-gray-400">
+                {t.equipment && <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.equipment}</span></p>}
+                {t.studio_partner && <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.studio_partner}</span></p>}
+                {t.availability_note && <p className="flex items-start gap-2"><Clock className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.availability_note}</span></p>}
+              </div>
+            )}
+
+            {/* Categorized demos */}
+            {demosByCat.length > 0 && (
+              <div className="mb-8 space-y-5">
+                {demosByCat.map(({ c, items }) => (
+                  <div key={c.key}>
+                    <p className="text-xs text-gray-500 mb-2">{useCaseLabel(c.key, locale)}</p>
+                    <div className="space-y-2">
+                      {items.map((d, i) => (
+                        <div key={d.url || i} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-3">
+                          <div className="scale-90"><CatalogAudioPlayer audioUrl={d.url} /></div>
+                          <span className="text-sm text-gray-300">{d.name || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Legacy flat demos fallback */}
+            {flatDemos.length > 0 && (
               <div className="mb-8">
                 <p className="text-xs text-gray-500 mb-2">{tx('試聽 demo', '试听 demo', 'Demos')}</p>
                 <div className="space-y-2">
-                  {demos.map((d, i) => (
+                  {flatDemos.map((d, i) => (
                     <div key={i} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                       <div className="scale-90"><CatalogAudioPlayer audioUrl={d.url} /></div>
-                      <span className="text-sm text-gray-300">{d.name || d.label || `${tx('試聽', '试听', 'Demo')} ${i + 1}`}</span>
+                      <span className="text-sm text-gray-300">{('name' in d && d.name) || ('label' in d && d.label) || `${tx('試聽', '试听', 'Demo')} ${i + 1}`}</span>
                     </div>
                   ))}
                 </div>

@@ -305,6 +305,10 @@ export default function AdminTalentsPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTalent, setEditingTalent] = useState<Talent | null>(null);
+  // Publish (draft → public snapshot) with manual bio translations.
+  const [publishTarget, setPublishTarget] = useState<Talent | null>(null);
+  const [pubBio, setPubBio] = useState<{ 'zh-TW': string; 'zh-CN': string; en: string }>({ 'zh-TW': '', 'zh-CN': '', en: '' });
+  const [publishing, setPublishing] = useState(false);
   const [formData, setFormData] = useState({
     type: "VO",
     name: "",
@@ -439,6 +443,27 @@ export default function AdminTalentsPage() {
       fetchTalents();
     } catch { toast.error('Update failed'); }
     finally { setReviewingLiveness(null); }
+  };
+
+  // --- Publish: promote the talent's draft into the public snapshot ---
+  const openPublish = (talent: Talent) => {
+    setPublishTarget(talent);
+    // Prefill zh-TW with the draft bio; admin fills the other two (Phase 1 manual).
+    setPubBio({ 'zh-TW': (talent.bio as string) || '', 'zh-CN': '', en: '' });
+  };
+  const handlePublish = async () => {
+    if (!publishTarget) return;
+    setPublishing(true);
+    try {
+      const res = await fetch('/api/admin/talents/publish', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ talentId: publishTarget.id, bioTranslations: pubBio }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) { toast.success('已發布到公開頁面 ✓'); setPublishTarget(null); fetchTalents(); }
+      else toast.error(data.error || 'Publish failed');
+    } catch { toast.error('Publish failed'); }
+    finally { setPublishing(false); }
   };
 
   useEffect(() => {
@@ -1352,14 +1377,29 @@ export default function AdminTalentsPage() {
                 </TableCell>
                 <TableCell>
                   {(() => {
-                    const onboarded = !!(talent as Talent & { onboarded_at?: string }).onboarded_at;
-                    if (talent.is_active) return <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>;
+                    const tt = talent as Talent & { onboarded_at?: string; pending_review?: boolean };
+                    const onboarded = !!tt.onboarded_at;
+                    if (talent.is_active) {
+                      return tt.pending_review
+                        ? <Badge className="bg-amber-50 text-amber-700 border border-amber-300">修改待審</Badge>
+                        : <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>;
+                    }
                     if (onboarded) return <Badge className="bg-amber-50 text-amber-700 border border-amber-300">待發布·審核</Badge>;
                     return <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>;
                   })()}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
+                    {(() => {
+                      const tt = talent as Talent & { onboarded_at?: string; pending_review?: boolean };
+                      const needsPublish = (tt.onboarded_at && !talent.is_active) || tt.pending_review;
+                      if (!needsPublish) return null;
+                      return (
+                        <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700">
+                          <CheckCircle className="w-3.5 h-3.5 mr-1" /> {talent.is_active ? '審核發布' : '發布'}
+                        </Button>
+                      );
+                    })()}
                     <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900">
                       <Edit className="w-3.5 h-3.5 mr-1" /> Edit
                     </Button>
@@ -1380,6 +1420,39 @@ export default function AdminTalentsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Publish dialog — promote draft to public snapshot with bio translations */}
+      <Dialog open={!!publishTarget} onOpenChange={(o) => !o && setPublishTarget(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 text-lg">發布到公開頁面 — {publishTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              審核這位配音員的草稿後發布。簡介請填三語版本(前台會依客戶語言顯示);留空的語言會自動退回繁中版。
+              <span className="text-gray-400"> 之後接上翻譯 API 可一鍵自動產生。</span>
+            </p>
+            <div>
+              <Label className="text-gray-700">簡介 · 繁體中文</Label>
+              <Textarea value={pubBio['zh-TW']} onChange={(e) => setPubBio({ ...pubBio, 'zh-TW': e.target.value })} className="min-h-[80px] mt-1" />
+            </div>
+            <div>
+              <Label className="text-gray-700">簡介 · 简体中文</Label>
+              <Textarea value={pubBio['zh-CN']} onChange={(e) => setPubBio({ ...pubBio, 'zh-CN': e.target.value })} className="min-h-[80px] mt-1" placeholder="留空 → 退回繁中版" />
+            </div>
+            <div>
+              <Label className="text-gray-700">Bio · English</Label>
+              <Textarea value={pubBio.en} onChange={(e) => setPubBio({ ...pubBio, en: e.target.value })} className="min-h-[80px] mt-1" placeholder="Leave blank to fall back to the Chinese bio" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setPublishTarget(null)} className="border-gray-300 text-gray-700">取消</Button>
+              <Button onClick={handlePublish} disabled={publishing} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />} 確認發布
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

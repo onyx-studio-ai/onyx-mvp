@@ -10,7 +10,9 @@ import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-
 */
 
 const BUCKET = 'talent-demos';
-const ALLOWED_EXT = ['wav', 'wave', 'mp3', 'm4a', 'aac', 'ogg', 'flac'];
+// MP3 only — keeps demos small/streamable and the player simple. (Product call:
+// no video, no lossless dumps on the public profile.)
+const ALLOWED_EXT = ['mp3'];
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +31,7 @@ export async function POST(request: NextRequest) {
     const fileName = (body.fileName || '').trim();
     const ext = (fileName.split('.').pop() || '').toLowerCase();
     if (!ext || !ALLOWED_EXT.includes(ext)) {
-      return NextResponse.json({ error: 'Only audio files (wav, mp3, m4a, aac, ogg, flac) are accepted' }, { status: 400 });
+      return NextResponse.json({ error: 'Only MP3 files are accepted' }, { status: 400 });
     }
 
     const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
