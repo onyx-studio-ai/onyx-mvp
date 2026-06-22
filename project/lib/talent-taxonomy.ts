@@ -214,6 +214,19 @@ export const availabilityLabel = (key: string, locale: string) => {
   const o = AVAILABILITY.find((x) => x.key === key); return o ? pickLabel(o, locale) : key;
 };
 
+// Voice age range (multi-select — one talent can cover a span).
+export const VOICE_AGES = [
+  { key: 'child',  tw: '兒童',   cn: '儿童',   en: 'Child' },
+  { key: 'teen',   tw: '青少年', cn: '青少年', en: 'Teen' },
+  { key: 'young',  tw: '青年',   cn: '青年',   en: 'Young adult' },
+  { key: 'adult',  tw: '中年',   cn: '中年',   en: 'Adult' },
+  { key: 'senior', tw: '熟齡',   cn: '熟龄',   en: 'Senior' },
+] as const;
+export const VOICE_AGE_KEYS = new Set<string>(VOICE_AGES.map((a) => a.key));
+export const voiceAgeLabel = (key: string, locale: string) => {
+  const o = VOICE_AGES.find((x) => x.key === key); return o ? pickLabel(o, locale) : key;
+};
+
 // Countries (location) — chosen from a searchable dropdown, stored as the key.
 export const COUNTRIES = [
   { key: 'TW', tw: '台灣', cn: '台湾', en: 'Taiwan' },

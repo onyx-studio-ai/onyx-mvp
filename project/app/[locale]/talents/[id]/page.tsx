@@ -13,7 +13,8 @@ import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { ArrowLeft, MessageSquare, MapPin, Mic2 } from 'lucide-react';
 import CatalogAudioPlayer from '@/components/catalog/CatalogAudioPlayer';
-import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, type DemoItem } from '@/lib/talent-taxonomy';
+import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, type DemoItem } from '@/lib/talent-taxonomy';
+import { cjkSpace } from '@/lib/cjk-space';
 
 interface Talent {
   id: string;
@@ -22,6 +23,7 @@ interface Talent {
   tags?: string[];
   voice_traits?: string[];
   specialties?: string[];
+  voice_ages?: string[];
   gender?: string;
   accent?: string;
   demos?: DemoItem[];
@@ -91,7 +93,8 @@ export default function TalentProfile() {
     const v = (g || '').toLowerCase();
     return v === 'male' ? tx('男聲', '男声', 'Male') : v === 'female' ? tx('女聲', '女声', 'Female') : g ? tx('其他', '其他', 'Other') : '';
   };
-  const metaLine = [genderLabel(t?.gender), t?.location ? countryLabel(t.location, locale) : ''].filter(Boolean).join(' · ');
+  const ageLabel = (t?.voice_ages || []).map((a) => voiceAgeLabel(a, locale)).join(' / ');
+  const metaLine = [genderLabel(t?.gender), ageLabel, t?.location ? countryLabel(t.location, locale) : ''].filter(Boolean).join(' · ');
   const availabilityKeys = (t?.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
 
   return (
@@ -155,18 +158,18 @@ export default function TalentProfile() {
             {t.special_skills && (
               <div className="mb-4">
                 <p className="text-xs text-gray-500 mb-1.5">{tx('特殊技能 / 模仿', '特殊技能 / 模仿', 'Special skills & impressions')}</p>
-                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.special_skills}</p>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(t.special_skills)}</p>
               </div>
             )}
 
-            {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 mt-2 whitespace-pre-line">{bioText}</p>}
+            {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 mt-2 whitespace-pre-line">{cjkSpace(bioText)}</p>}
 
             {(t.clients || t.awards || t.notable_works || t.credits) && (
               <div className="mb-5 space-y-3">
-                {t.clients && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作品牌 / 客戶', '合作品牌 / 客户', 'Clients & brands')}</p><p className="text-sm text-gray-300 leading-relaxed">{t.clients}</p></div>)}
-                {t.notable_works && (<div><p className="text-xs text-gray-500 mb-1">{tx('代表作', '代表作', 'Notable work')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.notable_works}</p></div>)}
-                {t.awards && (<div><p className="text-xs text-gray-500 mb-1">{tx('獎項', '奖项', 'Awards')}</p><p className="text-sm text-gray-300 leading-relaxed">{t.awards}</p></div>)}
-                {!t.clients && !t.awards && !t.notable_works && t.credits && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{t.credits}</p></div>)}
+                {t.clients && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作品牌 / 客戶', '合作品牌 / 客户', 'Clients & brands')}</p><p className="text-sm text-gray-300 leading-relaxed">{cjkSpace(t.clients)}</p></div>)}
+                {t.notable_works && (<div><p className="text-xs text-gray-500 mb-1">{tx('代表作', '代表作', 'Notable work')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(t.notable_works)}</p></div>)}
+                {t.awards && (<div><p className="text-xs text-gray-500 mb-1">{tx('獎項', '奖项', 'Awards')}</p><p className="text-sm text-gray-300 leading-relaxed">{cjkSpace(t.awards)}</p></div>)}
+                {!t.clients && !t.awards && !t.notable_works && t.credits && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(t.credits)}</p></div>)}
               </div>
             )}
 
@@ -194,7 +197,7 @@ export default function TalentProfile() {
                       {items.map((d, i) => (
                         <div key={d.url || i} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                           <div className="scale-90"><CatalogAudioPlayer audioUrl={d.url} /></div>
-                          <span className="text-sm text-gray-300">{d.name || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
+                          <span className="text-sm text-gray-300">{cjkSpace(d.name) || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
                         </div>
                       ))}
                     </div>

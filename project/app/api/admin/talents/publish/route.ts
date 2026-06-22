@@ -20,7 +20,7 @@ import { talentReviewEmail } from '@/lib/mail-templates';
 */
 
 const SNAPSHOT_COLS =
-  'id, name, email, languages, gender, accent, bio, tags, voice_traits, specialties, demos, demo_urls, ' +
+  'id, name, email, languages, gender, accent, bio, tags, voice_traits, specialties, voice_ages, demos, demo_urls, ' +
   'headshot_url, sample_url, location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, category';
 
 export async function POST(request: NextRequest) {
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       tags: t.tags || [],
       voice_traits: t.voice_traits || [],
       specialties: t.specialties || [],
+      voice_ages: t.voice_ages || [],
       demos: t.demos || [],
       demo_urls: t.demo_urls || [],
       headshot_url: t.headshot_url || null,

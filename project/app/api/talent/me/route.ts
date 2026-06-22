@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
-import { USE_CASE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem } from '@/lib/talent-taxonomy';
+import { USE_CASE_KEYS, VOICE_AGE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem } from '@/lib/talent-taxonomy';
 
 /*
   Talent self-service profile API. Authenticated by the talent's OWN Supabase
@@ -21,7 +21,7 @@ import { USE_CASE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem } from '@/lib
 const TEXT_FIELDS = ['name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills'] as const;
 
 const COLS =
-  'id, name, bio, languages, accent, gender, tags, voice_traits, specialties, demos, demo_urls, headshot_url, ' +
+  'id, name, bio, languages, accent, gender, tags, voice_traits, specialties, voice_ages, demos, demo_urls, headshot_url, ' +
   'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, type, email, is_active, ' +
   'pending_review, published_snapshot, liveness_status';
 
@@ -120,6 +120,11 @@ export async function PATCH(request: NextRequest) {
     if ('specialties' in body) {
       if (!Array.isArray(body.specialties)) return NextResponse.json({ error: 'specialties must be an array' }, { status: 400 });
       updates.specialties = cleanTags(body.specialties);
+    }
+    // voice_ages: preset keys only (no custom).
+    if ('voice_ages' in body) {
+      if (!Array.isArray(body.voice_ages)) return NextResponse.json({ error: 'voice_ages must be an array' }, { status: 400 });
+      updates.voice_ages = [...new Set(body.voice_ages.filter((a: unknown): a is string => typeof a === 'string' && VOICE_AGE_KEYS.has(a)))];
     }
 
     // demos: categorized [{category,name,url,language,seconds}]. Validate bucket,

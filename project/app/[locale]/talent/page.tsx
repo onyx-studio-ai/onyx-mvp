@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2 } from 'lucide-react';
 import {
-  VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES,
+  VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES,
   pickLabel, formatLangEntry, baseLangLabel, accentLabel, accentOptionsFor, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
 } from '@/lib/talent-taxonomy';
 
@@ -58,18 +58,18 @@ const SERVICE_LABEL: Record<string, { tw: string; cn: string; en: string }> = {
 type Talent = {
   id: string; name: string; bio: string | null; languages: string[] | null;
   gender: string | null; tags: string[] | null;
-  voice_traits: string[] | null; specialties: string[] | null; demos: DemoItem[] | null;
+  voice_traits: string[] | null; specialties: string[] | null; voice_ages: string[] | null; demos: DemoItem[] | null;
   headshot_url: string | null; location: string | null; availability_note: string | null;
   clients: string | null; awards: string | null; notable_works: string | null; special_skills: string | null;
   equipment: string | null; studio_partner: string | null;
   type: string; email: string | null; is_active: boolean; pending_review: boolean;
   liveness_status: string | null;
 };
-type ListField = 'voice_traits' | 'specialties' | 'availability';
+type ListField = 'voice_traits' | 'specialties' | 'availability' | 'voice_ages';
 type Form = {
   name: string; bio: string; gender: string; location: string; studio_partner: string;
   equipment: string; clients: string; awards: string; notable_works: string; special_skills: string;
-  availability: string[]; languages: string[]; voice_traits: string[]; specialties: string[];
+  availability: string[]; languages: string[]; voice_traits: string[]; specialties: string[]; voice_ages: string[];
   headshot_url: string; demos: DemoItem[];
 };
 
@@ -119,7 +119,7 @@ export default function TalentDashboard() {
   const [t, setT] = useState<Talent | null>(null);
   const [form, setForm] = useState<Form>({
     name: '', bio: '', gender: '', location: '', studio_partner: '', equipment: '',
-    clients: '', awards: '', notable_works: '', special_skills: '', availability: [], languages: [], voice_traits: [], specialties: [], headshot_url: '', demos: [],
+    clients: '', awards: '', notable_works: '', special_skills: '', availability: [], languages: [], voice_traits: [], specialties: [], voice_ages: [], headshot_url: '', demos: [],
   });
 
   const [email, setEmail] = useState('');
@@ -155,6 +155,7 @@ export default function TalentDashboard() {
       languages: Array.isArray(talent.languages) ? talent.languages : [],
       voice_traits: Array.isArray(talent.voice_traits) ? talent.voice_traits : [],
       specialties: Array.isArray(talent.specialties) ? talent.specialties : [],
+      voice_ages: Array.isArray(talent.voice_ages) ? talent.voice_ages : [],
       headshot_url: talent.headshot_url || '',
       demos: Array.isArray(talent.demos) ? talent.demos : [],
     });
@@ -203,7 +204,7 @@ export default function TalentDashboard() {
         name: form.name, bio: form.bio, gender: form.gender, location: form.location,
         availability_note: form.availability.join(','), studio_partner: form.studio_partner, equipment: form.equipment,
         clients: form.clients, awards: form.awards, notable_works: form.notable_works, special_skills: form.special_skills,
-        languages: form.languages, voice_traits: form.voice_traits, specialties: form.specialties,
+        languages: form.languages, voice_traits: form.voice_traits, specialties: form.specialties, voice_ages: form.voice_ages,
         headshot_url: form.headshot_url, demos: form.demos,
       }),
     });
@@ -541,6 +542,15 @@ export default function TalentDashboard() {
                 <option value="" className="bg-zinc-900">{tx('選擇國家 / 地區', '选择国家 / 地区', 'Select country')}</option>
                 {sortedCountries.map((o) => <option key={o.key} value={o.key} className="bg-zinc-900">{pickLabel(o, locale)}</option>)}
               </select>
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className={labelCls}>{tx('聲音年齡', '声音年龄', 'Voice age')} <span className="font-normal text-gray-500">· {tx('可複選', '可复选', 'multi-select')}</span></label>
+            <div className="flex flex-wrap gap-2">
+              {VOICE_AGES.map((o) => {
+                const on = form.voice_ages.includes(o.key);
+                return <button key={o.key} type="button" onClick={() => toggleList('voice_ages', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-amber-500/20 border-amber-400/40 text-amber-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
+              })}
             </div>
           </div>
         </div>

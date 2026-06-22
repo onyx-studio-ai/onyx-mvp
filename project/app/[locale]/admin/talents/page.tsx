@@ -37,7 +37,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "next-intl";
-import { formatLangEntry, traitLabel, useCaseLabel, availabilityLabel, countryLabel, USE_CASES } from "@/lib/talent-taxonomy";
+import { formatLangEntry, traitLabel, useCaseLabel, availabilityLabel, countryLabel, voiceAgeLabel, USE_CASES } from "@/lib/talent-taxonomy";
+import { cjkSpace } from "@/lib/cjk-space";
 
 const ALL_LANGUAGES = [
   "Afrikaans", "Albanian", "Amharic", "Arabic", "Arabic (Egyptian)", "Arabic (Gulf)", "Arabic (Levantine)", "Arabic (Maghreb)",
@@ -1469,7 +1470,7 @@ export default function AdminTalentsPage() {
             {(() => {
               const r = publishTarget as (Talent & {
                 headshot_url?: string; languages?: string[]; gender?: string; location?: string;
-                voice_traits?: string[]; specialties?: string[]; special_skills?: string;
+                voice_traits?: string[]; specialties?: string[]; voice_ages?: string[]; special_skills?: string;
                 demos?: Array<{ category: string; name: string; url: string; language?: string }>;
                 clients?: string; awards?: string; notable_works?: string;
                 availability_note?: string; equipment?: string; studio_partner?: string; liveness_status?: string;
@@ -1497,17 +1498,18 @@ export default function AdminTalentsPage() {
                   {(r.languages || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">語言</p><div className="flex flex-wrap gap-1">{r.languages!.map((l) => <Chip key={l}>{formatLangEntry(l, locale)}</Chip>)}</div></div>}
                   {(r.voice_traits || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">聲線</p><div className="flex flex-wrap gap-1">{r.voice_traits!.map((k) => <Chip key={k}>{traitLabel(k, locale)}</Chip>)}</div></div>}
                   {(r.specialties || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">專長</p><div className="flex flex-wrap gap-1">{r.specialties!.map((k) => <Chip key={k}>{useCaseLabel(k, locale)}</Chip>)}</div></div>}
-                  {r.special_skills && <div><p className="text-[11px] text-gray-500 mb-1">特殊技能</p><p className="text-sm text-gray-700 whitespace-pre-line">{r.special_skills}</p></div>}
+                  {(r.voice_ages || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">聲音年齡</p><div className="flex flex-wrap gap-1">{r.voice_ages!.map((k) => <Chip key={k}>{voiceAgeLabel(k, locale)}</Chip>)}</div></div>}
+                  {r.special_skills && <div><p className="text-[11px] text-gray-500 mb-1">特殊技能</p><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(r.special_skills)}</p></div>}
                   {byCat.length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">Demo(點開試聽)</p><div className="space-y-2">{byCat.map(({ c, items }) => (
                     <div key={c.key}>
                       <p className="text-xs text-gray-600 mb-1">{useCaseLabel(c.key, locale)}</p>
-                      {items.map((d) => (<div key={d.url} className="flex items-center gap-2 mb-1"><span className="text-xs text-gray-700 w-28 truncate shrink-0">{d.name}</span><audio controls src={d.url} className="h-7 flex-1" /></div>))}
+                      {items.map((d) => (<div key={d.url} className="flex items-center gap-2 mb-1"><span className="text-xs text-gray-700 w-28 truncate shrink-0">{cjkSpace(d.name)}</span><audio controls src={d.url} className="h-7 flex-1" /></div>))}
                     </div>
                   ))}</div></div>}
                   {(r.clients || r.notable_works || r.awards) && <div className="grid gap-1 text-sm text-gray-700">
-                    {r.clients && <p><span className="text-gray-500 text-xs">合作品牌:</span> {r.clients}</p>}
-                    {r.notable_works && <p className="whitespace-pre-line"><span className="text-gray-500 text-xs">代表作:</span> {r.notable_works}</p>}
-                    {r.awards && <p><span className="text-gray-500 text-xs">獎項:</span> {r.awards}</p>}
+                    {r.clients && <p><span className="text-gray-500 text-xs">合作品牌:</span> {cjkSpace(r.clients)}</p>}
+                    {r.notable_works && <p className="whitespace-pre-line"><span className="text-gray-500 text-xs">代表作:</span> {cjkSpace(r.notable_works)}</p>}
+                    {r.awards && <p><span className="text-gray-500 text-xs">獎項:</span> {cjkSpace(r.awards)}</p>}
                   </div>}
                   {(avail.length > 0 || r.equipment || r.studio_partner) && <div className="text-xs text-gray-600 space-y-0.5">
                     {avail.length > 0 && <p>可工作時段:{avail.map((k) => availabilityLabel(k, locale)).join('、')}</p>}
