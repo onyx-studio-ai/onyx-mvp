@@ -1429,7 +1429,7 @@ export default function AdminTalentsPage() {
                       return (
                         <>
                           <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> {talent.is_active ? '審核發布' : '發布'}
+                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> 審核
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => { setRejectTarget(talent); setRejectReason(''); }} className="h-8 px-3 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-700">
                             <Send className="w-3.5 h-3.5 mr-1" /> 退回
