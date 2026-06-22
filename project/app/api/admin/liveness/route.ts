@@ -43,7 +43,15 @@ export async function POST(request: NextRequest) {
 
     const { lang, sentence } = pickLivenessSentence(talent.languages as string[] | null);
     const token = signLivenessToken(talent.id);
-    const recordLink = `${SITE_URL}/verify-voice/${token}`;
+    // Localize the email + prefix the link with the talent's locale so the verify
+    // page renders in their language. (Token is dotless, so the route resolves.)
+    let locale = 'zh-TW';
+    try {
+      const { data: appRow } = await db.from('talent_applications').select('locale').eq('email', talent.email).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const loc = (appRow as { locale?: string } | null)?.locale;
+      if (loc) locale = loc;
+    } catch { /* non-fatal */ }
+    const recordLink = `${SITE_URL}/${locale}/verify-voice/${token}`;
 
     const { error: upErr } = await db
       .from('talents')
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update talent' }, { status: 500 });
     }
 
-    const { subject, html } = livenessRequestEmail({ talentName: talent.name || '', recordLink });
+    const { subject, html } = livenessRequestEmail({ talentName: talent.name || '', recordLink, locale });
     const result = await sendEmail({ category: 'HELLO', to: talent.email, subject, html });
     if (!result?.success) {
       return NextResponse.json({ error: 'Status set, but the email could not be sent.' }, { status: 502 });
