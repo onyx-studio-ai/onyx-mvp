@@ -908,19 +908,22 @@ export function applicationStatusEmail(p: { applicantName: string; applicationNu
 // 7. Auth Emails (NEW)
 // ---------------------------------------------------------------------------
 
-export function signupConfirmationEmail(p: { confirmLink: string }): { subject: string; html: string } {
+export function signupConfirmationEmail(p: { confirmLink: string; locale?: string }): { subject: string; html: string } {
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
+  const C = {
+    tw: { subject: '確認您的 Onyx Studios 帳號', headline: '確認您的帳號', sub: '再一步就能開始使用 Onyx Studios。', card: '帳號驗證', l1: '歡迎使用 Onyx Studios。請點下方按鈕確認您的 Email,即可啟用帳號、進入您的個人控制台。', note: '此連結將於 24 小時後失效。若您並未註冊帳號,請忽略此信。', cta: '確認我的帳號' },
+    cn: { subject: '确认您的 Onyx Studios 账号', headline: '确认您的账号', sub: '再一步就能开始使用 Onyx Studios。', card: '账号验证', l1: '欢迎使用 Onyx Studios。请点击下方按钮确认您的邮箱,即可启用账号、进入您的个人控制台。', note: '此链接将在 24 小时后失效。若您并未注册账号,请忽略此邮件。', cta: '确认我的账号' },
+    en: { subject: 'Confirm Your Onyx Studios Account', headline: 'Confirm Your Account', sub: 'One more step to get started with Onyx Studios.', card: 'Account Verification', l1: 'Welcome to Onyx Studios. Please confirm your email address by clicking the button below to activate your account and access your personal dashboard.', note: 'This link will expire in 24 hours. If you did not create an account, you can safely ignore this email.', cta: 'Confirm My Account' },
+  }[L];
   const content = `
-    ${headlineBlock('Confirm Your Account', 'One more step to get started with Onyx Studios.', BRAND_GREEN)}
-    ${bodyCard('Account Verification', `
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Welcome to Onyx Studios. Please confirm your email address by clicking the button below to activate your account and access your personal dashboard.</p>
-      <p style="color:#9ca3af;font-size:13px;margin:0;">This link will expire in 24 hours. If you did not create an account, you can safely ignore this email.</p>
+    ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
+    ${bodyCard(C.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${C.l1}</p>
+      <p style="color:#9ca3af;font-size:13px;margin:0;">${C.note}</p>
     `)}
-    ${ctaRow('Confirm My Account', p.confirmLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}`;
+    ${ctaRow(C.cta, p.confirmLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}`;
 
-  return {
-    subject: 'Confirm Your Onyx Studios Account',
-    html: baseLayout(content),
-  };
+  return { subject: C.subject, html: baseLayout(content) };
 }
 
 export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; dashboardUrl: string; locale?: string }): { subject: string; html: string } {
@@ -1036,19 +1039,22 @@ export function quoteReceivedEmail(p: { talentName: string; briefNumber?: string
   return { subject: `新報價 ${n} — ${p.talentName}`, html: baseLayout(content) };
 }
 
-export function passwordResetEmail(p: { resetLink: string }): { subject: string; html: string } {
+export function passwordResetEmail(p: { resetLink: string; locale?: string }): { subject: string; html: string } {
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
+  const C = {
+    tw: { subject: '重設您的 Onyx Studios 密碼', headline: '重設密碼', sub: '我們收到了重設密碼的請求。', card: '密碼重設', l1: '請點下方按鈕,為您的 Onyx Studios 帳號設定新密碼。此連結將於 1 小時後失效。', note: '若您並未要求重設密碼,請忽略此信,您的密碼不會被變更。', cta: '重設密碼' },
+    cn: { subject: '重置您的 Onyx Studios 密码', headline: '重置密码', sub: '我们收到了重置密码的请求。', card: '密码重置', l1: '请点击下方按钮,为您的 Onyx Studios 账号设置新密码。此链接将在 1 小时后失效。', note: '若您并未要求重置密码,请忽略此邮件,您的密码不会被更改。', cta: '重置密码' },
+    en: { subject: 'Reset Your Onyx Studios Password', headline: 'Reset Your Password', sub: 'We received a request to reset your password.', card: 'Password Reset', l1: 'Click the button below to set a new password for your Onyx Studios account. This link will expire in 1 hour.', note: 'If you did not request a password reset, you can safely ignore this email. Your password will not be changed.', cta: 'Reset Password' },
+  }[L];
   const content = `
-    ${headlineBlock('Reset Your Password', 'We received a request to reset your password.', '#3b82f6')}
-    ${bodyCard('Password Reset', `
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Click the button below to set a new password for your Onyx Studios account. This link will expire in 1 hour.</p>
-      <p style="color:#9ca3af;font-size:13px;margin:0;">If you did not request a password reset, you can safely ignore this email. Your password will not be changed.</p>
+    ${headlineBlock(C.headline, C.sub, '#3b82f6')}
+    ${bodyCard(C.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${C.l1}</p>
+      <p style="color:#9ca3af;font-size:13px;margin:0;">${C.note}</p>
     `)}
-    ${ctaRow('Reset Password', p.resetLink, '#3b82f6')}`;
+    ${ctaRow(C.cta, p.resetLink, '#3b82f6')}`;
 
-  return {
-    subject: 'Reset Your Onyx Studios Password',
-    html: baseLayout(content),
-  };
+  return { subject: C.subject, html: baseLayout(content) };
 }
 
 export function passwordChangedEmail(): { subject: string; html: string } {

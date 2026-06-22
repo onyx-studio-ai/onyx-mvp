@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ type AuthMode = 'login' | 'signup' | 'forgot';
 
 export default function AuthPage() {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
@@ -64,7 +65,7 @@ export default function AuthPage() {
         const res = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, turnstileToken: captchaToken }),
+          body: JSON.stringify({ email, password, turnstileToken: captchaToken, locale }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Signup failed');
@@ -76,7 +77,7 @@ export default function AuthPage() {
         const res = await fetch('/api/auth/reset-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, turnstileToken: captchaToken }),
+          body: JSON.stringify({ email, turnstileToken: captchaToken, locale }),
         });
         if (!res.ok) {
           const data = await res.json();

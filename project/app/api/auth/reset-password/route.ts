@@ -15,7 +15,7 @@ function getAdminClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, turnstileToken } = await request.json();
+    const { email, turnstileToken, locale: pageLocale } = await request.json();
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
     if (!(await verifyTurnstile(turnstileToken, ip))) {
@@ -27,6 +27,20 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getAdminClient();
+
+    // Email language: prefer the user's stored locale (from their application),
+    // fall back to the page locale they reset from, else English.
+    let locale = pageLocale || 'en';
+    try {
+      const { data: appRow } = await admin
+        .from('talent_applications')
+        .select('locale')
+        .eq('email', email.trim().toLowerCase())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (appRow?.locale) locale = appRow.locale;
+    } catch { /* non-fatal — use pageLocale */ }
 
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: 'recovery',
@@ -43,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const resetLink = linkData.properties.action_link;
-    const { subject, html } = passwordResetEmail({ resetLink });
+    const { subject, html } = passwordResetEmail({ resetLink, locale });
 
     await sendEmail({
       category: 'SUPPORT',

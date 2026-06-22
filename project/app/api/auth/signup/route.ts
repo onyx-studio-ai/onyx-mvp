@@ -15,7 +15,7 @@ function getAdminClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, turnstileToken } = await request.json();
+    const { email, password, turnstileToken, locale } = await request.json();
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
     if (!(await verifyTurnstile(turnstileToken, ip))) {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const confirmLink = linkData.properties.action_link;
-    const { subject, html } = signupConfirmationEmail({ confirmLink });
+    const { subject, html } = signupConfirmationEmail({ confirmLink, locale });
 
     await sendEmail({
       category: 'HELLO',
