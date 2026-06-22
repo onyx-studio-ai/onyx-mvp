@@ -30,6 +30,24 @@ const GENDER_OPTIONS = [
   { v: 'Female', tw: '女', cn: '女' },
   { v: 'Other', tw: '其他', cn: '其他' },
 ];
+// Per-category demo name hints — the category already gives context (demos are
+// grouped under it), so the name stays short: a brand for ads, a character for
+// games, a topic for narration. Keeps everyone's naming consistent.
+const DEMO_NAME_HINT: Record<string, { tw: string; cn: string; en: string }> = {
+  commercial:  { tw: '品牌名,例如:LINDOR、LEGO', cn: '品牌名,例如:LINDOR、LEGO', en: 'Brand, e.g. LINDOR, LEGO' },
+  narration:   { tw: '主題,例如:企業形象片', cn: '主题,例如:企业形象片', en: 'Topic, e.g. Corporate film' },
+  audiobook:   { tw: '書名 / 類型', cn: '书名 / 类型', en: 'Title / genre' },
+  corporate:   { tw: '公司 / 主題', cn: '公司 / 主题', en: 'Company / topic' },
+  elearning:   { tw: '課程主題', cn: '课程主题', en: 'Course topic' },
+  documentary: { tw: '主題', cn: '主题', en: 'Topic' },
+  game:        { tw: '角色名,例如:冷酷反派', cn: '角色名,例如:冷酷反派', en: 'Character, e.g. Cold villain' },
+  animation:   { tw: '角色 / 作品', cn: '角色 / 作品', en: 'Character / title' },
+  drama:       { tw: '角色 / 劇名', cn: '角色 / 剧名', en: 'Role / title' },
+  podcast:     { tw: '節目 / 主題', cn: '节目 / 主题', en: 'Show / topic' },
+  news:        { tw: '類型', cn: '类型', en: 'Type' },
+  ivr:         { tw: '用途', cn: '用途', en: 'Use case' },
+};
+
 const SERVICE_TAGS = new Set(['AI Voice', 'TTS Data', 'Proofreading']);
 const SERVICE_LABEL: Record<string, { tw: string; cn: string; en: string }> = {
   'AI Voice': { tw: 'AI 聲音', cn: 'AI 声音', en: 'AI Voice' },
@@ -94,6 +112,7 @@ export default function TalentDashboard() {
   const isZhCN = locale === 'zh-CN';
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
   const lbl = (o: { v: string; tw: string; cn: string }) => (isZhCN ? o.cn : isZh ? o.tw : o.v);
+  const namePh = (k: string) => { const h = DEMO_NAME_HINT[k]; return h ? pickLabel(h, locale) : tx('簡短名稱', '简短名称', 'Short label'); };
 
   const [phase, setPhase] = useState<'loading' | 'login' | 'dashboard' | 'notalent'>('loading');
   const [token, setToken] = useState('');
@@ -456,7 +475,7 @@ export default function TalentDashboard() {
         {/* Demos — collapsed: only categories with demos, plus one add control */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('試聽 demo', '试听 demo', 'Demos')}</label>
-          <p className="text-xs text-gray-500 mb-3">{tx('只收 MP3,單檔 3 分鐘內(建議 1 分鐘)。建議純人聲最清晰;可有音樂襯底,但請避免過大或破音的配樂。', '只收 MP3,单档 3 分钟内(建议 1 分钟)。建议纯人声最清晰;可有音乐衬底,但请避免过大或破音的配乐。', 'MP3 only, under 3 min (1 min ideal). Clean voice-only is clearest; light music is fine, but avoid loud or clipping backing tracks.')}</p>
+          <p className="text-xs text-gray-500 mb-3">{tx('只收 MP3,單檔 3 分鐘內(建議 1 分鐘)。建議純人聲最清晰;可有音樂襯底,但請避免過大或破音的配樂。命名簡短就好 —— 廣告填品牌名、角色填角色名。', '只收 MP3,单档 3 分钟内(建议 1 分钟)。建议纯人声最清晰;可有音乐衬底,但请避免过大或破音的配乐。命名简短就好 —— 广告填品牌名、角色填角色名。', 'MP3 only, under 3 min (1 min ideal). Clean voice-only is clearest; light music is fine, but avoid loud or clipping backing tracks. Keep names short — a brand for ads, a character for games.')}</p>
           {uploadErr && <p className="text-red-400 text-xs mb-2">{uploadErr}</p>}
 
           {demosByCat.length > 0 && (
@@ -472,7 +491,7 @@ export default function TalentDashboard() {
                       <div key={d.url} className="bg-white/5 rounded-lg p-2.5">
                         <div className="flex items-center gap-2 mb-2">
                           <Music2 className="w-4 h-4 text-amber-400 shrink-0" />
-                          <input className="flex-1 min-w-0 bg-transparent text-sm text-gray-200 focus:outline-none border-b border-transparent focus:border-white/20" value={d.name} onChange={(e) => updateDemo(d.url, { name: e.target.value })} placeholder={c.key === 'game' ? tx('角色名,例如:冷酷反派', '角色名,例如:冷酷反派', 'Character, e.g. Cold villain') : tx('demo 名稱', 'demo 名称', 'Demo name')} />
+                          <input className="flex-1 min-w-0 bg-transparent text-sm text-gray-200 focus:outline-none border-b border-transparent focus:border-white/20" value={d.name} onChange={(e) => updateDemo(d.url, { name: e.target.value })} placeholder={namePh(c.key)} />
                           <select className="bg-zinc-900 text-xs text-gray-300 rounded px-1.5 py-1 border border-white/10 max-w-[42%]" value={d.language || ''} onChange={(e) => updateDemo(d.url, { language: e.target.value })}>
                             <option value="" className="bg-zinc-900">{tx('語言', '语言', 'Language')}</option>
                             {form.languages.map((l) => <option key={l} value={l} className="bg-zinc-900">{formatLangEntry(l, locale)}</option>)}
