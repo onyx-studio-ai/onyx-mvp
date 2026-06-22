@@ -31,8 +31,8 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
 
   const [name, setName] = useState('');
   const [isClient, setIsClient] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [isTalent, setIsTalent] = useState(false);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null); // null = still checking
+  const [notTalent, setNotTalent] = useState(false);
   const [oppCount, setOppCount] = useState(0);
   const [quoteUpdates, setQuoteUpdates] = useState(0);
 
@@ -41,32 +41,38 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
     (async () => {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
-      if (token) {
-        try {
-          const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${token}` } });
-          if (r.ok) {
-            const j = await r.json();
-            if (!cancelled) { setName(j.talent?.name || ''); setIsClient(!!j.isClient); setIsTalent(true); }
-            // Derive notifications from the briefs feed (real data, no extra table).
-            try {
-              const br = await fetch('/api/talent/briefs', { headers: { Authorization: `Bearer ${token}` } });
-              if (br.ok) {
-                const bj = await br.json();
-                const quoted = new Set((bj.myQuotes || []).map((q: { brief_id: string }) => q.brief_id));
-                const opps = (bj.briefs || []).filter((b: { id: string }) => !quoted.has(b.id)).length;
-                const upd = (bj.myQuotes || []).filter((q: { status: string }) => ['shortlisted', 'accepted', 'awarded'].includes(q.status)).length;
-                if (!cancelled) { setOppCount(opps); setQuoteUpdates(upd); }
-              }
-            } catch { /* notifications are best-effort */ }
-          }
-        } catch { /* not a talent — render bare */ }
-      }
-      if (!cancelled) setReady(true);
+      if (!token) { if (!cancelled) setLoggedIn(false); return; }
+      // Show the dashboard chrome as soon as we know they're logged in — don't
+      // gate it on the /api/talent/me round-trip (that race was hiding the
+      // sidebar). Only HIDE it if the API explicitly says not-a-talent (404).
+      if (!cancelled) setLoggedIn(true);
+      try {
+        const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${token}` } });
+        if (r.status === 401) { if (!cancelled) setLoggedIn(false); return; }
+        if (r.status === 404) { if (!cancelled) setNotTalent(true); return; }
+        if (r.ok) {
+          const j = await r.json();
+          if (!cancelled) { setName(j.talent?.name || ''); setIsClient(!!j.isClient); }
+          // Derive notifications from the briefs feed (real data, no extra table).
+          try {
+            const br = await fetch('/api/talent/briefs', { headers: { Authorization: `Bearer ${token}` } });
+            if (br.ok) {
+              const bj = await br.json();
+              const quoted = new Set((bj.myQuotes || []).map((q: { brief_id: string }) => q.brief_id));
+              const opps = (bj.briefs || []).filter((b: { id: string }) => !quoted.has(b.id)).length;
+              const upd = (bj.myQuotes || []).filter((q: { status: string }) => ['shortlisted', 'accepted', 'awarded'].includes(q.status)).length;
+              if (!cancelled) { setOppCount(opps); setQuoteUpdates(upd); }
+            }
+          } catch { /* notifications are best-effort */ }
+        }
+      } catch { /* transient — keep chrome shown for a logged-in user */ }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  if (!ready || !isTalent) return <>{children}</>;
+  // Render bare (no dashboard chrome) while checking, when logged out (login
+  // screen), or when confirmed not-a-talent — but always clear the fixed navbar.
+  if (loggedIn === null || !loggedIn || notTalent) return <div className="pt-24">{children}</div>;
 
   const nav = [
     { href: '/talent', label: tx('我的檔案', '我的资料', 'Profile'), icon: User, exact: true, badge: 0 },
@@ -81,9 +87,9 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
   const showBanner = pathname === '/talent' && (oppCount > 0 || quoteUpdates > 0);
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-56 border-r border-white/10 bg-zinc-950 p-4 z-30">
+    <div className="min-h-screen bg-black text-white pt-24">
+      {/* Desktop sidebar — starts below the fixed global navbar (h-24) */}
+      <aside className="hidden md:flex md:flex-col md:fixed md:top-24 md:bottom-0 md:left-0 md:w-56 border-r border-white/10 bg-zinc-950 p-4 z-30">
         <div className="px-2 py-3 mb-2">
           <p className="text-[11px] tracking-[0.25em] text-amber-300">ONYX</p>
           <p className="text-sm font-semibold mt-1 truncate">{name || tx('配音員', '配音员', 'Talent')}</p>
@@ -111,8 +117,8 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
         </div>
       </aside>
 
-      {/* Mobile top nav */}
-      <div className="md:hidden sticky top-0 z-30 bg-zinc-950 border-b border-white/10 overflow-x-auto">
+      {/* Mobile top nav — sits just below the fixed global navbar */}
+      <div className="md:hidden sticky top-24 z-30 bg-zinc-950 border-b border-white/10 overflow-x-auto">
         <div className="flex items-center gap-1.5 px-3 py-2 whitespace-nowrap">
           {nav.map((n) => {
             const A = active(n.href, n.exact);

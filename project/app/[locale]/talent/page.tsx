@@ -279,7 +279,7 @@ export default function TalentDashboard() {
 
   // -------- render --------
   const shell = (inner: React.ReactNode, wide = false) => (
-    <main className="min-h-screen bg-black text-white px-4 py-12">
+    <main className="min-h-screen bg-black text-white px-4 py-8">
       <div className={`${wide ? 'max-w-3xl' : 'max-w-sm'} mx-auto`}>{inner}</div>
     </main>
   );
