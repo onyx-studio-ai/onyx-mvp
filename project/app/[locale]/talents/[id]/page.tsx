@@ -12,7 +12,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { ArrowLeft, MessageSquare, MapPin, Mic2 } from 'lucide-react';
-import CatalogAudioPlayer from '@/components/catalog/CatalogAudioPlayer';
 import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, type DemoItem } from '@/lib/talent-taxonomy';
 import { cjkSpace } from '@/lib/cjk-space';
 
@@ -195,9 +194,9 @@ export default function TalentProfile() {
                     <p className="text-xs text-gray-500 mb-2">{useCaseLabel(c.key, locale)}</p>
                     <div className="space-y-2">
                       {items.map((d, i) => (
-                        <div key={d.url || i} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                          <div className="scale-90"><CatalogAudioPlayer audioUrl={d.url} /></div>
-                          <span className="text-sm text-gray-300">{cjkSpace(d.name) || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
+                        <div key={d.url || i} className="flex items-center gap-3 bg-zinc-900/50 rounded-lg px-3 py-2">
+                          <span className="text-sm text-gray-200 w-36 sm:w-44 truncate shrink-0">{cjkSpace(d.name) || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
+                          <audio controls src={d.url} className="h-8 flex-1 min-w-0" />
                         </div>
                       ))}
                     </div>
@@ -212,9 +211,9 @@ export default function TalentProfile() {
                 <p className="text-xs text-gray-500 mb-2">{tx('試聽 demo', '试听 demo', 'Demos')}</p>
                 <div className="space-y-2">
                   {flatDemos.map((d, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                      <div className="scale-90"><CatalogAudioPlayer audioUrl={d.url} /></div>
-                      <span className="text-sm text-gray-300">{('name' in d && d.name) || ('label' in d && d.label) || `${tx('試聽', '试听', 'Demo')} ${i + 1}`}</span>
+                    <div key={i} className="flex items-center gap-3 bg-zinc-900/50 rounded-lg px-3 py-2">
+                      <span className="text-sm text-gray-200 w-36 sm:w-44 truncate shrink-0">{('name' in d && d.name) || ('label' in d && d.label) || `${tx('試聽', '试听', 'Demo')} ${i + 1}`}</span>
+                      <audio controls src={d.url} className="h-8 flex-1 min-w-0" />
                     </div>
                   ))}
                 </div>

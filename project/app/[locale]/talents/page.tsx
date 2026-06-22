@@ -21,13 +21,17 @@ interface Talent {
   tags?: string[];
   gender?: string;
   accent?: string;
+  demos?: { category?: string; name?: string; url: string }[];
   demo_urls?: { name?: string; url: string; label?: string }[];
   sample_url?: string;
   headshot_url?: string;
   bio?: string;
 }
 
-const demoUrl = (t: Talent) => t.demo_urls?.[0]?.url || t.sample_url || '';
+// Card preview = the talent's own managed demos (first = their primary). Legacy
+// application demo (demo_urls/sample_url) is only a fallback when they have none,
+// so a stale application clip never plays a demo they can't see or remove.
+const demoUrl = (t: Talent) => t.demos?.[0]?.url || t.demo_urls?.[0]?.url || t.sample_url || '';
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase();
 
 // Service-classification tags (set on approval from collaboration choices).

@@ -19,7 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2 } from 'lucide-react';
+import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES,
   pickLabel, formatLangEntry, baseLangLabel, accentLabel, accentOptionsFor, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
@@ -277,6 +277,12 @@ export default function TalentDashboard() {
   const updateDemo = (url: string, patch: Partial<DemoItem>) =>
     setForm((f) => ({ ...f, demos: f.demos.map((d) => (d.url === url ? { ...d, ...patch } : d)) }));
   const removeDemo = (url: string) => setForm((f) => ({ ...f, demos: f.demos.filter((d) => d.url !== url) }));
+  // The first demo in the array is the "primary" that previews on the roster card.
+  const setPrimaryDemo = (url: string) => setForm((f) => {
+    const d = f.demos.find((x) => x.url === url);
+    if (!d || f.demos[0]?.url === url) return f;
+    return { ...f, demos: [d, ...f.demos.filter((x) => x.url !== url)] };
+  });
   const toggleList = (field: ListField, key: string) =>
     setForm((f) => ({ ...f, [field]: f[field].includes(key) ? f[field].filter((x) => x !== key) : [...f[field], key] }));
   const addCustom = (field: 'voice_traits' | 'specialties', val: string) => {
@@ -476,7 +482,7 @@ export default function TalentDashboard() {
         {/* Demos — collapsed: only categories with demos, plus one add control */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('試聽 demo', '试听 demo', 'Demos')}</label>
-          <p className="text-xs text-gray-500 mb-3">{tx('只收 MP3,單檔 3 分鐘內(建議 1 分鐘)。建議純人聲最清晰;可有音樂襯底,但請避免過大或破音的配樂。命名簡短就好 —— 廣告填品牌名、角色填角色名。', '只收 MP3,单档 3 分钟内(建议 1 分钟)。建议纯人声最清晰;可有音乐衬底,但请避免过大或破音的配乐。命名简短就好 —— 广告填品牌名、角色填角色名。', 'MP3 only, under 3 min (1 min ideal). Clean voice-only is clearest; light music is fine, but avoid loud or clipping backing tracks. Keep names short — a brand for ads, a character for games.')}</p>
+          <p className="text-xs text-gray-500 mb-3">{tx('只收 MP3,單檔 3 分鐘內(建議 1 分鐘)。建議純人聲最清晰;可有音樂襯底,但請避免過大或破音的配樂。命名簡短就好 —— 廣告填品牌名、角色填角色名。點 ★ 設「主打」,它會在人才庫卡片上播放。', '只收 MP3,单档 3 分钟内(建议 1 分钟)。建议纯人声最清晰;可有音乐衬底,但请避免过大或破音的配乐。命名简短就好 —— 广告填品牌名、角色填角色名。点 ★ 设「主打」,它会在人才库卡片上播放。', 'MP3 only, under 3 min (1 min ideal). Clean voice-only is clearest; light music is fine, but avoid loud or clipping backing tracks. Keep names short — a brand for ads, a character for games. Tap ★ to set a primary demo — it previews on your roster card.')}</p>
           {uploadErr && <p className="text-red-400 text-xs mb-2">{uploadErr}</p>}
 
           {demosByCat.length > 0 && (
@@ -493,10 +499,15 @@ export default function TalentDashboard() {
                         <div className="flex items-center gap-2 mb-2">
                           <Music2 className="w-4 h-4 text-amber-400 shrink-0" />
                           <input className="flex-1 min-w-0 bg-transparent text-sm text-gray-200 focus:outline-none border-b border-transparent focus:border-white/20" value={d.name} onChange={(e) => updateDemo(d.url, { name: e.target.value })} placeholder={namePh(c.key)} />
-                          <select className="bg-zinc-900 text-xs text-gray-300 rounded px-1.5 py-1 border border-white/10 max-w-[42%]" value={d.language || ''} onChange={(e) => updateDemo(d.url, { language: e.target.value })}>
+                          <select className="bg-zinc-900 text-xs text-gray-300 rounded px-1.5 py-1 border border-white/10 max-w-[34%]" value={d.language || ''} onChange={(e) => updateDemo(d.url, { language: e.target.value })}>
                             <option value="" className="bg-zinc-900">{tx('語言', '语言', 'Language')}</option>
                             {form.languages.map((l) => <option key={l} value={l} className="bg-zinc-900">{formatLangEntry(l, locale)}</option>)}
                           </select>
+                          {form.demos[0]?.url === d.url ? (
+                            <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] text-amber-300 bg-amber-500/15 rounded-full px-2 py-0.5"><Star className="w-3 h-3 fill-amber-300" />{tx('主打', '主打', 'Primary')}</span>
+                          ) : (
+                            <button onClick={() => setPrimaryDemo(d.url)} title={tx('設為主打(在卡片播放)', '设为主打(在卡片播放)', 'Set as primary (plays on card)')} className="text-gray-500 hover:text-amber-300 shrink-0" aria-label="set primary"><Star className="w-4 h-4" /></button>
+                          )}
                           <button onClick={() => removeDemo(d.url)} className="text-gray-500 hover:text-red-400 shrink-0" aria-label="remove"><Trash2 className="w-4 h-4" /></button>
                         </div>
                         <audio controls src={d.url} className="w-full h-8" />
