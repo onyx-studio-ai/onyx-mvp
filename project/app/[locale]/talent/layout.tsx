@@ -78,7 +78,7 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
     { href: '/talent', label: tx('我的檔案', '我的资料', 'Profile'), icon: User, exact: true, badge: 0 },
     { href: '/talent/opportunities', label: tx('案件機會', '案件机会', 'Opportunities'), icon: Briefcase, badge: oppCount },
     { href: '/talent/earnings', label: tx('收款', '收款', 'Earnings'), icon: DollarSign, badge: 0 },
-    { href: '/messages', label: tx('訊息', '消息', 'Messages'), icon: MessageSquare, badge: 0 },
+    { href: '/talent/messages', label: tx('訊息', '消息', 'Messages'), icon: MessageSquare, badge: 0 },
   ];
   const active = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
   const signOut = async () => { await supabase.auth.signOut(); router.push('/auth'); };
