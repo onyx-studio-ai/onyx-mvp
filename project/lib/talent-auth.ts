@@ -22,12 +22,26 @@ export async function resolveTalentFromRequest(
 
   // Only ACTIVE talents may use the marketplace APIs. A deactivated talent
   // keeps a valid session + row, so without this gate they could keep quoting.
-  const { data: talent } = await db
+  const sel = columns.includes('id') ? columns : `id, ${columns}`;
+  let { data: talent } = await db
     .from('talents')
-    .select(columns)
+    .select(sel)
     .eq('auth_user_id', user.id)
     .eq('is_active', true)
     .maybeSingle();
+  // Fall back to the user's verified email + lazy-link auth_user_id (active only).
+  if (!talent && user.email) {
+    const { data: byEmail } = await db
+      .from('talents')
+      .select(sel)
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (byEmail) {
+      await db.from('talents').update({ auth_user_id: user.id }).eq('id', (byEmail as { id: string }).id);
+      talent = byEmail;
+    }
+  }
   if (!talent) return { error: 'No active talent profile is linked to this account', status: 404 };
 
   return { db, talent: talent as unknown as Record<string, unknown> };

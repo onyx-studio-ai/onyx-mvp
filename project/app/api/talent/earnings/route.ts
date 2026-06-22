@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
     const user = userData?.user;
     if (userErr || !user) return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
 
-    const { data: talent } = await db
-      .from('talents')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .maybeSingle();
+    let { data: talent } = await db.from('talents').select('id').eq('auth_user_id', user.id).maybeSingle();
+    if (!talent && user.email) {
+      const { data: byEmail } = await db.from('talents').select('id').eq('email', user.email).maybeSingle();
+      if (byEmail) talent = byEmail;
+    }
     if (!talent) return NextResponse.json({ error: 'No talent profile linked' }, { status: 404 });
 
     // Only the columns the talent should see — their cut, the type, status, date.

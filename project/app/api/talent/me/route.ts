@@ -21,11 +21,18 @@ async function resolveTalent(request: NextRequest) {
   const user = userData?.user;
   if (userErr || !user) return { error: 'Invalid or expired session', status: 401 as const };
 
-  const { data: talent } = await db
-    .from('talents')
-    .select('id, name, bio, languages, accent, gender, tags, demo_urls, type, email, is_active')
-    .eq('auth_user_id', user.id)
-    .maybeSingle();
+  const COLS = 'id, name, bio, languages, accent, gender, tags, demo_urls, type, email, is_active';
+  let { data: talent } = await db.from('talents').select(COLS).eq('auth_user_id', user.id).maybeSingle();
+  // Fall back to the user's VERIFIED login email, then lazy-link auth_user_id so
+  // future lookups are by id. Handles talents whose account wasn't linked at
+  // onboard, or who set their password later via forgot-password.
+  if (!talent && user.email) {
+    const { data: byEmail } = await db.from('talents').select(COLS).eq('email', user.email).maybeSingle();
+    if (byEmail) {
+      await db.from('talents').update({ auth_user_id: user.id }).eq('id', byEmail.id);
+      talent = byEmail;
+    }
+  }
   if (!talent) return { error: 'No talent profile is linked to this account', status: 404 as const };
 
   return { db, talent };
