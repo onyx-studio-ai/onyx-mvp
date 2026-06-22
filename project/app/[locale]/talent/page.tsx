@@ -107,7 +107,7 @@ export default function TalentDashboard() {
   const [password, setPassword] = useState('');
   const [loginErr, setLoginErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [savedMsg, setSavedMsg] = useState('');
   const [saveErr, setSaveErr] = useState('');
   const [langPick, setLangPick] = useState('');
   const [langQ, setLangQ] = useState('');
@@ -165,8 +165,9 @@ export default function TalentDashboard() {
   const demoLangs = new Set(form.demos.map((d) => d.language).filter(Boolean));
   const langsMissingDemo = form.languages.filter((l) => !demoLangs.has(l));
 
-  async function handleSave() {
-    if (langsMissingDemo.length > 0) {
+  async function handleSave(submit: boolean) {
+    // The language-needs-a-demo rule only blocks SUBMIT — drafts save freely.
+    if (submit && langsMissingDemo.length > 0) {
       setSaveErr(tx(
         `這些語言還沒有對應的 demo,請先上傳:${langsMissingDemo.map((l) => formatLangEntry(l, locale)).join('、')}`,
         `这些语言还没有对应的 demo,请先上传:${langsMissingDemo.map((l) => formatLangEntry(l, locale)).join('、')}`,
@@ -174,11 +175,12 @@ export default function TalentDashboard() {
       ));
       return;
     }
-    setBusy(true); setSaved(false); setSaveErr('');
+    setBusy(true); setSavedMsg(''); setSaveErr('');
     const res = await fetch('/api/talent/me', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
+        submit,
         name: form.name, bio: form.bio, gender: form.gender, location: form.location,
         availability_note: form.availability.join(','), studio_partner: form.studio_partner, equipment: form.equipment,
         clients: form.clients, awards: form.awards, notable_works: form.notable_works, special_skills: form.special_skills,
@@ -202,8 +204,8 @@ export default function TalentDashboard() {
     }
     const { talent } = await res.json();
     setT((prev) => (prev ? { ...prev, ...talent } : prev));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSavedMsg(submit ? tx('✓ 已送出審核', '✓ 已送出审核', '✓ Submitted for review') : tx('✓ 已儲存草稿', '✓ 已保存草稿', '✓ Draft saved'));
+    setTimeout(() => setSavedMsg(''), 3000);
   }
 
   async function handleLogout() { await supabase.auth.signOut(); setT(null); setPhase('login'); }
@@ -315,11 +317,13 @@ export default function TalentDashboard() {
   const canAddCustomLang = !!lq && !BASE_LANGUAGES.some((o) => pickLabel(o, locale).toLowerCase() === lq || o.en.toLowerCase() === lq);
   const demosByCat = USE_CASES.map((c) => ({ c, items: form.demos.filter((d) => d.category === c.key) })).filter((g) => g.items.length > 0);
 
-  const statusBadge = !t?.is_active
-    ? { cls: 'bg-amber-500/15 text-amber-300', icon: <Clock className="w-3.5 h-3.5" />, text: tx('審核中 · 尚未公開', '审核中 · 尚未公开', 'In review · not public yet') }
-    : t?.pending_review
-      ? { cls: 'bg-amber-500/15 text-amber-300', icon: <Clock className="w-3.5 h-3.5" />, text: tx('已上線 · 有修改待審核', '已上线 · 有修改待审核', 'Live · changes pending review') }
-      : { cls: 'bg-emerald-500/15 text-emerald-300', icon: <CheckCircle2 className="w-3.5 h-3.5" />, text: tx('已上線', '已上线', 'Live on roster') };
+  const statusBadge = t?.is_active
+    ? (t?.pending_review
+        ? { cls: 'bg-amber-500/15 text-amber-300', icon: <Clock className="w-3.5 h-3.5" />, text: tx('已上線 · 修改待審核', '已上线 · 修改待审核', 'Live · changes pending review') }
+        : { cls: 'bg-emerald-500/15 text-emerald-300', icon: <CheckCircle2 className="w-3.5 h-3.5" />, text: tx('已上線', '已上线', 'Live on roster') })
+    : (t?.pending_review
+        ? { cls: 'bg-amber-500/15 text-amber-300', icon: <Clock className="w-3.5 h-3.5" />, text: tx('審核中 · 尚未公開', '审核中 · 尚未公开', 'In review · not public yet') }
+        : { cls: 'bg-white/10 text-gray-300', icon: <Clock className="w-3.5 h-3.5" />, text: tx('草稿 · 尚未送審', '草稿 · 尚未送审', 'Draft · not submitted') });
 
   const livenessBadge = t?.liveness_status === 'verified'
     ? { cls: 'bg-emerald-500/15 text-emerald-300', text: tx('✓ 真人已驗證', '✓ 真人已验证', '✓ Human verified') }
@@ -358,7 +362,7 @@ export default function TalentDashboard() {
       </div>
       {photoErr && <p className="text-red-400 text-xs mb-3 -mt-2">{photoErr}</p>}
 
-      <p className="text-xs text-gray-500 mb-5">{tx('您的修改會先送審 —— 我們聽過 demo、確認資料後才會公開到前台;通過或需要調整都會 email 通知您。', '您的修改会先送审 —— 我们听过 demo、确认资料后才会公开到前台;通过或需要调整都会 email 通知您。', 'Your changes go to review first — we listen to the demos and check your details before they go public. We’ll email you when approved, or if anything needs a tweak.')}</p>
+      <p className="text-xs text-gray-500 mb-5">{tx('隨時可「儲存草稿」,不會送審;填好後再按「送出審核」。我們聽過 demo、確認資料才會公開到前台,通過或需調整都會 email 通知您。', '随时可「保存草稿」,不会送审;填好后再按「提交审核」。我们听过 demo、确认资料才会公开到前台,通过或需调整都会 email 通知您。', 'Save a draft anytime — it isn’t reviewed. When you’re ready, hit Submit for review. We check your demos and details before going public, and email you on approval or if anything needs a tweak.')}</p>
 
       <div className="space-y-8">
         {/* Bio */}
@@ -561,12 +565,15 @@ export default function TalentDashboard() {
           </div>
         </div>
 
-        {/* Save */}
-        <div className="flex items-center gap-3 pt-1">
-          <button onClick={handleSave} disabled={busy || photoBusy || !!uploadingCat} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2.5 text-sm transition">
-            {busy ? tx('送出中…', '提交中…', 'Submitting…') : tx('儲存並送審', '保存并送审', 'Save & submit for review')}
+        {/* Save draft vs submit for review */}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button onClick={() => handleSave(false)} disabled={busy || photoBusy || !!uploadingCat} className="bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white font-medium rounded-lg px-5 py-2.5 text-sm transition">
+            {tx('儲存草稿', '保存草稿', 'Save draft')}
           </button>
-          {saved && <span className="text-emerald-400 text-sm">{tx('✓ 已送出審核', '✓ 已送出审核', '✓ Sent for review')}</span>}
+          <button onClick={() => handleSave(true)} disabled={busy || photoBusy || !!uploadingCat} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2.5 text-sm transition">
+            {busy ? tx('處理中…', '处理中…', 'Working…') : tx('送出審核', '提交审核', 'Submit for review')}
+          </button>
+          {savedMsg && <span className="text-emerald-400 text-sm">{savedMsg}</span>}
           {saveErr && <span className="text-red-400 text-sm">{saveErr}</span>}
         </div>
 

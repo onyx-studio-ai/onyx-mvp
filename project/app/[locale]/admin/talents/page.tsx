@@ -1403,7 +1403,8 @@ export default function AdminTalentsPage() {
                         ? <Badge className="bg-amber-50 text-amber-700 border border-amber-300">修改待審</Badge>
                         : <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>;
                     }
-                    if (onboarded) return <Badge className="bg-amber-50 text-amber-700 border border-amber-300">待發布·審核</Badge>;
+                    if (tt.pending_review) return <Badge className="bg-amber-50 text-amber-700 border border-amber-300">待審核</Badge>;
+                    if (onboarded) return <Badge className="bg-sky-50 text-sky-700 border border-sky-200">草稿中</Badge>;
                     return <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>;
                   })()}
                 </TableCell>
@@ -1411,7 +1412,8 @@ export default function AdminTalentsPage() {
                   <div className="flex gap-2">
                     {(() => {
                       const tt = talent as Talent & { onboarded_at?: string; pending_review?: boolean };
-                      const needsPublish = (tt.onboarded_at && !talent.is_active) || tt.pending_review;
+                      // Only act once the talent has actually SUBMITTED for review.
+                      const needsPublish = !!tt.pending_review;
                       if (!needsPublish) return null;
                       return (
                         <>

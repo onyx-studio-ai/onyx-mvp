@@ -93,6 +93,7 @@ export async function PATCH(request: NextRequest) {
     if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
 
     const body = await request.json();
+    const submit = body.submit === true; // true = submit for review; false = save draft only
     const updates: Record<string, unknown> = {};
 
     for (const k of TEXT_FIELDS) {
@@ -159,8 +160,10 @@ export async function PATCH(request: NextRequest) {
       const langs: string[] = [...new Set((body.languages as unknown[]).filter((l): l is string => typeof l === 'string' && !!l.trim()).map((l) => l.trim()))];
       const demosForCheck: DemoItem[] = cleanDemos ?? (Array.isArray(r.talent.demos) ? r.talent.demos : []);
       const demoLangs = new Set<string>(demosForCheck.map((d) => d.language).filter((x): x is string => !!x));
+      // Only enforce the "language needs a demo" rule when SUBMITTING for review
+      // — a half-finished draft can be saved with languages still missing demos.
       const missing = langs.filter((l) => !demoLangs.has(l));
-      if (missing.length > 0) {
+      if (submit && missing.length > 0) {
         return NextResponse.json({ error: 'language_without_demo', languages: missing }, { status: 400 });
       }
       updates.languages = langs;
@@ -170,8 +173,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
-    // Any edit re-enters the review queue. Public stays on the last snapshot.
-    updates.pending_review = true;
+    // Saving a draft does NOT touch review state. Only an explicit submit enters
+    // the review queue; admin publish is what clears pending_review back to false.
+    if (submit) updates.pending_review = true;
 
     const { data, error } = await r.db
       .from('talents')
