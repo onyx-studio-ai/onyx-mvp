@@ -1351,9 +1351,12 @@ export default function AdminTalentsPage() {
                   })()}
                 </TableCell>
                 <TableCell>
-                  <Badge className={talent.is_active ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-200 text-gray-600 border border-gray-400"}>
-                    {talent.is_active ? "Active" : "Inactive"}
-                  </Badge>
+                  {(() => {
+                    const onboarded = !!(talent as Talent & { onboarded_at?: string }).onboarded_at;
+                    if (talent.is_active) return <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>;
+                    if (onboarded) return <Badge className="bg-amber-50 text-amber-700 border border-amber-300">待發布·審核</Badge>;
+                    return <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>;
+                  })()}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">

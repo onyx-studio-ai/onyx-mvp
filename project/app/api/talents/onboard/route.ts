@@ -7,10 +7,13 @@ import { sendEmail } from '@/lib/mail';
 /*
   Post-approval onboarding (token-gated, no login). GET validates the token
   and returns the talent's public name + whether they've already completed it.
-  POST records agreement to the cooperation terms, activates the talent
-  (is_active=true) so they appear in the public roster, and provisions a
-  self-service login account (Supabase Auth) so they can manage their own
-  profile at /talent — emailing them a set-password link.
+  POST records agreement to the cooperation terms (onboarded_at) and provisions a
+  self-service login account (Supabase Auth) so they can manage their own profile
+  at /talent — emailing them a set-password link.
+
+  It deliberately does NOT publish the talent (is_active stays false): they go
+  live on the public roster only after they've reviewed/polished their profile
+  and an admin flips them Active. So onboarding ≠ going public.
 */
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
@@ -22,10 +25,10 @@ export async function GET(request: NextRequest) {
     if (!appId) return NextResponse.json({ valid: false }, { status: 400 });
 
     const db = getSupabaseServiceClient();
-    const { data } = await db.from('talents').select('name, is_active').eq('application_id', appId).single();
+    const { data } = await db.from('talents').select('name, onboarded_at').eq('application_id', appId).single();
     if (!data) return NextResponse.json({ valid: false }, { status: 404 });
 
-    return NextResponse.json({ valid: true, name: data.name, done: data.is_active });
+    return NextResponse.json({ valid: true, name: data.name, done: !!data.onboarded_at });
   } catch (err) {
     return supabaseErrorResponse(err, 'api/talents/onboard:GET');
   }
@@ -39,11 +42,13 @@ export async function POST(request: NextRequest) {
     if (!body.agree) return NextResponse.json({ error: 'Please agree to the terms' }, { status: 400 });
 
     const db = getSupabaseServiceClient();
-    // Activate. Keep this query free of auth_user_id so onboarding still works
-    // even if the talent-account migration hasn't been applied yet.
+    // Record onboarding — but DON'T publish (is_active stays false). The talent
+    // reviews/polishes their profile at /talent; an admin publishes them later.
+    // Keep this query free of auth_user_id so onboarding still works even if the
+    // talent-account migration hasn't been applied yet.
     const { data: talent, error } = await db
       .from('talents')
-      .update({ is_active: true })
+      .update({ onboarded_at: new Date().toISOString() })
       .eq('application_id', appId)
       .select('id, name, email')
       .single();
