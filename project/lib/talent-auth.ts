@@ -38,7 +38,7 @@ export async function resolveTalentFromRequest(
       .eq('is_active', true)
       .maybeSingle();
     if (byEmail) {
-      await db.from('talents').update({ auth_user_id: user.id }).eq('id', (byEmail as { id: string }).id);
+      await db.from('talents').update({ auth_user_id: user.id }).eq('id', (byEmail as unknown as { id: string }).id);
       talent = byEmail;
     }
   }
