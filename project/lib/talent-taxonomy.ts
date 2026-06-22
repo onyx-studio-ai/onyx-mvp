@@ -123,20 +123,69 @@ export const BASE_LANGUAGES = [
 ] as const;
 
 export const ACCENTS = [
-  { key: 'native',    tw: '標準 / 母語', cn: '标准 / 母语', en: 'Native / Standard' },
-  { key: 'taiwan',    tw: '台灣',       cn: '台湾',         en: 'Taiwan' },
-  { key: 'mainland',  tw: '大陸',       cn: '大陆',         en: 'Mainland' },
-  { key: 'hongkong',  tw: '香港',       cn: '香港',         en: 'Hong Kong' },
-  { key: 'american',  tw: '美式',       cn: '美式',         en: 'American' },
-  { key: 'british',   tw: '英式',       cn: '英式',         en: 'British' },
-  { key: 'australian',tw: '澳洲',       cn: '澳洲',         en: 'Australian' },
-  { key: 'canadian',  tw: '加拿大',     cn: '加拿大',       en: 'Canadian' },
-  { key: 'indian',    tw: '印度',       cn: '印度',         en: 'Indian' },
-  { key: 'singapore', tw: '新加坡',     cn: '新加坡',       en: 'Singapore' },
-  { key: 'malaysia',  tw: '馬來西亞',   cn: '马来西亚',     en: 'Malaysia' },
-  { key: 'korean',    tw: '韓式',       cn: '韩式',         en: 'Korean' },
-  { key: 'japanese',  tw: '日式',       cn: '日式',         en: 'Japanese' },
+  { key: 'native',     tw: '標準 / 母語', cn: '标准 / 母语', en: 'Native / Standard' },
+  // Chinese family
+  { key: 'taiwan',     tw: '台灣',     cn: '台湾',     en: 'Taiwan' },
+  { key: 'mainland',   tw: '大陸',     cn: '大陆',     en: 'Mainland' },
+  { key: 'hongkong',   tw: '香港',     cn: '香港',     en: 'Hong Kong' },
+  { key: 'guangzhou',  tw: '廣州',     cn: '广州',     en: 'Guangzhou' },
+  { key: 'malaysia',   tw: '馬來西亞', cn: '马来西亚', en: 'Malaysia' },
+  { key: 'singapore',  tw: '新加坡',   cn: '新加坡',   en: 'Singapore' },
+  // English
+  { key: 'american',   tw: '美式',     cn: '美式',     en: 'American' },
+  { key: 'british',    tw: '英式',     cn: '英式',     en: 'British' },
+  { key: 'australian', tw: '澳洲',     cn: '澳洲',     en: 'Australian' },
+  { key: 'canadian',   tw: '加拿大',   cn: '加拿大',   en: 'Canadian' },
+  { key: 'irish',      tw: '愛爾蘭',   cn: '爱尔兰',   en: 'Irish' },
+  { key: 'scottish',   tw: '蘇格蘭',   cn: '苏格兰',   en: 'Scottish' },
+  { key: 'indian',     tw: '印度',     cn: '印度',     en: 'Indian' },
+  { key: 'southafrican', tw: '南非',   cn: '南非',     en: 'South African' },
+  { key: 'filipino',   tw: '菲律賓',   cn: '菲律宾',   en: 'Filipino' },
+  // Spanish
+  { key: 'spain',      tw: '西班牙(歐洲)', cn: '西班牙(欧洲)', en: 'Spain (Castilian)' },
+  { key: 'latam',      tw: '拉丁美洲', cn: '拉丁美洲', en: 'Latin American' },
+  { key: 'mexican',    tw: '墨西哥',   cn: '墨西哥',   en: 'Mexican' },
+  { key: 'argentine',  tw: '阿根廷',   cn: '阿根廷',   en: 'Argentine' },
+  { key: 'colombian',  tw: '哥倫比亞', cn: '哥伦比亚', en: 'Colombian' },
+  // Portuguese
+  { key: 'brazilian',  tw: '巴西',     cn: '巴西',     en: 'Brazilian' },
+  { key: 'portugal',   tw: '葡萄牙(歐洲)', cn: '葡萄牙(欧洲)', en: 'Portugal (European)' },
+  // French
+  { key: 'france',     tw: '法國',     cn: '法国',     en: 'France' },
+  { key: 'quebec',     tw: '魁北克',   cn: '魁北克',   en: 'Québécois' },
+  { key: 'belgian',    tw: '比利時',   cn: '比利时',   en: 'Belgian' },
+  { key: 'swissfr',    tw: '瑞士',     cn: '瑞士',     en: 'Swiss' },
+  // German
+  { key: 'germany',    tw: '德國(標準)', cn: '德国(标准)', en: 'Germany (Standard)' },
+  { key: 'austrian',   tw: '奧地利',   cn: '奥地利',   en: 'Austrian' },
+  { key: 'swissde',    tw: '瑞士',     cn: '瑞士',     en: 'Swiss' },
+  // Japanese
+  { key: 'kansai',     tw: '關西',     cn: '关西',     en: 'Kansai' },
+  // Arabic
+  { key: 'msa',        tw: '標準阿拉伯語', cn: '标准阿拉伯语', en: 'Modern Standard' },
+  { key: 'egyptian',   tw: '埃及',     cn: '埃及',     en: 'Egyptian' },
+  { key: 'gulf',       tw: '海灣',     cn: '海湾',     en: 'Gulf' },
+  { key: 'levantine',  tw: '黎凡特',   cn: '黎凡特',   en: 'Levantine' },
 ] as const;
+
+// Mainstream accents per language (the "大眾" options). 'native' is prepended
+// in the UI, and an "Other (type your own)" entry covers the niche "小眾" cases.
+export const LANG_ACCENTS: Record<string, string[]> = {
+  mandarin:   ['taiwan', 'mainland', 'malaysia', 'singapore'],
+  cantonese:  ['hongkong', 'guangzhou', 'malaysia'],
+  hokkien:    ['taiwan'],
+  english:    ['american', 'british', 'australian', 'canadian', 'irish', 'scottish', 'indian', 'singapore', 'southafrican', 'filipino'],
+  spanish:    ['spain', 'latam', 'mexican', 'argentine', 'colombian'],
+  portuguese: ['brazilian', 'portugal'],
+  french:     ['france', 'quebec', 'belgian', 'swissfr'],
+  german:     ['germany', 'austrian', 'swissde'],
+  japanese:   ['kansai'],
+  arabic:     ['msa', 'egyptian', 'gulf', 'levantine'],
+};
+
+// Accent option keys for a given language: always 'native' first, then its
+// mainstream regional accents (if any). The UI appends an "other" choice.
+export const accentOptionsFor = (langKey: string): string[] => ['native', ...(LANG_ACCENTS[langKey] || [])];
 
 export const baseLangLabel = (key: string, locale: string) => {
   const o = BASE_LANGUAGES.find((x) => x.key === key); return o ? pickLabel(o, locale) : key;

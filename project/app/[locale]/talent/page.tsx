@@ -21,8 +21,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2 } from 'lucide-react';
 import {
-  VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, ACCENTS, AVAILABILITY, COUNTRIES,
-  pickLabel, formatLangEntry, baseLangLabel, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
+  VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES,
+  pickLabel, formatLangEntry, baseLangLabel, accentLabel, accentOptionsFor, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
 } from '@/lib/talent-taxonomy';
 
 const GENDER_OPTIONS = [
@@ -112,6 +112,7 @@ export default function TalentDashboard() {
   const [langPick, setLangPick] = useState('');
   const [langQ, setLangQ] = useState('');
   const [accentPick, setAccentPick] = useState('native');
+  const [accentCustom, setAccentCustom] = useState('');
   const [traitCustom, setTraitCustom] = useState('');
   const [specCustom, setSpecCustom] = useState('');
   const [addCat, setAddCat] = useState('');
@@ -266,9 +267,10 @@ export default function TalentDashboard() {
     setForm((f) => ({ ...f, [field]: f[field].filter((x) => x !== val) }));
   const addLang = () => {
     if (!langPick) return;
-    const entry = `${langPick.replace(/\//g, ' ').trim()}/${accentPick || 'native'}`;
+    const accent = accentPick === '__other__' ? (accentCustom.replace(/\//g, ' ').trim() || 'native') : (accentPick || 'native');
+    const entry = `${langPick.replace(/\//g, ' ').trim()}/${accent}`;
     if (!form.languages.includes(entry)) setForm((f) => ({ ...f, languages: [...f.languages, entry] }));
-    setLangPick(''); setLangQ(''); setAccentPick('native');
+    setLangPick(''); setLangQ(''); setAccentPick('native'); setAccentCustom('');
   };
   const removeLang = (v: string) => setForm((f) => ({ ...f, languages: f.languages.filter((x) => x !== v) }));
 
@@ -427,8 +429,8 @@ export default function TalentDashboard() {
               <input className={inputCls} value={langQ} onChange={(e) => setLangQ(e.target.value)} placeholder={tx('搜尋語言,例如:葡萄牙文 / Tagalog', '搜寻语言,例如:葡萄牙文 / Tagalog', 'Search a language, e.g. Portuguese / Tagalog')} />
               {(langMatches.length > 0 || canAddCustomLang) && (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {langMatches.slice(0, 12).map((o) => <button key={o.key} onClick={() => { setLangPick(o.key); setLangQ(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-2.5 py-1 transition">+ {pickLabel(o, locale)}</button>)}
-                  {canAddCustomLang && <button onClick={() => { setLangPick(langQ.trim()); setLangQ(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-full px-2.5 py-1 transition">{tx('其他', '其他', 'Other')}:“{langQ.trim()}”</button>}
+                  {langMatches.slice(0, 12).map((o) => <button key={o.key} onClick={() => { setLangPick(o.key); setLangQ(''); setAccentPick('native'); setAccentCustom(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-2.5 py-1 transition">+ {pickLabel(o, locale)}</button>)}
+                  {canAddCustomLang && <button onClick={() => { setLangPick(langQ.trim()); setLangQ(''); setAccentPick('native'); setAccentCustom(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-full px-2.5 py-1 transition">{tx('其他', '其他', 'Other')}:“{langQ.trim()}”</button>}
                 </div>
               )}
             </div>
@@ -436,8 +438,12 @@ export default function TalentDashboard() {
             <div className="flex flex-wrap gap-2 items-center">
               <span className="inline-flex items-center gap-1.5 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-200">{baseLangLabel(langPick, locale)}<button onClick={() => setLangPick('')} className="text-gray-400 hover:text-white" aria-label="change">×</button></span>
               <select className={`${inputCls} flex-1 min-w-[120px]`} value={accentPick} onChange={(e) => setAccentPick(e.target.value)}>
-                {ACCENTS.map((o) => <option key={o.key} value={o.key} className="bg-zinc-900">{pickLabel(o, locale)}</option>)}
+                {accentOptionsFor(langPick).map((k) => <option key={k} value={k} className="bg-zinc-900">{accentLabel(k, locale)}</option>)}
+                <option value="__other__" className="bg-zinc-900">{tx('其他(自填)', '其他(自填)', 'Other (type)')}</option>
               </select>
+              {accentPick === '__other__' && (
+                <input className={`${inputCls} flex-1 min-w-[120px]`} value={accentCustom} onChange={(e) => setAccentCustom(e.target.value)} placeholder={tx('口音,例如:韓國口音', '口音,例如:韩国口音', 'Accent, e.g. Korean')} />
+              )}
               <button type="button" onClick={addLang} className="shrink-0 text-sm bg-amber-500/90 hover:bg-amber-400 text-black font-medium rounded-lg px-4 transition">{tx('加入', '加入', 'Add')}</button>
             </div>
           )}
