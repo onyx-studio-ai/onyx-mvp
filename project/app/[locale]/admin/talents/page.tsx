@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "next-intl";
-import { formatLangEntry } from "@/lib/talent-taxonomy";
+import { formatLangEntry, traitLabel, useCaseLabel, availabilityLabel, countryLabel, USE_CASES } from "@/lib/talent-taxonomy";
 
 const ALL_LANGUAGES = [
   "Afrikaans", "Albanian", "Amharic", "Arabic", "Arabic (Egyptian)", "Arabic (Gulf)", "Arabic (Levantine)", "Arabic (Maghreb)",
@@ -1462,11 +1462,63 @@ export default function AdminTalentsPage() {
       <Dialog open={!!publishTarget} onOpenChange={(o) => !o && setPublishTarget(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 text-lg">發布到公開頁面 — {publishTarget?.name}</DialogTitle>
+            <DialogTitle className="text-gray-900 text-lg">審核並發布 — {publishTarget?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Read-only review of exactly what the talent submitted */}
+            {(() => {
+              const r = publishTarget as (Talent & {
+                headshot_url?: string; languages?: string[]; gender?: string; location?: string;
+                voice_traits?: string[]; specialties?: string[]; special_skills?: string;
+                demos?: Array<{ category: string; name: string; url: string; language?: string }>;
+                clients?: string; awards?: string; notable_works?: string;
+                availability_note?: string; equipment?: string; studio_partner?: string; liveness_status?: string;
+              }) | null;
+              if (!r) return null;
+              const demos = Array.isArray(r.demos) ? r.demos : [];
+              const byCat = USE_CASES.map((c) => ({ c, items: demos.filter((d) => d.category === c.key) })).filter((g) => g.items.length > 0);
+              const avail = (r.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
+              const Chip = ({ children }: { children: React.ReactNode }) => <span className="inline-block text-[11px] bg-gray-100 border border-gray-300 text-gray-700 rounded-full px-2 py-0.5">{children}</span>;
+              return (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    {r.headshot_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={r.headshot_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center text-gray-500 font-semibold">{(r.name || '?').charAt(0)}</div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-gray-900">{r.name}</p>
+                      <p className="text-xs text-gray-500">{[r.gender, r.location ? countryLabel(r.location, locale) : ''].filter(Boolean).join(' · ')}</p>
+                    </div>
+                    {r.liveness_status === 'verified' && <span className="ml-auto text-xs text-emerald-700 font-medium">真人 ✓</span>}
+                  </div>
+                  {(r.languages || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">語言</p><div className="flex flex-wrap gap-1">{r.languages!.map((l) => <Chip key={l}>{formatLangEntry(l, locale)}</Chip>)}</div></div>}
+                  {(r.voice_traits || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">聲線</p><div className="flex flex-wrap gap-1">{r.voice_traits!.map((k) => <Chip key={k}>{traitLabel(k, locale)}</Chip>)}</div></div>}
+                  {(r.specialties || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">專長</p><div className="flex flex-wrap gap-1">{r.specialties!.map((k) => <Chip key={k}>{useCaseLabel(k, locale)}</Chip>)}</div></div>}
+                  {r.special_skills && <div><p className="text-[11px] text-gray-500 mb-1">特殊技能</p><p className="text-sm text-gray-700 whitespace-pre-line">{r.special_skills}</p></div>}
+                  {byCat.length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">Demo(點開試聽)</p><div className="space-y-2">{byCat.map(({ c, items }) => (
+                    <div key={c.key}>
+                      <p className="text-xs text-gray-600 mb-1">{useCaseLabel(c.key, locale)}</p>
+                      {items.map((d) => (<div key={d.url} className="flex items-center gap-2 mb-1"><span className="text-xs text-gray-700 w-28 truncate shrink-0">{d.name}</span><audio controls src={d.url} className="h-7 flex-1" /></div>))}
+                    </div>
+                  ))}</div></div>}
+                  {(r.clients || r.notable_works || r.awards) && <div className="grid gap-1 text-sm text-gray-700">
+                    {r.clients && <p><span className="text-gray-500 text-xs">合作品牌:</span> {r.clients}</p>}
+                    {r.notable_works && <p className="whitespace-pre-line"><span className="text-gray-500 text-xs">代表作:</span> {r.notable_works}</p>}
+                    {r.awards && <p><span className="text-gray-500 text-xs">獎項:</span> {r.awards}</p>}
+                  </div>}
+                  {(avail.length > 0 || r.equipment || r.studio_partner) && <div className="text-xs text-gray-600 space-y-0.5">
+                    {avail.length > 0 && <p>可工作時段:{avail.map((k) => availabilityLabel(k, locale)).join('、')}</p>}
+                    {r.equipment && <p>器材:{r.equipment}</p>}
+                    {r.studio_partner && <p>錄音室:{r.studio_partner}</p>}
+                  </div>}
+                </div>
+              );
+            })()}
             <p className="text-sm text-gray-600">
-              審核這位配音員的草稿後發布。簡介請填三語版本(前台會依客戶語言顯示);留空的語言會自動退回繁中版。
+              聽過 demo、確認資料 OK 後發布。簡介請填三語版本(前台會依客戶語言顯示);留空的語言會自動退回繁中版。
               <span className="text-gray-400"> 之後接上翻譯 API 可一鍵自動產生。</span>
             </p>
             <div>
