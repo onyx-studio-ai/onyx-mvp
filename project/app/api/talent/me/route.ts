@@ -105,7 +105,7 @@ export async function PATCH(request: NextRequest) {
     }
     // Strip links / personal contact info from free-text — links belong in the
     // dedicated field, contact info stays private (never shown to clients).
-    for (const k of ['bio', 'clients', 'awards', 'notable_works', 'special_skills'] as const) {
+    for (const k of ['bio', 'clients', 'awards', 'notable_works', 'special_skills', 'equipment'] as const) {
       if (typeof updates[k] === 'string') updates[k] = stripContactsAndLinks(updates[k] as string);
     }
 
@@ -164,7 +164,7 @@ export async function PATCH(request: NextRequest) {
         }
         cleanDemos.push({
           category,
-          name: String(d?.name || 'Demo').slice(0, 120),
+          name: (stripContactsAndLinks(String(d?.name || 'Demo')).replace(/[\s_,、・\-]+$/g, '').trim() || 'Demo').slice(0, 120),
           url,
           language: typeof d?.language === 'string' ? d.language : undefined,
           seconds: seconds || undefined,
