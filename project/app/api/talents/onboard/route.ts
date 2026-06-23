@@ -88,12 +88,15 @@ export async function POST(request: NextRequest) {
 
         if (userId) {
           await db.from('talents').update({ auth_user_id: userId }).eq('id', talent.id);
+          // Locale-prefixed reset page so a zh talent lands on the Chinese page
+          // (next-intl: en = no prefix). Allowlisted via *.onyxstudios.ai/**.
+          const lp = locale && locale !== 'en' ? `/${locale}` : '';
           const { data: link } = await db.auth.admin.generateLink({
             type: 'recovery',
             email: talent.email,
-            options: { redirectTo: `${SITE}/auth/reset-password` },
+            options: { redirectTo: `${SITE}${lp}/auth/reset-password` },
           });
-          const setupUrl = link?.properties?.action_link || `${SITE}/auth/reset-password`;
+          const setupUrl = link?.properties?.action_link || `${SITE}${lp}/auth/reset-password`;
           const mail = talentAccountSetupEmail({
             name: talent.name,
             setupUrl,

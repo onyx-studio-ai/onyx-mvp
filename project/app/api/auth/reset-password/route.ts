@@ -42,11 +42,15 @@ export async function POST(request: NextRequest) {
       if (appRow?.locale) locale = appRow.locale;
     } catch { /* non-fatal — use pageLocale */ }
 
+    // Locale-prefixed reset page so the user lands in their own language
+    // (next-intl: en = no prefix). Allowlisted via *.onyxstudios.ai/**.
+    const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
+    const lp = locale && locale !== 'en' ? `/${locale}` : '';
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email: email.trim().toLowerCase(),
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai'}/auth/reset-password`,
+        redirectTo: `${SITE}${lp}/auth/reset-password`,
       },
     });
 
