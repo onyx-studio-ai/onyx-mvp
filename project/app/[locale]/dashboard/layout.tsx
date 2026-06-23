@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt } from 'lucide-react';
+import { FileAudio, Settings, LogOut, Receipt, Mic2 } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
 
@@ -86,8 +87,24 @@ function Sidebar() {
     return value === `dashboard.${key}` ? fallback : value;
   };
 
+  // If this account also has a talent profile, surface a link to the talent
+  // portal (/talent) — where they edit their profile and submit it for review.
+  const [isTalent, setIsTalent] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const tok = session?.access_token;
+        if (!tok) return;
+        const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
+        if (r.ok) setIsTalent(true);
+      } catch { /* not a talent / no session */ }
+    })();
+  }, []);
+
   const nav = [
     { href: '/dashboard', label: tr('navProjects', '專案') , icon: FileAudio },
+    ...(isTalent ? [{ href: '/talent', label: tr('navTalentProfile', '我的配音員檔案'), icon: Mic2 }] : []),
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票'), icon: Receipt },
     { href: '/dashboard/settings', label: tr('navSettings', '設定'), icon: Settings },
   ];
