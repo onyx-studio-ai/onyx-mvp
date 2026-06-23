@@ -110,6 +110,10 @@
 
 **production 用 epoch 8**(`wing-e8.ckpt` + `wing_e8_s480.pth`),ref `wing_ads_0004.wav`,prompt_text="無間斷收聽音樂,全無限制。",prompt_lang=`yue`(粵語).
 
+> 📍 **2026-06-23 更正**:`wing_ads_0004.wav` **不在** backup 資料夾,實際在
+> `/Volumes/WingAI SSD/Claude/Projects/工程部/訓練資料/Wing/transcripts/wing_ads_sliced/wing_ads_0004.wav`
+> (實測 44.1k/mono/16bit/**3.4s**,不是 ~4.7s;偏短,同夾 324 切片可挑 8-12s 更好的)。weights 才在 backup 夾。
+
 ⚠️ 已驗證 TTS 跑得起來,粵語腔。後續可以比較 epoch 4/6/8 哪個最好聽。
 
 ### Nova(身份待確認)

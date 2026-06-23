@@ -30,10 +30,11 @@
 ### Reference 音檔(都在本機,別重錄)
 | 用途 | 檔案(絕對路徑) | prompt_text(一字不漏對齊) | lang |
 |---|---|---|---|
-| Eric 普通話 ref | `/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/eric_ref.wav` | `我是楊日漢,我確認本段聲音由我本人於2026年3月18號親自錄製。` | zh |
-| Wing 粵語 ref | `/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/wing_sovits_backup_20260529/wing_ads_0004.wav` | `無間斷收聽音樂,全無限制。` | yue |
+| Eric 普通話 ref | `/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/eric_ref.wav` ✅ 48k/mono/24bit/8.7s | `我是楊日漢,我確認本段聲音由我本人於2026年3月18號親自錄製。` | zh |
+| Wing 粵語 ref | `/Volumes/WingAI SSD/Claude/Projects/工程部/訓練資料/Wing/transcripts/wing_ads_sliced/wing_ads_0004.wav` ⚠️ 44.1k/mono/16bit/**3.4s(偏短)** | `無間斷收聽音樂,全無限制。` | yue |
 
 > ⚠️ Eric 的 ref **一定用 `eric_ref.wav`(自然講話)**,不要用 `eric_ref_high.wav` / `FAAM0113.wav`(廣告腔訓練片段 → 大陸腔,踩過)。
+> ⚠️ Wing ref 只有 3.4s 偏短(甜蜜點 8-12s)。若粵語輸出不穩,從 `wing_ads_sliced/`(324 切片)挑一段 8-12s 乾淨的重測。**pod 上記得帶這兩個檔上去(都在本機 SSD)。**
 
 ### 測試稿(三 arm 念同一份)
 **T1 — 普通話真實廣告(treechildyt 原稿,Eric):**
