@@ -456,8 +456,18 @@ export default function AdminTalentsPage() {
   // --- Publish: promote the talent's draft into the public snapshot ---
   const openPublish = (talent: Talent) => {
     setPublishTarget(talent);
-    // Prefill zh-TW with the draft bio; admin fills the other two (Phase 1 manual).
-    setPubBio({ 'zh-TW': (talent.bio as string) || '', 'zh-CN': '', en: '' });
+    // Prefill from the LAST PUBLISHED translations so re-publishing never wipes
+    // the zh-CN / English bios the admin entered before. Fall back to the draft
+    // bio (their own language) for zh-TW on a first publish.
+    const tt = talent as Talent & { bio?: string; published_snapshot?: { bio?: unknown } };
+    const draft = tt.bio || '';
+    const sbio = tt.published_snapshot?.bio;
+    if (sbio && typeof sbio === 'object') {
+      const o = sbio as Record<string, string>;
+      setPubBio({ 'zh-TW': o['zh-TW'] || draft, 'zh-CN': o['zh-CN'] || '', en: o['en'] || '' });
+    } else {
+      setPubBio({ 'zh-TW': (typeof sbio === 'string' && sbio) || draft, 'zh-CN': '', en: '' });
+    }
   };
   const handlePublish = async () => {
     if (!publishTarget) return;

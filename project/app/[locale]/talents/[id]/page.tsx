@@ -78,7 +78,12 @@ export default function TalentProfile() {
     } else {
       obj = t.bio as Record<string, string>;
     }
-    return obj[locale] || obj['en'] || Object.values(obj)[0] || '';
+    // Fallback order: Chinese viewers prefer the other Chinese variant before
+    // English (never show English to a zh viewer just because one variant is
+    // blank); English viewers prefer Chinese only if there's no English.
+    const order = locale === 'en' ? ['en', 'zh-TW', 'zh-CN'] : locale === 'zh-CN' ? ['zh-CN', 'zh-TW', 'en'] : ['zh-TW', 'zh-CN', 'en'];
+    for (const k of order) if (obj[k]) return obj[k];
+    return Object.values(obj)[0] || '';
   })();
 
   // Categorized demos take precedence; fall back to legacy flat demos.

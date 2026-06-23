@@ -43,11 +43,11 @@ export async function POST(request: NextRequest) {
     const tr = (body.bioTranslations || {}) as Record<string, string>;
     const draftBio = (t.bio as string) || '';
     const bioObj: Record<string, string> = {};
-    for (const loc of ['zh-TW', 'zh-CN', 'en']) {
-      const v = (tr[loc] || '').trim();
-      if (v) bioObj[loc] = v;
-    }
-    const snapshotBio = Object.keys(bioObj).length > 0 ? { 'zh-TW': draftBio, ...bioObj } : draftBio;
+    const tw = (tr['zh-TW'] || draftBio || '').trim(); // zh-TW always present (draft fallback)
+    if (tw) bioObj['zh-TW'] = tw;
+    if ((tr['zh-CN'] || '').trim()) bioObj['zh-CN'] = tr['zh-CN'].trim();
+    if ((tr['en'] || '').trim()) bioObj['en'] = tr['en'].trim();
+    const snapshotBio = Object.keys(bioObj).length > 0 ? bioObj : draftBio;
 
     const snapshot = {
       name: t.name,
