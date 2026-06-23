@@ -5,7 +5,7 @@ import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { Menu, X, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface NavigationLink {
@@ -20,6 +20,10 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const t = useTranslations('navbar');
   const tc = useTranslations('common');
+  const locale = useLocale();
+  const isZhCN = locale === 'zh-CN';
+  const isZh = locale.startsWith('zh');
+  const ntx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,8 +65,10 @@ export default function Navbar() {
 
   const getContextTools = (): NavigationLink[] => {
     if (isVoiceContext) {
+      // Two browse paths so visitors choose AI vs real-human up front.
       return [
-        { href: '/voices', label: t('browseVoices') },
+        { href: '/voices', label: ntx('AI 聲音', 'AI 声音', 'AI Voices') },
+        { href: '/talents', label: ntx('真人配音員', '真人配音员', 'Human Talent') },
         { href: '/pricing', label: t('pricing') },
       ];
     }

@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { Search, ArrowRight } from 'lucide-react';
 import CatalogAudioPlayer from '@/components/catalog/CatalogAudioPlayer';
+import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
 
 interface Talent {
   id: string;
@@ -92,7 +93,8 @@ export default function TalentRoster() {
       <div className="max-w-6xl mx-auto px-4 pt-28 pb-16">
         <p className="text-xs tracking-[0.25em] uppercase text-amber-300 mb-2">{tx('ONYX · 配音陣容', 'ONYX · 配音阵容', 'ONYX · Voice Roster')}</p>
         <h1 className="text-3xl font-bold mb-2">{tx('配音員', '配音员', 'Voice Talent')}</h1>
-        <p className="text-gray-400 text-sm mb-8 max-w-2xl">{tx('試聽我們的配音員、依語言與聲線挑選,找到適合的聲音後即可洽詢合作。', '试听我们的配音员、依语言与声线挑选,找到适合的声音后即可洽询合作。', 'Listen to our voice talents, filter by language and voice, and get in touch once you find the right voice for your project.')}</p>
+        <p className="text-gray-400 text-sm mb-5 max-w-2xl">{tx('試聽我們的配音員、依語言與聲線挑選,找到適合的聲音後即可洽詢合作。', '试听我们的配音员、依语言与声线挑选,找到适合的声音后即可洽询合作。', 'Listen to our voice talents, filter by language and voice, and get in touch once you find the right voice for your project.')}</p>
+        <BrowseVoiceTabs />
 
         {/* filters */}
         <div className="flex flex-wrap gap-2 mb-8">

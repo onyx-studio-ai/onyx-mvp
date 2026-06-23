@@ -8,6 +8,7 @@ import { User, UserRound, Play, Activity, Wand2, ChevronDown, X, Globe, Search }
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/landing/Footer';
+import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
 import { audioManager } from '@/lib/audioManager';
 
 const POPULAR_CODES = ['en', 'zh-CN', 'zh-TW', 'yue', 'ja', 'ko', 'th', 'es', 'fr'];
@@ -270,6 +271,9 @@ export default function VoicesPage() {
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               {t('pageSubtitle')}
             </p>
+            <div className="mt-8 flex justify-center">
+              <BrowseVoiceTabs />
+            </div>
           </div>
 
           {/* Language Filter */}
