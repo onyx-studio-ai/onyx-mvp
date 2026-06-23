@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
   }
 
   const folder = body.role === 'Singer' ? 'singers' : 'voice-actors';
-  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
-  const path = `${folder}/${Date.now()}_${safeName}`;
+  // Opaque filename — the original can carry a phone/PII that would leak in the URL.
+  const path = `${folder}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
 
   try {
     const supabase = getSupabaseServiceClient();

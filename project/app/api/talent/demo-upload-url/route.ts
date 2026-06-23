@@ -34,8 +34,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only MP3 files are accepted' }, { status: 400 });
     }
 
-    const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
-    const path = `approved/${talent.id}/${Date.now()}_${safeName}`;
+    // Opaque filename — never put the user's original filename in the path: it can
+    // contain a phone/PII that would leak in the public URL (talents name files like
+    // "brand_0975554977.mp3"). The display name lives separately in demos[].name.
+    const path = `approved/${talent.id}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
     const { data, error } = await db.storage.from(BUCKET).createSignedUploadUrl(path);
     if (error || !data) {
       return NextResponse.json({ error: error?.message || 'Could not prepare upload' }, { status: 500 });
