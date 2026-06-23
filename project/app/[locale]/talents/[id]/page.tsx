@@ -74,6 +74,16 @@ export default function TalentProfile() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Single-playback: starting one demo pauses every other <audio> on the page
+  // (native players don't coordinate on their own). 'play' doesn't bubble → capture.
+  useEffect(() => {
+    const onPlay = (e: Event) => {
+      document.querySelectorAll('audio').forEach((a) => { if (a !== e.target) a.pause(); });
+    };
+    document.addEventListener('play', onPlay, true);
+    return () => document.removeEventListener('play', onPlay, true);
+  }, []);
+
   const bioText = (() => {
     if (!t?.bio) return '';
     let obj: Record<string, string>;
