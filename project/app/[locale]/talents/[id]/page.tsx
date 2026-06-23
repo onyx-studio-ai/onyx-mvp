@@ -190,10 +190,10 @@ export default function TalentProfile() {
               </div>
             )}
 
-            {(t.equipment || t.studio_partner) && (
+            {/* studio_partner (錄音室) is internal-only — never shown to clients. */}
+            {t.equipment && (
               <div className="mb-7 grid gap-2 text-sm text-gray-400">
-                {t.equipment && <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.equipment}</span></p>}
-                {t.studio_partner && <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><a href={t.studio_partner.startsWith('http') ? t.studio_partner : `https://${t.studio_partner}`} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 break-all">{tx('配合錄音室', '合作录音室', 'Partner studio')}</a></p>}
+                <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.equipment}</span></p>
               </div>
             )}
 
