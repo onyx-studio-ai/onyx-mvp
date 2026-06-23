@@ -3,6 +3,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { talentReviewEmail } from '@/lib/mail-templates';
+import { translateFields } from '@/lib/translate';
 
 /*
   Admin publish: promote a talent's current DRAFT (the talents row) into the
@@ -10,10 +11,10 @@ import { talentReviewEmail } from '@/lib/mail-templates';
   changes what clients see — talent self-edits never do. Also flips is_active=true
   (first publish), so this doubles as the onboarding go-live step.
 
-  bioTranslations is the admin's manual i18n of the bio (Phase 1 — auto-translate
-  comes later once a translation key is configured). Stored as {locale: text} so
-  the public profile shows the viewer's language; falls back to the plain draft
-  bio for any locale the admin left blank.
+  Free-text fields (bio, clients, awards, notable work, special skills) are
+  auto-translated to {zh-TW, zh-CN, en} via DeepL (lib/translate) so the public
+  profile shows each viewer their own language. The admin's manual bioTranslations
+  override the auto bio per locale. Degrades to originals if DEEPL_API_KEY is unset.
 
   Only public-safe fields go into the snapshot — never email/phone/payment_details
   /internal_cost/auth_user_id.
@@ -38,13 +39,24 @@ export async function POST(request: NextRequest) {
     // No generated DB types → loose row.
     const t = data as unknown as Record<string, unknown>;
 
-    // Build the bio i18n object from the admin's translations, falling back to the
-    // draft bio for any blank locale. If nothing was provided, keep the plain bio.
-    const tr = (body.bioTranslations || {}) as Record<string, string>;
     const draftBio = (t.bio as string) || '';
-    const bioObj: Record<string, string> = {};
-    const tw = (tr['zh-TW'] || draftBio || '').trim(); // zh-TW always present (draft fallback)
-    if (tw) bioObj['zh-TW'] = tw;
+
+    // Auto-translate the free-text fields to {zh-TW,zh-CN,en} via DeepL (source
+    // auto-detected). Degrades gracefully to originals if no key / on error.
+    const trf = await translateFields({
+      bio: draftBio,
+      clients: (t.clients as string) || '',
+      awards: (t.awards as string) || '',
+      notable_works: (t.notable_works as string) || '',
+      special_skills: (t.special_skills as string) || '',
+    });
+
+    // bio: auto-translation as the base; the admin's manual dialog entries (if any)
+    // override per locale.
+    const tr = (body.bioTranslations || {}) as Record<string, string>;
+    const autoBio = trf.bio;
+    const bioObj: Record<string, string> = autoBio && typeof autoBio === 'object' ? { ...autoBio } : draftBio ? { 'zh-TW': draftBio } : {};
+    if ((tr['zh-TW'] || '').trim()) bioObj['zh-TW'] = tr['zh-TW'].trim();
     if ((tr['zh-CN'] || '').trim()) bioObj['zh-CN'] = tr['zh-CN'].trim();
     if ((tr['en'] || '').trim()) bioObj['en'] = tr['en'].trim();
     const snapshotBio = Object.keys(bioObj).length > 0 ? bioObj : draftBio;
@@ -67,10 +79,10 @@ export async function POST(request: NextRequest) {
       availability_note: t.availability_note || null,
       equipment: t.equipment || null,
       studio_partner: t.studio_partner || null,
-      clients: t.clients || null,
-      awards: t.awards || null,
-      notable_works: t.notable_works || null,
-      special_skills: t.special_skills || null,
+      clients: trf.clients ?? t.clients ?? null,
+      awards: trf.awards ?? t.awards ?? null,
+      notable_works: trf.notable_works ?? t.notable_works ?? null,
+      special_skills: trf.special_skills ?? t.special_skills ?? null,
       category: t.category || null,
     };
 

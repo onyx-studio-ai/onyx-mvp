@@ -14,6 +14,7 @@ import { useLocale } from 'next-intl';
 import { ArrowLeft, MessageSquare, MapPin, Mic2 } from 'lucide-react';
 import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, type DemoItem } from '@/lib/talent-taxonomy';
 import { cjkSpace } from '@/lib/cjk-space';
+import { pickLocale } from '@/lib/i18n-pick';
 
 interface Talent {
   id: string;
@@ -33,10 +34,10 @@ interface Talent {
   location?: string;
   availability_note?: string;
   credits?: string;
-  clients?: string;
-  awards?: string;
-  notable_works?: string;
-  special_skills?: string;
+  clients?: string | Record<string, string>;
+  awards?: string | Record<string, string>;
+  notable_works?: string | Record<string, string>;
+  special_skills?: string | Record<string, string>;
   equipment?: string;
   studio_partner?: string;
 }
@@ -100,6 +101,11 @@ export default function TalentProfile() {
   const ageLabel = (t?.voice_ages || []).map((a) => voiceAgeLabel(a, locale)).join(' / ');
   const metaLine = [genderLabel(t?.gender), ageLabel, t?.location ? countryLabel(t.location, locale) : ''].filter(Boolean).join(' · ');
   const availabilityKeys = (t?.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
+  // Credit fields may be plain strings (legacy) or {locale:text} (auto-translated).
+  const clientsT = cjkSpace(pickLocale(t?.clients, locale));
+  const notableT = cjkSpace(pickLocale(t?.notable_works, locale));
+  const awardsT = cjkSpace(pickLocale(t?.awards, locale));
+  const skillsT = cjkSpace(pickLocale(t?.special_skills, locale));
 
   return (
     <main className="min-h-screen bg-[#050505] text-white">
@@ -159,21 +165,21 @@ export default function TalentProfile() {
               );
             })()}
 
-            {t.special_skills && (
+            {skillsT && (
               <div className="mb-4">
                 <p className="text-xs text-gray-500 mb-1.5">{tx('特殊技能 / 模仿', '特殊技能 / 模仿', 'Special skills & impressions')}</p>
-                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(t.special_skills)}</p>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{skillsT}</p>
               </div>
             )}
 
             {bioText && <p className="text-sm text-gray-300 leading-relaxed mb-6 mt-2 whitespace-pre-line">{cjkSpace(bioText)}</p>}
 
-            {(t.clients || t.awards || t.notable_works || t.credits) && (
+            {(clientsT || awardsT || notableT || t.credits) && (
               <div className="mb-5 space-y-3">
-                {t.clients && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作品牌 / 客戶', '合作品牌 / 客户', 'Clients & brands')}</p><p className="text-sm text-gray-300 leading-relaxed">{cjkSpace(t.clients)}</p></div>)}
-                {t.notable_works && (<div><p className="text-xs text-gray-500 mb-1">{tx('代表作', '代表作', 'Notable work')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(t.notable_works)}</p></div>)}
-                {t.awards && (<div><p className="text-xs text-gray-500 mb-1">{tx('獎項', '奖项', 'Awards')}</p><p className="text-sm text-gray-300 leading-relaxed">{cjkSpace(t.awards)}</p></div>)}
-                {!t.clients && !t.awards && !t.notable_works && t.credits && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(t.credits)}</p></div>)}
+                {clientsT && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作品牌 / 客戶', '合作品牌 / 客户', 'Clients & brands')}</p><p className="text-sm text-gray-300 leading-relaxed">{clientsT}</p></div>)}
+                {notableT && (<div><p className="text-xs text-gray-500 mb-1">{tx('代表作', '代表作', 'Notable work')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{notableT}</p></div>)}
+                {awardsT && (<div><p className="text-xs text-gray-500 mb-1">{tx('獎項', '奖项', 'Awards')}</p><p className="text-sm text-gray-300 leading-relaxed">{awardsT}</p></div>)}
+                {!clientsT && !awardsT && !notableT && t.credits && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(typeof t.credits === 'string' ? t.credits : '')}</p></div>)}
               </div>
             )}
 
