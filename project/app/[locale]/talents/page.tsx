@@ -30,6 +30,7 @@ interface Talent {
   voice_traits?: string[];
   specialties?: string[];
   voice_ages?: string[];
+  tags?: string[];
   gender?: string;
   accent?: string;
   location?: string;
@@ -42,6 +43,18 @@ interface Talent {
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase();
 // Base language key of a stored entry ("english/hongkong" -> "english").
 const langBase = (v: string) => (v || '').split('/')[0];
+
+// Services a real talent ACCEPTS (distinct from 用途/demo categories). Stored in
+// talents.tags as canonical English on approval (from the application coop_* opt-ins),
+// so a client can filter for, e.g., who's open to TTS-data or proofreading work.
+const SERVICE_LABEL: Record<string, { tw: string; cn: string; en: string }> = {
+  'AI Voice':       { tw: 'AI 聲音',  cn: 'AI 声音',  en: 'AI Voice' },
+  'TTS Data':       { tw: 'TTS 訓練', cn: 'TTS 训练', en: 'TTS Data' },
+  'Proofreading':   { tw: '語音校對', cn: '语音校对', en: 'Proofreading' },
+  'Voice Director': { tw: '聲音導演', cn: '声音导演', en: 'Voice Director' },
+};
+const SERVICE_KEYS = Object.keys(SERVICE_LABEL);
+const servicesOf = (tags?: string[]) => (tags || []).filter((g) => SERVICE_KEYS.includes(g));
 const fmtTime = (s: number) => {
   if (!isFinite(s) || s < 0) s = 0;
   const m = Math.floor(s / 60), r = Math.floor(s % 60);
@@ -62,6 +75,7 @@ export default function TalentRoster() {
   const [age, setAge] = useState('');
   const [trait, setTrait] = useState('');
   const [useCase, setUseCase] = useState('');
+  const [service, setService] = useState('');   // accepted service type (TTS / proofreading / …)
 
   // --- persistent now-playing player (single audio element) ---
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -109,6 +123,13 @@ export default function TalentRoster() {
   }, [talents]);
   const topLangs = langCounts.slice(0, 6);
 
+  // Service types actually present in the roster (preserve canonical order).
+  const presentServices = useMemo(() => {
+    const set = new Set<string>();
+    talents.forEach((t) => servicesOf(t.tags).forEach((s) => set.add(s)));
+    return SERVICE_KEYS.filter((k) => set.has(k));
+  }, [talents]);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return talents.filter((t) => {
@@ -117,18 +138,20 @@ export default function TalentRoster() {
       if (age && !(t.voice_ages || []).includes(age)) return false;
       if (trait && !(t.voice_traits || []).includes(trait)) return false;
       if (useCase && !(t.specialties || []).includes(useCase) && !(t.demos || []).some((d) => d.category === useCase)) return false;
+      if (service && !servicesOf(t.tags).includes(service)) return false;
       if (term) {
         const hay = [
           t.name, t.accent, t.location ? countryLabel(t.location, locale) : '',
           ...(t.languages || []).map((l) => formatLangEntry(l, locale)),
           ...(t.voice_traits || []).map((k) => traitLabel(k, locale)),
           ...(t.specialties || []).map((k) => useCaseLabel(k, locale)),
+          ...servicesOf(t.tags).map((k) => SERVICE_LABEL[k] ? (isZhCN ? SERVICE_LABEL[k].cn : isZh ? SERVICE_LABEL[k].tw : SERVICE_LABEL[k].en) : k),
         ].join(' ').toLowerCase();
         if (!hay.includes(term)) return false;
       }
       return true;
     });
-  }, [talents, q, lang, gender, age, trait, useCase, locale]);
+  }, [talents, q, lang, gender, age, trait, useCase, service, locale, isZh, isZhCN]);
 
   const togglePlay = (t: Talent) => {
     const pd = primaryDemo(t);
@@ -194,6 +217,12 @@ export default function TalentRoster() {
             <option value="">{tx('用途', '用途', 'Use case')}</option>
             {USE_CASES.map((u) => <option key={u.key} value={u.key}>{useCaseLabel(u.key, locale)}</option>)}
           </select>
+          {presentServices.length > 0 && (
+            <select className={selectCls} value={service} onChange={(e) => setService(e.target.value)}>
+              <option value="">{tx('可配合項目', '可配合项目', 'Services')}</option>
+              {presentServices.map((k) => <option key={k} value={k}>{tx(SERVICE_LABEL[k].tw, SERVICE_LABEL[k].cn, SERVICE_LABEL[k].en)}</option>)}
+            </select>
+          )}
         </div>
 
         {/* language quick-chips with counts — the "genre" row */}
@@ -253,6 +282,7 @@ export default function TalentRoster() {
                   </div>
 
                   {(t.languages || []).length > 0 && pills(t.languages || [], (k) => formatLangEntry(k, locale), 'bg-zinc-800 text-gray-300')}
+                  {servicesOf(t.tags).length > 0 && pills(servicesOf(t.tags), (k) => tx(SERVICE_LABEL[k].tw, SERVICE_LABEL[k].cn, SERVICE_LABEL[k].en), 'bg-sky-500/10 text-sky-300 border border-sky-500/30')}
                   {(t.voice_traits || []).length > 0 && pills(t.voice_traits || [], (k) => traitLabel(k, locale), 'bg-amber-500/10 text-amber-300/90')}
 
                   <Link href={`/${locale}/talents/${t.id}`} className="mt-auto inline-flex items-center gap-1 text-sm text-amber-300 hover:text-amber-200">
