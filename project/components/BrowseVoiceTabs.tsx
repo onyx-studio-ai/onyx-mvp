@@ -20,10 +20,10 @@ export default function BrowseVoiceTabs() {
 
   return (
     <div className="inline-flex gap-1 p-1 rounded-full bg-white/[0.04] border border-white/10 mb-6">
-      <Link href="/voices" className={`${base} ${aiActive ? 'bg-blue-500 text-white' : 'text-gray-300 hover:text-white'}`}>
+      <Link href="/voices" className={`${base} ${aiActive ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : 'text-gray-300 hover:text-white'}`}>
         {tx('AI 聲音', 'AI 声音', 'AI Voices')}
       </Link>
-      <Link href="/talents" className={`${base} ${!aiActive ? 'bg-amber-500 text-black' : 'text-gray-300 hover:text-white'}`}>
+      <Link href="/talents" className={`${base} ${!aiActive ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : 'text-gray-300 hover:text-white'}`}>
         {tx('真人配音員', '真人配音员', 'Human Talent')}
       </Link>
     </div>
