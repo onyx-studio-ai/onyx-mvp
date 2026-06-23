@@ -278,7 +278,7 @@ export default function TalentRoster() {
                       )}
                       {pd && (
                         <button onClick={() => togglePlay(t)} aria-label={tx('播放試聽', '播放试听', 'Play demo')}
-                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-white flex items-center justify-center">
+                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center hover:bg-amber-400">
                           {isNow && playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
                         </button>
                       )}
@@ -293,7 +293,7 @@ export default function TalentRoster() {
                   {servicesOf(t.tags).length > 0 && pills(servicesOf(t.tags), (k) => tx(SERVICE_LABEL[k].tw, SERVICE_LABEL[k].cn, SERVICE_LABEL[k].en), 'bg-sky-500/10 text-sky-300 border border-sky-500/30')}
                   {(t.voice_traits || []).length > 0 && pills(t.voice_traits || [], (k) => traitLabel(k, locale), 'bg-amber-500/10 text-amber-300/90')}
 
-                  <Link href={`/${locale}/talents/${t.id}`} className="mt-auto inline-flex items-center gap-1 text-sm text-gray-200 hover:text-white">
+                  <Link href={`/${locale}/talents/${t.id}`} className="mt-auto inline-flex items-center gap-1 text-sm text-amber-300 hover:text-amber-200">
                     {tx('查看 / 洽詢', '查看 / 洽询', 'View / enquire')} <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -317,7 +317,7 @@ export default function TalentRoster() {
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
             <button onClick={() => { const a = audioRef.current; if (!a) return; if (a.paused) a.play().catch(() => {}); else a.pause(); }}
               aria-label={playing ? tx('暫停', '暂停', 'Pause') : tx('播放', '播放', 'Play')}
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-white flex items-center justify-center flex-none">
+              className="w-9 h-9 rounded-full bg-amber-500 text-black flex items-center justify-center hover:bg-amber-400 flex-none">
               {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
             </button>
             <div className="min-w-0 w-32 sm:w-44 flex-none">
@@ -326,7 +326,7 @@ export default function TalentRoster() {
             </div>
             <input type="range" min={0} max={dur || 0} value={cur} step={0.1}
               onChange={(e) => { const a = audioRef.current; if (a) a.currentTime = Number(e.target.value); }}
-              className="flex-1 accent-white h-1" aria-label={tx('進度', '进度', 'Seek')} />
+              className="flex-1 accent-amber-500 h-1" aria-label={tx('進度', '进度', 'Seek')} />
             <span className="text-[11px] text-gray-400 tabular-nums flex-none w-20 text-right">{fmtTime(cur)} / {fmtTime(dur)}</span>
           </div>
         </div>
