@@ -1,5 +1,6 @@
 import { Toaster } from '@/components/ui/sonner';
 import Navbar from '@/components/Navbar';
+import RecoveryRedirect from '@/components/RecoveryRedirect';
 import { SelectionProvider } from '@/contexts/SelectionContext';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
@@ -116,6 +117,7 @@ export default async function LocaleLayout({
       />
       <NextIntlClientProvider messages={messages}>
         <SelectionProvider>
+          <RecoveryRedirect />
           <Navbar />
           {children}
           <Toaster />
