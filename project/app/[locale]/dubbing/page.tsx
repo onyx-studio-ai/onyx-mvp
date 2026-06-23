@@ -145,15 +145,15 @@ export default function DubbingPage() {
 
       {/* HERO */}
       <section className="relative px-4 sm:px-6 lg:px-8 pb-12">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-teal-900/10 via-transparent to-transparent pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
           className="relative max-w-5xl mx-auto text-center"
         >
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-blue-300/25 bg-blue-500/[0.08] px-5 py-2">
-            <span className="w-2 h-2 rounded-full bg-blue-300 animate-pulse" />
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-teal-300/25 bg-teal-500/[0.08] px-5 py-2">
+            <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
             <span className="text-sm tracking-wide text-gray-100 font-medium">
               {tx('影片配音工作室', '影视配音工作室', 'Dubbing Studio')}
             </span>
@@ -167,7 +167,7 @@ export default function DubbingPage() {
 
           {/* Gradient tagline — this is the slogan slot, parallel to the
               homepage's "AI 生成，賦予靈魂" gradient tagline pattern. */}
-          <p className="text-2xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent leading-tight">
+          <p className="text-2xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-cyan-200 via-teal-200 to-emerald-200 bg-clip-text text-transparent leading-tight">
             {tx(
               '一個聲音，跨越 30+ 語種',
               '一个声音，跨越 30+ 语种',
@@ -236,7 +236,7 @@ export default function DubbingPage() {
             transition={{ duration: 0.6 }}
             className="mb-10 text-center"
           >
-            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-blue-300 mb-3">
+            <p className="text-xs font-semibold tracking-[0.25em] uppercase text-teal-300 mb-3">
               {tx('30+ 語種', '30+ 语种', '30+ Languages')}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
@@ -306,8 +306,8 @@ export default function DubbingPage() {
                   className="relative rounded-2xl bg-white/[0.03] border border-white/[0.08] p-7"
                 >
                   <div className="flex items-baseline gap-3 mb-4">
-                    <span className="font-mono text-xs tracking-[0.25em] text-blue-300/70">{w.num}</span>
-                    <Icon className="w-5 h-5 text-blue-300" />
+                    <span className="font-mono text-xs tracking-[0.25em] text-teal-300/70">{w.num}</span>
+                    <Icon className="w-5 h-5 text-teal-300" />
                   </div>
                   <h3 className="text-white font-bold text-lg mb-2 tracking-tight">{w.title}</h3>
                   <p className="text-sm text-gray-400 leading-relaxed">{w.desc}</p>
@@ -342,7 +342,7 @@ export default function DubbingPage() {
                   transition={{ duration: 0.5, delay: i * 0.1 }}
                   className="rounded-2xl bg-white/[0.03] border border-white/[0.08] p-7"
                 >
-                  <Icon className="w-6 h-6 text-blue-300 mb-4" />
+                  <Icon className="w-6 h-6 text-teal-300 mb-4" />
                   <h3 className="text-white font-bold text-lg mb-2 tracking-tight">{c.title}</h3>
                   <p className="text-sm text-gray-400 leading-relaxed">{c.desc}</p>
                 </motion.div>
@@ -381,7 +381,7 @@ export default function DubbingPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="max-w-3xl mx-auto rounded-2xl bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent border border-blue-400/20 p-10 md:p-12 text-center"
+          className="max-w-3xl mx-auto rounded-2xl bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-transparent border border-teal-400/20 p-10 md:p-12 text-center"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
             {tx('送出配音案件需求', '送出配音项目需求', 'Send your dubbing brief')}
@@ -395,7 +395,7 @@ export default function DubbingPage() {
           </p>
           <Link
             href="/dubbing/brief"
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 font-semibold hover:from-blue-700 hover:to-cyan-700 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-8 py-4 font-semibold hover:from-teal-700 hover:to-cyan-700 transition-colors"
           >
             {tx('送出配音需求', '送出配音需求', 'Submit dubbing brief')}
             <ArrowRight className="w-5 h-5" aria-hidden="true" />

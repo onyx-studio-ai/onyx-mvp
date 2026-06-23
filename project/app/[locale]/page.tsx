@@ -56,7 +56,7 @@ export default function LobbyPage() {
       featured: false,
     },
     {
-      id: 'video', number: '03', icon: Globe, accent: 'text-cyan-300',
+      id: 'video', number: '03', icon: Globe, accent: 'text-teal-300',
       title: t('videoTitle'),
       description: t('videoDesc'),
       href: '/dubbing',
