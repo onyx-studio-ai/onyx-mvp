@@ -1437,19 +1437,29 @@ export default function AdminTalentsPage() {
                   <div className="flex gap-2">
                     {(() => {
                       const tt = talent as Talent & { onboarded_at?: string; pending_review?: boolean };
-                      // Only act once the talent has actually SUBMITTED for review.
-                      const needsPublish = !!tt.pending_review;
-                      if (!needsPublish) return null;
-                      return (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> 審核
+                      // Pending submission → review (approve / send back).
+                      if (tt.pending_review) {
+                        return (
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700">
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> 審核
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => { setRejectTarget(talent); setRejectReason(''); }} className="h-8 px-3 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-700">
+                              <Send className="w-3.5 h-3.5 mr-1" /> 退回
+                            </Button>
+                          </>
+                        );
+                      }
+                      // Already live → allow re-publishing to regenerate the public
+                      // snapshot (e.g. after a translation-logic change or field-visibility change).
+                      if (talent.is_active) {
+                        return (
+                          <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 border-gray-300 text-gray-600 hover:bg-gray-100">
+                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> 重新發布
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => { setRejectTarget(talent); setRejectReason(''); }} className="h-8 px-3 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-700">
-                            <Send className="w-3.5 h-3.5 mr-1" /> 退回
-                          </Button>
-                        </>
-                      );
+                        );
+                      }
+                      return null;
                     })()}
                     <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900">
                       <Edit className="w-3.5 h-3.5 mr-1" /> Edit
