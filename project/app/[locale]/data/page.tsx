@@ -377,7 +377,7 @@ export default function DataPage() {
           </p>
           <Link
             href="/data/brief"
-            className="inline-flex items-center gap-2 rounded-full bg-white text-black px-8 py-4 font-semibold hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-black px-8 py-4 font-semibold hover:from-amber-400 hover:to-orange-400 transition-colors"
           >
             {tx('送出資料需求', '送出资料需求', 'Submit voice-data brief')}
             <ArrowRight className="w-5 h-5" aria-hidden="true" />

@@ -395,7 +395,7 @@ export default function DubbingPage() {
           </p>
           <Link
             href="/dubbing/brief"
-            className="inline-flex items-center gap-2 rounded-full bg-white text-black px-8 py-4 font-semibold hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 font-semibold hover:from-blue-700 hover:to-cyan-700 transition-colors"
           >
             {tx('送出配音需求', '送出配音需求', 'Submit dubbing brief')}
             <ArrowRight className="w-5 h-5" aria-hidden="true" />
