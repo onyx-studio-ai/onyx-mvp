@@ -225,7 +225,7 @@ export default function TalentProfile() {
               </div>
             )}
 
-            <Link href={`/${locale}/contact?talent=${encodeURIComponent(t.name)}`}
+            <Link href={`/${locale}/hire?talent=${encodeURIComponent(t.name)}&talentId=${t.id}`}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500 text-black font-medium hover:bg-amber-400 transition-colors">
               <MessageSquare className="w-4 h-4" /> {tx('洽詢這位配音', '洽询这位配音', 'Enquire about this talent')}
             </Link>

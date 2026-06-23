@@ -90,11 +90,16 @@ export default function Hire() {
   // Tailored entry: arriving from the "100% Live Studio" pricing card (?from=live-studio)
   // pre-selects the live online session and hides the AI-routing options (they already chose human).
   const [isLiveStudio, setIsLiveStudio] = useState(false);
+  // Arriving from a talent profile's "Enquire" — pre-fills the requested talent;
+  // the rest of the brief is still required.
+  const [requestedTalent, setRequestedTalent] = useState('');
+  const [requestedTalentId, setRequestedTalentId] = useState('');
   useEffect(() => {
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'live-studio') {
-      setIsLiveStudio(true);
-      setWantsLiveSession(true);
-    }
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('from') === 'live-studio') { setIsLiveStudio(true); setWantsLiveSession(true); }
+    const t = sp.get('talent'); if (t) setRequestedTalent(t);
+    const tid = sp.get('talentId'); if (tid) setRequestedTalentId(tid);
   }, []);
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
@@ -137,6 +142,11 @@ export default function Hire() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          // Prepend the requested talent into the brief so it's visible regardless
+          // of schema, and also pass it as explicit fields.
+          brief: requestedTalent ? `${tx('指定配音員', '指定配音员', 'Requested talent')}: ${requestedTalent}\n\n${form.brief}` : form.brief,
+          requested_talent: requestedTalent,
+          requested_talent_id: requestedTalentId,
           content_type: contentType,
           categories: contentType ? [contentType] : [],
           has_singing: hasSinging,
@@ -189,6 +199,16 @@ export default function Hire() {
           </div>
         ) : (
           <p className="text-xs text-gray-500 mb-8">{tx('這裡是真人配音發案。需要 AI 配音 / TTS 或 AI 訓練資料?在「案件類型」選對應項,我們帶你去對的工作室。', '这里是真人配音发案。需要 AI 配音 / TTS 或 AI 训练资料?在「案件类型」选对应项,我们带你去对的工作室。', 'This is for human voiceover. Need AI / TTS or AI training data? Pick it under “Project type” and we’ll point you to the right studio.')}</p>
+        )}
+
+        {requestedTalent && (
+          <div className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-300">{tx('指定配音員:', '指定配音员:', 'Requested talent:')} {requestedTalent}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{tx('已為您指定這位配音員。請補齊以下需求,我們會據此回覆報價。', '已为您指定这位配音员。请补齐以下需求,我们会据此回复报价。', 'This talent is attached to your enquiry. Fill in the brief below and we’ll quote accordingly.')}</p>
+            </div>
+            <button type="button" onClick={() => { setRequestedTalent(''); setRequestedTalentId(''); }} className="shrink-0 text-xs text-gray-400 hover:text-white">{tx('移除', '移除', 'Remove')}</button>
+          </div>
         )}
 
         <div className="space-y-8">

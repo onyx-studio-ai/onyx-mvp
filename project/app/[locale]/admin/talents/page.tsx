@@ -1349,10 +1349,9 @@ export default function AdminTalentsPage() {
                       </div>
                     );
                     if (status === 'requested') return (
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-amber-700" />
-                        <span className="text-amber-700 text-xs font-medium">Requested</span>
-                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleSendVoiceIdRequest(talent.id)} disabled={sendingVoiceId === talent.id} className="text-amber-700 hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs">
+                        {sendingVoiceId === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} Requested · 重發
+                      </Button>
                     );
                     return (
                       <Button
@@ -1404,10 +1403,9 @@ export default function AdminTalentsPage() {
                       </div>
                     );
                     if (s === 'sent') return (
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-amber-700" />
-                        <span className="text-amber-700 text-xs font-medium">已寄出</span>
-                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleSendLiveness(talent.id)} disabled={sendingLiveness === talent.id} className="text-amber-700 hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs">
+                        {sendingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} 已寄出 · 重發
+                      </Button>
                     );
                     return (
                       <Button variant="ghost" size="sm" onClick={() => handleSendLiveness(talent.id)} disabled={sendingLiveness === talent.id} className={`hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs ${s === 'rejected' ? 'text-red-600' : 'text-gray-500'}`}>
