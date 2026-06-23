@@ -942,7 +942,7 @@ export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; da
       l2: '請點下方按鈕設定您的登入密碼:',
       cta: '設定密碼',
       l3: `設定完成後,日後可隨時於 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音員後台</a> 登入管理。`,
-      note: '此連結 24 小時內有效。若您並未報名 Onyx Studios,請忽略此信。',
+      note: '此連結 24 小時內有效;若已過期,請至登入頁點「忘記密碼」、輸入此 Email 即可重新索取。若您並未報名 Onyx Studios,請忽略此信。',
     },
     cn: {
       subject: '设置密码 · 开通您的 Onyx 配音员后台',
@@ -954,7 +954,7 @@ export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; da
       l2: '请点下方按钮设置您的登录密码:',
       cta: '设置密码',
       l3: `设置完成后,日后可随时在 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音员后台</a> 登录管理。`,
-      note: '此链接 24 小时内有效。若您并未报名 Onyx Studios,请忽略此邮件。',
+      note: '此链接 24 小时内有效;若已过期,请至登录页点「忘记密码」、输入此 Email 即可重新索取。若您并未报名 Onyx Studios,请忽略此邮件。',
     },
     en: {
       subject: 'Set Your Password · Activate Your Onyx Talent Dashboard',
@@ -966,7 +966,7 @@ export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; da
       l2: 'Click the button below to set your login password:',
       cta: 'Set Password',
       l3: `Once set, you can log in anytime at your <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">Talent Dashboard</a>.`,
-      note: 'This link is valid for 24 hours. If you did not apply to Onyx Studios, please ignore this email.',
+      note: 'This link is valid for 24 hours; if it expires, go to the sign-in page, click “Forgot password” and enter this email to get a new one. If you did not apply to Onyx Studios, please ignore this email.',
     },
   }[L];
   const P = (t: string) => `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${t}</p>`;
@@ -1042,9 +1042,9 @@ export function quoteReceivedEmail(p: { talentName: string; briefNumber?: string
 export function passwordResetEmail(p: { resetLink: string; locale?: string }): { subject: string; html: string } {
   const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
   const C = {
-    tw: { subject: '重設您的 Onyx Studios 密碼', headline: '重設密碼', sub: '我們收到了重設密碼的請求。', card: '密碼重設', l1: '請點下方按鈕,為您的 Onyx Studios 帳號設定新密碼。此連結將於 1 小時後失效。', note: '若您並未要求重設密碼,請忽略此信,您的密碼不會被變更。', cta: '重設密碼' },
-    cn: { subject: '重置您的 Onyx Studios 密码', headline: '重置密码', sub: '我们收到了重置密码的请求。', card: '密码重置', l1: '请点击下方按钮,为您的 Onyx Studios 账号设置新密码。此链接将在 1 小时后失效。', note: '若您并未要求重置密码,请忽略此邮件,您的密码不会被更改。', cta: '重置密码' },
-    en: { subject: 'Reset Your Onyx Studios Password', headline: 'Reset Your Password', sub: 'We received a request to reset your password.', card: 'Password Reset', l1: 'Click the button below to set a new password for your Onyx Studios account. This link will expire in 1 hour.', note: 'If you did not request a password reset, you can safely ignore this email. Your password will not be changed.', cta: 'Reset Password' },
+    tw: { subject: '重設您的 Onyx Studios 密碼', headline: '重設密碼', sub: '我們收到了重設密碼的請求。', card: '密碼重設', l1: '請點下方按鈕,為您的 Onyx Studios 帳號設定新密碼。此連結將於 24 小時後失效;逾期請再按一次「忘記密碼」重新索取。', note: '若您並未要求重設密碼,請忽略此信,您的密碼不會被變更。', cta: '重設密碼' },
+    cn: { subject: '重置您的 Onyx Studios 密码', headline: '重置密码', sub: '我们收到了重置密码的请求。', card: '密码重置', l1: '请点击下方按钮,为您的 Onyx Studios 账号设置新密码。此链接将在 24 小时后失效;逾期请再按一次「忘记密码」重新索取。', note: '若您并未要求重置密码,请忽略此邮件,您的密码不会被更改。', cta: '重置密码' },
+    en: { subject: 'Reset Your Onyx Studios Password', headline: 'Reset Your Password', sub: 'We received a request to reset your password.', card: 'Password Reset', l1: 'Click the button below to set a new password for your Onyx Studios account. This link expires in 24 hours; if it expires, just click “Forgot password” again to get a new one.', note: 'If you did not request a password reset, you can safely ignore this email. Your password will not be changed.', cta: 'Reset Password' },
   }[L];
   const content = `
     ${headlineBlock(C.headline, C.sub, '#3b82f6')}
