@@ -89,7 +89,8 @@
 | `eric_sovits_v2pro_final.pth` | **SoVITS v2Pro 最終權重 → production 用這個** | 908 MB | — |
 | `eric_ref.wav` ⭐ | **production ref(楊日漢授權聲明)** | 1.3 MB | `我是楊日漢，我確認本段聲音由我本人於2026年3月18號親自錄製。` |
 | `eric_ref_high.wav` | 廣告稿乾淨版(FAAM0113 的處理版) | 1.2 MB | `年度最大電玩展強勢登場。主機與遊戲片整套購買，立即為您省下兩千元。` |
-| `eric_train_data/` (419 wav + `eric_filelist.txt`) | 原始訓練資料 | 424 MB | — |
+| `eric_train_data/` (419 wav + `eric_filelist.txt`) | 原始訓練資料(切片,48k/16bit/~8s) | 424 MB | — |
+| `…/訓練資料/eric/TTS 1小時 Eric音檔/` ⭐ | **完整語料庫** | — | `eric_training_dataset.csv`(417 句,**id/text/emotion/speed** 標,挑 ref 神器)+ `原檔/`(長錄音 FAAM001-128 等 48k/24bit)+ `聲音認證.wav`(57s 自然講話)。風格=溫暖旁白+促銷口播 |
 
 > **⚠️ 2026-05-30 踩坑:** voice-ai-platform `voices.yaml` 一開始用 `FAAM0113.wav` (raw 訓練廣告片段) 當 ref → **大陸腔**。
 > GPT 才訓 15 epoch,prosody 高度依賴 ref,**ref 用了廣告腔的訓練資料 = 結果就是廣告腔/大陸腔**。
