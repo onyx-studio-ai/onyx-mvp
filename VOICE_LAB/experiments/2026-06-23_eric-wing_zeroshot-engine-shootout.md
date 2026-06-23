@@ -27,14 +27,19 @@
 
 ## 1. 固定變因(三個 arm 都用同一份)
 
-### Reference 音檔(都在本機,別重錄)
-| 用途 | 檔案(絕對路徑) | prompt_text(一字不漏對齊) | lang |
-|---|---|---|---|
-| Eric 普通話 ref | `/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/eric_ref.wav` ✅ 48k/mono/24bit/8.7s | `我是楊日漢,我確認本段聲音由我本人於2026年3月18號親自錄製。` | zh |
-| Wing 粵語 ref | `/Volumes/WingAI SSD/Claude/Projects/工程部/訓練資料/Wing/transcripts/wing_ads_sliced/wing_ads_0004.wav` ⚠️ 44.1k/mono/16bit/**3.4s(偏短)** | `無間斷收聽音樂,全無限制。` | yue |
+### Reference 音檔 — 語料庫驅動,ref 選擇也是變因(不要只用一個)
+> **心法**:ref 決定輸出風格與腔。use-case 是「廣告」就該用廣告 ref(要那股廣告能量),不是平鋪直敘的聲明。
+> 舊「廣告 ref → 大陸腔」是**我們弱訓練模型**過度依賴 ref 造成的;強 zero-shot base(Qwen3/CV3,百萬小時)能在台灣腔廣告 ref 下守住台灣腔 —— **這要實測,不能假設**。所以 Eric 兩個 ref 都跑、比較。
 
-> ⚠️ Eric 的 ref **一定用 `eric_ref.wav`(自然講話)**,不要用 `eric_ref_high.wav` / `FAAM0113.wav`(廣告腔訓練片段 → 大陸腔,踩過)。
-> ⚠️ Wing ref 只有 3.4s 偏短(甜蜜點 8-12s)。若粵語輸出不穩,從 `wing_ads_sliced/`(324 切片)挑一段 8-12s 乾淨的重測。**pod 上記得帶這兩個檔上去(都在本機 SSD)。**
+| 用途 | 檔案 | 格式 | prompt_text / 逐字稿來源 |
+|---|---|---|---|
+| **Eric ref-A(廣告腔,對應 ad use-case)** | `…/onyx-platform/eric_train_data/FAAM0113.wav` | 48k/mono/16bit/8.1s | `年度最大電玩展強勢登場!主機與遊戲片整套購買,立即為您省下兩千元。`(`eric_filelist.txt` 內,418 檔都有對齊稿) |
+| **Eric ref-B(自然講話,對照)** | `…/onyx-platform/eric_ref.wav` | 48k/mono/24bit/8.7s | `我是楊日漢,我確認本段聲音由我本人於2026年3月18號親自錄製。` |
+| **Wing 粵語 ref(升級版)** | `…/訓練資料/Wing/Wing/1.zh-hk_audio_08-lc-education_mobile-desk.wav` | **48k/mono/24bit/11.8s** ✅ | 逐字稿在 `…/訓練資料/Wing/wing_edits_chunks_2026-05-29-18-32.json`(跑前撈出對齊文字) |
+
+> ✅ **Wing ref 已換掉 3.4s 廣告切片** → 改用 `Wing/Wing/` 的 `zh-hk_audio` 系列(48k/24bit、11.8–23s、分好類:upsell/proposition/education)。
+> education 那段語氣較自然(非硬銷),11.8s 正好。若要更有廣告能量可改 upsell 系列。**pod 上帶 3 個 ref + 對應逐字稿。**
+> Eric 418 檔(`eric_train_data/`,48k/16bit/~8s,全廣告稿、`eric_filelist.txt` 有逐字稿)= 現成 ref 庫,要哪種語氣就挑哪句。
 
 ### 測試稿(三 arm 念同一份)
 **T1 — 普通話真實廣告(treechildyt 原稿,Eric):**
