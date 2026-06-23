@@ -227,6 +227,19 @@ export const voiceAgeLabel = (key: string, locale: string) => {
   const o = VOICE_AGES.find((x) => x.key === key); return o ? pickLabel(o, locale) : key;
 };
 
+// Typical delivery time (交期) — the question clients ask first.
+export const TURNAROUNDS = [
+  { key: '24h',      tw: '24 小時內', cn: '24 小时内', en: 'Within 24h' },
+  { key: '1-2d',     tw: '1–2 天',    cn: '1–2 天',    en: '1–2 days' },
+  { key: '3-5d',     tw: '3–5 天',    cn: '3–5 天',    en: '3–5 days' },
+  { key: '1w',       tw: '1 週以上',  cn: '1 周以上',  en: '1 week+' },
+  { key: 'flexible', tw: '視專案而定', cn: '视项目而定', en: 'Depends on project' },
+] as const;
+export const TURNAROUND_KEYS = new Set<string>(TURNAROUNDS.map((x) => x.key));
+export const turnaroundLabel = (key: string, locale: string) => {
+  const o = TURNAROUNDS.find((x) => x.key === key); return o ? pickLabel(o, locale) : key;
+};
+
 // Countries (location) — chosen from a searchable dropdown, stored as the key.
 export const COUNTRIES = [
   { key: 'TW', tw: '台灣', cn: '台湾', en: 'Taiwan' },

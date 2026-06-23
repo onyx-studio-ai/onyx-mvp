@@ -24,7 +24,7 @@ import { stripContactsAndLinks } from '@/lib/sanitize-text';
 
 const SNAPSHOT_COLS =
   'id, name, english_name, email, languages, gender, accent, bio, tags, voice_traits, specialties, voice_ages, demos, demo_urls, ' +
-  'headshot_url, sample_url, location, availability_note, equipment, clients, awards, notable_works, special_skills, category';
+  'headshot_url, sample_url, location, availability_note, equipment, clients, awards, notable_works, special_skills, turnaround, years_experience, native_languages, category';
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
@@ -90,6 +90,9 @@ export async function POST(request: NextRequest) {
       sample_url: t.sample_url || null,
       location: t.location || null,
       availability_note: t.availability_note || null,
+      turnaround: t.turnaround || null,
+      years_experience: typeof t.years_experience === 'number' ? t.years_experience : null,
+      native_languages: t.native_languages || [],
       equipment: trf.equipment ?? t.equipment ?? null,
       clients: trf.clients ?? t.clients ?? null,
       awards: trf.awards ?? t.awards ?? null,

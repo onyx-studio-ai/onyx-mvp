@@ -45,13 +45,16 @@ const LANG_OPTIONS = [
   { v: 'Indonesian', tw: '印尼文', cn: '印尼文' },
   { v: 'Thai', tw: '泰文', cn: '泰文' },
   { v: 'Malay', tw: '馬來文', cn: '马来文' },
-  { v: 'Spanish', tw: '西班牙文', cn: '西班牙文' },
+  { v: 'Spanish · Spain', tw: '西班牙文 · 西班牙', cn: '西班牙文 · 西班牙' },
+  { v: 'Spanish · Latin America', tw: '西班牙文 · 拉丁美洲', cn: '西班牙文 · 拉丁美洲' },
   { v: 'French · France', tw: '法文 · 法國', cn: '法文 · 法国' },
   { v: 'French · Canadian', tw: '法文 · 加拿大', cn: '法文 · 加拿大' },
-  { v: 'German', tw: '德文', cn: '德文' },
+  { v: 'German · Germany', tw: '德文 · 德國', cn: '德文 · 德国' },
+  { v: 'German · Austria', tw: '德文 · 奧地利', cn: '德文 · 奥地利' },
   { v: 'Russian', tw: '俄文', cn: '俄文' },
   { v: 'Arabic', tw: '阿拉伯文', cn: '阿拉伯文' },
   { v: 'Portuguese · Brazil', tw: '葡萄牙文 · 巴西', cn: '葡萄牙文 · 巴西' },
+  { v: 'Portuguese · Portugal', tw: '葡萄牙文 · 葡萄牙', cn: '葡萄牙文 · 葡萄牙' },
 ];
 const CATEGORIES = [
   { v: 'Commercial', tw: '廣告', cn: '广告' },
@@ -164,6 +167,7 @@ export default function TalentApply() {
     display_name: '', english_name: '', full_name: '', email: '', phone: '',
     msg_line: '', msg_whatsapp: '', msg_telegram: '',
     gender: '', age_range: '',
+    years_experience: '', turnaround: '',
     microphone_model: '', excluded_countries: '',
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -276,6 +280,8 @@ export default function TalentApply() {
         messaging_contacts: { line: form.msg_line, whatsapp: form.msg_whatsapp, telegram: form.msg_telegram },
         gender: form.gender,
         age_range: form.age_range,
+        years_experience: form.years_experience ? parseInt(form.years_experience, 10) : null,
+        turnaround: form.turnaround || null,
         languages: langs,
         specialties: cats,
         voice_types: feels,
@@ -427,6 +433,19 @@ export default function TalentApply() {
                     {AGES.map((a) => <option key={a.v} value={a.v}>{lbl(a)}</option>)}
                   </select>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div><Label hint={tx('精確年數', '精确年数', 'exact number')}>{tx('配音年資', '配音年资', 'Years of experience')}</Label>
+                  <input className={inputCls} type="number" min="0" max="80" value={form.years_experience} onChange={(e) => set('years_experience', e.target.value)} placeholder={tx('例如:8', '例如:8', 'e.g. 8')} /></div>
+                <div><Label hint={tx('一般交件時間', '一般交件时间', 'typical delivery')}>{tx('交期', '交期', 'Turnaround')}</Label>
+                  <select className={inputCls} value={form.turnaround} onChange={(e) => set('turnaround', e.target.value)}>
+                    <option value="">{tx('— 選擇 —', '— 选择 —', '— Select —')}</option>
+                    <option value="24h">{tx('24 小時內', '24 小时内', 'Within 24h')}</option>
+                    <option value="1-2d">{tx('1–2 天', '1–2 天', '1–2 days')}</option>
+                    <option value="3-5d">{tx('3–5 天', '3–5 天', '3–5 days')}</option>
+                    <option value="1w">{tx('1 週以上', '1 周以上', '1 week+')}</option>
+                    <option value="flexible">{tx('視專案而定', '视项目而定', 'Depends on project')}</option>
+                  </select></div>
               </div>
               <div className="mt-4">
                 <Label req hint={tx('至少 1 項;可搜尋或自訂', '至少 1 项;可搜寻或自订', 'At least 1; search or add your own')}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</Label>

@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { ArrowLeft, MessageSquare, MapPin, Mic2 } from 'lucide-react';
-import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, type DemoItem } from '@/lib/talent-taxonomy';
+import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, turnaroundLabel, type DemoItem } from '@/lib/talent-taxonomy';
 import { cjkSpace } from '@/lib/cjk-space';
 import { pickLocale } from '@/lib/i18n-pick';
 
@@ -21,6 +21,9 @@ interface Talent {
   name: string;
   name_i18n?: Record<string, string>;
   languages?: string[];
+  native_languages?: string[];
+  turnaround?: string;
+  years_experience?: number;
   tags?: string[];
   voice_traits?: string[];
   specialties?: string[];
@@ -103,7 +106,9 @@ export default function TalentProfile() {
   // Display name: locale-aware (English page uses the self-provided English name,
   // 简体 sees 簡→簡 via OpenCC). Falls back to the plain name on legacy snapshots.
   const displayName = pickLocale(t?.name_i18n, locale) || t?.name || '';
-  const metaLine = [genderLabel(t?.gender), ageLabel, t?.location ? countryLabel(t.location, locale) : ''].filter(Boolean).join(' · ');
+  const yrs = typeof t?.years_experience === 'number' && t.years_experience > 0
+    ? tx(`${t.years_experience} 年經驗`, `${t.years_experience} 年经验`, `${t.years_experience} yrs experience`) : '';
+  const metaLine = [genderLabel(t?.gender), ageLabel, t?.location ? countryLabel(t.location, locale) : '', yrs].filter(Boolean).join(' · ');
   const availabilityKeys = (t?.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
   // Credit fields may be plain strings (legacy) or {locale:text} (auto-translated).
   const clientsT = cjkSpace(pickLocale(t?.clients, locale));
@@ -140,7 +145,7 @@ export default function TalentProfile() {
             {(t.languages || []).length > 0 && (
               <div className="mb-4">
                 <p className="text-xs text-gray-500 mb-1.5">{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</p>
-                <div className="flex flex-wrap gap-1.5">{(t.languages || []).map((l) => <span key={l} className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-gray-200">{formatLangEntry(l, locale)}</span>)}</div>
+                <div className="flex flex-wrap gap-1.5">{(t.languages || []).map((l) => { const native = (t.native_languages || []).includes(l); return <span key={l} className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-gray-200">{formatLangEntry(l, locale)}{native && <span className="ml-1 text-emerald-300">· {tx('母語', '母语', 'Native')}</span>}</span>; })}</div>
               </div>
             )}
 
@@ -184,6 +189,13 @@ export default function TalentProfile() {
                 {notableT && (<div><p className="text-xs text-gray-500 mb-1">{tx('代表作', '代表作', 'Notable work')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{notableT}</p></div>)}
                 {awardsT && (<div><p className="text-xs text-gray-500 mb-1">{tx('獎項', '奖项', 'Awards')}</p><p className="text-sm text-gray-300 leading-relaxed">{awardsT}</p></div>)}
                 {!clientsT && !awardsT && !notableT && t.credits && (<div><p className="text-xs text-gray-500 mb-1">{tx('合作單位 / 經歷', '合作单位 / 经历', 'Clients & experience')}</p><p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{cjkSpace(typeof t.credits === 'string' ? t.credits : '')}</p></div>)}
+              </div>
+            )}
+
+            {t.turnaround && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-1">{tx('一般交期', '一般交期', 'Typical turnaround')}</p>
+                <span className="text-sm text-gray-200">{turnaroundLabel(t.turnaround, locale)}</span>
               </div>
             )}
 

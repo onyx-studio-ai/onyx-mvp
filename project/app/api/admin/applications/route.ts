@@ -181,6 +181,9 @@ export async function PATCH(request: NextRequest) {
             // never the legal full_name.
             name: application.display_name || application.full_name,
             english_name: application.english_name || null,
+            turnaround: application.turnaround || null,
+            years_experience: application.years_experience ?? null,
+            native_languages: application.native_languages || [],
             email: application.email || null,
             gender: application.gender || null,
             accent: application.accent || null,

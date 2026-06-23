@@ -27,6 +27,7 @@ interface Talent {
   id: string;
   name: string;
   name_i18n?: Record<string, string>;
+  years_experience?: number;
   type?: string;
   languages?: string[];
   voice_traits?: string[];
@@ -261,7 +262,9 @@ export default function TalentRoster() {
             {filtered.map((t) => {
               const pd = primaryDemo(t);
               const isNow = now?.id === t.id;
-              const meta = [genderLabel(t.gender), (t.voice_ages || []).map((a) => voiceAgeLabel(a, locale)).join('/'), t.location ? countryLabel(t.location, locale) : '']
+              const yrs = typeof t.years_experience === 'number' && t.years_experience > 0
+                ? tx(`${t.years_experience} 年`, `${t.years_experience} 年`, `${t.years_experience}y`) : '';
+              const meta = [genderLabel(t.gender), (t.voice_ages || []).map((a) => voiceAgeLabel(a, locale)).join('/'), t.location ? countryLabel(t.location, locale) : '', yrs]
                 .filter(Boolean).join(' · ');
               return (
                 <div key={t.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-3 hover:border-zinc-600 transition-colors flex flex-col gap-2 min-h-[184px]">

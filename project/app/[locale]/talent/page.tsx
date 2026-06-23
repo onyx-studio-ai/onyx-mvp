@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star } from 'lucide-react';
 import {
-  VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES,
+  VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES, TURNAROUNDS, turnaroundLabel,
   pickLabel, formatLangEntry, baseLangLabel, accentLabel, accentOptionsFor, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
 } from '@/lib/talent-taxonomy';
 
@@ -62,6 +62,7 @@ type Talent = {
   headshot_url: string | null; location: string | null; availability_note: string | null;
   clients: string | null; awards: string | null; notable_works: string | null; special_skills: string | null;
   equipment: string | null; studio_partner: string | null;
+  turnaround: string | null; years_experience: number | null; native_languages: string[] | null;
   type: string; email: string | null; is_active: boolean; pending_review: boolean;
   liveness_status: string | null;
 };
@@ -69,6 +70,7 @@ type ListField = 'voice_traits' | 'specialties' | 'availability' | 'voice_ages';
 type Form = {
   name: string; english_name: string; bio: string; gender: string; location: string; studio_partner: string;
   equipment: string; clients: string; awards: string; notable_works: string; special_skills: string;
+  turnaround: string; years_experience: string; native_languages: string[];
   availability: string[]; languages: string[]; voice_traits: string[]; specialties: string[]; voice_ages: string[];
   headshot_url: string; demos: DemoItem[];
 };
@@ -119,7 +121,8 @@ export default function TalentDashboard() {
   const [t, setT] = useState<Talent | null>(null);
   const [form, setForm] = useState<Form>({
     name: '', english_name: '', bio: '', gender: '', location: '', studio_partner: '', equipment: '',
-    clients: '', awards: '', notable_works: '', special_skills: '', availability: [], languages: [], voice_traits: [], specialties: [], voice_ages: [], headshot_url: '', demos: [],
+    clients: '', awards: '', notable_works: '', special_skills: '', turnaround: '', years_experience: '', native_languages: [],
+    availability: [], languages: [], voice_traits: [], specialties: [], voice_ages: [], headshot_url: '', demos: [],
   });
 
   const [email, setEmail] = useState('');
@@ -152,6 +155,8 @@ export default function TalentDashboard() {
       name: talent.name || '', english_name: talent.english_name || '', bio: talent.bio || '', gender: talent.gender || '',
       location: talent.location || '', studio_partner: talent.studio_partner || '', equipment: talent.equipment || '',
       clients: talent.clients || '', awards: talent.awards || '', notable_works: talent.notable_works || '', special_skills: talent.special_skills || '',
+      turnaround: talent.turnaround || '', years_experience: talent.years_experience != null ? String(talent.years_experience) : '',
+      native_languages: Array.isArray(talent.native_languages) ? talent.native_languages : [],
       availability: (talent.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean),
       languages: Array.isArray(talent.languages) ? talent.languages : [],
       voice_traits: Array.isArray(talent.voice_traits) ? talent.voice_traits : [],
@@ -205,6 +210,8 @@ export default function TalentDashboard() {
         name: form.name, english_name: form.english_name, bio: form.bio, gender: form.gender, location: form.location,
         availability_note: form.availability.join(','), studio_partner: form.studio_partner, equipment: form.equipment,
         clients: form.clients, awards: form.awards, notable_works: form.notable_works, special_skills: form.special_skills,
+        turnaround: form.turnaround, years_experience: form.years_experience ? parseInt(form.years_experience, 10) : null,
+        native_languages: form.native_languages,
         languages: form.languages, voice_traits: form.voice_traits, specialties: form.specialties, voice_ages: form.voice_ages,
         headshot_url: form.headshot_url, demos: form.demos,
       }),
@@ -218,6 +225,8 @@ export default function TalentDashboard() {
           `这些语言还没有对应的 demo:${(j.languages || []).map((l: string) => formatLangEntry(l, locale)).join('、')}`,
           `These languages need a demo: ${(j.languages || []).map((l: string) => formatLangEntry(l, locale)).join(', ')}`,
         ));
+      } else if (j.error === 'demo_without_language') {
+        setSaveErr(tx('每段 demo 都要標示語言(紅框那欄)才能送審。', '每段 demo 都要标示语言(红框那栏)才能送审。', 'Every demo must have a language set (the red field) before submitting.'));
       } else {
         setSaveErr(j.error || tx('儲存失敗,請稍後再試。', '保存失败,请稍后再试。', 'Save failed. Please try again.'));
       }
@@ -403,9 +412,26 @@ export default function TalentDashboard() {
         {/* Bio */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('個人簡介', '个人简介', 'Bio')}</label>
-          <p className="text-xs text-amber-300/80 mb-2">{tx('請勿填寫連結或個人聯絡資訊(電話、Email、社群)—— 系統會自動移除。作品連結請放下方專屬欄位。', '请勿填写链接或个人联系信息(电话、Email、社群)—— 系统会自动移除。作品链接请放下方专属栏位。', 'No links or personal contact info (phone, email, socials) — they’re removed automatically. Put work links in the dedicated field below.')}</p>
+          <p className="text-xs text-amber-300/80 mb-2">{tx('請勿填寫連結或個人聯絡資訊(電話、Email、社群)—— 系統會自動移除。請只描述您的聲音與專長。', '请勿填写链接或个人联系信息(电话、Email、社群)—— 系统会自动移除。请只描述您的声音与专长。', 'No links or personal contact info (phone, email, socials) — they’re removed automatically. Describe your voice and strengths only.')}</p>
           <textarea className={`${inputCls} min-h-[100px] resize-y`} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })}
             placeholder={tx('用您的語言寫即可,上線時我們會翻成其他語言。例如:溫暖知性的女聲,擅長廣告與旁白…', '用您的语言写即可,上线时我们会翻成其他语言。例如:温暖知性的女声,擅长广告与旁白…', 'Write in your own language — we translate it at publish. e.g. Warm, articulate voice, great for ads and narration…')} />
+        </div>
+
+        {/* Experience & turnaround */}
+        <div className={sectionCls}>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>{tx('配音年資', '配音年资', 'Years of experience')}</label>
+              <input type="number" min="0" max="80" className={inputCls} value={form.years_experience} onChange={(e) => setForm({ ...form, years_experience: e.target.value })} placeholder={tx('例如:8', '例如:8', 'e.g. 8')} />
+            </div>
+            <div>
+              <label className={labelCls}>{tx('交期', '交期', 'Turnaround')}</label>
+              <select className={inputCls} value={form.turnaround} onChange={(e) => setForm({ ...form, turnaround: e.target.value })}>
+                <option value="" className="bg-zinc-900">{tx('— 選擇 —', '— 选择 —', '— Select —')}</option>
+                {TURNAROUNDS.map((o) => <option key={o.key} value={o.key} className="bg-zinc-900">{turnaroundLabel(o.key, locale)}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Voice traits + specialties */}
@@ -464,6 +490,22 @@ export default function TalentDashboard() {
               })}
             </div>
           )}
+          {form.languages.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1.5">{tx('哪些是母語?點選標記(客戶頁會標「母語」)', '哪些是母语?点选标记(客户页会标「母语」)', 'Which are native? Tap to mark (shown as “Native” on your profile)')}</p>
+              <div className="flex flex-wrap gap-2">
+                {form.languages.map((v) => {
+                  const isNative = form.native_languages.includes(v);
+                  return (
+                    <button key={v} type="button" onClick={() => setForm((f) => ({ ...f, native_languages: isNative ? f.native_languages.filter((x) => x !== v) : [...f.native_languages, v] }))}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition ${isNative ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400/40' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`}>
+                      {formatLangEntry(v, locale)}{isNative ? ' ✓' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {!langPick ? (
             <div>
               <input className={inputCls} value={langQ} onChange={(e) => setLangQ(e.target.value)} placeholder={tx('搜尋語言,例如:葡萄牙文 / Tagalog', '搜寻语言,例如:葡萄牙文 / Tagalog', 'Search a language, e.g. Portuguese / Tagalog')} />
@@ -519,8 +561,8 @@ export default function TalentDashboard() {
                         <div className="flex items-center gap-2 mb-2">
                           <Music2 className="w-4 h-4 text-amber-400 shrink-0" />
                           <input className="flex-1 min-w-0 bg-transparent text-sm text-gray-200 focus:outline-none border-b border-transparent focus:border-white/20" value={d.name} onChange={(e) => updateDemo(d.url, { name: e.target.value })} placeholder={namePh(c.key)} />
-                          <select className="bg-zinc-900 text-xs text-gray-300 rounded px-1.5 py-1 border border-white/10 max-w-[34%]" value={d.language || ''} onChange={(e) => updateDemo(d.url, { language: e.target.value })}>
-                            <option value="" className="bg-zinc-900">{tx('語言', '语言', 'Language')}</option>
+                          <select className={`bg-zinc-900 text-xs text-gray-300 rounded px-1.5 py-1 border max-w-[34%] ${d.language ? 'border-white/10' : 'border-red-500/60'}`} value={d.language || ''} onChange={(e) => updateDemo(d.url, { language: e.target.value })}>
+                            <option value="" className="bg-zinc-900">{tx('選語言*', '选语言*', 'Language*')}</option>
                             {form.languages.map((l) => <option key={l} value={l} className="bg-zinc-900">{formatLangEntry(l, locale)}</option>)}
                           </select>
                           {form.demos[0]?.url === d.url ? (

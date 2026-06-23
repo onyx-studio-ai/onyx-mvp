@@ -19,11 +19,11 @@ import { stripContactsAndLinks } from '@/lib/sanitize-text';
 // is_active, pricing and the published_snapshot are intentionally excluded.
 // location = country key, availability_note = comma-joined preset keys,
 // studio_partner = URL, clients/awards/notable_works = structured credits.
-const TEXT_FIELDS = ['name', 'english_name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills'] as const;
+const TEXT_FIELDS = ['name', 'english_name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills', 'turnaround'] as const;
 
 const COLS =
   'id, name, english_name, bio, languages, accent, gender, tags, voice_traits, specialties, voice_ages, demos, demo_urls, headshot_url, ' +
-  'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, type, email, is_active, ' +
+  'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, turnaround, years_experience, native_languages, type, email, is_active, ' +
   'pending_review, published_snapshot, liveness_status';
 
 // traits/specialties accept preset keys AND free-text custom values ("其他").
@@ -132,6 +132,16 @@ export async function PATCH(request: NextRequest) {
       if (!Array.isArray(body.voice_ages)) return NextResponse.json({ error: 'voice_ages must be an array' }, { status: 400 });
       updates.voice_ages = [...new Set(body.voice_ages.filter((a: unknown): a is string => typeof a === 'string' && VOICE_AGE_KEYS.has(a)))];
     }
+    // years_experience: a non-negative integer (clamped); native_languages: which
+    // of the talent's languages are native (a free subset, validated as the rest).
+    if ('years_experience' in body) {
+      const n = parseInt(String(body.years_experience), 10);
+      updates.years_experience = Number.isFinite(n) && n >= 0 ? Math.min(n, 80) : null;
+    }
+    if ('native_languages' in body) {
+      if (!Array.isArray(body.native_languages)) return NextResponse.json({ error: 'native_languages must be an array' }, { status: 400 });
+      updates.native_languages = cleanTags(body.native_languages);
+    }
 
     // demos: categorized [{category,name,url,language,seconds}]. Validate bucket,
     // category, per-category cap and the 3-min length cap.
@@ -161,6 +171,12 @@ export async function PATCH(request: NextRequest) {
         });
       }
       updates.demos = cleanDemos;
+    }
+
+    // Every demo must declare its language, or the language filter silently misses
+    // it. Enforced on submit (drafts can still be saved mid-edit).
+    if (submit && cleanDemos && cleanDemos.some((d) => !d.language)) {
+      return NextResponse.json({ error: 'demo_without_language' }, { status: 400 });
     }
 
     // languages: each claimed language MUST be backed by at least one demo in
