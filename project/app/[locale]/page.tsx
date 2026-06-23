@@ -251,7 +251,7 @@ export default function LobbyPage() {
                     )}
                   </p>
 
-                  <div className="flex items-center gap-1.5 text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+                  <div className={`flex items-center gap-1.5 text-sm font-medium ${service.accent} group-hover:opacity-80 transition-opacity`}>
                     <span>{service.type === 'link' ? t('explore') : t('chatSpecialist')}</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </div>
