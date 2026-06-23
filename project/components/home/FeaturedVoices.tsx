@@ -11,7 +11,7 @@ import { supabase, type AudioShowcase } from '@/lib/supabase';
 const CARD_STYLES: { badge: string; gradientColors: [string, string] }[] = [
   { badge: '\u2728 ONYX EXCLUSIVE', gradientColors: ['#1e3a8a', '#7c3aed'] },
   { badge: '\u2728 ONYX EXCLUSIVE', gradientColors: ['#06b6d4', '#8b5cf6'] },
-  { badge: '\u2728 ONYX EXCLUSIVE', gradientColors: ['#dc2626', '#f97316'] },
+  { badge: '\u2728 ONYX EXCLUSIVE', gradientColors: ['#0891b2', '#2563eb'] },
 ];
 
 export default function FeaturedVoices() {

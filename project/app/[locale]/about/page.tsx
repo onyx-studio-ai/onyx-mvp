@@ -39,8 +39,8 @@ export default function AboutPage() {
               <div className="text-5xl font-bold text-cyan-400 mb-2">1,500+</div>
               <div className="text-gray-300 font-medium">{t('statProjectsDelivered')}</div>
             </div>
-            <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-emerald-950/30 to-transparent border border-emerald-500/20">
-              <div className="text-5xl font-bold text-emerald-400 mb-2">28</div>
+            <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-cyan-950/30 to-transparent border border-cyan-500/20">
+              <div className="text-5xl font-bold text-cyan-400 mb-2">28</div>
               <div className="text-gray-300 font-medium">{t('statBroadcastQuality')}</div>
             </div>
           </div>

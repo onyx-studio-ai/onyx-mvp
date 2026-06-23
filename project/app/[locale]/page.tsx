@@ -56,7 +56,7 @@ export default function LobbyPage() {
       featured: false,
     },
     {
-      id: 'video', number: '03', icon: Globe, accent: 'text-emerald-300',
+      id: 'video', number: '03', icon: Globe, accent: 'text-cyan-300',
       title: t('videoTitle'),
       description: t('videoDesc'),
       href: '/dubbing',
@@ -247,7 +247,7 @@ export default function LobbyPage() {
                   <p className="text-sm text-gray-400 leading-relaxed mb-6">
                     {service.description}
                     {service.id === 'voice' && (
-                      <>{' '}<span className="text-teal-300 font-medium">{t('voiceDescHuman')}</span></>
+                      <>{' '}<span className="text-cyan-300 font-medium">{t('voiceDescHuman')}</span></>
                     )}
                   </p>
 
