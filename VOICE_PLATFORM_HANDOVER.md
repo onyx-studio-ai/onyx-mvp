@@ -106,14 +106,17 @@ voices:
     name: Wing (Onyx Studios)
     type: tts
     version: v2Pro
-    gpt_weights: /app/GPT-SoVITS/GPT_weights_v2Pro/wing-v5-e2.ckpt   # 2026-05-31 trained
-    sovits_weights: /app/GPT-SoVITS/SoVITS_weights_v2Pro/wing-v4_e2_s7410.pth
+    gpt_weights: /app/GPT-SoVITS/GPT_weights_v2Pro/wing-v5-e2.ckpt           # 2026-05-31 trained, 7250 step
+    sovits_weights: /app/GPT-SoVITS/SoVITS_weights_v2Pro/wing-v4_e4_s14820.pth  # e4 比 e2 音質改善
     refer_wav_path: /workspace/data/wing_sliced/wing_004915.wav
     prompt_text: 透過在日常生活中進行簡單的改變,就可以幫助你降低患腦退化症的風險。
     prompt_lang: yue
-    temperature: 0.5
+    temperature: 0.5  # 不要用 0.9,雜訊大
     top_p: 0.7
+    top_k: 20
     text_split_method: cut5
+    # ⚠️ 英文混排仍不自然(corpus 沒英文)— 用 tts_smart_wrapper.py 切句送
+    # ⚠️ 長句(>15 字)仍可能截斷,wrapper 可緩解
 
   ahong:
     name: 阿宏 (Onyx Studios)

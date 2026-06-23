@@ -78,17 +78,22 @@
 
 > 2026-05-28 教訓:RunPod pod 被砍 Eric GPT-SoVITS server 連帶消失。所幸權重 backup 在本機。**以後新訓練完一定要 rsync 一份到本機這個位置。**
 
-### Eric (GPT-SoVITS v2Pro,2026-04 訓的)
+### Eric — 楊日漢 (GPT-SoVITS v2Pro,2026-04 訓的,台灣男聲)
 位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/`**
 
-| 檔案 | 用途 | 大小 |
-|---|---|---|
-| `eric_gpt_e15.ckpt` | GPT 模組 epoch 15 | 148 MB |
-| `eric_sovits_e100_s5400.pth` | SoVITS 模組 epoch 100 step 5400(早期 checkpoint) | 81 MB |
-| `eric_sovits_v2pro_final.pth` | **SoVITS v2Pro 最終權重 → production 用這個** | 908 MB |
-| `eric_ref.wav` | TTS 推論用 reference audio | 1.3 MB |
-| `eric_ref_high.wav` | 高品質 reference(乾淨版) | 1.2 MB |
-| `eric_train_data/` (419 wav + `eric_filelist.txt`) | 原始訓練資料 | 424 MB |
+| 檔案 | 用途 | 大小 | 內容 / 對應 prompt_text |
+|---|---|---|---|
+| `eric_gpt_e15.ckpt` | GPT 模組 epoch 15 | 148 MB | — |
+| `eric_sovits_e100_s5400.pth` | SoVITS 模組 epoch 100 step 5400(早期 checkpoint) | 81 MB | — |
+| `eric_sovits_v2pro_final.pth` | **SoVITS v2Pro 最終權重 → production 用這個** | 908 MB | — |
+| `eric_ref.wav` ⭐ | **production ref(楊日漢授權聲明)** | 1.3 MB | `我是楊日漢，我確認本段聲音由我本人於2026年3月18號親自錄製。` |
+| `eric_ref_high.wav` | 廣告稿乾淨版(FAAM0113 的處理版) | 1.2 MB | `年度最大電玩展強勢登場。主機與遊戲片整套購買，立即為您省下兩千元。` |
+| `eric_train_data/` (419 wav + `eric_filelist.txt`) | 原始訓練資料 | 424 MB | — |
+
+> **⚠️ 2026-05-30 踩坑:** voice-ai-platform `voices.yaml` 一開始用 `FAAM0113.wav` (raw 訓練廣告片段) 當 ref → **大陸腔**。
+> GPT 才訓 15 epoch,prosody 高度依賴 ref,**ref 用了廣告腔的訓練資料 = 結果就是廣告腔/大陸腔**。
+> 解法:換成 `eric_ref.wav`(楊日漢的授權聲明,自然講話節奏)→ 台灣腔回來。
+> Production config 永遠用 `eric_ref.wav` + 對應 prompt_text(見上表)。
 
 ### Wing(GPT-SoVITS v2Pro,2026-05-29 訓的,粵語)
 位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/wing_sovits_backup_20260529/`**

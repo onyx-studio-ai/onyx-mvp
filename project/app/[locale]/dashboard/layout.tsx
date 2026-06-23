@@ -1,12 +1,34 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt, Mic2 } from 'lucide-react';
+import { useRouter as useLocaleRouter } from '@/i18n/navigation';
+import { FileAudio, Settings, LogOut, Receipt } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
+
+// Role separation: the client dashboard and the talent portal are two distinct
+// backends. A talent account belongs in /talent and must never see the buyer
+// dashboard. Login + reset-password already route talents to /talent; this guard
+// is the safety net for a talent who lands on /dashboard directly (old bookmark,
+// manual URL) — bounce them to their own module.
+function TalentGuard() {
+  const router = useLocaleRouter();
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const tok = session?.access_token;
+        if (!tok) return;
+        const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
+        if (r.ok) router.replace('/talent');
+      } catch { /* not a talent — stay on the client dashboard */ }
+    })();
+  }, [router]);
+  return null;
+}
 
 function DashboardHeader() {
   const router = useRouter();
@@ -87,24 +109,8 @@ function Sidebar() {
     return value === `dashboard.${key}` ? fallback : value;
   };
 
-  // If this account also has a talent profile, surface a link to the talent
-  // portal (/talent) — where they edit their profile and submit it for review.
-  const [isTalent, setIsTalent] = useState(false);
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const tok = session?.access_token;
-        if (!tok) return;
-        const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
-        if (r.ok) setIsTalent(true);
-      } catch { /* not a talent / no session */ }
-    })();
-  }, []);
-
   const nav = [
     { href: '/dashboard', label: tr('navProjects', '專案') , icon: FileAudio },
-    ...(isTalent ? [{ href: '/talent', label: tr('navTalentProfile', '我的配音員檔案'), icon: Mic2 }] : []),
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票'), icon: Receipt },
     { href: '/dashboard/settings', label: tr('navSettings', '設定'), icon: Settings },
   ];
@@ -188,6 +194,7 @@ function MobileNav() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashboardProvider>
+      <TalentGuard />
       <div className="min-h-screen bg-[#050505]">
         <DashboardHeader />
         <Sidebar />
