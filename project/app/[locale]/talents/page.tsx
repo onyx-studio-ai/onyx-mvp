@@ -20,6 +20,7 @@ import {
   formatLangEntry, baseLangLabel, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
   VOICE_TRAITS, USE_CASES, VOICE_AGES,
 } from '@/lib/talent-taxonomy';
+import { pickLocale } from '@/lib/i18n-pick';
 
 interface Demo { category?: string; name?: string; url: string; language?: string }
 interface Talent {
@@ -102,7 +103,7 @@ export default function TalentRoster() {
   const primaryDemo = (t: Talent): { url: string; label: string } | null => {
     const d = (t.demos || []).find((x) => x?.url);
     if (d) {
-      const label = d.category ? useCaseLabel(d.category, locale) : (d.name || tx('試聽', '试听', 'Demo'));
+      const label = d.category ? useCaseLabel(d.category, locale) : (pickLocale(d.name, locale) || tx('試聽', '试听', 'Demo'));
       return { url: d.url, label };
     }
     const leg = t.demo_urls?.find((x) => x?.url)?.url || t.sample_url;

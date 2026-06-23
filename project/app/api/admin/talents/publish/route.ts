@@ -52,7 +52,16 @@ export async function POST(request: NextRequest) {
       awards: (t.awards as string) || '',
       notable_works: (t.notable_works as string) || '',
       special_skills: (t.special_skills as string) || '',
+      equipment: (t.equipment as string) || '',
     });
+
+    // Demo names are free text too (e.g. 廣告台詞 / 時光小屋) — translate each so the
+    // English page doesn't show Chinese labels. Keyed d0, d1, … to map back by index.
+    const draftDemos = Array.isArray(t.demos) ? (t.demos as Array<Record<string, unknown>>) : [];
+    const nameTrf = await translateFields(
+      Object.fromEntries(draftDemos.map((d, i) => [`d${i}`, (d?.name as string) || '']))
+    );
+    const snapshotDemos = draftDemos.map((d, i) => ({ ...d, name: nameTrf[`d${i}`] ?? d.name ?? '' }));
 
     // bio: auto-translation result (a {zh-TW,zh-CN,en} object), or the plain
     // source string if translation is unavailable (pickLocale handles both).
@@ -68,13 +77,13 @@ export async function POST(request: NextRequest) {
       voice_traits: t.voice_traits || [],
       specialties: t.specialties || [],
       voice_ages: t.voice_ages || [],
-      demos: t.demos || [],
+      demos: snapshotDemos,
       demo_urls: t.demo_urls || [],
       headshot_url: t.headshot_url || null,
       sample_url: t.sample_url || null,
       location: t.location || null,
       availability_note: t.availability_note || null,
-      equipment: t.equipment || null,
+      equipment: trf.equipment ?? t.equipment ?? null,
       clients: trf.clients ?? t.clients ?? null,
       awards: trf.awards ?? t.awards ?? null,
       notable_works: trf.notable_works ?? t.notable_works ?? null,

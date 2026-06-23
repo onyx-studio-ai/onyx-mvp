@@ -193,7 +193,7 @@ export default function TalentProfile() {
             {/* studio_partner (錄音室) is internal-only — never shown to clients. */}
             {t.equipment && (
               <div className="mb-7 grid gap-2 text-sm text-gray-400">
-                <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{t.equipment}</span></p>
+                <p className="flex items-start gap-2"><Mic2 className="w-4 h-4 mt-0.5 opacity-60 shrink-0" /><span>{cjkSpace(pickLocale(t.equipment, locale))}</span></p>
               </div>
             )}
 
@@ -206,7 +206,7 @@ export default function TalentProfile() {
                     <div className="space-y-2">
                       {items.map((d, i) => (
                         <div key={d.url || i} className="flex items-center gap-3 bg-zinc-900/50 rounded-lg px-3 py-2">
-                          <span className="text-sm text-gray-200 w-36 sm:w-44 truncate shrink-0">{cjkSpace(d.name) || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
+                          <span className="text-sm text-gray-200 w-36 sm:w-44 truncate shrink-0">{cjkSpace(pickLocale(d.name, locale)) || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
                           <audio controls src={d.url} className="h-8 flex-1 min-w-0" />
                         </div>
                       ))}
