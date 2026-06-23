@@ -7,8 +7,8 @@
 
 | 項目 | 值 |
 |---|---|
-| **本版** | v1.0 |
-| **Last Updated** | 2026-05-23 |
+| **本版** | v1.1 |
+| **Last Updated** | 2026-06-23 |
 | **Next Mandatory Review** | **2026-08-23**(3 個月) |
 | **Maintainer** | Wing + Claude(Onyx Studios) |
 
@@ -48,6 +48,7 @@
 | Version | Date | Changes |
 |---|---|---|
 | v1.0 | 2026-05-23 | 初版,涵蓋當天踩過所有坑 + 2026 業界全梯隊整理 |
+| v1.1 | 2026-06-23 | 新增 **Qwen3-TTS**(第一梯隊,Apache 2.0,3秒克隆,中文 WER 業界最低)+ **Fish Audio S2**(帳面強但 Research License 非商用,跳過)+ Higgs 升 **v3**;授權矩陣同步。配套實驗:`VOICE_LAB/experiments/2026-06-23_eric-wing_zeroshot-engine-shootout.md`(zero-shot 打敗訓練模型) |
 
 ---
 
@@ -161,37 +162,52 @@ rsync -avhP -e "ssh -p <PORT>" \
 - **粵語**: ❌ 沒有
 - **官方**: https://github.com/resemble-ai/chatterbox
 
-#### 4. **Higgs Audio v2**(Boson AI)— 新銳
-- **特色**: **10M+ 小時訓練**,zero-shot 表現極強
-- **語言**: 中、英、日、韓、**四川話、粵語**(原生!)
-- **3B 參數**,品質頂級
+#### 4. **Higgs Audio v3**(Boson AI)— 新銳(2026 升 v3,原 v2 已過)
+- **特色**: **10M+ 小時訓練**,zero-shot 表現極強;v3 = `bosonai/higgs-audio-v3-tts-4b`(4B)
+- **語言**: 100+ 語言;v2 原生四川話/粵語(v3 方言待 pod 上實測確認)
+- **授權**: **Apache 2.0 ✅**
+- **缺點**: 自架要跑 `sgl-omni serve`(SGLang),比 pip 安裝重;或直接用 Boson API
 - **官方**: https://github.com/boson-ai/higgs-audio
+
+#### 5. 🆕 **Qwen3-TTS**(阿里 QwenLM,2026 新)— **中文新首選**
+- **盲測/客觀**: 中文 WER **業界最低**(贏 Higgs v2 / VibeVoice / VoxCPM),speaker sim 0.789,**贏 ElevenLabs + MiniMax**
+- **克隆**: **3 秒參考音** zero-shot;另有「文字描述生新聲音」Voice Design + 9 內建聲
+- **語言/方言**: 10+ 語言;官稱 **9 種中文方言含粵語**(README 語言清單未明列粵語 → **pod 上實測**)
+- **授權**: **Apache 2.0 ✅**(無 royalty)
+- **安裝**: `pip install -U qwen-tts`;模型 `Qwen/Qwen3-TTS-12Hz-1.7B-Base`(另有 0.6B)
+- **API**: `Qwen3TTSModel.generate_voice_clone(text, language, ref_audio, ref_text)`
+- **官方**: https://github.com/QwenLM/Qwen3-TTS
 
 ### 🥈 第二梯隊(可用但有限制)
 
-#### 5. **IndexTTS-2**(Bilibili)— 工業級 + 情緒/時長控制
+#### 6. **IndexTTS-2**(Bilibili)— 工業級 + 情緒/時長控制
 - **特色**: 精準控制每段的「時長」(影視配音用)、emotion 可獨立指定
 - **語言**: 中、英、日
 - **粵語**: ❌ 未來會加
 - **官方**: https://github.com/index-tts/index-tts2
 
-#### 6. **F5-TTS**— 學術 SOTA
+#### 7. **F5-TTS**— 學術 SOTA
 - **品質**: 純 voice clone 品質頂尖
 - **語言**: 中、英
 - **粵語**: ❌
 - **缺點**: 長文有 chunking seam,速度慢
 
-#### 7. **XTTS-v2**(Coqui)— 多語老牌
+#### 8. **XTTS-v2**(Coqui)— 多語老牌
 - **語言**: 17 種語言
 - **粵語**: ❌(歸類在「中文」)
 - **6 秒 reference 就能 clone**
 
-#### 8. **Fish Speech V1.5**(fishaudio)
+#### 9. **Fish Speech V1.5**(fishaudio)
 - **品質**: TTS Arena ELO 1339(top tier)
 - **授權**: **CC-BY-NC-SA-4.0(不可商用!)**❌
 - **語言**: 中英日
 
-#### 9. **OpenVoice v2**(MyShell)— 情緒/風格轉換強
+#### 10. **Fish Audio S2 / S2 Pro**(fishaudio,2026 新)— 帳面最強,但授權是坑
+- **客觀**: Seed-TTS WER 0.54%(中)、MiniMax 24 語測 11 語 WER 第一、17 語 sim 第一,**含粵語贏 ElevenLabs/MiniMax**
+- **授權**: ❌ **Fish Audio Research License** —— 研究/非商用免費,**商用只能走它官方 API**(自架不能商用)。跟 Fish Speech 同一個坑,**自架方案直接跳過**
+- **官方**: https://fish.audio/blog/fish-audio-open-sources-s2/
+
+#### 11. **OpenVoice v2**(MyShell)— 情緒/風格轉換強
 - **特色**: cross-lingual clone + 風格/情緒轉換
 - **粵語**: ❌
 
@@ -230,9 +246,10 @@ rsync -avhP -e "ssh -p <PORT>" \
 
 ### 粵語支援度排行
 1. **CosyVoice 3** ✅ 原生支援(18+ 方言,粵語明確列入)
-2. **Higgs Audio v2** ✅ 原生支援
-3. **GPT-SoVITS v2+** ✅ 2024/08 起支援
-4. F5-TTS / XTTS-v2 / Chatterbox ❌ 無原生粵語
+2. **Qwen3-TTS** 🆕 官稱 9 方言含粵語(**README 未明列 → 6/23 shootout 實測確認**)
+3. **Higgs Audio v3** ✅ v2 原生支援(v3 待實測)
+4. **GPT-SoVITS v2+** ✅ 2024/08 起支援
+5. F5-TTS / XTTS-v2 / Chatterbox ❌ 無原生粵語
 
 ### 粵語用 CV3 怎麼下指令
 **zero_shot 模式**(用粵語 reference + 粵語白話字 text):
@@ -345,13 +362,13 @@ Content-Type: application/json
 
 | 場景 | 引擎 | 為什麼 |
 |---|---|---|
-| 一般中文配音 | **CV3** | CER 最低,設定到位後品質頂級 |
-| 粵語配音 | **CV3 + instruct2** | 18 方言原生支援,Higgs v2 是備案 |
+| 一般中文配音 | **Qwen3-TTS** 或 **CV3** | Qwen3 中文 WER 業界最低,3秒克隆;CV3 已部署當對照(待 6/23 shootout 定案) |
+| 粵語配音 | **CV3 + instruct2** | 18 方言原生支援;Qwen3 粵語待實測、Higgs 是備案 |
 | 多情緒 Eric | **CV3 + 7 個情緒 ref** | 直接從 416 訓練檔挑,zero-shot |
 | 已錄音換 Eric 聲 | **GPT-SoVITS RVC**(舊 pod)| 唯一做 voice conversion 的 |
-| 客戶要 ElevenLabs 同等 | **CV3 + sentence-split + ttsfrd** | 我們今天驗證夠用 |
-| 不能商用的場景 | ❌ Fish Speech(非商用授權) | — |
-| 想試最新 SOTA | **Higgs Audio v2** | 10M 小時訓練,原生粵語 |
+| 客戶要 ElevenLabs 同等 | **Qwen3-TTS / CV3 + sentence-split** | Qwen3 客觀贏 ElevenLabs;CV3 + ttsfrd 已驗證夠用 |
+| 不能商用的場景 | ❌ Fish Speech / Fish Audio S2(非商用授權,自架不能商用) | — |
+| 想試最新 SOTA | **Qwen3-TTS**(中文)/ **Higgs v3**(多語) | Qwen3 中文最強;Higgs 10M 小時、100+ 語 |
 
 ---
 
@@ -370,9 +387,12 @@ Content-Type: application/json
 - [ ] **TensorRT-LLM**(README:4x 加速,production 必備)
 
 ### Phase C — 試新引擎
-- [ ] **Higgs Audio v2** 部署測試(10M 小時訓練資料,可能比 CV3 更好)
+- [ ] 🔥 **Qwen3-TTS vs CV3 vs 訓練模型 shootout**(`VOICE_LAB/experiments/2026-06-23_...`)← **最高優先,解機器人感的正解**
+- [ ] **Higgs Audio v3** 部署測試(10M 小時、100+ 語,SGLang 自架或 Boson API)
 - [ ] **Chatterbox** 英文場景測試(MIT 商用 + 盲測贏 ElevenLabs)
 - [ ] **IndexTTS-2** 情緒控制測試(影視配音用)
+
+> ⚠️ Phase B 的「GPT-SoVITS v2Pro 重訓 Eric」**先別做** —— 依 [00_DIAGNOSIS](VOICE_LAB/00_DIAGNOSIS_clone-vs-train.md),機器人感的正解是**換 zero-shot 引擎**,不是再訓一次。等 shootout 證明 zero-shot 鎖不住身份,才回來做 few-shot 微調。
 
 ---
 
@@ -380,10 +400,12 @@ Content-Type: application/json
 
 | 引擎 | 授權 | 商用 | 注意 |
 |---|---|---|---|
+| **Qwen3-TTS** 🆕 | Apache 2.0 | ✅ | 無 royalty,中文最強 |
 | **CosyVoice 3** | Apache 2.0 | ✅ | 無 royalty |
 | **GPT-SoVITS** | MIT | ✅ | 無 royalty |
 | **Chatterbox** | MIT | ✅ | 無 royalty,可 self-host + 改 weights |
-| **Higgs Audio v2** | Apache 2.0 | ✅ | 無 royalty |
+| **Higgs Audio v3** | Apache 2.0 | ✅ | 無 royalty(v2→v3) |
+| **Fish Audio S2 / S2 Pro** 🆕 | Fish Audio Research License | ❌ | **自架非商用!**商用只能買它 API |
 | **XTTS-v2** | Coqui Public License | ⚠️ | 商用要看條款 |
 | **F5-TTS** | 學術用途 | ⚠️ | 商用要洽談 |
 | **Fish Speech V1.5** | CC-BY-NC-SA-4.0 | ❌ | **非商用!** |
@@ -431,6 +453,10 @@ Content-Type: application/json
 - [Demos CV3](https://funaudiollm.github.io/cosyvoice3/)
 - [Issue #517](https://github.com/FunAudioLLM/CosyVoice/issues/517) — 訓練 timeout 修法
 - [Issue #1727](https://github.com/FunAudioLLM/CosyVoice/issues/1727) — 同上
+
+### Qwen3-TTS 🆕
+- [GitHub](https://github.com/QwenLM/Qwen3-TTS) — `pip install -U qwen-tts`,模型 `Qwen/Qwen3-TTS-12Hz-1.7B-Base`
+- [License (Apache 2.0)](https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE)
 
 ### GPT-SoVITS
 - [README](https://github.com/RVC-Boss/GPT-SoVITS/blob/main/README.md)
