@@ -13,8 +13,9 @@ import { translateFields } from '@/lib/translate';
 
   Free-text fields (bio, clients, awards, notable work, special skills) are
   auto-translated to {zh-TW, zh-CN, en} via DeepL (lib/translate) so the public
-  profile shows each viewer their own language. The admin's manual bioTranslations
-  override the auto bio per locale. Degrades to originals if DEEPL_API_KEY is unset.
+  profile shows each viewer their own language. The admin may tweak the bio source
+  (body.bio) in the publish dialog; 简体/English are derived from it. Degrades to
+  originals if DEEPL_API_KEY is unset.
 
   Only public-safe fields go into the snapshot — never email/phone/payment_details
   /internal_cost/auth_user_id.
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
     // No generated DB types → loose row.
     const t = data as unknown as Record<string, unknown>;
 
-    const draftBio = (t.bio as string) || '';
+    // Bio source: the admin may have tweaked it in the publish dialog (body.bio);
+    // otherwise use the talent's draft bio. This single source is auto-translated.
+    const draftBio = (typeof body.bio === 'string' ? body.bio : (t.bio as string)) || '';
 
     // Auto-translate the free-text fields to {zh-TW,zh-CN,en} via DeepL (source
     // auto-detected). Degrades gracefully to originals if no key / on error.
@@ -51,15 +54,9 @@ export async function POST(request: NextRequest) {
       special_skills: (t.special_skills as string) || '',
     });
 
-    // bio: auto-translation as the base; the admin's manual dialog entries (if any)
-    // override per locale.
-    const tr = (body.bioTranslations || {}) as Record<string, string>;
-    const autoBio = trf.bio;
-    const bioObj: Record<string, string> = autoBio && typeof autoBio === 'object' ? { ...autoBio } : draftBio ? { 'zh-TW': draftBio } : {};
-    if ((tr['zh-TW'] || '').trim()) bioObj['zh-TW'] = tr['zh-TW'].trim();
-    if ((tr['zh-CN'] || '').trim()) bioObj['zh-CN'] = tr['zh-CN'].trim();
-    if ((tr['en'] || '').trim()) bioObj['en'] = tr['en'].trim();
-    const snapshotBio = Object.keys(bioObj).length > 0 ? bioObj : draftBio;
+    // bio: auto-translation result (a {zh-TW,zh-CN,en} object), or the plain
+    // source string if translation is unavailable (pickLocale handles both).
+    const snapshotBio = trf.bio ?? draftBio ?? null;
 
     const snapshot = {
       name: t.name,
@@ -88,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     const { error: upErr } = await db
       .from('talents')
-      .update({ published_snapshot: snapshot, pending_review: false, is_active: true })
+      .update({ published_snapshot: snapshot, bio: draftBio, pending_review: false, is_active: true })
       .eq('id', talentId);
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 

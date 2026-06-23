@@ -309,9 +309,10 @@ export default function AdminTalentsPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTalent, setEditingTalent] = useState<Talent | null>(null);
-  // Publish (draft → public snapshot) with manual bio translations.
+  // Publish (draft → public snapshot). Bio is a single source the admin can
+  // tweak; 简体/English are auto-translated at publish time (DeepL).
   const [publishTarget, setPublishTarget] = useState<Talent | null>(null);
-  const [pubBio, setPubBio] = useState<{ 'zh-TW': string; 'zh-CN': string; en: string }>({ 'zh-TW': '', 'zh-CN': '', en: '' });
+  const [pubBio, setPubBio] = useState<string>('');
   const [publishing, setPublishing] = useState(false);
   // Changes-requested (reject) flow
   const [rejectTarget, setRejectTarget] = useState<Talent | null>(null);
@@ -456,18 +457,10 @@ export default function AdminTalentsPage() {
   // --- Publish: promote the talent's draft into the public snapshot ---
   const openPublish = (talent: Talent) => {
     setPublishTarget(talent);
-    // Prefill from the LAST PUBLISHED translations so re-publishing never wipes
-    // the zh-CN / English bios the admin entered before. Fall back to the draft
-    // bio (their own language) for zh-TW on a first publish.
-    const tt = talent as Talent & { bio?: string; published_snapshot?: { bio?: unknown } };
-    const draft = tt.bio || '';
-    const sbio = tt.published_snapshot?.bio;
-    if (sbio && typeof sbio === 'object') {
-      const o = sbio as Record<string, string>;
-      setPubBio({ 'zh-TW': o['zh-TW'] || draft, 'zh-CN': o['zh-CN'] || '', en: o['en'] || '' });
-    } else {
-      setPubBio({ 'zh-TW': (typeof sbio === 'string' && sbio) || draft, 'zh-CN': '', en: '' });
-    }
+    // Prefill the talent's own bio (the source). The admin can tweak it here;
+    // 简体 + English are auto-translated from it at publish time.
+    const tt = talent as Talent & { bio?: string };
+    setPubBio(tt.bio || '');
   };
   const handlePublish = async () => {
     if (!publishTarget) return;
@@ -475,7 +468,7 @@ export default function AdminTalentsPage() {
     try {
       const res = await fetch('/api/admin/talents/publish', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ talentId: publishTarget.id, bioTranslations: pubBio }),
+        body: JSON.stringify({ talentId: publishTarget.id, bio: pubBio }),
       });
       const data = await res.json();
       if (res.ok && data.success) { toast.success('已發布到公開頁面 ✓'); setPublishTarget(null); fetchTalents(); }
@@ -1528,20 +1521,12 @@ export default function AdminTalentsPage() {
               );
             })()}
             <p className="text-sm text-gray-600">
-              聽過 demo、確認資料 OK 後發布。簡介請填三語版本(前台會依客戶語言顯示);留空的語言會自動退回繁中版。
-              <span className="text-gray-400"> 之後接上翻譯 API 可一鍵自動產生。</span>
+              聽過 demo、確認資料 OK 後發布。簡介可在此微調(原文);
+              <span className="text-gray-400"> 簡體與英文會在發布時自動翻譯,前台依客戶語言顯示。</span>
             </p>
             <div>
-              <Label className="text-gray-700">簡介 · 繁體中文</Label>
-              <Textarea value={pubBio['zh-TW']} onChange={(e) => setPubBio({ ...pubBio, 'zh-TW': e.target.value })} className="min-h-[80px] mt-1" />
-            </div>
-            <div>
-              <Label className="text-gray-700">簡介 · 简体中文</Label>
-              <Textarea value={pubBio['zh-CN']} onChange={(e) => setPubBio({ ...pubBio, 'zh-CN': e.target.value })} className="min-h-[80px] mt-1" placeholder="留空 → 退回繁中版" />
-            </div>
-            <div>
-              <Label className="text-gray-700">Bio · English</Label>
-              <Textarea value={pubBio.en} onChange={(e) => setPubBio({ ...pubBio, en: e.target.value })} className="min-h-[80px] mt-1" placeholder="Leave blank to fall back to the Chinese bio" />
+              <Label className="text-gray-700">簡介(原文)</Label>
+              <Textarea value={pubBio} onChange={(e) => setPubBio(e.target.value)} className="min-h-[100px] mt-1" placeholder="配音員填寫的簡介;發布時自動翻成簡體 / 英文" />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setPublishTarget(null)} className="border-gray-300 text-gray-700">取消</Button>
