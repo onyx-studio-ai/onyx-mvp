@@ -18,7 +18,7 @@ import { Search, ArrowRight, Play, Pause } from 'lucide-react';
 import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
 import {
   formatLangEntry, baseLangLabel, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
-  VOICE_TRAITS, USE_CASES, VOICE_AGES,
+  VOICE_TRAITS, USE_CASES, VOICE_AGES, TRAIT_KEYS,
 } from '@/lib/talent-taxonomy';
 import { pickLocale } from '@/lib/i18n-pick';
 
@@ -33,6 +33,7 @@ interface Talent {
   voice_traits?: string[];
   specialties?: string[];
   voice_ages?: string[];
+  tag_i18n?: Record<string, Record<string, string>>;
   tags?: string[];
   gender?: string;
   accent?: string;
@@ -291,7 +292,7 @@ export default function TalentRoster() {
 
                   {(t.languages || []).length > 0 && pills(t.languages || [], (k) => formatLangEntry(k, locale), 'bg-zinc-800 text-gray-300')}
                   {servicesOf(t.tags).length > 0 && pills(servicesOf(t.tags), (k) => tx(SERVICE_LABEL[k].tw, SERVICE_LABEL[k].cn, SERVICE_LABEL[k].en), 'bg-sky-500/10 text-sky-300 border border-sky-500/30')}
-                  {(t.voice_traits || []).length > 0 && pills(t.voice_traits || [], (k) => traitLabel(k, locale), 'bg-amber-500/10 text-amber-300/90')}
+                  {(t.voice_traits || []).length > 0 && pills(t.voice_traits || [], (k) => (TRAIT_KEYS.has(k) ? traitLabel(k, locale) : (pickLocale(t.tag_i18n?.[k], locale) || k)), 'bg-amber-500/10 text-amber-300/90')}
 
                   <Link href={`/${locale}/talents/${t.id}`} className="mt-auto inline-flex items-center gap-1 text-sm text-amber-300 hover:text-amber-200">
                     {tx('查看 / 洽詢', '查看 / 洽询', 'View / enquire')} <ArrowRight className="w-3.5 h-3.5" />

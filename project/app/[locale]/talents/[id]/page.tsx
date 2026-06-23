@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { ArrowLeft, MessageSquare, MapPin, Mic2 } from 'lucide-react';
-import { traitLabel, useCaseLabel, USE_CASES, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, turnaroundLabel, type DemoItem } from '@/lib/talent-taxonomy';
+import { traitLabel, useCaseLabel, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, turnaroundLabel, type DemoItem } from '@/lib/talent-taxonomy';
 import { cjkSpace } from '@/lib/cjk-space';
 import { pickLocale } from '@/lib/i18n-pick';
 
@@ -27,6 +27,7 @@ interface Talent {
   tags?: string[];
   voice_traits?: string[];
   specialties?: string[];
+  tag_i18n?: Record<string, Record<string, string>>;
   voice_ages?: string[];
   gender?: string;
   accent?: string;
@@ -111,6 +112,11 @@ export default function TalentProfile() {
   const metaLine = [genderLabel(t?.gender), ageLabel, t?.location ? countryLabel(t.location, locale) : '', yrs].filter(Boolean).join(' · ');
   const availabilityKeys = (t?.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
   // Credit fields may be plain strings (legacy) or {locale:text} (auto-translated).
+  // Preset trait/specialty keys localize via the taxonomy; custom (free-text) tags
+  // the talent typed are translated at publish into tag_i18n.
+  const tagI18n = (t?.tag_i18n || {}) as Record<string, Record<string, string>>;
+  const traitText = (k: string) => (TRAIT_KEYS.has(k) ? traitLabel(k, locale) : (pickLocale(tagI18n[k], locale) || cjkSpace(k)));
+  const specText = (k: string) => (USE_CASE_KEYS.has(k) ? useCaseLabel(k, locale) : (pickLocale(tagI18n[k], locale) || cjkSpace(k)));
   const clientsT = cjkSpace(pickLocale(t?.clients, locale));
   const notableT = cjkSpace(pickLocale(t?.notable_works, locale));
   const awardsT = cjkSpace(pickLocale(t?.awards, locale));
@@ -152,14 +158,14 @@ export default function TalentProfile() {
             {(t.voice_traits || []).length > 0 && (
               <div className="mb-4">
                 <p className="text-xs text-gray-500 mb-1.5">{tx('聲線特質', '声线特质', 'Voice traits')}</p>
-                <div className="flex flex-wrap gap-1.5">{(t.voice_traits || []).map((k) => <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300/90">{traitLabel(k, locale)}</span>)}</div>
+                <div className="flex flex-wrap gap-1.5">{(t.voice_traits || []).map((k) => <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300/90">{traitText(k)}</span>)}</div>
               </div>
             )}
 
             {(t.specialties || []).length > 0 && (
               <div className="mb-4">
                 <p className="text-xs text-gray-500 mb-1.5">{tx('專長類型', '专长类型', 'Specialties')}</p>
-                <div className="flex flex-wrap gap-1.5">{(t.specialties || []).map((k) => <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-300/90">{useCaseLabel(k, locale)}</span>)}</div>
+                <div className="flex flex-wrap gap-1.5">{(t.specialties || []).map((k) => <span key={k} className="text-xs px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-300/90">{specText(k)}</span>)}</div>
               </div>
             )}
 

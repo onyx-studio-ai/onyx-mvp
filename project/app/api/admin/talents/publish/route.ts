@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/mail';
 import { talentReviewEmail } from '@/lib/mail-templates';
 import { translateFields, localizeName } from '@/lib/translate';
 import { stripContactsAndLinks } from '@/lib/sanitize-text';
+import { TRAIT_KEYS, USE_CASE_KEYS } from '@/lib/talent-taxonomy';
 
 /*
   Admin publish: promote a talent's current DRAFT (the talents row) into the
@@ -73,6 +74,16 @@ export async function POST(request: NextRequest) {
     // (which many consumers still read) — public UI prefers name_i18n.
     const nameI18n = localizeName((t.name as string) || '', (t.english_name as string) || '');
 
+    // Custom (non-preset) voice-trait / specialty tags are free text the talent
+    // typed (e.g. 海綿寶寶, 有聲漫畫) — translate them so the English/简体 profile
+    // doesn't show Chinese. Preset keys are localized at render and left alone.
+    const vt = Array.isArray(t.voice_traits) ? (t.voice_traits as string[]).filter((x) => typeof x === 'string') : [];
+    const sp = Array.isArray(t.specialties) ? (t.specialties as string[]).filter((x) => typeof x === 'string') : [];
+    const customTags = [...new Set([...vt.filter((x) => !TRAIT_KEYS.has(x)), ...sp.filter((x) => !USE_CASE_KEYS.has(x))])];
+    const tagTrf = customTags.length ? await translateFields(Object.fromEntries(customTags.map((c, i) => [`t${i}`, c]))) : {};
+    const tagI18n: Record<string, unknown> = {};
+    customTags.forEach((c, i) => { const v = tagTrf[`t${i}`]; if (v && typeof v === 'object') tagI18n[c] = v; });
+
     const snapshot = {
       name: t.name,
       name_i18n: nameI18n,
@@ -83,6 +94,7 @@ export async function POST(request: NextRequest) {
       tags: t.tags || [],
       voice_traits: t.voice_traits || [],
       specialties: t.specialties || [],
+      tag_i18n: tagI18n,
       voice_ages: t.voice_ages || [],
       demos: snapshotDemos,
       demo_urls: t.demo_urls || [],
