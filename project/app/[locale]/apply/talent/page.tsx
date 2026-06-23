@@ -380,6 +380,7 @@ export default function TalentApply() {
                 <div><Label req hint={tx('公開', '公开', 'Public')}>{tx('顯示名稱', '显示名称', 'Display name')}</Label><input className={inputCls} value={form.display_name} onChange={(e) => set('display_name', e.target.value)} placeholder={tx('客戶端顯示的名稱', '客户端显示的名称', 'Shown to clients')} /></div>
                 <div><Label req hint={tx('不公開', '不公开', 'Private')}>{tx('真實姓名', '真实姓名', 'Legal name')}</Label><input className={inputCls} value={form.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder={tx('合約/付款用', '合约/付款用', 'For contracts & payment')} /></div>
               </div>
+              <p className="text-xs text-amber-300/80 mt-2">{tx('「顯示名稱」會公開,請勿放電話、連結或個人聯絡資訊 —— 聯絡方式請填下方專屬欄位(僅供我們聯繫、不公開)。', '「显示名称」会公开,请勿放电话、链接或个人联系信息 —— 联系方式请填下方专属栏位(仅供我们联系、不公开)。', 'Your display name is public — no phone, links or contact info there. Put contact details in the dedicated fields below (private, only for us to reach you).')}</p>
               <div className="mt-4">
                 <Label hint={tx('選填,英文頁顯示', '选填,英文页显示', 'Optional')}>{tx('英文 / 羅馬拼音名', '英文 / 罗马拼音名', 'English / Romanized name')}</Label>
                 <input className={inputCls} value={form.english_name} onChange={(e) => set('english_name', e.target.value)} placeholder={tx('例如:Jason Wang(英文頁會用,留空則顯示原名)', '例如:Jason Wang(英文页会用,留空则显示原名)', 'e.g. Jason Wang — used on the English site; blank shows your original name')} />
