@@ -143,6 +143,7 @@ export default function VoiceIdUploadPage() {
   const [paymentDetails, setPaymentDetails] = useState({
     paypal_email: '', bank_name: '', bank_code: '',
     account_name: '', account_number: '', swift_code: '',
+    bank_country: '', notes: '',
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -171,6 +172,24 @@ export default function VoiceIdUploadPage() {
 
   const handleUpload = useCallback(async () => {
     if (!file || !token || !signatureDataUrl || !paymentMethod) return;
+
+    // Necessary payment fields must be filled; optional ones may stay blank.
+    if (paymentMethod === 'paypal' && !paymentDetails.paypal_email.trim()) {
+      setErrorMsg(tx('請填寫 PayPal 電子郵件。', '请填写 PayPal 电子邮件。', 'Please enter your PayPal email.'));
+      return;
+    }
+    if (paymentMethod === 'bank_transfer') {
+      const d = paymentDetails;
+      if (!d.account_name.trim() || !d.bank_name.trim() || !d.account_number.trim() || !d.swift_code.trim()) {
+        setErrorMsg(tx(
+          '請填寫銀行轉帳必填欄位:帳戶名稱、銀行名稱、帳號 / IBAN、SWIFT / BIC。',
+          '请填写银行转账必填项:账户名称、银行名称、账号 / IBAN、SWIFT / BIC。',
+          'Please complete the required bank fields: account holder name, bank name, account number / IBAN, and SWIFT / BIC.',
+        ));
+        return;
+      }
+    }
+    setErrorMsg('');
     setPageState('uploading');
 
     try {
@@ -632,29 +651,14 @@ export default function VoiceIdUploadPage() {
 
           {paymentMethod === 'bank_transfer' && (
             <div className="space-y-3">
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                {tx('支援全球銀行匯款(美國 / 英國 / 歐洲 / 台灣等)。標 * 為必填,其餘可留空。',
+                    '支持全球银行汇款(美国 / 英国 / 欧洲 / 台湾等)。标 * 为必填,其余可留空。',
+                    'Supports bank transfers worldwide (US / UK / EU / Taiwan, etc.). Fields marked * are required; the rest are optional.')}
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">{tx('銀行名稱', '银行名称', 'Bank Name')}</label>
-                  <input
-                    placeholder={tx('例如:HSBC、中國信託', '例如:HSBC、中国信托', 'e.g. HSBC, Citibank')}
-                    value={paymentDetails.bank_name}
-                    onChange={e => setPaymentDetails(p => ({ ...p, bank_name: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{tx('銀行 / 分行代碼', '银行 / 分行代码', 'Bank / Branch Code')}</label>
-                  <input
-                    placeholder={tx('例如:822', '例如:822', 'e.g. 822')}
-                    value={paymentDetails.bank_code}
-                    onChange={e => setPaymentDetails(p => ({ ...p, bank_code: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{tx('帳戶名稱', '账户名称', 'Account Holder Name')}</label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('帳戶名稱', '账户名称', 'Account Holder Name')} <span className="text-amber-400">*</span></label>
                   <input
                     placeholder={tx('帳戶全名', '账户全名', 'Full name on account')}
                     value={paymentDetails.account_name}
@@ -663,25 +667,63 @@ export default function VoiceIdUploadPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">{tx('帳號', '账号', 'Account Number')}</label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('銀行名稱', '银行名称', 'Bank Name')} <span className="text-amber-400">*</span></label>
                   <input
-                    placeholder={tx('銀行帳號', '银行账号', 'Account number')}
-                    value={paymentDetails.account_number}
-                    onChange={e => setPaymentDetails(p => ({ ...p, account_number: e.target.value }))}
+                    placeholder={tx('例如:HSBC、Bank of America、中國信託', '例如:HSBC、Bank of America、中国信托', 'e.g. HSBC, Bank of America')}
+                    value={paymentDetails.bank_name}
+                    onChange={e => setPaymentDetails(p => ({ ...p, bank_name: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">{tx('SWIFT 代碼', 'SWIFT 代码', 'SWIFT Code')} <span className="text-gray-600">{tx('(國際匯款)', '(国际汇款)', '(international)')}</span></label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('帳號 / IBAN', '账号 / IBAN', 'Account Number / IBAN')} <span className="text-amber-400">*</span></label>
                   <input
-                    placeholder={tx('例如:CTCBTWTP', '例如:CTCBTWTP', 'e.g. CTCBTWTP')}
+                    placeholder={tx('帳號或 IBAN', '账号或 IBAN', 'Account number or IBAN')}
+                    value={paymentDetails.account_number}
+                    onChange={e => setPaymentDetails(p => ({ ...p, account_number: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">SWIFT / BIC <span className="text-amber-400">*</span></label>
+                  <input
+                    placeholder={tx('例如:CTCBTWTP、CHASUS33', '例如:CTCBTWTP、CHASUS33', 'e.g. CHASUS33, HBUKGB4B')}
                     value={paymentDetails.swift_code}
                     onChange={e => setPaymentDetails(p => ({ ...p, swift_code: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('Routing / Sort / 分行代碼', 'Routing / Sort / 分行代码', 'Routing / Sort / Branch Code')}</label>
+                  <input
+                    placeholder={tx('美國 ABA、英國 Sort、台灣分行(若有)', '美国 ABA、英国 Sort、台湾分行(若有)', 'US ABA / UK sort / branch (if any)')}
+                    value={paymentDetails.bank_code}
+                    onChange={e => setPaymentDetails(p => ({ ...p, bank_code: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('銀行所在國家', '银行所在国家', 'Bank Country')}</label>
+                  <input
+                    placeholder={tx('例如:United Kingdom', '例如:United Kingdom', 'e.g. United Kingdom')}
+                    value={paymentDetails.bank_country}
+                    onChange={e => setPaymentDetails(p => ({ ...p, bank_country: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">{tx('備註(選填)', '备注(选填)', 'Notes (optional)')}</label>
+                <input
+                  placeholder={tx('中介行、分行地址等(若需要)', '中介行、分行地址等(若需要)', 'Intermediary bank, branch address, etc. (if needed)')}
+                  value={paymentDetails.notes}
+                  onChange={e => setPaymentDetails(p => ({ ...p, notes: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
+                />
               </div>
             </div>
           )}

@@ -341,6 +341,7 @@ export default function AdminTalentsPage() {
       account_name: "",
       account_number: "",
       swift_code: "",
+      bank_country: "",
       notes: "",
     },
     compensation_model: "commission" as "commission" | "buyout",
@@ -661,6 +662,7 @@ export default function AdminTalentsPage() {
         account_name: pd?.account_name || "",
         account_number: pd?.account_number || "",
         swift_code: pd?.swift_code || "",
+        bank_country: pd?.bank_country || "",
         notes: pd?.notes || "",
       },
       compensation_model: (talent.compensation_model || "commission") as "commission" | "buyout",
@@ -706,6 +708,7 @@ export default function AdminTalentsPage() {
         account_name: "",
         account_number: "",
         swift_code: "",
+        bank_country: "",
         notes: "",
       },
       compensation_model: "commission",
@@ -1093,9 +1096,9 @@ export default function AdminTalentsPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">Bank Code / Branch</Label>
+                        <Label className="text-gray-600 text-xs">Routing / Sort / Branch Code</Label>
                         <Input
-                          placeholder="e.g. 822 / SWIFT"
+                          placeholder="US ABA / UK sort / branch"
                           value={formData.payment_details.bank_code}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, bank_code: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
@@ -1113,9 +1116,9 @@ export default function AdminTalentsPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">Account Number</Label>
+                        <Label className="text-gray-600 text-xs">Account Number / IBAN</Label>
                         <Input
-                          placeholder="Account number"
+                          placeholder="Account number or IBAN"
                           value={formData.payment_details.account_number}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, account_number: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
@@ -1124,11 +1127,20 @@ export default function AdminTalentsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">SWIFT Code (international)</Label>
+                        <Label className="text-gray-600 text-xs">SWIFT / BIC (international)</Label>
                         <Input
-                          placeholder="e.g. CTCBTWTP"
+                          placeholder="e.g. CHASUS33, HBUKGB4B"
                           value={formData.payment_details.swift_code}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, swift_code: e.target.value } })}
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-gray-600 text-xs">Bank Country</Label>
+                        <Input
+                          placeholder="e.g. United Kingdom"
+                          value={formData.payment_details.bank_country}
+                          onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, bank_country: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>

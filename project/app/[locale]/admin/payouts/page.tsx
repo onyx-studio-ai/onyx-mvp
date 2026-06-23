@@ -619,14 +619,20 @@ export default function PayoutsPage() {
                     {activeTalent.paymentDetails.account_name && (
                       <div><span className="text-gray-500">Name:</span> <span className="text-gray-700">{activeTalent.paymentDetails.account_name}</span></div>
                     )}
-                    {activeTalent.paymentDetails.account_number && (
-                      <div><span className="text-gray-500">Account:</span> <span className="text-gray-700">{activeTalent.paymentDetails.account_number}</span></div>
+                    {activeTalent.paymentDetails.bank_name && (
+                      <div><span className="text-gray-500">Bank:</span> <span className="text-gray-700">{activeTalent.paymentDetails.bank_name}</span></div>
                     )}
-                    {activeTalent.paymentDetails.bank_code && (
-                      <div><span className="text-gray-500">Code:</span> <span className="text-gray-700">{activeTalent.paymentDetails.bank_code}</span></div>
+                    {activeTalent.paymentDetails.account_number && (
+                      <div><span className="text-gray-500">Account / IBAN:</span> <span className="text-gray-700">{activeTalent.paymentDetails.account_number}</span></div>
                     )}
                     {activeTalent.paymentDetails.swift_code && (
-                      <div><span className="text-gray-500">SWIFT:</span> <span className="text-gray-700">{activeTalent.paymentDetails.swift_code}</span></div>
+                      <div><span className="text-gray-500">SWIFT / BIC:</span> <span className="text-gray-700">{activeTalent.paymentDetails.swift_code}</span></div>
+                    )}
+                    {activeTalent.paymentDetails.bank_code && (
+                      <div><span className="text-gray-500">Routing / Sort:</span> <span className="text-gray-700">{activeTalent.paymentDetails.bank_code}</span></div>
+                    )}
+                    {activeTalent.paymentDetails.bank_country && (
+                      <div><span className="text-gray-500">Country:</span> <span className="text-gray-700">{activeTalent.paymentDetails.bank_country}</span></div>
                     )}
                   </div>
                 )}
