@@ -10,8 +10,10 @@ const URL_RE = /\b(?:https?:\/\/|www\.)\S+/gi;
 const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/gi;
 // bare domains with a common TLD (catches "drive.google.com/…" without http)
 const DOMAIN_RE = /\b[a-z0-9-]+\.(?:com|net|org|io|ai|co|me|tw|cn|hk|jp|kr|sg|app|link|page|site|xyz|info|biz|tv|fm|gl|ly)(?:\/\S*)?/gi;
-// + international or a run of 9+ digits (phone / ID) — avoids stripping year ranges
-const PHONE_RE = /(?:\+\d[\d\s().-]{7,}\d)|\b\d{9,}\b/g;
+// + international, or any run of 9+ digits (phone / ID). No \b — a phone glued to a
+// word char (e.g. "Name_0975554977") has no word boundary; match the digit run itself.
+// 9+ digits avoids stripping years / short codes.
+const PHONE_RE = /(?:\+\d[\d\s().-]{7,}\d)|\d{9,}/g;
 
 export function stripContactsAndLinks(s: string): string {
   if (!s) return s;
