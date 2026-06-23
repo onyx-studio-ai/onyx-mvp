@@ -180,6 +180,7 @@ export async function PATCH(request: NextRequest) {
             // Public roster shows this name → prefer the public display name,
             // never the legal full_name.
             name: application.display_name || application.full_name,
+            english_name: application.english_name || null,
             email: application.email || null,
             gender: application.gender || null,
             accent: application.accent || null,

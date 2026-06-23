@@ -161,7 +161,7 @@ export default function TalentApply() {
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    display_name: '', full_name: '', email: '', phone: '',
+    display_name: '', english_name: '', full_name: '', email: '', phone: '',
     msg_line: '', msg_whatsapp: '', msg_telegram: '',
     gender: '', age_range: '',
     microphone_model: '', excluded_countries: '',
@@ -269,6 +269,7 @@ export default function TalentApply() {
         locale,
         full_name: form.full_name,
         display_name: form.display_name,
+        english_name: form.english_name,
         email: form.email,
         phone: form.phone,
         country: '',
@@ -372,6 +373,10 @@ export default function TalentApply() {
               <div className="grid grid-cols-2 gap-4">
                 <div><Label req hint={tx('公開', '公开', 'Public')}>{tx('顯示名稱', '显示名称', 'Display name')}</Label><input className={inputCls} value={form.display_name} onChange={(e) => set('display_name', e.target.value)} placeholder={tx('客戶端顯示的名稱', '客户端显示的名称', 'Shown to clients')} /></div>
                 <div><Label req hint={tx('不公開', '不公开', 'Private')}>{tx('真實姓名', '真实姓名', 'Legal name')}</Label><input className={inputCls} value={form.full_name} onChange={(e) => set('full_name', e.target.value)} placeholder={tx('合約/付款用', '合约/付款用', 'For contracts & payment')} /></div>
+              </div>
+              <div className="mt-4">
+                <Label hint={tx('選填,英文頁顯示', '选填,英文页显示', 'Optional')}>{tx('英文 / 羅馬拼音名', '英文 / 罗马拼音名', 'English / Romanized name')}</Label>
+                <input className={inputCls} value={form.english_name} onChange={(e) => set('english_name', e.target.value)} placeholder={tx('例如:Jason Wang(英文頁會用,留空則顯示原名)', '例如:Jason Wang(英文页会用,留空则显示原名)', 'e.g. Jason Wang — used on the English site; blank shows your original name')} />
               </div>
               <div className="mt-4">
                 <Label req>Email {emailVerified && <span className="text-emerald-400 text-xs">✓ {tx('已驗證', '已验证', 'Verified')}</span>}</Label>

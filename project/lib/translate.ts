@@ -47,6 +47,17 @@ async function deepl(text: string, target: string): Promise<string> {
 
 export type I18nText = { 'zh-TW'?: string; 'zh-CN'?: string; en?: string };
 
+/*
+  Localize a person's NAME — names are never machine-translated/transliterated
+  (Wang vs Wong, personal English names…). 繁↔簡 is safe via OpenCC; the English
+  variant is the talent's self-provided romanized name, or the original as fallback.
+*/
+export function localizeName(name: string, englishName?: string): I18nText {
+  const n = (name || '').trim();
+  const en = (englishName || '').trim();
+  return { 'zh-TW': toTrad(n), 'zh-CN': toSimp(n), en: en || n };
+}
+
 // Build {zh-TW, zh-CN, en} for one text, picking the right tool per source language.
 async function translateOne(text: string): Promise<I18nText> {
   if (isChinese(text)) {

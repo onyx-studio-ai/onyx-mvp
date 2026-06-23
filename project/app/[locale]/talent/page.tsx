@@ -56,7 +56,7 @@ const SERVICE_LABEL: Record<string, { tw: string; cn: string; en: string }> = {
 };
 
 type Talent = {
-  id: string; name: string; bio: string | null; languages: string[] | null;
+  id: string; name: string; english_name: string | null; bio: string | null; languages: string[] | null;
   gender: string | null; tags: string[] | null;
   voice_traits: string[] | null; specialties: string[] | null; voice_ages: string[] | null; demos: DemoItem[] | null;
   headshot_url: string | null; location: string | null; availability_note: string | null;
@@ -67,7 +67,7 @@ type Talent = {
 };
 type ListField = 'voice_traits' | 'specialties' | 'availability' | 'voice_ages';
 type Form = {
-  name: string; bio: string; gender: string; location: string; studio_partner: string;
+  name: string; english_name: string; bio: string; gender: string; location: string; studio_partner: string;
   equipment: string; clients: string; awards: string; notable_works: string; special_skills: string;
   availability: string[]; languages: string[]; voice_traits: string[]; specialties: string[]; voice_ages: string[];
   headshot_url: string; demos: DemoItem[];
@@ -118,7 +118,7 @@ export default function TalentDashboard() {
   const [token, setToken] = useState('');
   const [t, setT] = useState<Talent | null>(null);
   const [form, setForm] = useState<Form>({
-    name: '', bio: '', gender: '', location: '', studio_partner: '', equipment: '',
+    name: '', english_name: '', bio: '', gender: '', location: '', studio_partner: '', equipment: '',
     clients: '', awards: '', notable_works: '', special_skills: '', availability: [], languages: [], voice_traits: [], specialties: [], voice_ages: [], headshot_url: '', demos: [],
   });
 
@@ -148,7 +148,7 @@ export default function TalentDashboard() {
     const { talent } = (await res.json()) as { talent: Talent };
     setT(talent);
     setForm({
-      name: talent.name || '', bio: talent.bio || '', gender: talent.gender || '',
+      name: talent.name || '', english_name: talent.english_name || '', bio: talent.bio || '', gender: talent.gender || '',
       location: talent.location || '', studio_partner: talent.studio_partner || '', equipment: talent.equipment || '',
       clients: talent.clients || '', awards: talent.awards || '', notable_works: talent.notable_works || '', special_skills: talent.special_skills || '',
       availability: (talent.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean),
@@ -201,7 +201,7 @@ export default function TalentDashboard() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         submit,
-        name: form.name, bio: form.bio, gender: form.gender, location: form.location,
+        name: form.name, english_name: form.english_name, bio: form.bio, gender: form.gender, location: form.location,
         availability_note: form.availability.join(','), studio_partner: form.studio_partner, equipment: form.equipment,
         clients: form.clients, awards: form.awards, notable_works: form.notable_works, special_skills: form.special_skills,
         languages: form.languages, voice_traits: form.voice_traits, specialties: form.specialties, voice_ages: form.voice_ages,
@@ -383,6 +383,7 @@ export default function TalentDashboard() {
             {livenessBadge && <span className={`text-[11px] px-2.5 py-1 rounded-full ${livenessBadge.cls}`}>{livenessBadge.text}</span>}
           </div>
           <input className="w-full bg-transparent text-2xl font-bold focus:outline-none focus:border-b focus:border-white/20 pb-0.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tx('顯示名稱', '显示名称', 'Display name')} />
+          <input className="w-full bg-transparent text-sm text-gray-300 focus:outline-none focus:border-b focus:border-white/20 pb-0.5 mt-1" value={form.english_name} onChange={(e) => setForm({ ...form, english_name: e.target.value })} placeholder={tx('英文 / 羅馬拼音名(選填,英文頁顯示)', '英文 / 罗马拼音名(选填,英文页显示)', 'English / Romanized name (optional, shown on English site)')} />
           <p className="text-xs text-gray-500 mt-1.5">{t?.email}</p>
         </div>
       </div>

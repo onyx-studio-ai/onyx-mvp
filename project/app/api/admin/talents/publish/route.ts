@@ -3,7 +3,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { talentReviewEmail } from '@/lib/mail-templates';
-import { translateFields } from '@/lib/translate';
+import { translateFields, localizeName } from '@/lib/translate';
 
 /*
   Admin publish: promote a talent's current DRAFT (the talents row) into the
@@ -22,7 +22,7 @@ import { translateFields } from '@/lib/translate';
 */
 
 const SNAPSHOT_COLS =
-  'id, name, email, languages, gender, accent, bio, tags, voice_traits, specialties, voice_ages, demos, demo_urls, ' +
+  'id, name, english_name, email, languages, gender, accent, bio, tags, voice_traits, specialties, voice_ages, demos, demo_urls, ' +
   'headshot_url, sample_url, location, availability_note, equipment, clients, awards, notable_works, special_skills, category';
 
 export async function POST(request: NextRequest) {
@@ -67,8 +67,14 @@ export async function POST(request: NextRequest) {
     // source string if translation is unavailable (pickLocale handles both).
     const snapshotBio = trf.bio ?? draftBio ?? null;
 
+    // Name: never machine-translated. 繁簡 via OpenCC; English = self-provided
+    // english_name, else the original. Kept alongside the plain `name` string
+    // (which many consumers still read) — public UI prefers name_i18n.
+    const nameI18n = localizeName((t.name as string) || '', (t.english_name as string) || '');
+
     const snapshot = {
       name: t.name,
+      name_i18n: nameI18n,
       languages: t.languages || [],
       gender: t.gender || null,
       accent: t.accent || null,

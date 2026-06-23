@@ -26,6 +26,7 @@ interface Demo { category?: string; name?: string; url: string; language?: strin
 interface Talent {
   id: string;
   name: string;
+  name_i18n?: Record<string, string>;
   type?: string;
   languages?: string[];
   voice_traits?: string[];
@@ -84,6 +85,9 @@ export default function TalentRoster() {
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
   const [dur, setDur] = useState(0);
+
+  // Locale-aware display name (English page uses the self-provided English name).
+  const nameOf = (t: Talent) => pickLocale(t.name_i18n, locale) || t.name;
 
   useEffect(() => {
     fetch('/api/talents/roster')
@@ -159,7 +163,7 @@ export default function TalentRoster() {
     const a = audioRef.current;
     if (!pd || !a) return;
     if (now?.id === t.id) { if (a.paused) a.play().catch(() => {}); else a.pause(); return; }
-    setNow({ id: t.id, name: t.name, label: pd.label });
+    setNow({ id: t.id, name: nameOf(t), label: pd.label });
     a.src = pd.url;
     a.currentTime = 0;
     a.play().catch(() => {});
@@ -265,9 +269,9 @@ export default function TalentRoster() {
                     <div className="relative flex-none">
                       {t.headshot_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={t.headshot_url} alt={t.name} className="w-12 h-12 rounded-full object-cover" />
+                        <img src={t.headshot_url} alt={nameOf(t)} className="w-12 h-12 rounded-full object-cover" />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 to-zinc-700 flex items-center justify-center text-lg font-semibold text-blue-200">{initial(t.name)}</div>
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 to-zinc-700 flex items-center justify-center text-lg font-semibold text-blue-200">{initial(nameOf(t))}</div>
                       )}
                       {pd && (
                         <button onClick={() => togglePlay(t)} aria-label={tx('播放試聽', '播放试听', 'Play demo')}
@@ -277,7 +281,7 @@ export default function TalentRoster() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <Link href={`/${locale}/talents/${t.id}`} className="font-semibold text-white hover:text-blue-300 truncate block">{t.name}</Link>
+                      <Link href={`/${locale}/talents/${t.id}`} className="font-semibold text-white hover:text-blue-300 truncate block">{nameOf(t)}</Link>
                       {meta && <p className="text-[11px] text-gray-500 truncate">{meta}</p>}
                     </div>
                   </div>

@@ -19,6 +19,7 @@ import { pickLocale } from '@/lib/i18n-pick';
 interface Talent {
   id: string;
   name: string;
+  name_i18n?: Record<string, string>;
   languages?: string[];
   tags?: string[];
   voice_traits?: string[];
@@ -99,6 +100,9 @@ export default function TalentProfile() {
     return v === 'male' ? tx('男聲', '男声', 'Male') : v === 'female' ? tx('女聲', '女声', 'Female') : g ? tx('其他', '其他', 'Other') : '';
   };
   const ageLabel = (t?.voice_ages || []).map((a) => voiceAgeLabel(a, locale)).join(' / ');
+  // Display name: locale-aware (English page uses the self-provided English name,
+  // 简体 sees 簡→簡 via OpenCC). Falls back to the plain name on legacy snapshots.
+  const displayName = pickLocale(t?.name_i18n, locale) || t?.name || '';
   const metaLine = [genderLabel(t?.gender), ageLabel, t?.location ? countryLabel(t.location, locale) : ''].filter(Boolean).join(' · ');
   const availabilityKeys = (t?.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
   // Credit fields may be plain strings (legacy) or {locale:text} (auto-translated).
@@ -123,12 +127,12 @@ export default function TalentProfile() {
             <div className="flex items-center gap-5 mb-7">
               {t.headshot_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={t.headshot_url} alt={t.name} className="w-28 h-28 rounded-2xl object-cover" />
+                <img src={t.headshot_url} alt={displayName} className="w-28 h-28 rounded-2xl object-cover" />
               ) : (
-                <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-amber-500/30 to-zinc-700 flex items-center justify-center text-3xl font-semibold text-amber-200">{initial(t.name)}</div>
+                <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-amber-500/30 to-zinc-700 flex items-center justify-center text-3xl font-semibold text-amber-200">{initial(displayName)}</div>
               )}
               <div>
-                <h1 className="text-2xl font-bold">{t.name}</h1>
+                <h1 className="text-2xl font-bold">{displayName}</h1>
                 {metaLine && <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 opacity-60" />{metaLine}</p>}
               </div>
             </div>

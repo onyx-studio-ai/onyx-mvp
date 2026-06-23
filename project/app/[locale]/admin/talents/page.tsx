@@ -321,6 +321,7 @@ export default function AdminTalentsPage() {
   const [formData, setFormData] = useState({
     type: "VO",
     name: "",
+    english_name: "",
     email: "",
     gender: "",
     accent: "",
@@ -582,6 +583,7 @@ export default function AdminTalentsPage() {
       const talentData = {
         type: formData.type,
         name: formData.name,
+        english_name: formData.english_name.trim() || null,
         email: formData.email.trim() || null,
         gender: formData.gender || null,
         accent: formData.accent || null,
@@ -640,6 +642,7 @@ export default function AdminTalentsPage() {
     setFormData({
       type: talent.type,
       name: talent.name,
+      english_name: (talent as Talent & { english_name?: string }).english_name || "",
       email: talent.email || "",
       gender: talent.gender || "",
       accent: talent.accent || "",
@@ -688,6 +691,7 @@ export default function AdminTalentsPage() {
     setFormData({
       type: "VO",
       name: "",
+      english_name: "",
       email: "",
       gender: "",
       accent: "",
@@ -786,6 +790,12 @@ export default function AdminTalentsPage() {
                     required
                     placeholder="e.g. Alex Chen"
                     className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
+                  />
+                  <Input
+                    value={formData.english_name}
+                    onChange={e => setFormData({ ...formData, english_name: e.target.value })}
+                    placeholder="English / Romanized name (optional)"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm"
                   />
                 </div>
                 <div className="space-y-2">

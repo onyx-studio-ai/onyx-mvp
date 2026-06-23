@@ -18,10 +18,10 @@ import { USE_CASE_KEYS, VOICE_AGE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoIt
 // is_active, pricing and the published_snapshot are intentionally excluded.
 // location = country key, availability_note = comma-joined preset keys,
 // studio_partner = URL, clients/awards/notable_works = structured credits.
-const TEXT_FIELDS = ['name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills'] as const;
+const TEXT_FIELDS = ['name', 'english_name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills'] as const;
 
 const COLS =
-  'id, name, bio, languages, accent, gender, tags, voice_traits, specialties, voice_ages, demos, demo_urls, headshot_url, ' +
+  'id, name, english_name, bio, languages, accent, gender, tags, voice_traits, specialties, voice_ages, demos, demo_urls, headshot_url, ' +
   'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, type, email, is_active, ' +
   'pending_review, published_snapshot, liveness_status';
 
