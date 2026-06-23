@@ -4,6 +4,7 @@ import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-
 import { sendEmail } from '@/lib/mail';
 import { talentReviewEmail } from '@/lib/mail-templates';
 import { translateFields, localizeName } from '@/lib/translate';
+import { stripContactsAndLinks } from '@/lib/sanitize-text';
 
 /*
   Admin publish: promote a talent's current DRAFT (the talents row) into the
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Bio source: the admin may have tweaked it in the publish dialog (body.bio);
     // otherwise use the talent's draft bio. This single source is auto-translated.
-    const draftBio = (typeof body.bio === 'string' ? body.bio : (t.bio as string)) || '';
+    const draftBio = stripContactsAndLinks((typeof body.bio === 'string' ? body.bio : (t.bio as string)) || '');
 
     // Auto-translate the free-text fields to {zh-TW,zh-CN,en} via DeepL (source
     // auto-detected). Degrades gracefully to originals if no key / on error.

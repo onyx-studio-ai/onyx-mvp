@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 import { USE_CASE_KEYS, VOICE_AGE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem } from '@/lib/talent-taxonomy';
+import { stripContactsAndLinks } from '@/lib/sanitize-text';
 
 /*
   Talent self-service profile API. Authenticated by the talent's OWN Supabase
@@ -101,6 +102,11 @@ export async function PATCH(request: NextRequest) {
     }
     if ('name' in updates && (typeof updates.name !== 'string' || !updates.name.trim())) {
       return NextResponse.json({ error: 'Display name cannot be empty' }, { status: 400 });
+    }
+    // Strip links / personal contact info from free-text — links belong in the
+    // dedicated field, contact info stays private (never shown to clients).
+    for (const k of ['bio', 'clients', 'awards', 'notable_works', 'special_skills'] as const) {
+      if (typeof updates[k] === 'string') updates[k] = stripContactsAndLinks(updates[k] as string);
     }
 
     // headshot_url: must live in our talent-photos bucket (or be cleared).

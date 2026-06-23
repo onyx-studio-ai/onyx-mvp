@@ -132,6 +132,7 @@ export default function TalentDashboard() {
   const [langQ, setLangQ] = useState('');
   const [accentPick, setAccentPick] = useState('native');
   const [accentCustom, setAccentCustom] = useState('');
+  const [langErr, setLangErr] = useState('');
   const [traitCustom, setTraitCustom] = useState('');
   const [specCustom, setSpecCustom] = useState('');
   const [addCat, setAddCat] = useState('');
@@ -295,10 +296,17 @@ export default function TalentDashboard() {
     setForm((f) => ({ ...f, [field]: f[field].filter((x) => x !== val) }));
   const addLang = () => {
     if (!langPick) return;
+    // Languages with regional variants (Mandarin, English, Spanish…) MUST have a
+    // specific accent — "國語" alone is too broad. Force a real choice.
+    const hasRegional = accentOptionsFor(langPick).length > 1;
+    if (hasRegional && (!accentPick || accentPick === 'native')) {
+      setLangErr(tx(`「${baseLangLabel(langPick, locale)}」請選擇口音`, `「${baseLangLabel(langPick, locale)}」请选择口音`, `Please pick an accent for ${baseLangLabel(langPick, locale)}`));
+      return;
+    }
     const accent = accentPick === '__other__' ? (accentCustom.replace(/\//g, ' ').trim() || 'native') : (accentPick || 'native');
     const entry = `${langPick.replace(/\//g, ' ').trim()}/${accent}`;
     if (!form.languages.includes(entry)) setForm((f) => ({ ...f, languages: [...f.languages, entry] }));
-    setLangPick(''); setLangQ(''); setAccentPick('native'); setAccentCustom('');
+    setLangPick(''); setLangQ(''); setAccentPick('native'); setAccentCustom(''); setLangErr('');
   };
   const removeLang = (v: string) => setForm((f) => ({ ...f, languages: f.languages.filter((x) => x !== v) }));
 
@@ -395,6 +403,7 @@ export default function TalentDashboard() {
         {/* Bio */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('個人簡介', '个人简介', 'Bio')}</label>
+          <p className="text-xs text-amber-300/80 mb-2">{tx('請勿填寫連結或個人聯絡資訊(電話、Email、社群)—— 系統會自動移除。作品連結請放下方專屬欄位。', '请勿填写链接或个人联系信息(电话、Email、社群)—— 系统会自动移除。作品链接请放下方专属栏位。', 'No links or personal contact info (phone, email, socials) — they’re removed automatically. Put work links in the dedicated field below.')}</p>
           <textarea className={`${inputCls} min-h-[100px] resize-y`} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })}
             placeholder={tx('用您的語言寫即可,上線時我們會翻成其他語言。例如:溫暖知性的女聲,擅長廣告與旁白…', '用您的语言写即可,上线时我们会翻成其他语言。例如:温暖知性的女声,擅长广告与旁白…', 'Write in your own language — we translate it at publish. e.g. Warm, articulate voice, great for ads and narration…')} />
         </div>
@@ -460,23 +469,33 @@ export default function TalentDashboard() {
               <input className={inputCls} value={langQ} onChange={(e) => setLangQ(e.target.value)} placeholder={tx('搜尋語言,例如:葡萄牙文 / Tagalog', '搜寻语言,例如:葡萄牙文 / Tagalog', 'Search a language, e.g. Portuguese / Tagalog')} />
               {(langMatches.length > 0 || canAddCustomLang) && (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {langMatches.slice(0, 12).map((o) => <button key={o.key} onClick={() => { setLangPick(o.key); setLangQ(''); setAccentPick('native'); setAccentCustom(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-2.5 py-1 transition">+ {pickLabel(o, locale)}</button>)}
-                  {canAddCustomLang && <button onClick={() => { setLangPick(langQ.trim()); setLangQ(''); setAccentPick('native'); setAccentCustom(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-full px-2.5 py-1 transition">{tx('其他', '其他', 'Other')}:“{langQ.trim()}”</button>}
+                  {langMatches.slice(0, 12).map((o) => <button key={o.key} onClick={() => { setLangPick(o.key); setLangQ(''); setAccentPick(accentOptionsFor(o.key).length > 1 ? '' : 'native'); setAccentCustom(''); setLangErr(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-2.5 py-1 transition">+ {pickLabel(o, locale)}</button>)}
+                  {canAddCustomLang && <button onClick={() => { setLangPick(langQ.trim()); setLangQ(''); setAccentPick('native'); setAccentCustom(''); setLangErr(''); }} className="text-xs bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-full px-2.5 py-1 transition">{tx('其他', '其他', 'Other')}:“{langQ.trim()}”</button>}
                 </div>
               )}
             </div>
           ) : (
+            <>
             <div className="flex flex-wrap gap-2 items-center">
               <span className="inline-flex items-center gap-1.5 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-200">{baseLangLabel(langPick, locale)}<button onClick={() => setLangPick('')} className="text-gray-400 hover:text-white" aria-label="change">×</button></span>
-              <select className={`${inputCls} flex-1 min-w-[120px]`} value={accentPick} onChange={(e) => setAccentPick(e.target.value)}>
-                {accentOptionsFor(langPick).map((k) => <option key={k} value={k} className="bg-zinc-900">{accentLabel(k, locale)}</option>)}
-                <option value="__other__" className="bg-zinc-900">{tx('其他(自填)', '其他(自填)', 'Other (type)')}</option>
-              </select>
+              {(() => {
+                const opts = accentOptionsFor(langPick);
+                const hasRegional = opts.length > 1; // more than just 'native' → must pick a region
+                return (
+                  <select className={`${inputCls} flex-1 min-w-[120px]`} value={accentPick} onChange={(e) => { setAccentPick(e.target.value); setLangErr(''); }}>
+                    {hasRegional && <option value="" className="bg-zinc-900">{tx('— 請選擇口音 —', '— 请选择口音 —', '— Select accent —')}</option>}
+                    {opts.filter((k) => !hasRegional || k !== 'native').map((k) => <option key={k} value={k} className="bg-zinc-900">{accentLabel(k, locale)}</option>)}
+                    <option value="__other__" className="bg-zinc-900">{tx('其他(自填)', '其他(自填)', 'Other (type)')}</option>
+                  </select>
+                );
+              })()}
               {accentPick === '__other__' && (
                 <input className={`${inputCls} flex-1 min-w-[120px]`} value={accentCustom} onChange={(e) => setAccentCustom(e.target.value)} placeholder={tx('口音,例如:韓國口音', '口音,例如:韩国口音', 'Accent, e.g. Korean')} />
               )}
               <button type="button" onClick={addLang} className="shrink-0 text-sm bg-amber-500/90 hover:bg-amber-400 text-black font-medium rounded-lg px-4 transition">{tx('加入', '加入', 'Add')}</button>
             </div>
+            {langErr && <p className="text-xs text-red-400 mt-1.5">{langErr}</p>}
+            </>
           )}
         </div>
 
