@@ -19,7 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star } from 'lucide-react';
+import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES, TURNAROUNDS, turnaroundLabel,
   pickLabel, formatLangEntry, baseLangLabel, accentLabel, accentOptionsFor, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
@@ -131,6 +131,7 @@ export default function TalentDashboard() {
   const [busy, setBusy] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
   const [saveErr, setSaveErr] = useState('');
+  const [isClient, setIsClient] = useState(false); // dual-role: also has client orders
   const [langPick, setLangPick] = useState('');
   const [langQ, setLangQ] = useState('');
   const [accentPick, setAccentPick] = useState('native');
@@ -149,7 +150,8 @@ export default function TalentDashboard() {
     const res = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${accessToken}` } });
     if (res.status === 404) return setPhase('notalent');
     if (!res.ok) return setPhase('login');
-    const { talent } = (await res.json()) as { talent: Talent };
+    const { talent, isClient: alsoClient } = (await res.json()) as { talent: Talent; isClient?: boolean };
+    setIsClient(!!alsoClient);
     setT(talent);
     setForm({
       name: talent.name || '', english_name: talent.english_name || '', bio: talent.bio || '', gender: talent.gender || '',
@@ -380,6 +382,17 @@ export default function TalentDashboard() {
 
   return shell(
     <>
+      {/* Dual-role only: this account also has client orders → switch to the buyer
+          dashboard. A pure talent never sees this. */}
+      {isClient && (
+        <Link
+          href={`${locale === 'en' ? '' : `/${locale}`}/dashboard`}
+          className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-full px-3 py-1.5 mb-5 transition"
+        >
+          <LayoutDashboard className="w-3.5 h-3.5" />
+          {tx('前往客戶後台', '前往客户后台', 'Go to client dashboard')}
+        </Link>
+      )}
       {/* Spotify-style header */}
       <div className="flex items-end gap-5 mb-6">
         <div className="relative w-28 h-28 rounded-2xl overflow-hidden bg-zinc-800 shrink-0">

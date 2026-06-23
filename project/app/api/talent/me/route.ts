@@ -75,13 +75,19 @@ export async function GET(request: NextRequest) {
   try {
     const r = await resolveTalent(request);
     if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
-    // Dual-role: also a client (has placed voiceover orders)? Lets the dashboard
-    // offer a "switch to client area" link only when relevant.
+    // Dual-role: is this account ALSO a client (placed any order)? Drives access
+    // to the client dashboard + the cross-portal switcher. Check every order
+    // type — a talent who only bought music/orchestra is still a client.
     let isClient = false;
-    try {
-      const { data: ord } = await r.db.from('voice_orders').select('id').eq('email', r.talent.email || '').limit(1).maybeSingle();
-      isClient = !!ord;
-    } catch { /* non-fatal */ }
+    const email = r.talent.email || '';
+    if (email) {
+      for (const table of ['voice_orders', 'music_orders', 'orchestra_orders'] as const) {
+        try {
+          const { data: ord } = await r.db.from(table).select('id').eq('email', email).limit(1).maybeSingle();
+          if (ord) { isClient = true; break; }
+        } catch { /* non-fatal — table/RLS quirk shouldn't block the profile load */ }
+      }
+    }
     return NextResponse.json({ talent: r.talent, isClient });
   } catch (err) {
     return supabaseErrorResponse(err, 'api/talent/me:GET');

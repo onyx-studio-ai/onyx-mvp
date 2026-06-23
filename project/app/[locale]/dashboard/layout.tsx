@@ -1,34 +1,13 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { useRouter as useLocaleRouter } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt } from 'lucide-react';
+import { FileAudio, Settings, LogOut, Receipt, Mic2 } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
-
-// Role separation: the client dashboard and the talent portal are two distinct
-// backends. A talent account belongs in /talent and must never see the buyer
-// dashboard. Login + reset-password already route talents to /talent; this guard
-// is the safety net for a talent who lands on /dashboard directly (old bookmark,
-// manual URL) — bounce them to their own module.
-function TalentGuard() {
-  const router = useLocaleRouter();
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const tok = session?.access_token;
-        if (!tok) return;
-        const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
-        if (r.ok) router.replace('/talent');
-      } catch { /* not a talent — stay on the client dashboard */ }
-    })();
-  }, [router]);
-  return null;
-}
 
 function DashboardHeader() {
   const router = useRouter();
@@ -99,7 +78,7 @@ function DashboardHeader() {
   );
 }
 
-function Sidebar() {
+function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
   const pathname = usePathname();
   const safePathname = pathname || '';
   const user = useDashboardUser();
@@ -109,10 +88,13 @@ function Sidebar() {
     return value === `dashboard.${key}` ? fallback : value;
   };
 
+  // Dual-role only: this account is also a talent → offer a switch to the talent
+  // portal. A pure client never sees it; a pure talent never reaches /dashboard.
   const nav = [
     { href: '/dashboard', label: tr('navProjects', '專案') , icon: FileAudio },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票'), icon: Receipt },
     { href: '/dashboard/settings', label: tr('navSettings', '設定'), icon: Settings },
+    ...(showTalentLink ? [{ href: '/talent', label: tr('navTalentPortal', '配音員後台'), icon: Mic2 }] : []),
   ];
 
   const displayName = user.user_metadata?.full_name || user.email;
@@ -152,7 +134,7 @@ function Sidebar() {
   );
 }
 
-function MobileNav() {
+function MobileNav({ showTalentLink }: { showTalentLink: boolean }) {
   const pathname = usePathname();
   const safePathname = pathname || '';
   const t = useTranslations('dashboard');
@@ -164,6 +146,7 @@ function MobileNav() {
     { href: '/dashboard', label: tr('navProjects', '專案') },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票') },
     { href: '/dashboard/settings', label: tr('navSettings', '設定') },
+    ...(showTalentLink ? [{ href: '/talent', label: tr('navTalentPortal', '配音員後台') }] : []),
   ];
 
   return (
@@ -192,14 +175,35 @@ function MobileNav() {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useLocaleRouter();
+  // Role-based access to the client dashboard:
+  //   pure talent  (talent, no orders)      → bounced to /talent
+  //   pure client  (orders, no profile)     → stays, no talent link
+  //   dual role    (talent who also ordered) → stays, talent-portal switcher shown
+  // /api/talent/me returns { talent, isClient }: ok ⇒ has a talent profile.
+  const [showTalentLink, setShowTalentLink] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const tok = session?.access_token;
+        if (!tok) return;
+        const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
+        if (!r.ok) return; // not a talent → pure client, stays put
+        const { isClient } = await r.json().catch(() => ({ isClient: false }));
+        if (!isClient) { router.replace('/talent'); return; } // pure talent → wrong backend
+        setShowTalentLink(true); // dual role → allow, surface the switcher
+      } catch { /* network hiccup → fail open (stay on dashboard) */ }
+    })();
+  }, [router]);
+
   return (
     <DashboardProvider>
-      <TalentGuard />
       <div className="min-h-screen bg-[#050505]">
         <DashboardHeader />
-        <Sidebar />
+        <Sidebar showTalentLink={showTalentLink} />
         <div className="md:ml-56 pt-16 min-h-screen">
-          <MobileNav />
+          <MobileNav showTalentLink={showTalentLink} />
           {children}
         </div>
       </div>
