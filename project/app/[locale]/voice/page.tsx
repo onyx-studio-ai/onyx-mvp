@@ -119,9 +119,9 @@ async function VoicePageContent() {
             </h2>
             <p className="text-gray-300 leading-relaxed max-w-2xl">
               {tx(
-                '1,500+ 配音員、30+ 語種。瀏覽試聽後直接發案,由我們居中為您協調報價與排程。',
-                '1,500+ 配音员、30+ 语种。浏览试听后直接发案,由我们居中为您协调报价与排程。',
-                '1,500+ voice actors across 30+ languages. Browse and listen, then post a brief — we coordinate quotes and scheduling for you.'
+                '多語種真人配音員。瀏覽試聽後直接發案,由我們居中為您協調報價與排程。',
+                '多语种真人配音员。浏览试听后直接发案,由我们居中为您协调报价与排程。',
+                'Real human voice actors across many languages. Browse and listen, then post a brief — we coordinate quotes and scheduling for you.'
               )}
             </p>
           </div>
