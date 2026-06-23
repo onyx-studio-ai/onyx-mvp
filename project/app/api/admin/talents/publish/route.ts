@@ -46,56 +46,56 @@ export async function POST(request: NextRequest) {
     // otherwise use the talent's draft bio. This single source is auto-translated.
     const draftBio = stripContactsAndLinks((typeof body.bio === 'string' ? body.bio : (t.bio as string)) || '');
 
-    // Auto-translate the free-text fields to {zh-TW,zh-CN,en} via DeepL (source
-    // auto-detected). Degrades gracefully to originals if no key / on error.
+    // Publish is the single chokepoint: EVERY free-text field that reaches the
+    // public snapshot is stripped of phone/email/links here, no matter how it was
+    // entered (self-service, admin form, or approval). `tidy` also trims trailing
+    // separators left by a stripped phone (e.g. "Name_0975…" → "Name").
+    const tidy = (s: string) => stripContactsAndLinks(s || '').replace(/[\s_,、・\-]+$/g, '').replace(/^[\s_,、・\-]+/g, '').trim();
+
+    // Auto-translate the (stripped) free-text fields to {zh-TW,zh-CN,en} via DeepL.
     const trf = await translateFields({
       bio: draftBio,
-      clients: (t.clients as string) || '',
-      awards: (t.awards as string) || '',
-      notable_works: (t.notable_works as string) || '',
-      special_skills: (t.special_skills as string) || '',
-      equipment: (t.equipment as string) || '',
+      clients: tidy((t.clients as string) || ''),
+      awards: tidy((t.awards as string) || ''),
+      notable_works: tidy((t.notable_works as string) || ''),
+      special_skills: tidy((t.special_skills as string) || ''),
+      equipment: tidy((t.equipment as string) || ''),
     });
 
-    // Demo names are free text too (e.g. 廣告台詞 / 時光小屋) — translate each so the
-    // English page doesn't show Chinese labels. Keyed d0, d1, … to map back by index.
+    // Demo names are free text too — strip + translate each.
     const draftDemos = Array.isArray(t.demos) ? (t.demos as Array<Record<string, unknown>>) : [];
-    // Strip phone/email/links talents stuff into demo filenames, then tidy trailing separators.
-    const cleanDemoName = (s: string) => stripContactsAndLinks(s).replace(/[\s_,、・\-]+$/g, '').trim();
     const nameTrf = await translateFields(
-      Object.fromEntries(draftDemos.map((d, i) => [`d${i}`, cleanDemoName((d?.name as string) || '')]))
+      Object.fromEntries(draftDemos.map((d, i) => [`d${i}`, tidy((d?.name as string) || '')]))
     );
     const snapshotDemos = draftDemos.map((d, i) => ({ ...d, name: nameTrf[`d${i}`] ?? d.name ?? '' }));
 
-    // bio: auto-translation result (a {zh-TW,zh-CN,en} object), or the plain
-    // source string if translation is unavailable (pickLocale handles both).
     const snapshotBio = trf.bio ?? draftBio ?? null;
 
-    // Name: never machine-translated. 繁簡 via OpenCC; English = self-provided
-    // english_name, else the original. Kept alongside the plain `name` string
-    // (which many consumers still read) — public UI prefers name_i18n.
-    const nameI18n = localizeName((t.name as string) || '', (t.english_name as string) || '');
+    // Name: stripped, never machine-translated. 繁簡 via OpenCC; English = self-provided.
+    const cleanName = tidy((t.name as string) || '') || (t.name as string) || '';
+    const nameI18n = localizeName(cleanName, tidy((t.english_name as string) || ''));
 
-    // Custom (non-preset) voice-trait / specialty tags are free text the talent
-    // typed (e.g. 海綿寶寶, 有聲漫畫) — translate them so the English/简体 profile
-    // doesn't show Chinese. Preset keys are localized at render and left alone.
-    const vt = Array.isArray(t.voice_traits) ? (t.voice_traits as string[]).filter((x) => typeof x === 'string') : [];
-    const sp = Array.isArray(t.specialties) ? (t.specialties as string[]).filter((x) => typeof x === 'string') : [];
-    const customTags = [...new Set([...vt.filter((x) => !TRAIT_KEYS.has(x)), ...sp.filter((x) => !USE_CASE_KEYS.has(x))])];
+    // Voice-trait / specialty tags: preset keys pass through; custom (free-text)
+    // ones get stripped + translated. Store the cleaned arrays AND the i18n map so
+    // neither the array nor the display can leak a phone a talent hid in a "tag".
+    const cleanTag = (x: string) => (TRAIT_KEYS.has(x) || USE_CASE_KEYS.has(x) ? x : tidy(x));
+    const vtClean = (Array.isArray(t.voice_traits) ? (t.voice_traits as string[]) : []).filter((x) => typeof x === 'string').map(cleanTag).filter(Boolean);
+    const spClean = (Array.isArray(t.specialties) ? (t.specialties as string[]) : []).filter((x) => typeof x === 'string').map(cleanTag).filter(Boolean);
+    const customTags = [...new Set([...vtClean.filter((x) => !TRAIT_KEYS.has(x)), ...spClean.filter((x) => !USE_CASE_KEYS.has(x))])];
     const tagTrf = customTags.length ? await translateFields(Object.fromEntries(customTags.map((c, i) => [`t${i}`, c]))) : {};
     const tagI18n: Record<string, unknown> = {};
     customTags.forEach((c, i) => { const v = tagTrf[`t${i}`]; if (v && typeof v === 'object') tagI18n[c] = v; });
 
     const snapshot = {
-      name: t.name,
+      name: cleanName,
       name_i18n: nameI18n,
       languages: t.languages || [],
       gender: t.gender || null,
       accent: t.accent || null,
       bio: snapshotBio,
       tags: t.tags || [],
-      voice_traits: t.voice_traits || [],
-      specialties: t.specialties || [],
+      voice_traits: vtClean,
+      specialties: spClean,
       tag_i18n: tagI18n,
       voice_ages: t.voice_ages || [],
       demos: snapshotDemos,
