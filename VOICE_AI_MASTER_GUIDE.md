@@ -116,6 +116,18 @@
 
 ⚠️ 已驗證 TTS 跑得起來,粵語腔。後續可以比較 epoch 4/6/8 哪個最好聽。
 
+### 阿宏 — 呂冠彥 (Onyx Bravo,台灣男聲) ⚠️ 2026-06-23 補登
+> **原 GPT-SoVITS 訓練權重:全碟搜不到 = 已遺失**(.ckpt/.pth 都沒備份到本機)。
+> **但不影響** —— 走 zero-shot 只要 raw 人聲 ref,不需要那個訓練模型。
+
+| 資產 | 位置 | 說明 |
+|---|---|---|
+| **原始人聲(5hr,zero-shot ref 金礦)** | `…/訓練資料/2026041201 數據堂 冠彥 TTS 5小時/交檔/`(7 個日期夾,共 112 wav,**48k/mono/24bit**) | **自然口語**(拍照/水果/買房子/颱風/第一次出遠門…),非廣告腔;每檔 2.7–6.5 分鐘長,要切 8-12s 乾淨句 |
+| 已切好的 ref 候選 | `~/Desktop/voice-shootout-refs/Ahong_阿宏_候選A/B_水果_*.wav`(各 ~10.5s,silencedetect 切的乾淨整句) | 逐字稿待補(pod 上 whisper 或聽打) |
+| 舊模型輸出(僅參考) | `…/訓練資料/ahong_v2/01_ref_round1`(epoch e12/e16)、`02_ref_round2`(pitch 154/113/132/142Hz)、`03_onyx_bravo_16langs`(16 語 demo) | 都是**合成**輸出,非人聲;記憶:**154Hz/e12 是 winner**(他自然音高約 154Hz);16langs 可當「before 機器人版」對照 |
+
+> ⚠️ 數據堂交檔**沒附逐字稿檔**(只有 wav)。zero-shot ref 要文字 → 切好的句子用 whisper 轉或聽打。
+
 ### Nova(身份待確認)
 位置:`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/nova_train_data/` + `nova_preprocess_final/`
 

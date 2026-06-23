@@ -36,6 +36,9 @@
 | **Eric ref-A(廣告腔,對應 ad use-case)** | `…/onyx-platform/eric_train_data/FAAM0113.wav` | 48k/mono/16bit/8.1s | `年度最大電玩展強勢登場!主機與遊戲片整套購買,立即為您省下兩千元。`(`eric_filelist.txt` 內,418 檔都有對齊稿) |
 | **Eric ref-B(自然講話,對照)** | `…/onyx-platform/eric_ref.wav` | 48k/mono/24bit/8.7s | `我是楊日漢,我確認本段聲音由我本人於2026年3月18號親自錄製。` |
 | **Wing 粵語 ref(升級版)** | `…/訓練資料/Wing/Wing/1.zh-hk_audio_08-lc-education_mobile-desk.wav` | **48k/mono/24bit/11.8s** ✅ | 逐字稿在 `…/訓練資料/Wing/wing_edits_chunks_2026-05-29-18-32.json`(跑前撈出對齊文字) |
+| **阿宏 / Bravo 普通話 ref** | `~/Desktop/voice-shootout-refs/Ahong_阿宏_候選A_水果_10.5s.wav`(原檔 `…/數據堂 冠彥 TTS 5小時/交檔/0513/文本_水果.wav` 的 7.0–17.5s,silencedetect 切的乾淨整句) | **48k/mono/24bit/10.5s** ✅ | 逐字稿待補(whisper/聽打);另有候選B |
+
+> 🆕 **阿宏(Onyx Bravo)訓練模型已遺失**,但有 5hr 原始自然人聲 → 純走 zero-shot,**正好示範「沒有訓練模型也能做」**。他自然音高約 154Hz(舊 A/B 結論)。
 
 > ✅ **Wing ref 已換掉 3.4s 廣告切片** → 改用 `Wing/Wing/` 的 `zh-hk_audio` 系列(48k/24bit、11.8–23s、分好類:upsell/proposition/education)。
 > education 那段語氣較自然(非硬銷),11.8s 正好。若要更有廣告能量可改 upsell 系列。**pod 上帶 3 個 ref + 對應逐字稿。**
