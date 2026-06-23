@@ -156,6 +156,7 @@ export async function PATCH(request: NextRequest) {
           if (application.coop_ai_clone) serviceTags.push('AI Voice');
           if (application.coop_ai_training) serviceTags.push('TTS Data');
           if (application.coop_proofread) serviceTags.push('Proofreading');
+          if (application.coop_voice_director) serviceTags.push('Voice Director');
           const tags: string[] = [
             ...serviceTags,
             ...(application.voice_types || []),

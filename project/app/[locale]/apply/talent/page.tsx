@@ -9,6 +9,7 @@
   are localized. Reuses /api/apply/upload-url + /api/apply/submit.
   New DB columns (display_name, messaging_contacts, coop_*, low_price_data_optin,
   excluded_countries, coop_proofread) come from migration 20260619000000.
+  coop_voice_director added in migration 20260623120000.
 */
 
 import { useState } from 'react';
@@ -120,6 +121,10 @@ const COOP = [
     tw: { t: '⑤ 語音校對', d: '聆聽指定音檔,標示唸錯或讀錯之處,並提供正確讀音(含同音字判讀)。一般可快速完成,內容較長者(約 30 秒以上)需較多時間。僅於有需求時邀約,費用依長度另行議定。' },
     cn: { t: '⑤ 语音校对', d: '聆听指定音档,标示念错或读错之处,并提供正确读音(含同音字判读)。一般可快速完成,内容较长者(约 30 秒以上)需较多时间。仅于有需求时邀约,费用依长度另行议定。' },
     en: { t: '⑤ Audio proofreading', d: 'Listen to a supplied recording, flag mispronounced or misread words, and provide the correct reading (including homophones). Usually quick; longer pieces (30s+) require more time. Engaged on a per-project basis, with fees agreed by length.' } },
+  { key: 'voiceDirector',
+    tw: { t: '⑥ 擔任聲音導演', d: '若您有聲音導演經驗 —— 於錄音現場指導其他配音員的表演、咬字、節奏與情緒,我們有相關案件時可邀請您擔任聲音導演。費用依案件另行議定。' },
+    cn: { t: '⑥ 担任声音导演', d: '若您有声音导演经验 —— 于录音现场指导其他配音员的表演、咬字、节奏与情绪,我们有相关案件时可邀请您担任声音导演。费用依案件另行议定。' },
+    en: { t: '⑥ Voice directing', d: 'If you have experience as a voice director — guiding other talents on performance, delivery, pacing and emotion during a session — we may invite you to direct when such projects come up. Fees agreed per project.' } },
 ] as const;
 
 const inputCls =
@@ -169,7 +174,7 @@ export default function TalentApply() {
   const [feels, setFeels] = useState<string[]>([]);
   const [feelQ, setFeelQ] = useState('');
   const [env, setEnv] = useState<string | null>(null);
-  const [coop, setCoop] = useState({ jobs: true, buyout: false, aiClone: false, aiTrain: false, proofread: false });
+  const [coop, setCoop] = useState({ jobs: true, buyout: false, aiClone: false, aiTrain: false, proofread: false, voiceDirector: false });
   const [lowData, setLowData] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
@@ -280,6 +285,7 @@ export default function TalentApply() {
         coop_ai_clone: coop.aiClone,
         coop_ai_training: coop.aiTrain,
         coop_proofread: coop.proofread,
+        coop_voice_director: coop.voiceDirector,
         low_price_data_optin: lowData,
         excluded_countries: form.excluded_countries ? [form.excluded_countries] : [],
         consent_data_processing: agreeTerms,

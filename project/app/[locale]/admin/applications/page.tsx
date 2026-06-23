@@ -32,6 +32,7 @@ interface Application {
   coop_ai_clone?: boolean;
   coop_ai_training?: boolean;
   coop_proofread?: boolean;
+  coop_voice_director?: boolean;
   low_price_data_optin?: boolean;
   excluded_countries?: string[];
   locale?: string;
@@ -392,7 +393,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                     {app.messaging_contacts && (app.messaging_contacts.line || app.messaging_contacts.whatsapp || app.messaging_contacts.telegram) && (
                       <div><span className="text-gray-500">通訊軟體: </span><span className="text-gray-900">{[app.messaging_contacts.line && `Line: ${app.messaging_contacts.line}`, app.messaging_contacts.whatsapp && `WhatsApp: ${app.messaging_contacts.whatsapp}`, app.messaging_contacts.telegram && `Telegram: ${app.messaging_contacts.telegram}`].filter(Boolean).join(' · ')}</span></div>
                     )}
-                    <div><span className="text-gray-500">合作意願: </span><span className="text-gray-900">{[app.coop_accept_jobs && '接案配音', app.coop_open_buyout && '開放買斷', app.coop_ai_clone && 'AI複製(會用聲音)', app.coop_ai_training && 'AI訓練(不用聲音)', app.coop_proofread && '語音校對'].filter(Boolean).join('、') || '—'}</span></div>
+                    <div><span className="text-gray-500">合作意願: </span><span className="text-gray-900">{[app.coop_accept_jobs && '接案配音', app.coop_open_buyout && '開放買斷', app.coop_ai_clone && 'AI複製(會用聲音)', app.coop_ai_training && 'AI訓練(不用聲音)', app.coop_proofread && '語音校對', app.coop_voice_director && '聲音導演'].filter(Boolean).join('、') || '—'}</span></div>
                     <div><span className="text-gray-500">低價數據採集案: </span><span className="text-gray-900">{app.low_price_data_optin ? '願意收資訊' : '否'}</span></div>
                     {app.excluded_countries && app.excluded_countries.length > 0 && <div><span className="text-gray-500">不接案國家: </span><span className="text-gray-900">{app.excluded_countries.join('、')}</span></div>}
                     <div><span className="text-gray-500">表單語言: </span><span className="text-gray-900">{app.locale}</span></div>
