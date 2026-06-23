@@ -1238,27 +1238,63 @@ export function voiceIdRequestEmail(p: {
   talentName: string;
   uploadLink: string;
   expiresIn: string;
+  locale?: string;
 }): { subject: string; html: string } {
+  const slocale: SupportedLocale = p.locale === 'zh-CN' ? 'zh-CN' : p.locale?.startsWith('zh') ? 'zh-TW' : 'en';
+  const L = slocale === 'zh-CN' ? 'cn' : slocale === 'zh-TW' ? 'tw' : 'en';
+  const name = (p.talentName || '').trim();
+  const T = {
+    tw: {
+      subject: 'Onyx Studios — 聲音 ID 驗證(需要您處理)', headline: '聲音 ID 驗證',
+      sub: `${name} 您好,請上傳您的聲音 ID 錄音。`, card: '聲音 ID 聲明',
+      p1: '恭喜您通過 Onyx Studios 審核。驗證流程的一環,需要您提交一段 <strong style="color:#fff;">10 秒的聲音 ID 錄音</strong>。',
+      p2: '這段錄音作為您的「聲音生物簽章」,確認您的身分,以及您在報名同意中授權的權利轉移。',
+      instr: '錄音說明',
+      i1: '1. 找一個安靜、無背景雜音的空間', i2: '2. 用您自然的聲音清楚唸出',
+      i3: '3. 唸出:<em style="color:#fff;">「我,[您的全名],確認這是我本人的真實聲音。我在此授權 Onyx Studios 依雙方簽署之協議,製作並商業管理我的 AI 聲音分身,日期為 [今日日期]。」</em>',
+      i4: '4. 以 WAV 或 MP3 上傳(最大 10MB)',
+      exp: `此連結將於 <strong style="color:#f3f4f6;">${p.expiresIn}</strong> 後失效,且僅能使用一次。`, cta: '上傳我的聲音 ID',
+    },
+    cn: {
+      subject: 'Onyx Studios — 声音 ID 验证(需要您处理)', headline: '声音 ID 验证',
+      sub: `${name} 您好,请上传您的声音 ID 录音。`, card: '声音 ID 声明',
+      p1: '恭喜您通过 Onyx Studios 审核。验证流程的一环,需要您提交一段 <strong style="color:#fff;">10 秒的声音 ID 录音</strong>。',
+      p2: '这段录音作为您的「声音生物签章」,确认您的身分,以及您在报名同意中授权的权利转移。',
+      instr: '录音说明',
+      i1: '1. 找一个安静、无背景杂音的空间', i2: '2. 用您自然的声音清楚念出',
+      i3: '3. 念出:<em style="color:#fff;">「我,[您的全名],确认这是我本人的真实声音。我在此授权 Onyx Studios 依双方签署之协议,制作并商业管理我的 AI 声音分身,日期为 [今日日期]。」</em>',
+      i4: '4. 以 WAV 或 MP3 上传(最大 10MB)',
+      exp: `此链接将于 <strong style="color:#f3f4f6;">${p.expiresIn}</strong> 后失效,且仅能使用一次。`, cta: '上传我的声音 ID',
+    },
+    en: {
+      subject: 'Action Required — Voice ID Verification for Onyx Studios', headline: 'Voice ID Verification',
+      sub: `${name}, please submit your Voice ID recording.`, card: 'Voice ID Affidavit',
+      p1: 'Congratulations on your approved status with Onyx Studios. As part of our verification process, we need you to submit a <strong style="color:#ffffff;">10-second Voice ID recording</strong>.',
+      p2: 'This recording serves as a biological digital signature, confirming your identity and the lawful transfer of rights as agreed in your application consent.',
+      instr: 'Recording Instructions',
+      i1: '1. Find a quiet room with no background noise', i2: '2. Speak clearly in your natural voice',
+      i3: '3. Say: <em style="color:#ffffff;">"I, [Your Full Name], confirm this is my own biological voice. I hereby authorize Onyx Studios to create and commercially manage an AI digital twin of my voice under our signed agreement, on this date, [Today\'s Date]."</em>',
+      i4: '4. Upload as WAV or MP3 (max 10MB)',
+      exp: `This link expires in <strong style="color:#f3f4f6;">${p.expiresIn}</strong>. It can only be used once.`, cta: 'Upload My Voice ID',
+    },
+  }[L];
   const content = `
-    ${headlineBlock('Voice ID Verification', `${p.talentName}, please submit your Voice ID recording.`, BRAND_GREEN)}
-    ${bodyCard('Voice ID Affidavit', `
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Congratulations on your approved status with Onyx Studios. As part of our verification process, we need you to submit a <strong style="color:#ffffff;">10-second Voice ID recording</strong>.</p>
-      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">This recording serves as a biological digital signature, confirming your identity and the lawful transfer of rights as agreed in your application consent.</p>
+    ${headlineBlock(T.headline, T.sub, BRAND_GREEN)}
+    ${bodyCard(T.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${T.p1}</p>
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${T.p2}</p>
       <div style="background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:18px 20px;margin:0 0 16px;">
-        <p style="margin:0 0 8px;color:${BRAND_GREEN};font-size:14px;font-weight:700;">Recording Instructions</p>
-        <p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">1. Find a quiet room with no background noise</p>
-        <p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">2. Speak clearly in your natural voice</p>
-        <p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">3. Say: <em style="color:#ffffff;">"I, [Your Full Name], confirm this is my own biological voice. I hereby authorize Onyx Studios to create and commercially manage an AI digital twin of my voice under our signed agreement, on this date, [Today's Date]."</em></p>
-        <p style="margin:0;color:#d1d5db;font-size:14px;">4. Upload as WAV or MP3 (max 10MB)</p>
+        <p style="margin:0 0 8px;color:${BRAND_GREEN};font-size:14px;font-weight:700;">${T.instr}</p>
+        <p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">${T.i1}</p>
+        <p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">${T.i2}</p>
+        <p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">${T.i3}</p>
+        <p style="margin:0;color:#d1d5db;font-size:14px;">${T.i4}</p>
       </div>
-      <p style="color:#9ca3af;font-size:13px;margin:0;">This link expires in <strong style="color:#f3f4f6;">${p.expiresIn}</strong>. It can only be used once.</p>
+      <p style="color:#9ca3af;font-size:13px;margin:0;">${T.exp}</p>
     `)}
-    ${ctaRow('Upload My Voice ID', p.uploadLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}`;
+    ${ctaRow(T.cta, p.uploadLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}`;
 
-  return {
-    subject: 'Action Required — Voice ID Verification for Onyx Studios',
-    html: baseLayout(content),
-  };
+  return { subject: T.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, slocale) };
 }
 
 // ---------------------------------------------------------------------------

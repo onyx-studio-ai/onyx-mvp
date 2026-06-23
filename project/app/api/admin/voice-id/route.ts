@@ -73,11 +73,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: updateErr.message }, { status: 500 });
     }
 
-    const uploadLink = `${SITE_URL}/voice-id/${token}`;
+    // Localize: English by default; Chinese only for zh talents. Locale-prefixed
+    // link so the upload page renders in their language too.
+    let locale = 'en';
+    try {
+      const { data: appRow } = await supabase.from('talent_applications').select('locale').eq('email', talent.email).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const loc = (appRow as { locale?: string } | null)?.locale;
+      if (loc) locale = loc;
+    } catch { /* non-fatal */ }
+    const expiresIn = locale.startsWith('zh') ? '7 天' : '7 days';
+    const uploadLink = `${SITE_URL}/${locale}/voice-id/${token}`;
     const { subject, html } = voiceIdRequestEmail({
       talentName: talent.name || 'Talent',
       uploadLink,
-      expiresIn: '7 days',
+      expiresIn,
+      locale,
     });
 
     const emailResult = await sendEmail({
