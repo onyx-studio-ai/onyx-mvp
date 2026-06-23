@@ -23,7 +23,7 @@ export default function BrowseVoiceTabs() {
       <Link href="/voices" className={`${base} ${aiActive ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : 'text-gray-300 hover:text-white'}`}>
         {tx('AI 聲音', 'AI 声音', 'AI Voices')}
       </Link>
-      <Link href="/talents" className={`${base} ${!aiActive ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white' : 'text-gray-300 hover:text-white'}`}>
+      <Link href="/talents" className={`${base} ${!aiActive ? 'bg-white/10 border border-white/20 text-white' : 'text-gray-300 hover:text-white'}`}>
         {tx('真人配音員', '真人配音员', 'Human Talent')}
       </Link>
     </div>
