@@ -60,8 +60,10 @@ export async function POST(request: NextRequest) {
     // Demo names are free text too (e.g. 廣告台詞 / 時光小屋) — translate each so the
     // English page doesn't show Chinese labels. Keyed d0, d1, … to map back by index.
     const draftDemos = Array.isArray(t.demos) ? (t.demos as Array<Record<string, unknown>>) : [];
+    // Strip phone/email/links talents stuff into demo filenames, then tidy trailing separators.
+    const cleanDemoName = (s: string) => stripContactsAndLinks(s).replace(/[\s_,、・\-]+$/g, '').trim();
     const nameTrf = await translateFields(
-      Object.fromEntries(draftDemos.map((d, i) => [`d${i}`, (d?.name as string) || '']))
+      Object.fromEntries(draftDemos.map((d, i) => [`d${i}`, cleanDemoName((d?.name as string) || '')]))
     );
     const snapshotDemos = draftDemos.map((d, i) => ({ ...d, name: nameTrf[`d${i}`] ?? d.name ?? '' }));
 

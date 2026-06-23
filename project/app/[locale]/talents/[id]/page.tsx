@@ -239,6 +239,7 @@ export default function TalentProfile() {
                       {items.map((d, i) => (
                         <div key={d.url || i} className="flex items-center gap-3 bg-zinc-900/50 rounded-lg px-3 py-2">
                           <span className="text-sm text-gray-200 w-36 sm:w-44 truncate shrink-0">{cjkSpace(pickLocale(d.name, locale)) || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
+                          {d.language && <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 shrink-0 whitespace-nowrap">{formatLangEntry(d.language, locale)}</span>}
                           <audio controls src={d.url} className="h-8 flex-1 min-w-0" />
                         </div>
                       ))}
