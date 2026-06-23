@@ -30,10 +30,6 @@ export default function Footer() {
           </p>
 
           <div className="py-6 border-t border-b border-white/5 space-y-4">
-            <div className="text-gray-400 text-sm">
-              <p>{t('locations')}</p>
-            </div>
-
             {/* Services nav — internal links for SEO */}
             <div className="flex items-center justify-center gap-6 text-xs text-gray-500 flex-wrap">
               <Link href="/voice" className="hover:text-gray-300 transition-colors">
@@ -120,7 +116,6 @@ export default function Footer() {
             <div className="space-y-1">
               <p><strong>{t('billingLabel')}</strong> {t('billingEntity')}</p>
               <p><strong>{t('taxIdLabel')}</strong> {t('taxIdValue')}</p>
-              <p><strong>{t('addressLabel')}</strong> {t('addressValue')}</p>
               <p>{t('contactInfo')}</p>
             </div>
           </div>
