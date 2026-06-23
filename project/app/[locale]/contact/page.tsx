@@ -7,10 +7,10 @@ import { Mail, Building2, Globe } from 'lucide-react';
 type SupportedLocale = 'en' | 'zh-TW' | 'zh-CN';
 
 const DEPARTMENTS = [
-  { labelKey: 'deptGeneralLabel', email: 'hello@onyxstudios.ai', descKey: 'deptGeneralDesc', accent: 'emerald' },
+  { labelKey: 'deptGeneralLabel', email: 'hello@onyxstudios.ai', descKey: 'deptGeneralDesc', accent: 'blue' },
   { labelKey: 'deptSupportLabel', email: 'support@onyxstudios.ai', descKey: 'deptSupportDesc', accent: 'blue' },
-  { labelKey: 'deptProductionLabel', email: 'produce@onyxstudios.ai', descKey: 'deptProductionDesc', accent: 'amber' },
-  { labelKey: 'deptBillingLabel', email: 'billing@onyxstudios.ai', descKey: 'deptBillingDesc', accent: 'purple' },
+  { labelKey: 'deptProductionLabel', email: 'produce@onyxstudios.ai', descKey: 'deptProductionDesc', accent: 'blue' },
+  { labelKey: 'deptBillingLabel', email: 'billing@onyxstudios.ai', descKey: 'deptBillingDesc', accent: 'blue' },
   { labelKey: 'deptAdminLabel', email: 'admin@onyxstudios.ai', descKey: 'deptAdminDesc', accent: 'rose' },
 ];
 
@@ -89,12 +89,10 @@ export default function ContactPage({
                     <div className="flex-1">
                       <h3 className="text-xl font-semibold mb-1">{t('taipeiTitle')}</h3>
                       <p className="text-sm text-gray-500 mb-3">{t('taipeiRole')}</p>
-                      <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">
-                        {t('taipeiAddress')}
-                      </p>
-                      {/* Phone number removed 2026-06-07 — line is
-                          currently inactive (no one answers). Will
-                          re-enable when staffed. */}
+                      {/* Street address & phone intentionally not shown — the
+                          registered address is mail-only with no walk-in/phone
+                          staffing; contact is email-first. Region + hours convey
+                          timezone without implying a visitable office. */}
                       <div className="flex items-center gap-1.5 mt-3 px-2 py-1 bg-blue-500/10 rounded-full w-fit">
                         <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
                         <span className="text-blue-400 text-xs font-medium">{t('taipeiHours')}</span>

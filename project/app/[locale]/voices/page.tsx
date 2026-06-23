@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { languages, getVoicesForLanguage, findLanguageByVoiceName, Voice, voicesByLanguage } from '@/lib/voices';
-import { User, UserRound, Play, Activity, Wand2, ChevronDown, X, Globe, Search } from 'lucide-react';
+import { User, UserRound, Play, Pause, Activity, Wand2, ChevronDown, X, Globe, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/landing/Footer';
@@ -260,7 +260,7 @@ export default function VoicesPage() {
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-20">
-      <div className="relative py-20 px-4">
+      <div className="relative pt-20 pb-28 px-4">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.05),transparent_50%)]" />
 
         <div className="relative z-10 max-w-7xl mx-auto">
@@ -382,94 +382,58 @@ export default function VoicesPage() {
           </div>
 
           {availableVoices.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availableVoices.map((voice: Voice) => (
-                <div
-                  key={voice.id}
-                  className="relative p-6 rounded-2xl border-2 border-white/10 bg-gradient-to-b from-[#0a0a0a] to-[#0f0f0f] hover:border-white/20 transition-all group"
-                >
-                  <div className="flex items-start justify-between mb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              {availableVoices.map((voice: Voice) => {
+                const selectedIdx = selectedDemoIndexByVoice[voice.id];
+                const isPlaying = playingVoiceId === voice.id;
+                return (
+                  <div
+                    key={voice.id}
+                    className="bg-zinc-950 border border-zinc-800 rounded-2xl p-3 hover:border-zinc-600 transition-colors flex flex-col gap-2 min-h-[180px]"
+                  >
                     <div className="flex items-center gap-3">
-                      {voice.gender === 'male' ? (
-                        <User className="w-6 h-6 text-blue-400" />
-                      ) : (
-                        <UserRound className="w-6 h-6 text-pink-400" />
-                      )}
-                      <div>
-                        <h3 className="text-xl font-bold text-white">{voice.name}</h3>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider">
-                          {genderLabel(voice.gender)}
-                        </p>
+                      <div className="relative flex-none">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 to-zinc-700 flex items-center justify-center text-blue-200">
+                          {voice.gender === 'female' ? <UserRound className="w-6 h-6" /> : <User className="w-6 h-6" />}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            const selectedDemo = selectedIdx != null ? voice.demos?.[selectedIdx] : null;
+                            const url = selectedDemo?.url || voice.audioPreviewUrl;
+                            toggleAudioPreview({ ...voice, audioPreviewUrl: url }, e);
+                          }}
+                          aria-label={isPlaying ? t('stopPreview') : t('playPreview')}
+                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-400"
+                        >
+                          {isPlaying ? <Activity className="w-3 h-3 animate-pulse" /> : <Play className="w-3 h-3 ml-0.5" />}
+                        </button>
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-white truncate">{voice.name}</h3>
+                        <p className="text-[11px] text-gray-500">{genderLabel(voice.gender)}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          const selectedIdx = selectedDemoIndexByVoice[voice.id];
-                          const selectedDemo = selectedIdx != null ? voice.demos?.[selectedIdx] : null;
-                          const url = selectedDemo?.url || voice.audioPreviewUrl;
-                          toggleAudioPreview({ ...voice, audioPreviewUrl: url }, e);
-                        }}
-                        className={`
-                          p-3 rounded-lg transition-all
-                          ${
-                            playingVoiceId === voice.id
-                              ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                              : 'bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white'
-                          }
-                        `}
-                        title={playingVoiceId === voice.id ? t('stopPreview') : t('playPreview')}
-                      >
-                        {playingVoiceId === voice.id ? (
-                          <Activity className="w-5 h-5 animate-pulse" />
-                        ) : (
-                          <Play className="w-5 h-5" />
-                        )}
-                      </button>
-                      {playingVoiceId === voice.id && (
-                        <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
-                          <div
-                            className="h-full bg-blue-400 rounded-full transition-[width] duration-200"
-                            style={{ width: `${audioProgress}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-400 leading-relaxed mb-4">
-                    {voice.description}
-                  </p>
 
-                  {voice.demos && voice.demos.length > 1 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-2">
-                        {isZh ? `${voice.demos.length} 個語言示範 · 選擇後按 ▶ 試聽` : `${voice.demos.length} language demos · select, then press ▶`}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
+                    {voice.demos && voice.demos.length > 1 && (
+                      <div className="flex flex-wrap gap-1">
                         {voice.demos.map((demo, i) => {
                           const langObj = languages.find(l => l.code === demo.label);
-                          const display = langObj ? langDisplayName(langObj) : (demo.label || `Demo ${i+1}`);
-                          const isSelected = selectedDemoIndexByVoice[voice.id] === i;
+                          const display = langObj ? langDisplayName(langObj) : (demo.label || `Demo ${i + 1}`);
+                          const isSelected = selectedIdx === i;
                           return (
                             <button
                               key={demo.url + i}
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // 2026-06-07 Wing 反饋:點 chip 不該自動播,
-                                // 只負責 SELECT。換 chip 前先停掉當前播放音
-                                // (避免使用者邊聽 A 邊點 B 結果聽到 A 的尾巴)。
                                 stopCurrentAudio();
-                                setSelectedDemoIndexByVoice(prev => ({
-                                  ...prev,
-                                  [voice.id]: i,
-                                }));
+                                setSelectedDemoIndexByVoice(prev => ({ ...prev, [voice.id]: i }));
                               }}
-                              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                              className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                                 isSelected
-                                  ? 'bg-blue-600 border-blue-500 text-white'
-                                  : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/20'
+                                  ? 'bg-blue-500/20 text-blue-200 border-blue-400/40'
+                                  : 'bg-zinc-800 border-zinc-700 text-gray-300 hover:border-zinc-500'
                               }`}
                               title={demo.name || display}
                             >
@@ -478,18 +442,18 @@ export default function VoicesPage() {
                           );
                         })}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <Button
-                    onClick={() => handleUseVoice(voice)}
-                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white py-2.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    {t('useVoice')}
-                  </Button>
-                </div>
-              ))}
+                    <Button
+                      onClick={() => handleUseVoice(voice)}
+                      className="mt-auto w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      {t('useVoice')}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-24">
@@ -504,6 +468,32 @@ export default function VoicesPage() {
           )}
         </div>
       </div>
+
+      {/* persistent now-playing bar — mirrors the human roster */}
+      {playingVoiceId && (() => {
+        const v = allVoices.find((x) => x.id === playingVoiceId);
+        if (!v) return null;
+        return (
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur border-t border-zinc-800">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+              <button
+                onClick={stopCurrentAudio}
+                aria-label={t('stopPreview')}
+                className="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-400 flex-none"
+              >
+                <Pause className="w-4 h-4" />
+              </button>
+              <div className="min-w-0 w-40 flex-none">
+                <p className="text-sm font-medium text-white truncate">{v.name}</p>
+                <p className="text-[11px] text-gray-400 truncate">{genderLabel(v.gender)}</p>
+              </div>
+              <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                <div className="h-full bg-blue-400 rounded-full transition-[width] duration-200" style={{ width: `${audioProgress}%` }} />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <Footer />
     </main>
