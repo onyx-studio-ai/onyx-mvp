@@ -2,14 +2,21 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Upload, Mic, CheckCircle, AlertTriangle, Shield, Loader2, Eraser, PenTool, FileText, ChevronDown, ChevronUp, CreditCard } from 'lucide-react';
 
 type PageState = 'loading' | 'valid' | 'invalid' | 'expired' | 'already_submitted' | 'uploading' | 'success';
+
+// English by default; Chinese only for zh locales. (The binding agreement body
+// stays English — authoritative — per legal review.)
+const mkTx = (locale: string) => (tw: string, cn: string, en: string) =>
+  locale === 'zh-CN' ? cn : locale.startsWith('zh') ? tw : en;
 
 function SignaturePad({ onSignatureChange }: { onSignatureChange: (dataUrl: string | null) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
+  const tx = mkTx(useLocale());
 
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -82,7 +89,7 @@ function SignaturePad({ onSignatureChange }: { onSignatureChange: (dataUrl: stri
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <PenTool className="w-4 h-4 text-green-400" />
-          <h3 className="text-white font-semibold text-sm">Electronic Signature</h3>
+          <h3 className="text-white font-semibold text-sm">{tx('電子簽名', '电子签名', 'Electronic Signature')}</h3>
         </div>
         {hasSignature && (
           <button
@@ -90,11 +97,11 @@ function SignaturePad({ onSignatureChange }: { onSignatureChange: (dataUrl: stri
             onClick={clearSignature}
             className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
           >
-            <Eraser className="w-3.5 h-3.5" /> Clear
+            <Eraser className="w-3.5 h-3.5" /> {tx('清除', '清除', 'Clear')}
           </button>
         )}
       </div>
-      <p className="text-gray-500 text-xs">Sign below to confirm your identity and authorize the agreement.</p>
+      <p className="text-gray-500 text-xs">{tx('在下方簽名,確認您的身分並授權本協議。', '在下方签名,确认您的身分并授权本协议。', 'Sign below to confirm your identity and authorize the agreement.')}</p>
       <div className="relative rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-900/50 overflow-hidden">
         <canvas
           ref={canvasRef}
@@ -109,7 +116,7 @@ function SignaturePad({ onSignatureChange }: { onSignatureChange: (dataUrl: stri
         />
         {!hasSignature && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-zinc-600 text-sm">Sign here with your finger or mouse</p>
+            <p className="text-zinc-600 text-sm">{tx('用手指或滑鼠在此簽名', '用手指或鼠标在此签名', 'Sign here with your finger or mouse')}</p>
           </div>
         )}
         <div className="absolute bottom-3 left-4 right-4 border-t border-zinc-700" />
@@ -121,6 +128,7 @@ function SignaturePad({ onSignatureChange }: { onSignatureChange: (dataUrl: stri
 export default function VoiceIdUploadPage() {
   const params = useParams();
   const token = params.token as string;
+  const tx = mkTx(useLocale());
 
   const [pageState, setPageState] = useState<PageState>('loading');
   const [talentName, setTalentName] = useState('');
@@ -152,12 +160,12 @@ export default function VoiceIdUploadPage() {
           setPageState('already_submitted');
         } else {
           setPageState('invalid');
-          setErrorMsg(data.error || 'Invalid token');
+          setErrorMsg(data.error || tx('連結無效', '链接无效', 'Invalid token'));
         }
       })
       .catch(() => {
         setPageState('invalid');
-        setErrorMsg('Unable to validate token');
+        setErrorMsg(tx('無法驗證連結', '无法验证链接', 'Unable to validate token'));
       });
   }, [token]);
 
@@ -181,11 +189,11 @@ export default function VoiceIdUploadPage() {
         setPageState('success');
       } else {
         setPageState('valid');
-        setErrorMsg(data.error || 'Upload failed');
+        setErrorMsg(data.error || tx('上傳失敗', '上传失败', 'Upload failed'));
       }
     } catch {
       setPageState('valid');
-      setErrorMsg('Upload failed. Please try again.');
+      setErrorMsg(tx('上傳失敗,請再試一次。', '上传失败,请再试一次。', 'Upload failed. Please try again.'));
     }
   }, [file, token, signatureDataUrl, paymentMethod, paymentDetails]);
 
@@ -200,11 +208,11 @@ export default function VoiceIdUploadPage() {
     setErrorMsg('');
     const allowedTypes = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/x-wav', 'audio/wave'];
     if (!allowedTypes.includes(f.type)) {
-      setErrorMsg('Please upload a WAV or MP3 file.');
+      setErrorMsg(tx('請上傳 WAV 或 MP3 檔。', '请上传 WAV 或 MP3 文件。', 'Please upload a WAV or MP3 file.'));
       return;
     }
     if (f.size > 10 * 1024 * 1024) {
-      setErrorMsg('File must be under 10MB.');
+      setErrorMsg(tx('檔案需小於 10MB。', '文件需小于 10MB。', 'File must be under 10MB.'));
       return;
     }
     setFile(f);
@@ -215,7 +223,7 @@ export default function VoiceIdUploadPage() {
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
-          <p className="text-gray-400 text-sm">Verifying your link...</p>
+          <p className="text-gray-400 text-sm">{tx('驗證連結中…', '验证链接中…', 'Verifying your link...')}</p>
         </div>
       </div>
     );
@@ -225,18 +233,18 @@ export default function VoiceIdUploadPage() {
     const configs = {
       invalid: {
         icon: <AlertTriangle className="w-12 h-12 text-red-400" />,
-        title: 'Invalid Link',
-        desc: 'This Voice ID link is invalid or has been revoked. Please contact Onyx Studios if you believe this is an error.',
+        title: tx('連結無效', '链接无效', 'Invalid Link'),
+        desc: tx('此聲音 ID 連結無效或已被撤銷。若您認為這是錯誤,請聯絡 Onyx Studios。', '此声音 ID 链接无效或已被撤销。若您认为这是错误,请联系 Onyx Studios。', 'This Voice ID link is invalid or has been revoked. Please contact Onyx Studios if you believe this is an error.'),
       },
       expired: {
         icon: <AlertTriangle className="w-12 h-12 text-amber-400" />,
-        title: 'Link Expired',
-        desc: 'This Voice ID link has expired. Please contact Onyx Studios to request a new one.',
+        title: tx('連結已過期', '链接已过期', 'Link Expired'),
+        desc: tx('此聲音 ID 連結已過期。請聯絡 Onyx Studios 重新取得。', '此声音 ID 链接已过期。请联系 Onyx Studios 重新取得。', 'This Voice ID link has expired. Please contact Onyx Studios to request a new one.'),
       },
       already_submitted: {
         icon: <CheckCircle className="w-12 h-12 text-green-400" />,
-        title: 'Already Submitted',
-        desc: 'Your Voice ID has already been submitted successfully. No further action is needed.',
+        title: tx('已提交', '已提交', 'Already Submitted'),
+        desc: tx('您的聲音 ID 已成功提交,無需再處理。', '您的声音 ID 已成功提交,无需再处理。', 'Your Voice ID has already been submitted successfully. No further action is needed.'),
       },
     };
     const c = configs[pageState];
@@ -248,7 +256,7 @@ export default function VoiceIdUploadPage() {
           <h1 className="text-2xl font-bold text-white">{c.title}</h1>
           <p className="text-gray-400 text-sm leading-relaxed">{c.desc}</p>
           <a href="mailto:support@onyxstudios.ai" className="inline-block text-green-400 text-sm hover:underline">
-            Contact Support
+            {tx('聯絡客服', '联系客服', 'Contact Support')}
           </a>
         </div>
       </div>
@@ -262,17 +270,17 @@ export default function VoiceIdUploadPage() {
           <div className="w-16 h-16 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle className="w-8 h-8 text-green-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Voice ID Submitted</h1>
+          <h1 className="text-2xl font-bold text-white">{tx('聲音 ID 已提交', '声音 ID 已提交', 'Voice ID Submitted')}</h1>
           <p className="text-gray-400 text-sm leading-relaxed">
-            Thank you, {talentName || 'Talent'}. Your Voice ID recording has been received and is being processed.
+            {tx(`${talentName || ''} 您好,我們已收到您的聲音 ID 錄音,正在處理中。`, `${talentName || ''} 您好,我们已收到您的声音 ID 录音,正在处理中。`, `Thank you, ${talentName || 'Talent'}. Your Voice ID recording has been received and is being processed.`)}
           </p>
           {vidNumber && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-              <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Reference Number</p>
+              <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{tx('參考編號', '参考编号', 'Reference Number')}</p>
               <p className="text-green-400 text-lg font-mono font-bold">{vidNumber}</p>
             </div>
           )}
-          <p className="text-gray-500 text-xs">You can safely close this page.</p>
+          <p className="text-gray-500 text-xs">{tx('您可以安全關閉此頁面。', '您可以安全关闭此页面。', 'You can safely close this page.')}</p>
         </div>
       </div>
     );
@@ -285,13 +293,13 @@ export default function VoiceIdUploadPage() {
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-gray-400 uppercase tracking-wider">
             <Shield className="w-3.5 h-3.5 text-green-400" />
-            Secure Verification
+            {tx('安全驗證', '安全验证', 'Secure Verification')}
           </div>
           <h1 className="text-3xl font-bold text-white">
-            <span className="text-green-400">Voice ID</span> Verification
+            <span className="text-green-400">{tx('聲音 ID', '声音 ID', 'Voice ID')}</span> {tx('驗證', '验证', 'Verification')}
           </h1>
           <p className="text-gray-400 text-sm">
-            Welcome, <span className="text-white font-medium">{talentName || 'Talent'}</span>. Please upload your Voice ID recording below.
+            {tx('您好 ', '您好 ', 'Welcome, ')}<span className="text-white font-medium">{talentName || 'Talent'}</span>{tx(',請於下方上傳您的聲音 ID 錄音。', ',请于下方上传您的声音 ID 录音。', '. Please upload your Voice ID recording below.')}
           </p>
         </div>
 
@@ -301,13 +309,13 @@ export default function VoiceIdUploadPage() {
             <div className="w-8 h-8 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center justify-center">
               <Mic className="w-4 h-4 text-green-400" />
             </div>
-            <h2 className="text-white font-semibold">Recording Instructions</h2>
+            <h2 className="text-white font-semibold">{tx('錄音說明', '录音说明', 'Recording Instructions')}</h2>
           </div>
           <ol className="space-y-2 text-sm text-gray-400 list-decimal list-inside">
-            <li>Find a quiet room with no background noise</li>
-            <li>Speak clearly in your natural voice</li>
-            <li>Say: <span className="text-white italic">&ldquo;I, [Your Full Name], confirm this is my own biological voice. I hereby authorize Onyx Studios to create and commercially manage an AI digital twin of my voice under our signed agreement, on this date, [Today&apos;s Date].&rdquo;</span></li>
-            <li>Save as WAV or MP3 (max 10MB)</li>
+            <li>{tx('找一個安靜、無背景雜音的空間', '找一个安静、无背景杂音的空间', 'Find a quiet room with no background noise')}</li>
+            <li>{tx('用您自然的聲音清楚唸出', '用您自然的声音清楚念出', 'Speak clearly in your natural voice')}</li>
+            <li>{tx('唸出:', '念出:', 'Say: ')}<span className="text-white italic">{tx('「我,[您的全名],確認這是我本人的真實聲音。我在此授權 Onyx Studios 依雙方簽署之協議,製作並商業管理我的 AI 聲音分身,日期為 [今日日期]。」', '「我,[您的全名],确认这是我本人的真实声音。我在此授权 Onyx Studios 依双方签署之协议,制作并商业管理我的 AI 声音分身,日期为 [今日日期]。」', '“I, [Your Full Name], confirm this is my own biological voice. I hereby authorize Onyx Studios to create and commercially manage an AI digital twin of my voice under our signed agreement, on this date, [Today’s Date].”')}</span></li>
+            <li>{tx('以 WAV 或 MP3 儲存(最大 10MB)', '以 WAV 或 MP3 保存(最大 10MB)', 'Save as WAV or MP3 (max 10MB)')}</li>
           </ol>
         </div>
 
@@ -323,8 +331,8 @@ export default function VoiceIdUploadPage() {
                 <FileText className="w-4 h-4 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-white font-semibold">Talent Engagement Agreement</h2>
-                <p className="text-gray-500 text-xs mt-0.5">Review the full agreement before signing</p>
+                <h2 className="text-white font-semibold">{tx('配音員合作協議', '配音员合作协议', 'Talent Engagement Agreement')}</h2>
+                <p className="text-gray-500 text-xs mt-0.5">{tx('簽署前請詳閱完整協議(以英文版為準)', '签署前请详阅完整协议(以英文版为准)', 'Review the full agreement before signing')}</p>
               </div>
             </div>
             {showFullAgreement ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -534,7 +542,7 @@ export default function VoiceIdUploadPage() {
                 className="mt-1 w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-green-500 focus:ring-green-500 focus:ring-offset-0 cursor-pointer"
               />
               <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                I have read and agree to the <button type="button" onClick={() => setShowFullAgreement(true)} className="text-green-400 hover:underline">Talent Engagement Agreement</button>. I understand that my electronic signature and Voice ID recording constitute a legally binding consent.
+                {tx('我已閱讀並同意 ', '我已阅读并同意 ', 'I have read and agree to the ')}<button type="button" onClick={() => setShowFullAgreement(true)} className="text-green-400 hover:underline">{tx('配音員合作協議', '配音员合作协议', 'Talent Engagement Agreement')}</button>{tx('。我了解我的電子簽名與聲音 ID 錄音構成具法律約束力的同意。', '。我了解我的电子签名与声音 ID 录音构成具法律约束力的同意。', '. I understand that my electronic signature and Voice ID recording constitute a legally binding consent.')}
               </span>
             </label>
           </div>
@@ -569,13 +577,13 @@ export default function VoiceIdUploadPage() {
               <CheckCircle className="w-10 h-10 text-green-400 mx-auto" />
               <p className="text-white font-medium">{file.name}</p>
               <p className="text-gray-500 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-              <p className="text-green-400 text-xs">Click to change file</p>
+              <p className="text-green-400 text-xs">{tx('點擊更換檔案', '点击更换文件', 'Click to change file')}</p>
             </div>
           ) : (
             <div className="space-y-3">
               <Upload className="w-10 h-10 text-gray-500 mx-auto" />
-              <p className="text-gray-300">Drag & drop your recording here</p>
-              <p className="text-gray-500 text-sm">or click to browse &middot; WAV or MP3 &middot; max 10MB</p>
+              <p className="text-gray-300">{tx('將錄音拖放到這裡', '将录音拖放到这里', 'Drag & drop your recording here')}</p>
+              <p className="text-gray-500 text-sm">{tx('或點擊選擇 · WAV 或 MP3 · 最大 10MB', '或点击选择 · WAV 或 MP3 · 最大 10MB', 'or click to browse · WAV or MP3 · max 10MB')}</p>
             </div>
           )}
         </div>
@@ -589,29 +597,29 @@ export default function VoiceIdUploadPage() {
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <CreditCard className="w-5 h-5 text-green-400" />
-            <h3 className="text-white font-semibold">Payment Information</h3>
-            <span className="text-xs text-amber-400 ml-auto">Required</span>
+            <h3 className="text-white font-semibold">{tx('收款資訊', '收款信息', 'Payment Information')}</h3>
+            <span className="text-xs text-amber-400 ml-auto">{tx('必填', '必填', 'Required')}</span>
           </div>
           <p className="text-gray-500 text-xs leading-relaxed">
-            This information is used solely for commission payments. Each party bears its own transaction fees (sender fees by Onyx, receiving fees by Talent). Tax obligations are the sole responsibility of the Talent.
+            {tx('此資訊僅用於支付您的分潤。雙方各自負擔自身的交易手續費(Onyx 負擔匯出費、配音員負擔收款費)。稅務由配音員自行負責。', '此信息仅用于支付您的分润。双方各自负担自身的交易手续费(Onyx 负担汇出费、配音员负担收款费)。税务由配音员自行负责。', 'This information is used solely for commission payments. Each party bears its own transaction fees (sender fees by Onyx, receiving fees by Talent). Tax obligations are the sole responsibility of the Talent.')}
           </p>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1.5">Payment Method</label>
+            <label className="block text-sm text-gray-300 mb-1.5">{tx('收款方式', '收款方式', 'Payment Method')}</label>
             <select
               value={paymentMethod}
               onChange={e => setPaymentMethod(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-sm focus:outline-none focus:border-green-500/50 transition-colors"
             >
-              <option value="">— Select payment method —</option>
+              <option value="">{tx('— 選擇收款方式 —', '— 选择收款方式 —', '— Select payment method —')}</option>
               <option value="paypal">PayPal</option>
-              <option value="bank_transfer">Bank Transfer</option>
+              <option value="bank_transfer">{tx('銀行轉帳', '银行转账', 'Bank Transfer')}</option>
             </select>
           </div>
 
           {paymentMethod === 'paypal' && (
             <div>
-              <label className="block text-sm text-gray-300 mb-1.5">PayPal Email</label>
+              <label className="block text-sm text-gray-300 mb-1.5">{tx('PayPal 電子郵件', 'PayPal 电子邮件', 'PayPal Email')}</label>
               <input
                 type="email"
                 placeholder="your@email.com"
@@ -626,18 +634,18 @@ export default function VoiceIdUploadPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Bank Name</label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('銀行名稱', '银行名称', 'Bank Name')}</label>
                   <input
-                    placeholder="e.g. HSBC, 中國信託"
+                    placeholder={tx('例如:HSBC、中國信託', '例如:HSBC、中国信托', 'e.g. HSBC, Citibank')}
                     value={paymentDetails.bank_name}
                     onChange={e => setPaymentDetails(p => ({ ...p, bank_name: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Bank / Branch Code</label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('銀行 / 分行代碼', '银行 / 分行代码', 'Bank / Branch Code')}</label>
                   <input
-                    placeholder="e.g. 822"
+                    placeholder={tx('例如:822', '例如:822', 'e.g. 822')}
                     value={paymentDetails.bank_code}
                     onChange={e => setPaymentDetails(p => ({ ...p, bank_code: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
@@ -646,18 +654,18 @@ export default function VoiceIdUploadPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Account Holder Name</label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('帳戶名稱', '账户名称', 'Account Holder Name')}</label>
                   <input
-                    placeholder="Full name on account"
+                    placeholder={tx('帳戶全名', '账户全名', 'Full name on account')}
                     value={paymentDetails.account_name}
                     onChange={e => setPaymentDetails(p => ({ ...p, account_name: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Account Number</label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('帳號', '账号', 'Account Number')}</label>
                   <input
-                    placeholder="Account number"
+                    placeholder={tx('銀行帳號', '银行账号', 'Account number')}
                     value={paymentDetails.account_number}
                     onChange={e => setPaymentDetails(p => ({ ...p, account_number: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
@@ -666,9 +674,9 @@ export default function VoiceIdUploadPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">SWIFT Code <span className="text-gray-600">(international)</span></label>
+                  <label className="block text-xs text-gray-400 mb-1">{tx('SWIFT 代碼', 'SWIFT 代码', 'SWIFT Code')} <span className="text-gray-600">{tx('(國際匯款)', '(国际汇款)', '(international)')}</span></label>
                   <input
-                    placeholder="e.g. CTCBTWTP"
+                    placeholder={tx('例如:CTCBTWTP', '例如:CTCBTWTP', 'e.g. CTCBTWTP')}
                     value={paymentDetails.swift_code}
                     onChange={e => setPaymentDetails(p => ({ ...p, swift_code: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-green-500/50"
@@ -695,28 +703,27 @@ export default function VoiceIdUploadPage() {
           {pageState === 'uploading' ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Uploading...
+              {tx('上傳中…', '上传中…', 'Uploading...')}
             </>
           ) : (
             <>
               <Upload className="w-4 h-4" />
-              Submit Voice ID &amp; Signature
+              {tx('提交聲音 ID 與簽名', '提交声音 ID 与签名', 'Submit Voice ID & Signature')}
             </>
           )}
         </button>
 
         {(!file || !signatureDataUrl || !agreedToTerms || !paymentMethod) && (
           <div className="text-center text-xs space-y-1">
-            {!agreedToTerms && <p className="text-amber-400">Please review and agree to the Talent Engagement Agreement.</p>}
-            {!file && <p className="text-amber-400">Please upload your Voice ID recording.</p>}
-            {!signatureDataUrl && <p className="text-amber-400">Please sign above to complete your submission.</p>}
-            {!paymentMethod && <p className="text-amber-400">Please select a payment method for commission payments.</p>}
+            {!agreedToTerms && <p className="text-amber-400">{tx('請詳閱並同意配音員合作協議。', '请详阅并同意配音员合作协议。', 'Please review and agree to the Talent Engagement Agreement.')}</p>}
+            {!file && <p className="text-amber-400">{tx('請上傳您的聲音 ID 錄音。', '请上传您的声音 ID 录音。', 'Please upload your Voice ID recording.')}</p>}
+            {!signatureDataUrl && <p className="text-amber-400">{tx('請在上方簽名以完成提交。', '请在上方签名以完成提交。', 'Please sign above to complete your submission.')}</p>}
+            {!paymentMethod && <p className="text-amber-400">{tx('請選擇分潤的收款方式。', '请选择分润的收款方式。', 'Please select a payment method for commission payments.')}</p>}
           </div>
         )}
 
         <p className="text-center text-gray-600 text-xs leading-relaxed">
-          By submitting, you confirm this recording is your genuine biological voice and your electronic signature
-          serves as lawful consent for the Voice ID Affidavit under your signed talent agreement with Onyx Studios.
+          {tx('提交即表示您確認此錄音為您本人的真實聲音,且您的電子簽名構成依您與 Onyx Studios 簽署之配音員協議下「聲音 ID 聲明」的合法同意。', '提交即表示您确认此录音为您本人的真实声音,且您的电子签名构成依您与 Onyx Studios 签署之配音员协议下「声音 ID 声明」的合法同意。', 'By submitting, you confirm this recording is your genuine biological voice and your electronic signature serves as lawful consent for the Voice ID Affidavit under your signed talent agreement with Onyx Studios.')}
         </p>
       </div>
     </div>
