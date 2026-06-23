@@ -89,7 +89,19 @@ export default function ResetPasswordPage() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setPageState('success');
-      setTimeout(() => router.push('/dashboard'), 2500);
+      // Route talents to their profile editor, clients to the studio dashboard
+      // (matches the email/password login routing) — a talent who just set their
+      // password should land on /talent, not the buyer portal.
+      let dest = '/dashboard';
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const tok = session?.access_token;
+        if (tok) {
+          const me = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
+          if (me.ok) dest = '/talent';
+        }
+      } catch { /* default to /dashboard */ }
+      setTimeout(() => router.push(dest), 2500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to update password. Please try again.';
       setError(message);
