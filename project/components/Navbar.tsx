@@ -2,16 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
-import { Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { useTranslations, useLocale } from 'next-intl';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-
-interface NavigationLink {
-  href: string;
-  label: string;
-}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -63,12 +58,19 @@ export default function Navbar() {
     { href: '/data' as const, label: t('dataStudio') },
   ];
 
-  const getContextTools = (): NavigationLink[] => {
+  type ContextTool = { label: string; href?: string; children?: { href: string; label: string }[] };
+  const getContextTools = (): ContextTool[] => {
     if (isVoiceContext) {
-      // Two browse paths so visitors choose AI vs real-human up front.
+      // One "Browse voices" item that forks into AI vs real-human (keeps the
+      // top nav short instead of two separate entries).
       return [
-        { href: '/voices', label: ntx('AI 聲音', 'AI 声音', 'AI Voices') },
-        { href: '/talents', label: ntx('真人配音員', '真人配音员', 'Human Talent') },
+        {
+          label: ntx('瀏覽聲音', '浏览声音', 'Browse voices'),
+          children: [
+            { href: '/voices', label: ntx('AI 聲音', 'AI 声音', 'AI Voices') },
+            { href: '/talents', label: ntx('真人配音員', '真人配音员', 'Human Talent') },
+          ],
+        },
         { href: '/pricing', label: t('pricing') },
       ];
     }
@@ -167,12 +169,41 @@ export default function Navbar() {
                   <div className="h-6 w-[1px] bg-white/20" />
 
                   {contextTools.map((tool) => {
+                    if (tool.children) {
+                      const childActive = tool.children.some((c) => pathname === c.href);
+                      return (
+                        <div key={tool.label} className="relative group">
+                          <button
+                            className={`text-sm font-medium transition-colors relative flex items-center gap-1 ${childActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                          >
+                            {tool.label}
+                            <ChevronDown className="w-3.5 h-3.5" />
+                            {childActive && (
+                              <div className="absolute -bottom-[37px] left-0 right-0 h-[2px] bg-blue-500" />
+                            )}
+                          </button>
+                          {/* pt-3 keeps the hover bridge so the panel doesn't vanish on the gap */}
+                          <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50">
+                            <div className="bg-zinc-900 border border-white/10 rounded-lg py-1 min-w-[150px] shadow-xl">
+                              {tool.children.map((c) => (
+                                <Link
+                                  key={c.href}
+                                  href={c.href}
+                                  className={`block px-4 py-2 text-sm transition-colors ${pathname === c.href ? 'text-white bg-white/5' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
+                                >
+                                  {c.label}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
                     const isActive = pathname === tool.href;
-
                     return (
                       <Link
                         key={tool.href}
-                        href={tool.href}
+                        href={tool.href!}
                         className={`text-sm font-medium transition-colors relative ${
                           isActive
                             ? 'text-white'
@@ -325,25 +356,27 @@ export default function Navbar() {
                 <div className="h-[1px] w-full bg-white/10 my-2" />
 
                 {contextTools.map((tool) => {
-                  const isActive = pathname === tool.href;
-
-                  return (
-                    <Link
-                      key={tool.href}
-                      href={tool.href}
-                      onClick={() => closeMobileMenu()}
-                      className={`text-lg font-medium transition-colors ${
-                        isActive
-                          ? 'text-white'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {tool.label}
-                      {isActive && (
-                        <div className="mt-2 h-[2px] w-12 bg-blue-500" />
-                      )}
-                    </Link>
-                  );
+                  const links = tool.children ?? [{ href: tool.href!, label: tool.label }];
+                  return links.map((c) => {
+                    const isActive = pathname === c.href;
+                    return (
+                      <Link
+                        key={c.href}
+                        href={c.href}
+                        onClick={() => closeMobileMenu()}
+                        className={`text-lg font-medium transition-colors ${
+                          isActive
+                            ? 'text-white'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {c.label}
+                        {isActive && (
+                          <div className="mt-2 h-[2px] w-12 bg-blue-500" />
+                        )}
+                      </Link>
+                    );
+                  });
                 })}
               </>
             )}
