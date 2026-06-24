@@ -13,6 +13,11 @@ import { estimateAudioMinutes, calculatePrice } from '@/lib/estimateAudio';
 import { languages, aiLanguages } from '@/lib/voices';
 import ContactModal from '@/components/ContactModal';
 
+// Our verified voices that have a fal speaker embedding (lib/tts/voice-embeddings).
+// These are cross-lingual (clone our talent → speak any AI language) so they're
+// offered for every AI language, not gated by which demo language they happen to have.
+const VOICE_ID_MAP: Record<string, string> = { 'Onyx Alpha': 'onyx-alpha' };
+
 interface ConfiguratorState {
   email: string;
   emailConfirm: string;
@@ -106,10 +111,9 @@ export default function VoiceConfiguratorPage() {
   const [rightsLevel, setRightsLevel] = useState<VoiceRightsLevel>('standard');
 
   // ── AI 付款前試聽(Tier-1 instant)──────────────────────────────
-  // Map verified voices → a voiceId that has a fal embedding (lib/tts/voice-embeddings).
-  // Only voices with an embedding can preview; others show "coming soon". Preview is
-  // truncated server-side (first lines) so it's free + can't extract the full deliverable.
-  const VOICE_ID_MAP: Record<string, string> = { 'Onyx Alpha': 'onyx-alpha' };
+  // previewVoiceId = the selected voice's fal embedding id (VOICE_ID_MAP, module scope).
+  // Only voices with an embedding can preview; preview is truncated server-side (first
+  // lines) so it's free + can't extract the full deliverable.
   const previewVoiceId = VOICE_ID_MAP[config.voiceSelection] || '';
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -209,12 +213,20 @@ export default function VoiceConfiguratorPage() {
   // are excluded to avoid offering a voice we can't actually deliver.
   const voicesForLang = useMemo(() => {
     const langCode = config.language.toLowerCase();
+    const isAiLang = aiLanguages.some(l => l.code.toLowerCase() === langCode);
     return talents
-      .filter(t => Array.isArray(t.demo_urls) && t.demo_urls.some(d => {
-        const label = (d.label || '').toLowerCase();
-        return label === langCode || label.startsWith(`${langCode}-`) ||
-               (langCode.includes('-') && label === langCode.split('-')[0]);
-      }))
+      .filter(t => {
+        // AI voices (with a fal embedding) are cross-lingual → offer for ANY AI language,
+        // not just the demo language they happen to have.
+        if (isAiLang && VOICE_ID_MAP[t.name]) return true;
+        // Otherwise require a demo in the selected language (so we don't offer a voice
+        // we can't deliver).
+        return Array.isArray(t.demo_urls) && t.demo_urls.some(d => {
+          const label = (d.label || '').toLowerCase();
+          return label === langCode || label.startsWith(`${langCode}-`) ||
+                 (langCode.includes('-') && label === langCode.split('-')[0]);
+        });
+      })
       .map(t => ({
         id: t.id,
         name: t.name,
