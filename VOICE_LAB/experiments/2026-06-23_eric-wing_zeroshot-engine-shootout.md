@@ -128,10 +128,27 @@ for i,w in enumerate(wavs): sf.write(f"qwen_eric_{i}.wav", w, sr)
 
 ---
 
-## 4. 結果(跑完填)
+## 4. 結果
 
-- **輸出檔**:`~/Desktop/2026-06-23_engine-shootout/`(pull 回本機)
-- **盲聽分數**:(填表)
+### Round 0 — Qwen3-TTS 免費官方 demo(HF Space `Qwen/Qwen3-TTS`,gradio_client / 網頁,2026-06-23)
+> 用免費 demo 先驗第一關,沒花 pod 的錢。(注:官方 ZeroGPU API 需 HF token;最後用 Chrome 擴充驅動網頁 UI / Wing 手動貼。)
+
+- **Eric / Alpha,ref=FAAM0114(confident),target=treechildyt 正式廣告稿**
+- **Wing 評價:自然度成立 ✅**(沒有訓練模型的「機器人感」)——**策略方向確定:走 zero-shot,訓練模型那條退役。**
+- **唯一問題 = G2P 對冷僻書面字讀錯**(非聲調沒抓好,是直接讀錯字):
+  - **蒞**(蒞臨,lì)讀錯、**摯**(誠摯,zhì)讀錯、**重**(重組,chóng)讀錯。
+  - 根因:正式公文體(誠摯/蒞臨/踴躍)書面字多 → Qwen3 G2P 踩雷。
+- **致命限制:Qwen3 沒有拼音/音素強制覆寫**(只靠語意上下文猜)→ 自助平台改不了客人的字 = **沒法保證讀對**。
+- **CosyVoice 有 pinyin/phoneme inpainting**(可強制發音)→ 對「任意客稿都要讀對」這需求,**CV3 在可控性上贏 Qwen3**。
+
+### 結論(Round 0)→ 修正後續方向
+1. **自然度問題已解**(zero-shot ✅),剩「發音可控性」才是上線關鍵。
+2. **下一步重點不是比誰更自然,是驗 CV3 pinyin override 能不能把 蒞/摯/重 鎖對** + 建**自動注音校正層**(查表注拼音→CV3),客稿全自動修。
+3. 字典 = 擴充現有多音字清單,加**書面字**(蒞、摯、踴、躍、蒞…)。
+4. Qwen3 仍是「最自然」備案,適合**口語/casual**稿;**正式書面稿走 CV3+注音**。可做雙引擎分流。
+
+- **待跑(pod)**:CV3 對 T1 加 pinyin override(蒞 lì4 / 摯 zhì4 / 重 chóng2)→ A/B vs Qwen3,確認可控且夠自然。
+- **輸出檔**:`~/Desktop/voice-shootout-refs/qwen3_demo/`(Eric 版)
 - **贏家**:______ → 接進平台哪條 lane:______
 
 ## 5. 結論(最重要,一定要填)
