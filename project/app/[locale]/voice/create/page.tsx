@@ -10,7 +10,7 @@ import Footer from '@/components/landing/Footer';
 import { supabase } from '@/lib/supabase';
 import { VOICE_TIERS, VOICE_RIGHTS_LABELS, type VoiceRightsLevel, getVoiceRightsAddonPrice } from '@/lib/config/pricing.config';
 import { estimateAudioMinutes, calculatePrice } from '@/lib/estimateAudio';
-import { languages } from '@/lib/voices';
+import { languages, aiLanguages } from '@/lib/voices';
 import ContactModal from '@/components/ContactModal';
 
 interface ConfiguratorState {
@@ -579,12 +579,23 @@ export default function VoiceConfiguratorPage() {
                   }}
                   className="w-full px-6 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-blue-500/50 transition-colors"
                 >
-                  {languages.map((lang) => (
+                  {aiLanguages.map((lang) => (
                     <option key={lang.code} value={lang.code} className="bg-black">
                       {locale.startsWith('zh') ? lang.zhName : lang.name}
                     </option>
                   ))}
                 </select>
+                {/* The other 17 languages have no good instant-AI clone engine →
+                    route to human voiceover / quote (Tier 2). Honest: don't list
+                    languages the AI can't deliver. */}
+                <p className="mt-2 text-sm text-gray-500">
+                  {locale.startsWith('zh')
+                    ? '需要其他語言?我們有真人配音 — '
+                    : 'Need another language? We have human voice actors — '}
+                  <Link href="/contact" className="text-blue-400 hover:text-blue-300 underline">
+                    {locale.startsWith('zh') ? '洽詢報價' : 'request a quote'}
+                  </Link>
+                </p>
               </div>
 
               <div>

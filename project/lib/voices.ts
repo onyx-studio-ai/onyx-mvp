@@ -36,13 +36,18 @@ export type VoicesByLanguage = {
   [key: string]: Voice[];
 };
 
-export const languages = [
-  { code: 'en', name: 'English', zhName: '英語' },
-  { code: 'zh-CN', name: 'Mandarin (Simplified)', zhName: '普通話' },
-  { code: 'zh-TW', name: 'Mandarin (Traditional)', zhName: '台灣繁體' },
-  { code: 'yue', name: 'Cantonese', zhName: '粵語' },
-  { code: 'ja', name: 'Japanese', zhName: '日語' },
-  { code: 'ko', name: 'Korean', zhName: '韓語' },
+// `ai: true` = languages our instant AI TTS engines deliver well (Tier 1, 12 langs):
+//   台灣國語 → BreezyVoice · 普通話/英日韓歐 → Qwen3 · 粵語 → wing-e8.
+// The other 17 have no good commercial clone-TTS → routed to human voiceover / quote
+// (Tier 2). All 29 stay in the array so existing orders in any language still resolve
+// their display name; the AI order dropdown filters to `ai` only.
+export const languages: { code: string; name: string; zhName: string; ai?: boolean }[] = [
+  { code: 'en', name: 'English', zhName: '英語', ai: true },
+  { code: 'zh-CN', name: 'Mandarin (Simplified)', zhName: '普通話', ai: true },
+  { code: 'zh-TW', name: 'Mandarin (Traditional)', zhName: '台灣繁體', ai: true },
+  { code: 'yue', name: 'Cantonese', zhName: '粵語', ai: true },
+  { code: 'ja', name: 'Japanese', zhName: '日語', ai: true },
+  { code: 'ko', name: 'Korean', zhName: '韓語', ai: true },
   { code: 'th', name: 'Thai', zhName: '泰語' },
   { code: 'vi', name: 'Vietnamese', zhName: '越南語' },
   { code: 'id', name: 'Indonesian', zhName: '印尼語' },
@@ -53,13 +58,13 @@ export const languages = [
   { code: 'bn', name: 'Bengali', zhName: '孟加拉語' },
   { code: 'ar', name: 'Arabic', zhName: '阿拉伯語' },
   { code: 'fa', name: 'Persian (Farsi)', zhName: '波斯語' },
-  { code: 'es', name: 'Spanish', zhName: '西班牙語' },
-  { code: 'pt', name: 'Portuguese', zhName: '葡萄牙語' },
-  { code: 'fr', name: 'French', zhName: '法語' },
-  { code: 'de', name: 'German', zhName: '德語' },
-  { code: 'it', name: 'Italian', zhName: '義大利語' },
+  { code: 'es', name: 'Spanish', zhName: '西班牙語', ai: true },
+  { code: 'pt', name: 'Portuguese', zhName: '葡萄牙語', ai: true },
+  { code: 'fr', name: 'French', zhName: '法語', ai: true },
+  { code: 'de', name: 'German', zhName: '德語', ai: true },
+  { code: 'it', name: 'Italian', zhName: '義大利語', ai: true },
   { code: 'nl', name: 'Dutch', zhName: '荷蘭語' },
-  { code: 'ru', name: 'Russian', zhName: '俄語' },
+  { code: 'ru', name: 'Russian', zhName: '俄語', ai: true },
   { code: 'pl', name: 'Polish', zhName: '波蘭語' },
   { code: 'tr', name: 'Turkish', zhName: '土耳其語' },
   { code: 'sv', name: 'Swedish', zhName: '瑞典語' },
@@ -67,6 +72,9 @@ export const languages = [
   { code: 'da', name: 'Danish', zhName: '丹麥語' },
   { code: 'fi', name: 'Finnish', zhName: '芬蘭語' },
 ];
+
+// AI-capable languages only (Tier 1 instant) — use for AI order dropdowns.
+export const aiLanguages = languages.filter((l) => l.ai);
 
 // LOCKED — empty until real voices are linked here.
 export const voicesByLanguage: VoicesByLanguage = {};
