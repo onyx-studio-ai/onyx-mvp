@@ -77,6 +77,24 @@ export class TtsError extends Error {
   }
 }
 
+// One-time per talent (per style): build a speaker embedding from a reference clip.
+// fal `clone-voice/1.7b` input: { audio_url, reference_text } → { speaker_embedding: { url } }.
+// Store the returned safetensors URL on the talent; generateVoice() reuses it forever.
+export async function createSpeakerEmbedding(audioUrl: string, refText: string): Promise<string> {
+  const key = process.env.FAL_KEY;
+  if (!key) throw new TtsError('FAL_KEY not configured', 'no_key');
+  const res = await fetch('https://fal.run/fal-ai/qwen-3-tts/clone-voice/1.7b', {
+    method: 'POST',
+    headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ audio_url: audioUrl, reference_text: refText }),
+  });
+  if (!res.ok) throw new TtsError(`fal clone-voice ${res.status}: ${(await res.text()).slice(0, 200)}`, 'upstream');
+  const d = (await res.json()) as { speaker_embedding?: { url?: string } };
+  const url = d.speaker_embedding?.url;
+  if (!url) throw new TtsError('clone-voice returned no embedding', 'upstream');
+  return url;
+}
+
 /** Generate speech. Throws TtsError on any failure (caller maps to HTTP). */
 export async function generateVoice(input: GenerateInput): Promise<GenerateResult> {
   const text = (input.text || '').trim();
