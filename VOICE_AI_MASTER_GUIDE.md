@@ -123,11 +123,12 @@
 
 | 資產 | 位置 | 說明 |
 |---|---|---|
-| **原始人聲(5hr,zero-shot ref 金礦)** | `…/Onyx_語音資產/2026041201 數據堂 冠彥 TTS 5小時/交檔/`(7 個日期夾,共 112 wav,**48k/mono/24bit**) | **自然口語**(拍照/水果/買房子/颱風/第一次出遠門…),非廣告腔;每檔 2.7–6.5 分鐘長,要切 8-12s 乾淨句 |
-| 已切好的 ref 候選 | `~/Desktop/voice-shootout-refs/Ahong_阿宏_候選A/B_水果_*.wav`(各 ~10.5s,silencedetect 切的乾淨整句) | 逐字稿待補(pod 上 whisper 或聽打) |
-| 舊模型輸出(僅參考) | `…/Onyx_語音資產/ahong_v2/01_ref_round1`(epoch e12/e16)、`02_ref_round2`(pitch 154/113/132/142Hz)、`03_onyx_bravo_16langs`(16 語 demo) | 都是**合成**輸出,非人聲;記憶:**154Hz/e12 是 winner**(他自然音高約 154Hz);16langs 可當「before 機器人版」對照 |
+| **原始人聲(5hr,可訓練/克隆)** | `…/Onyx_語音資產/2026041201 數據堂 冠彥 TTS 5小時/交檔/`(7 個日期夾,共 112 wav,**48k/mono/24bit**) | **自然台灣對話**(美食/手帳/拍照/颱風…),非廣告腔;每檔 2.7–6.5 分鐘長,要切句 |
+| ✅ **逐字稿(2026-06-24 更正:一直都在!)** | 數據堂母資料夾的 **5 個 .xlsx 錄音腳本**:`台湾话_文案演绎(单句).xlsx`、`…长尾语料(单句).xlsx`(1169 句)、`M43…新增0506.xlsx`、`台灣在地口語引導對話清單.xlsx` 等 | topic-keyed(`topic_001_turn_01_Speaker2_001`→文字),對應交檔 wav。**阿宏完整可訓練,不必 whisper** |
+| 已切好的 ref 候選 | `~/Desktop/voice-shootout-refs/Ahong_阿宏_候選A/B_水果_*.wav`(各 ~10.5s,silencedetect 切的乾淨整句) | 對應文字到 xlsx 撈 |
+| 舊模型輸出(僅參考) | `…/Onyx_語音資產/ahong_v2/{01_ref_round1,02_ref_round2,03_onyx_bravo_16langs}` | 都是**合成**輸出,非人聲;**154Hz/e12 是 winner** |
 
-> ⚠️ 數據堂交檔**沒附逐字稿檔**(只有 wav)。zero-shot ref 要文字 → 切好的句子用 whisper 轉或聽打。
+> 💎 阿宏這 5hr = **有逐字稿的自然台灣對話料**,是做台灣腔(BreezyVoice 微調/克隆)的黃金素材。模型丟了不要緊,料齊隨時重做。
 
 ### Nova(身份待確認)
 位置:`/Volumes/WingAI SSD/Claude/Projects/工程部/Onyx_語音資產/_models/nova_train_data/` + `nova_preprocess_final/`

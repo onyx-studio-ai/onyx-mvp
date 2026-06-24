@@ -38,7 +38,7 @@
 
 > 📋 **Eric ref 從 CSV 挑的**:`…/Onyx_語音資產/eric/TTS 1小時 Eric音檔/eric_training_dataset.csv`(417 句,含 emotion/speed 標)。treechildyt 是正式 B2B 邀請 → 選 **confident/medium**(非 FAAM0113 的 excited/fast)。warm 版備案 FAAM0117。原始長錄音在同夾 `原檔/`(FAAM001-128.wav 等,48k/24bit),要別的語氣可再切。
 | **Wing 粵語 ref(升級版)** | `…/Onyx_語音資產/Wing/Wing/1.zh-hk_audio_08-lc-education_mobile-desk.wav` | **48k/mono/24bit/11.8s** ✅ | 逐字稿在 `…/Onyx_語音資產/Wing/wing_edits_chunks_2026-05-29-18-32.json`(跑前撈出對齊文字) |
-| **阿宏 / Bravo 普通話 ref** | `~/Desktop/voice-shootout-refs/Ahong_阿宏_候選A_水果_10.5s.wav`(原檔 `…/數據堂 冠彥 TTS 5小時/交檔/0513/文本_水果.wav` 的 7.0–17.5s,silencedetect 切的乾淨整句) | **48k/mono/24bit/10.5s** ✅ | 逐字稿待補(whisper/聽打);另有候選B |
+| **阿宏 / Bravo 普通話 ref** | `~/Desktop/voice-shootout-refs/Ahong_阿宏_候選A_水果_10.5s.wav`(原檔 `…/數據堂 冠彥 TTS 5小時/交檔/0513/文本_水果.wav` 的 7.0–17.5s,silencedetect 切的乾淨整句) | **48k/mono/24bit/10.5s** ✅ | 逐字稿在數據堂母夾 5 個 xlsx(topic-keyed,不必 whisper);另有候選B |
 
 > 🆕 **阿宏(Onyx Bravo)訓練模型已遺失**,但有 5hr 原始自然人聲 → 純走 zero-shot,**正好示範「沒有訓練模型也能做」**。他自然音高約 154Hz(舊 A/B 結論)。
 
