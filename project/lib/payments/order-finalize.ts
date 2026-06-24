@@ -160,7 +160,9 @@ async function sendOrderEmails(params: {
       : undefined,
   });
 
-  const productionEmail = 'produce@onyxstudios.ai';
+  // Wing monitors hello@ — send the new-paid-order alert there (matches the contact
+  // inquiry default recipient, so all order+inquiry notifications land in one inbox).
+  const productionEmail = 'hello@onyxstudios.ai';
   const { subject: adminSubject, html: adminHtml } = newOrderNotificationEmail({
     orderNumber,
     orderType,

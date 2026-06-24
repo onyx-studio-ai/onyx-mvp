@@ -18,6 +18,12 @@ export const VOICE_EMBEDDINGS: Record<string, VoiceEmbedding> = {
       'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/tts-embeddings/eric_alpha.safetensors',
     refText: '高效防晒喷雾买一送一。提供全方位防护，让您在烈日下依然自信从容。',
   },
+  'onyx-bravo': {
+    label: 'Onyx Bravo (阿宏 / 呂冠彥)',
+    embeddingUrl:
+      'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/tts-embeddings/onyx_bravo.safetensors',
+    refText: '你平常最喜欢吃什么台湾小吃啊。',
+  },
 };
 
 export function getVoiceEmbedding(id: string): VoiceEmbedding | null {

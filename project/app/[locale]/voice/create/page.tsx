@@ -16,7 +16,7 @@ import ContactModal from '@/components/ContactModal';
 // Our verified voices that have a fal speaker embedding (lib/tts/voice-embeddings).
 // These are cross-lingual (clone our talent → speak any AI language) so they're
 // offered for every AI language, not gated by which demo language they happen to have.
-const VOICE_ID_MAP: Record<string, string> = { 'Onyx Alpha': 'onyx-alpha' };
+const VOICE_ID_MAP: Record<string, string> = { 'Onyx Alpha': 'onyx-alpha', 'Onyx Bravo': 'onyx-bravo' };
 
 interface ConfiguratorState {
   email: string;
