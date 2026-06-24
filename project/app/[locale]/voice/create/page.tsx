@@ -105,6 +105,32 @@ export default function VoiceConfiguratorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rightsLevel, setRightsLevel] = useState<VoiceRightsLevel>('standard');
 
+  // ── AI 付款前試聽(Tier-1 instant)──────────────────────────────
+  // Map verified voices → a voiceId that has a fal embedding (lib/tts/voice-embeddings).
+  // Only voices with an embedding can preview; others show "coming soon". Preview is
+  // truncated server-side (first lines) so it's free + can't extract the full deliverable.
+  const VOICE_ID_MAP: Record<string, string> = { 'Onyx Alpha': 'onyx-alpha' };
+  const previewVoiceId = VOICE_ID_MAP[config.voiceSelection] || '';
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewErr, setPreviewErr] = useState('');
+  const handlePreview = async () => {
+    setPreviewErr(''); setPreviewUrl(''); setPreviewLoading(true);
+    try {
+      const r = await fetch('/api/voice/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: config.scriptText, language: config.language, voiceId: previewVoiceId, preview: true }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Preview failed');
+      setPreviewUrl(d.audioUrl);
+    } catch (e) {
+      setPreviewErr(e instanceof Error ? e.message : 'Preview failed');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   // Live talent catalogue (Onyx Alpha / Bravo / Delta / future). Sourced
   // from /api/talents — same endpoint that powers the /voices wall — so the
   // configurator dropdown stays in sync with whatever is verified in
@@ -686,6 +712,28 @@ export default function VoiceConfiguratorPage() {
                     errors.scriptText ? 'border-red-500/50' : 'border-white/10'
                   } text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors resize-none`}
                 />
+                {/* AI 付款前試聽:選有 embedding 的聲音 + 有稿 → 生前兩句 */}
+                {config.scriptText.trim().length >= 4 && (
+                  previewVoiceId ? (
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={handlePreview}
+                        disabled={previewLoading}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600/90 hover:bg-blue-600 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                      >
+                        {previewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
+                        {isZhLocale ? '試聽前兩句(免費)' : 'Preview first lines (free)'}
+                      </button>
+                      {previewErr && <p className="text-red-400 text-sm mt-2">{previewErr}</p>}
+                      {previewUrl && <audio controls src={previewUrl} className="mt-3 w-full" />}
+                    </div>
+                  ) : config.voiceSelection ? (
+                    <p className="mt-3 text-sm text-gray-500">
+                      {isZhLocale ? '此聲音的 AI 即時試聽即將開放。' : 'Instant AI preview for this voice is coming soon.'}
+                    </p>
+                  ) : null
+                )}
                 {config.scriptText.trim().length >= 10 && !isCustomTier && config.baseTier && (
                   <div className="mt-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2">
                     <div className="flex justify-between text-sm">
