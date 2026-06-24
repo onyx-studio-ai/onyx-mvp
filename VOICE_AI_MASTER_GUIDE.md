@@ -80,17 +80,17 @@
 > 2026-05-28 教訓:RunPod pod 被砍 Eric GPT-SoVITS server 連帶消失。所幸權重 backup 在本機。**以後新訓練完一定要 rsync 一份到本機這個位置。**
 
 ### Eric — 楊日漢 (GPT-SoVITS v2Pro,2026-04 訓的,台灣男聲)
-位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/`**
+位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/Onyx_語音資產/`**(2026-06-24 大整理:權重→`_models/`、ref→`_refs/`、語料→頂層)
 
 | 檔案 | 用途 | 大小 | 內容 / 對應 prompt_text |
 |---|---|---|---|
-| `eric_gpt_e15.ckpt` | GPT 模組 epoch 15 | 148 MB | — |
-| `eric_sovits_e100_s5400.pth` | SoVITS 模組 epoch 100 step 5400(早期 checkpoint) | 81 MB | — |
-| `eric_sovits_v2pro_final.pth` | **SoVITS v2Pro 最終權重 → production 用這個** | 908 MB | — |
-| `eric_ref.wav` ⭐ | **production ref(楊日漢授權聲明)** | 1.3 MB | `我是楊日漢，我確認本段聲音由我本人於2026年3月18號親自錄製。` |
-| `eric_ref_high.wav` | 廣告稿乾淨版(FAAM0113 的處理版) | 1.2 MB | `年度最大電玩展強勢登場。主機與遊戲片整套購買，立即為您省下兩千元。` |
+| `_models/eric_gpt_e15.ckpt` | GPT 模組 epoch 15 | 148 MB | — |
+| `_models/eric_sovits_e100_s5400.pth` | SoVITS 模組 epoch 100 step 5400(早期 checkpoint) | 81 MB | — |
+| `_models/eric_sovits_v2pro_final.pth` | **SoVITS v2Pro 最終權重 → production 用這個** | 908 MB | — |
+| `_refs/eric_ref.wav` ⭐ | **production ref(楊日漢授權聲明)** | 1.3 MB | `我是楊日漢，我確認本段聲音由我本人於2026年3月18號親自錄製。` |
+| `_refs/eric_ref_high.wav` | 廣告稿乾淨版(FAAM0113 的處理版) | 1.2 MB | `年度最大電玩展強勢登場。主機與遊戲片整套購買，立即為您省下兩千元。` |
 | `eric_train_data/` (419 wav + `eric_filelist.txt`) | 原始訓練資料(切片,48k/16bit/~8s) | 424 MB | — |
-| `…/訓練資料/eric/TTS 1小時 Eric音檔/` ⭐ | **完整語料庫** | — | `eric_training_dataset.csv`(417 句,**id/text/emotion/speed** 標,挑 ref 神器)+ `原檔/`(長錄音 FAAM001-128 等 48k/24bit)+ `聲音認證.wav`(57s 自然講話)。風格=溫暖旁白+促銷口播 |
+| `…/Onyx_語音資產/eric/TTS 1小時 Eric音檔/` ⭐ | **完整語料庫** | — | `eric_training_dataset.csv`(417 句,**id/text/emotion/speed** 標,挑 ref 神器)+ `原檔/`(長錄音 FAAM001-128 等 48k/24bit)+ `聲音認證.wav`(57s 自然講話)。風格=溫暖旁白+促銷口播 |
 
 > **⚠️ 2026-05-30 踩坑:** voice-ai-platform `voices.yaml` 一開始用 `FAAM0113.wav` (raw 訓練廣告片段) 當 ref → **大陸腔**。
 > GPT 才訓 15 epoch,prosody 高度依賴 ref,**ref 用了廣告腔的訓練資料 = 結果就是廣告腔/大陸腔**。
@@ -98,9 +98,9 @@
 > Production config 永遠用 `eric_ref.wav` + 對應 prompt_text(見上表)。
 
 ### Wing(GPT-SoVITS v2Pro,2026-05-29 訓的,粵語)
-位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/wing_sovits_backup_20260529/`**
+位置:**`/Volumes/WingAI SSD/Claude/Projects/工程部/Onyx_語音資產/_models/wing_sovits_backup_20260529/`**
 
-訓練資料來源:`/Volumes/WingAI SSD/Claude/Projects/工程部/訓練資料/Wing/transcripts/wing_ads_sliced/`(324 切片,34.2 分鐘 zh-hk Spotify 廣告)
+訓練資料來源:`/Volumes/WingAI SSD/Claude/Projects/工程部/Onyx_語音資產/Wing/transcripts/wing_ads_sliced/`(324 切片,34.2 分鐘 zh-hk Spotify 廣告)
 訓練 pod:`u46xxo7nkayx80` (A40 48GB, EU-SE-1) — 同台跑 Eric
 
 | 檔案 | 用途 | 大小 |
@@ -112,7 +112,7 @@
 **production 用 epoch 8**(`wing-e8.ckpt` + `wing_e8_s480.pth`),ref `wing_ads_0004.wav`,prompt_text="無間斷收聽音樂,全無限制。",prompt_lang=`yue`(粵語).
 
 > 📍 **2026-06-23 更正**:`wing_ads_0004.wav` **不在** backup 資料夾,實際在
-> `/Volumes/WingAI SSD/Claude/Projects/工程部/訓練資料/Wing/transcripts/wing_ads_sliced/wing_ads_0004.wav`
+> `/Volumes/WingAI SSD/Claude/Projects/工程部/Onyx_語音資產/Wing/transcripts/wing_ads_sliced/wing_ads_0004.wav`
 > (實測 44.1k/mono/16bit/**3.4s**,不是 ~4.7s;偏短,同夾 324 切片可挑 8-12s 更好的)。weights 才在 backup 夾。
 
 ⚠️ 已驗證 TTS 跑得起來,粵語腔。後續可以比較 epoch 4/6/8 哪個最好聽。
@@ -123,14 +123,14 @@
 
 | 資產 | 位置 | 說明 |
 |---|---|---|
-| **原始人聲(5hr,zero-shot ref 金礦)** | `…/訓練資料/2026041201 數據堂 冠彥 TTS 5小時/交檔/`(7 個日期夾,共 112 wav,**48k/mono/24bit**) | **自然口語**(拍照/水果/買房子/颱風/第一次出遠門…),非廣告腔;每檔 2.7–6.5 分鐘長,要切 8-12s 乾淨句 |
+| **原始人聲(5hr,zero-shot ref 金礦)** | `…/Onyx_語音資產/2026041201 數據堂 冠彥 TTS 5小時/交檔/`(7 個日期夾,共 112 wav,**48k/mono/24bit**) | **自然口語**(拍照/水果/買房子/颱風/第一次出遠門…),非廣告腔;每檔 2.7–6.5 分鐘長,要切 8-12s 乾淨句 |
 | 已切好的 ref 候選 | `~/Desktop/voice-shootout-refs/Ahong_阿宏_候選A/B_水果_*.wav`(各 ~10.5s,silencedetect 切的乾淨整句) | 逐字稿待補(pod 上 whisper 或聽打) |
-| 舊模型輸出(僅參考) | `…/訓練資料/ahong_v2/01_ref_round1`(epoch e12/e16)、`02_ref_round2`(pitch 154/113/132/142Hz)、`03_onyx_bravo_16langs`(16 語 demo) | 都是**合成**輸出,非人聲;記憶:**154Hz/e12 是 winner**(他自然音高約 154Hz);16langs 可當「before 機器人版」對照 |
+| 舊模型輸出(僅參考) | `…/Onyx_語音資產/ahong_v2/01_ref_round1`(epoch e12/e16)、`02_ref_round2`(pitch 154/113/132/142Hz)、`03_onyx_bravo_16langs`(16 語 demo) | 都是**合成**輸出,非人聲;記憶:**154Hz/e12 是 winner**(他自然音高約 154Hz);16langs 可當「before 機器人版」對照 |
 
 > ⚠️ 數據堂交檔**沒附逐字稿檔**(只有 wav)。zero-shot ref 要文字 → 切好的句子用 whisper 轉或聽打。
 
 ### Nova(身份待確認)
-位置:`/Volumes/WingAI SSD/Claude/Projects/工程部/onyx-platform/nova_train_data/` + `nova_preprocess_final/`
+位置:`/Volumes/WingAI SSD/Claude/Projects/工程部/Onyx_語音資產/_models/nova_train_data/` + `nova_preprocess_final/`
 
 ### CV3 Eric / Wing(現役 production)
 位置:RunPod pod `7k8u5nzkzs9xpa` 的 `/workspace/CosyVoice/refs/`(reference audio,zero-shot 用)

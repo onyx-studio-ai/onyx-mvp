@@ -36,7 +36,7 @@ VOICE_LAB/
 | 文件 | 角色 |
 |---|---|
 | [VOICE_AI_MASTER_GUIDE.md](../VOICE_AI_MASTER_GUIDE.md) | 長期戰略 + 引擎梯隊 + 絕不再踩清單(穩定知識) |
-| [VOICE_TRAINING_LESSONS.md](../VOICE_TRAINING_LESSONS.md) | 訓練資料/pipeline 的硬教訓 |
+| [VOICE_TRAINING_LESSONS.md](../VOICE_TRAINING_LESSONS.md) | Onyx_語音資產/pipeline 的硬教訓 |
 | **VOICE_LAB/**(這裡) | **活的實驗紀錄 + 每週新進展**(會一直長) |
 
 ## 每日自學 + 提案例程
