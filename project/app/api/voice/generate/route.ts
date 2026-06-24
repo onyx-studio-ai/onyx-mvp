@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateVoice, TtsError, type GenerateInput } from '@/lib/tts/engine';
+import { generateVoice, TtsError } from '@/lib/tts/engine';
+import { getVoiceEmbedding } from '@/lib/tts/voice-embeddings';
 
 // Tier-1 instant TTS endpoint. Wraps lib/tts/engine (Qwen3-via-fal for now;
 // BreezyVoice/wing-e8 pending pod). Generation costs fal credits → basic per-IP
@@ -34,24 +35,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Rate limit: max ${RATE_PER_MIN}/min` }, { status: 429 });
   }
 
-  let body: Partial<GenerateInput>;
+  let body: { text?: string; language?: string; voiceId?: string; voice?: string; preview?: boolean; modelSize?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  if (!body.text || !body.language || (!body.voice && !body.embeddingUrl)) {
-    return NextResponse.json({ error: 'text, language and (voice OR embeddingUrl) are required' }, { status: 400 });
+  // voiceId = one of OUR talents (embedding resolved server-side — frontend can't
+  // inject an arbitrary URL). voice = a fal preset (for flow-testing). Need one.
+  if (!body.text || !body.language || (!body.voiceId && !body.voice)) {
+    return NextResponse.json({ error: 'text, language and (voiceId OR voice) are required' }, { status: 400 });
+  }
+
+  let embeddingUrl: string | undefined;
+  let refText: string | undefined;
+  if (body.voiceId) {
+    const v = getVoiceEmbedding(String(body.voiceId));
+    if (!v) return NextResponse.json({ error: `Unknown voiceId "${body.voiceId}"` }, { status: 404 });
+    embeddingUrl = v.embeddingUrl;
+    refText = v.refText;
   }
 
   try {
     const result = await generateVoice({
       text: String(body.text).slice(0, 5000),
       language: String(body.language),
-      voice: body.voice ? String(body.voice) : undefined,
-      embeddingUrl: body.embeddingUrl ? String(body.embeddingUrl) : undefined,
-      refText: body.refText ? String(body.refText) : undefined,
+      voice: !body.voiceId && body.voice ? String(body.voice) : undefined,
+      embeddingUrl,
+      refText,
       preview: !!body.preview,
       modelSize: body.modelSize === '0.6B' ? '0.6B' : '1.7B',
     });
