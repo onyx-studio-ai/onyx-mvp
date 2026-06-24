@@ -53,15 +53,23 @@ function preprocess(text: string, code: string): string {
 export const STYLES = ['lively', 'steady', 'commercial'] as const;
 export type TtsStyle = (typeof STYLES)[number];
 
+// fal Qwen3 built-in preset voices (native quality, no cloning). Used to run the
+// whole pipeline NOW; our own talents (cloned) come later via BreezyVoice on a pod.
+export const PRESET_VOICES = ['Vivian', 'Serena', 'Uncle_Fu', 'Dylan', 'Eric', 'Ryan', 'Aiden', 'Ono_Anna', 'Sohee'] as const;
+
 export interface GenerateInput {
   text: string;
   language: string;
-  /** fal speaker embedding (safetensors) for this talent+style, from clone-voice. */
-  embeddingUrl: string;
+  /** EITHER a fal preset voice name (PRESET_VOICES) … */
+  voice?: string;
+  /** … OR a fal speaker embedding (safetensors) for a cloned talent (from clone-voice). */
+  embeddingUrl?: string;
   /** transcript of the reference used to build the embedding (improves quality). */
   refText?: string;
   preview?: boolean;
   modelSize?: '0.6B' | '1.7B';
+  /** sampling temperature; 0.7 = Wing-picked sweet spot (clear + lively). */
+  temperature?: number;
 }
 export interface GenerateResult {
   audioUrl: string;
@@ -99,7 +107,7 @@ export async function createSpeakerEmbedding(audioUrl: string, refText: string):
 export async function generateVoice(input: GenerateInput): Promise<GenerateResult> {
   const text = (input.text || '').trim();
   if (!text) throw new TtsError('Empty text', 'bad_input');
-  if (!input.embeddingUrl) throw new TtsError('Missing voice embedding', 'bad_input');
+  if (!input.voice && !input.embeddingUrl) throw new TtsError('Provide a preset voice or a cloned embedding', 'bad_input');
 
   const engine = engineForLanguage(input.language);
   if (!engine) throw new TtsError(`No AI engine for language "${input.language}" — route to human voiceover`, 'unsupported_lang');
@@ -113,15 +121,17 @@ export async function generateVoice(input: GenerateInput): Promise<GenerateResul
   if (!key) throw new TtsError('FAL_KEY not configured', 'no_key');
 
   const body = preprocess(input.preview ? truncateForPreview(text) : text, input.language);
+  const args: Record<string, unknown> = {
+    text: body,
+    language: QWEN3_FAL_LANG[input.language] || QWEN3_FAL_LANG[input.language.toLowerCase()] || 'Auto',
+    temperature: input.temperature ?? 0.7,
+  };
+  if (input.voice) args.voice = input.voice;                                  // preset (native quality)
+  else { args.speaker_voice_embedding_file_url = input.embeddingUrl; args.reference_text = input.refText || ''; } // cloned talent
   const res = await fetch('https://fal.run/fal-ai/qwen-3-tts/text-to-speech/' + (input.modelSize === '0.6B' ? '0.6b' : '1.7b'), {
     method: 'POST',
     headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      text: body,
-      speaker_voice_embedding_file_url: input.embeddingUrl,
-      reference_text: input.refText || '',
-      language: QWEN3_FAL_LANG[input.language] || QWEN3_FAL_LANG[input.language.toLowerCase()] || 'Auto',
-    }),
+    body: JSON.stringify(args),
   });
   if (!res.ok) {
     throw new TtsError(`fal Qwen3 error ${res.status}: ${(await res.text()).slice(0, 200)}`, 'upstream');

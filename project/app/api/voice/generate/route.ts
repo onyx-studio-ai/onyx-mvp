@@ -41,15 +41,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  if (!body.text || !body.language || !body.embeddingUrl) {
-    return NextResponse.json({ error: 'text, language and embeddingUrl are required' }, { status: 400 });
+  if (!body.text || !body.language || (!body.voice && !body.embeddingUrl)) {
+    return NextResponse.json({ error: 'text, language and (voice OR embeddingUrl) are required' }, { status: 400 });
   }
 
   try {
     const result = await generateVoice({
       text: String(body.text).slice(0, 5000),
       language: String(body.language),
-      embeddingUrl: String(body.embeddingUrl),
+      voice: body.voice ? String(body.voice) : undefined,
+      embeddingUrl: body.embeddingUrl ? String(body.embeddingUrl) : undefined,
       refText: body.refText ? String(body.refText) : undefined,
       preview: !!body.preview,
       modelSize: body.modelSize === '0.6B' ? '0.6B' : '1.7B',
