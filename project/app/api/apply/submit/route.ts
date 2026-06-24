@@ -46,6 +46,15 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[Apply API] Insert error:', error);
+      // A repeat application (same email / voice id) trips a unique constraint — that's
+      // not a server fault. Don't leak the raw "duplicate key value" SQL to the applicant
+      // (a real applicant, Ted, hit this and was blocked); tell them we already have them.
+      if ((error as { code?: string }).code === '23505' || /duplicate key/i.test(error.message || '')) {
+        const dup = locale?.startsWith('zh')
+          ? '這個 email 似乎已經報名過了 —— 我們已收到您的申請,會盡快與您聯絡。若要更新資料,請來信 hello@onyxstudios.ai。'
+          : "This email has already applied — we've got your application and will be in touch. To update your details, email hello@onyxstudios.ai.";
+        return NextResponse.json({ error: dup, duplicate: true }, { status: 409 });
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
