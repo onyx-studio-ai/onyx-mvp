@@ -18,16 +18,18 @@ export type TtsEngine = 'qwen3' | 'breezyvoice' | 'wing-e8';
 const QWEN3_LANGS = new Set(['zh-CN', 'en', 'ja', 'ko', 'es', 'pt', 'fr', 'de', 'it', 'ru']);
 export function engineForLanguage(code: string): TtsEngine | null {
   const c = code.toLowerCase();
-  if (c === 'zh-tw') return 'breezyvoice';
-  if (c === 'yue') return 'wing-e8';
+  // zh-TW: BreezyVoice (注音 control) is the eventual home; until that pod is up we
+  // serve Taiwan Mandarin via Qwen3+OpenCC — accent comes from the talent ref, not glyph.
+  if (c === 'zh-tw') return 'qwen3';
+  if (c === 'yue') return 'wing-e8'; // Cantonese: pod only (Qwen3 has no Cantonese)
   if (QWEN3_LANGS.has(code) || QWEN3_LANGS.has(c)) return 'qwen3';
   return null; // Tier-2 / human-only language
 }
 
 // fal Qwen3 maps our codes → its language dropdown.
 const QWEN3_FAL_LANG: Record<string, string> = {
-  'zh-CN': 'Chinese', en: 'English', ja: 'Japanese', ko: 'Korean', es: 'Spanish',
-  pt: 'Portuguese', fr: 'French', de: 'German', it: 'Italian', ru: 'Russian',
+  'zh-CN': 'Chinese', 'zh-TW': 'Chinese', en: 'English', ja: 'Japanese', ko: 'Korean',
+  es: 'Spanish', pt: 'Portuguese', fr: 'French', de: 'German', it: 'Italian', ru: 'Russian',
 };
 
 // Preview = first sentences only, so prospects hear the voice on THEIR script but
