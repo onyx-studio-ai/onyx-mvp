@@ -19,7 +19,7 @@ import { supabase } from '@/lib/supabase';
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
 
-type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; sample_line?: string; is_lead?: boolean };
+type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = {
   id: string;
   brief_number: string;
@@ -388,13 +388,17 @@ function RoleAudition({
 
   return (
     <div className={`rounded-lg border ${role.is_lead ? 'border-amber-400/30 bg-amber-400/5' : 'border-white/10 bg-white/[0.02]'}`}>
-      <button onClick={() => setOpen((o) => !o)} className="w-full text-left px-3 py-2 text-sm">
-        <span className="text-gray-100 font-medium">{role.name}</span>
-        {role.is_lead && <span className="ml-1 text-amber-300">★{tx('主角', '主角', 'Lead')}</span>}
-        {meta && <span className="text-gray-500 ml-2 text-xs">{meta}</span>}
-        {role.personality && <span className="text-gray-400 ml-2 text-xs">{role.personality}</span>}
-        <span className={`ml-2 text-xs ${isPopular ? 'text-amber-300' : 'text-gray-500'}`}>· {count} {tx('人已試', '人已试', 'auditioned')}</span>
-        <span className="float-right text-green-400 text-xs">{open ? '▴' : tx('試這個角色 ▾', '试这个角色 ▾', 'Audition ▾')}</span>
+      <button onClick={() => setOpen((o) => !o)} className="w-full text-left px-3 py-2 text-sm flex items-center gap-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {role.image && <img src={role.image} alt={role.name} className="w-9 h-9 rounded object-cover shrink-0 border border-white/10" />}
+        <span className="flex-1 min-w-0">
+          <span className="text-gray-100 font-medium">{role.name}</span>
+          {role.is_lead && <span className="ml-1 text-amber-300">★{tx('主角', '主角', 'Lead')}</span>}
+          {meta && <span className="text-gray-500 ml-2 text-xs">{meta}</span>}
+          {role.personality && <span className="text-gray-400 ml-2 text-xs">{role.personality}</span>}
+          <span className={`ml-2 text-xs ${isPopular ? 'text-amber-300' : 'text-gray-500'}`}>· {count} {tx('人已試', '人已试', 'auditioned')}</span>
+        </span>
+        <span className="text-green-400 text-xs shrink-0">{open ? '▴' : tx('試 ▾', '试 ▾', 'Audition ▾')}</span>
       </button>
       {isPopular && !open && (
         <p className="px-3 pb-2 text-xs text-amber-300/70">{tx('這個角色很多人試了,試別的角色中選機會更高', '这个角色很多人试了,试别的角色中选机会更高', 'This role is popular — try another to improve your odds')}</p>

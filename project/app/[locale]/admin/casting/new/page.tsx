@@ -12,6 +12,7 @@ import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 
 type RefFile = { name: string; url: string };
+type ParsedRole = { name: string; gender?: string; age?: string; personality?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 
 export default function NewCasting() {
@@ -26,6 +27,7 @@ export default function NewCasting() {
   const [recordingStart, setRecordingStart] = useState('');
   const [methods, setMethods] = useState<Record<string, boolean>>({ home: false, studio: false, online: false });
   const [rolesText, setRolesText] = useState('');
+  const [parsedRoles, setParsedRoles] = useState<ParsedRole[]>([]); // from xlsx (carries images)
   const [auditionScript, setAuditionScript] = useState('');
   const [refLinks, setRefLinks] = useState<string[]>(['']);
   const [refFiles, setRefFiles] = useState<RefFile[]>([]);
@@ -69,16 +71,35 @@ export default function NewCasting() {
     } catch (e) { setErr(e instanceof Error ? e.message : '抓取失敗'); } finally { setWorking(''); }
   }
 
+  async function uploadXlsx(file: File) {
+    setErr(''); setWorking('解析中…');
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const u = await fetch('/api/admin/casting/parse-xlsx', { method: 'POST', credentials: 'include', body: fd });
+      const uj = await u.json();
+      if (!u.ok) throw new Error(uj.error || '解析失敗');
+      const rs: ParsedRole[] = uj.roles || [];
+      setParsedRoles(rs);
+      // fill the editable textarea with the text version (images kept in parsedRoles, merged on submit by name)
+      setRolesText(rs.map((r) => `${r.is_lead ? '★' : ''}${r.name} | ${r.gender || ''} | ${r.age || ''} | ${r.personality || ''} | ${r.sample_line || ''}`).join('\n'));
+    } catch (e) { setErr(e instanceof Error ? e.message : '解析失敗'); } finally { setWorking(''); }
+  }
+
   async function submit() {
     setErr('');
     if (!title.trim()) return setErr('請填標題');
     if (!brief.trim()) return setErr('請填案件說明');
     setBusy(true);
+    // text roles (editable) + merge xlsx-extracted images by role name
+    const roles = parseRoles().map((r) => {
+      const p = parsedRoles.find((pr) => pr.name === r.name);
+      return p?.image ? { ...r, image: p.image } : r;
+    });
     const payload = {
       title, language, brief, rate_note: rateNote, base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
       audition_deadline: auditionDeadline, recording_start: recordingStart,
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
-      roles: parseRoles(), audition_script: auditionScript,
+      roles, audition_script: auditionScript,
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
     };
     const res = await fetch('/api/admin/casting', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -131,7 +152,26 @@ export default function NewCasting() {
           </div>
         </Field>
 
-        <Field label="試音角色(每行一個:★主角 | 性別 | 年齡 | 性格 | 台詞)">
+        <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-3">
+          <p className="text-sm text-green-200 mb-0.5">⚡ 推薦:上傳客戶 xlsx,自動帶入角色 + 角色圖片</p>
+          <p className="text-xs text-gray-500 mb-2">系統解析角色名/性別/年齡/性格/台詞,並抽出角色圖片(配音員看長相幫助試音)。解析後可在下方編輯。沒有 xlsx 就手動填。</p>
+          <input type="file" accept=".xlsx" disabled={!!working} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadXlsx(f); }}
+            className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-green-500/20 file:text-green-100 file:text-xs" />
+          {parsedRoles.length > 0 && (
+            <>
+              <p className="text-xs text-green-300 mt-2">✓ 解析到 {parsedRoles.length} 個角色({parsedRoles.filter((r) => r.image).length} 個有圖片)</p>
+              {parsedRoles.some((r) => r.image) && (
+                <div className="flex gap-1.5 flex-wrap mt-2">
+                  {parsedRoles.filter((r) => r.image).slice(0, 12).map((r, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={i} src={r.image} alt={r.name} title={r.name} className="w-10 h-10 rounded object-cover border border-white/10" />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        <Field label="試音角色(每行一個:★主角 | 性別 | 年齡 | 性格 | 台詞;上傳 xlsx 會自動填)">
           <textarea className={`${input} min-h-[120px] resize-y font-mono text-xs`} value={rolesText} onChange={(e) => setRolesText(e.target.value)}
             placeholder={'★顧冶 | 男 | 28 | 果斷 | 我從來不遲到…\n福爾森 | 男 | 35 | 理性 | 排除所有不可能的…'} />
         </Field>
