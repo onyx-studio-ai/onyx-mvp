@@ -188,17 +188,35 @@ export const LANG_ACCENTS: Record<string, string[]> = {
 export const accentOptionsFor = (langKey: string): string[] => ['native', ...(LANG_ACCENTS[langKey] || [])];
 
 export const baseLangLabel = (key: string, locale: string) => {
-  const o = BASE_LANGUAGES.find((x) => x.key === key); return o ? pickLabel(o, locale) : key;
+  const k = (key || '').trim();
+  // Match by taxonomy key first; else by any locale label — legacy demos stored the
+  // label itself (e.g. "Japanese", "中文") instead of the lowercase key, and those were
+  // rendering raw/untranslated on the zh profile.
+  const o = BASE_LANGUAGES.find((x) => x.key === k)
+    || BASE_LANGUAGES.find((x) => [x.key, x.tw, x.cn, x.en].some((s) => s.toLowerCase() === k.toLowerCase()));
+  return o ? pickLabel(o, locale) : key;
 };
 export const accentLabel = (key: string, locale: string) => {
-  const o = ACCENTS.find((x) => x.key === key); return o ? pickLabel(o, locale) : key;
+  const k = (key || '').trim();
+  const o = ACCENTS.find((x) => x.key === k)
+    || ACCENTS.find((x) => [x.key, x.tw, x.cn, x.en].some((s) => s.toLowerCase() === k.toLowerCase()));
+  return o ? pickLabel(o, locale) : key;
 };
-// Render a stored language entry ("english/hongkong") in the viewer's locale.
+// Render a stored language entry in the viewer's locale. Handles the current
+// "english/hongkong" key format AND legacy free-text ("Japanese", "Chinese · Taiwan").
 export const formatLangEntry = (value: string, locale: string) => {
-  if (!value.includes('/')) return value; // legacy free-text entry
-  const [l, a] = value.split('/');
-  const lang = baseLangLabel(l, locale);
-  return a && a !== 'native' ? `${lang} · ${accentLabel(a, locale)}` : lang;
+  const v = (value || '').trim();
+  if (!v) return v;
+  if (v.includes('/')) {
+    const [l, a] = v.split('/');
+    const lang = baseLangLabel(l, locale);
+    return a && a !== 'native' ? `${lang} · ${accentLabel(a, locale)}` : lang;
+  }
+  // Legacy: a single label ("Japanese") or "Lang · Region" ("Chinese · Taiwan") —
+  // localize each part via the taxonomy instead of showing raw English.
+  return v.split('·').map((p) => p.trim()).filter(Boolean)
+    .map((p, i) => (i === 0 ? baseLangLabel(p, locale) : accentLabel(p, locale)))
+    .join(' · ');
 };
 
 // Work-availability presets (toggle chips, not free text).

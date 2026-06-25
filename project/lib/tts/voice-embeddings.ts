@@ -71,14 +71,21 @@ export const VOICE_EMBEDDINGS: Record<string, VoiceEmbedding> = {
     defaultTone: 'friendly',
     // Real per-register embeddings cloned from 阿宏's emotion clips (Wing verified each
     // matches its tone). refText = whisper transcript of each clip (drama dialogue).
-    // ⚠️ soothing intentionally omitted — its source clip (a mainland news read) wouldn't
-    // clone cleanly (rambled even at temp 0.2). Falls back to friendly until Wing supplies
-    // a clean 舒緩 clip of 阿宏's own voice.
     tones: {
       professional: {
         embeddingUrl: `${SB}/onyx_bravo_promo.safetensors`,
         refText:
           '俗话说，下雨天，流客天，主人不流老天流。欸，陶部长可真是神通广大，好像哪的人都熟。等他还认为',
+      },
+      soothing: {
+        // Cloned from 阿宏's own 安慰/comfort clip, ref pre-slowed (atempo 0.72) so the
+        // calm-slow pace bakes into the embedding — no serverless post-processing needed
+        // (Wing approved 慢B speed). refText = whisper of the slowed clip.
+        embeddingUrl: `${SB}/onyx_bravo_soothing.safetensors`,
+        refText:
+          '你先不要自己嚇自己啦說不定你家忙期末考啊或是打工啊他不是在打工嗎應該蠻忙的吧你可以試試看他回慢的時候你也把這個時間回的比較長一點',
+        // soothing is the most rambling-prone register → lower temperature for stability.
+        temperature: 0.5,
       },
       energetic: {
         embeddingUrl: `${SB}/onyx_bravo_excited.safetensors`,
