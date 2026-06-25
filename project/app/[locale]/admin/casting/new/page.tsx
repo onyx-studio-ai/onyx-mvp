@@ -21,6 +21,7 @@ export default function NewCasting() {
   const [brief, setBrief] = useState('');
   const [rateNote, setRateNote] = useState('');
   const [baseRev, setBaseRev] = useState('1');
+  const [cap, setCap] = useState('5');
   const [auditionDeadline, setAuditionDeadline] = useState('');
   const [recordingStart, setRecordingStart] = useState('');
   const [methods, setMethods] = useState<Record<string, boolean>>({ home: false, studio: false, online: false });
@@ -74,7 +75,7 @@ export default function NewCasting() {
     if (!brief.trim()) return setErr('請填案件說明');
     setBusy(true);
     const payload = {
-      title, language, brief, rate_note: rateNote, base_revisions: Number(baseRev) || 0,
+      title, language, brief, rate_note: rateNote, base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
       audition_deadline: auditionDeadline, recording_start: recordingStart,
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
       roles: parseRoles(), audition_script: auditionScript,
@@ -114,10 +115,11 @@ export default function NewCasting() {
         </div>
         <Field label="案件說明 *"><textarea className={`${input} min-h-[90px] resize-y`} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="全劇共 X 條台詞… 先試音,通過後正式錄。試音範圍…" /></Field>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <Field label="試音截止"><input className={input} value={auditionDeadline} onChange={(e) => setAuditionDeadline(e.target.value)} placeholder="6/30" /></Field>
           <Field label="預計開錄"><input className={input} value={recordingStart} onChange={(e) => setRecordingStart(e.target.value)} placeholder="7月初" /></Field>
           <Field label="含修改次數"><input type="number" min="0" className={input} value={baseRev} onChange={(e) => setBaseRev(e.target.value)} /></Field>
+          <Field label="熱門門檻(人數提示)"><input type="number" min="1" className={input} value={cap} onChange={(e) => setCap(e.target.value)} /></Field>
         </div>
         <Field label="錄音方式(可複選)">
           <div className="flex gap-4 text-sm">

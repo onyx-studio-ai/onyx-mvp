@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     language: String(b.language || '').slice(0, 80) || null,
     rate_note: String(b.rate_note || '').slice(0, 200) || null,
     base_revisions: Number.isFinite(Number(b.base_revisions)) ? Math.max(0, Math.trunc(Number(b.base_revisions))) : 1,
+    audition_cap: Number.isFinite(Number(b.audition_cap)) ? Math.max(1, Math.trunc(Number(b.audition_cap))) : 5,
     audition_deadline: String(b.audition_deadline || '').slice(0, 120) || null,
     recording_start: String(b.recording_start || '').slice(0, 120) || null,
     recording_methods: methods,

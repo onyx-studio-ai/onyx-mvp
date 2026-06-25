@@ -33,6 +33,7 @@ type Brief = {
   recording_methods?: string[] | null;
   rate_note?: string | null;
   base_revisions?: number | null;
+  audition_cap?: number | null;
   categories: string[] | null;
   content_type: string | null;
   media_scope: string | null;
@@ -55,6 +56,7 @@ type Brief = {
 type Quote = {
   id: string;
   brief_id: string;
+  role_name?: string | null;
   gross_amount: number;
   net_amount: number;
   currency: string;
@@ -76,6 +78,7 @@ export default function Opportunities() {
   const [token, setToken] = useState('');
   const [briefs, setBriefs] = useState<Brief[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
 
   const load = useCallback(async (accessToken: string) => {
     setToken(accessToken);
@@ -84,6 +87,7 @@ export default function Opportunities() {
     const j = await res.json().catch(() => ({}));
     setBriefs(j.briefs || []);
     setQuotes(j.myQuotes || []);
+    setRoleCounts(j.roleCounts || {});
     setPhase('ready');
   }, []);
 
@@ -94,8 +98,6 @@ export default function Opportunities() {
       else setPhase('nologin');
     })();
   }, [load]);
-
-  const quoteFor = (briefId: string) => quotes.find((q) => q.brief_id === briefId);
 
   const shell = (inner: React.ReactNode) => (
     <main className="min-h-screen bg-black text-white px-4 py-16">
@@ -131,7 +133,15 @@ export default function Opportunities() {
 
       <div className="space-y-4">
         {briefs.map((b) => (
-          <BriefCard key={b.id} brief={b} myQuote={quoteFor(b.id)} token={token} tx={tx} onQuoted={(q) => setQuotes((prev) => [q, ...prev])} />
+          <BriefCard
+            key={b.id}
+            brief={b}
+            myQuotes={quotes.filter((q) => q.brief_id === b.id)}
+            roleCounts={roleCounts[b.id] || {}}
+            token={token}
+            tx={tx}
+            onQuoted={(q) => setQuotes((prev) => [q, ...prev])}
+          />
         ))}
       </div>
     </>
@@ -140,61 +150,38 @@ export default function Opportunities() {
 
 function BriefCard({
   brief,
-  myQuote,
+  myQuotes,
+  roleCounts,
   token,
   tx,
   onQuoted,
 }: {
   brief: Brief;
-  myQuote?: Quote;
+  myQuotes: Quote[];
+  roleCounts: Record<string, number>;
   token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
 }) {
+  const popularThreshold = Number(brief.audition_cap) || 5;
   const isCasting = brief.kind === 'casting';
+  const myQuote = myQuotes[0]; // regular briefs have a single quote per talent
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState(isCasting ? 'CNY' : 'USD');
+  const [currency, setCurrency] = useState('USD');
   const [message, setMessage] = useState('');
-  const [intro, setIntro] = useState('');
-  const [inclRev, setInclRev] = useState(String(brief.base_revisions ?? 1));
-  const [extraRev, setExtraRev] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
-  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-
   const grossN = Number(gross);
   const netPreview = isFinite(grossN) && grossN > 0 ? Math.round(grossN * (1 - COMMISSION) * 100) / 100 : 0;
 
-  async function uploadAudio(file: File) {
-    setErr(''); setUploading(true);
-    try {
-      const u = await fetch('/api/talent/audition-upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ fileName: file.name }),
-      });
-      const uj = await u.json().catch(() => ({}));
-      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
-      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
-      if (upErr) throw new Error(upErr.message);
-      setAudioUrl(uj.publicUrl);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed'));
-    } finally { setUploading(false); }
-  }
-
-  async function submit() {
+  async function submitQuote() {
     setErr('');
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請輸入大於 0 的金額', '请输入大于 0 的金额', 'Enter an amount greater than 0'));
-    if (isCasting && !audioUrl) return setErr(tx('請先上傳試音音檔', '请先上传试音音档', 'Please upload your audition first'));
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        brief_id: brief.id, gross_amount: grossN, currency, message,
-        ...(isCasting ? { sample_url: audioUrl, intro, included_revisions: Number(inclRev) || 0, extra_revision_price: extraRev } : {}),
-      }),
+      body: JSON.stringify({ brief_id: brief.id, gross_amount: grossN, currency, message }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -223,22 +210,6 @@ function BriefCard({
             ))}
           </div>
           {brief.brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{brief.brief}</p>}
-
-          {(brief.roles || []).length > 0 && (
-            <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1.5">{tx('試音角色', '试音角色', 'Audition roles')}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {(brief.roles || []).map((ro, i) => (
-                  <div key={i} className={`text-xs rounded-lg px-2.5 py-1.5 border ${ro.is_lead ? 'border-amber-400/40 bg-amber-400/5' : 'border-white/10 bg-white/[0.02]'}`}>
-                    <span className="text-gray-100 font-medium">{ro.name}</span>
-                    {ro.is_lead && <span className="ml-1 text-amber-300">★{tx('主角', '主角', 'Lead')}</span>}
-                    <span className="text-gray-500 ml-1">{[ro.gender, ro.age].filter(Boolean).join('·')}</span>
-                    {ro.personality && <span className="text-gray-400 block">{ro.personality}{ro.emotion ? ` · ${ro.emotion}` : ''}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {brief.audition_script && (
             <div className="mb-3">
@@ -271,7 +242,27 @@ function BriefCard({
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
             {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition due')}: {brief.audition_deadline}</span>}
             {brief.recording_start && <span>{tx('預計開錄', '预计开录', 'Recording starts')}: {brief.recording_start}</span>}
-            {typeof brief.base_revisions === 'number' && <span>{tx('含修改', '含修改', 'Revisions')}: {brief.base_revisions}</span>}
+          </div>
+
+          {/* Per-role auditions. Pick a role → upload an audition for it. Full roles
+              grey out (no count shown — we only nudge "try another"). One per role. */}
+          <div className="border-t border-white/10 pt-3">
+            <p className="text-xs text-gray-500 mb-2">{tx('選一個(或多個)角色試音', '选一个(或多个)角色试音', 'Pick a role (or several) to audition')}</p>
+            <div className="space-y-2">
+              {(brief.roles || []).map((ro, i) => (
+                <RoleAudition
+                  key={i}
+                  brief={brief}
+                  role={ro}
+                  count={roleCounts[ro.name || ''] || 0}
+                  popularThreshold={popularThreshold}
+                  done={myQuotes.find((q) => (q.role_name || '') === (ro.name || ''))}
+                  token={token}
+                  tx={tx}
+                  onQuoted={onQuoted}
+                />
+              ))}
+            </div>
           </div>
         </>
       ) : (
@@ -295,76 +286,147 @@ function BriefCard({
             {brief.length && <span>{tx('長度', '长度', 'Length')}: {brief.length}</span>}
             {brief.budget && <span>{tx('預算', '预算', 'Budget')}: {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
           </div>
+
+          {myQuote ? (
+            <div className="border-t border-white/10 pt-3 text-sm">
+              <span className="text-green-300">{tx('已報價', '已报价', 'Quoted')}: {myQuote.currency} {myQuote.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}</span>
+              <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {myQuote.status}</span>
+            </div>
+          ) : (
+            <div className="border-t border-white/10 pt-3 space-y-2">
+              <div className="flex gap-2">
+                <select className={`${inputCls} w-24`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
+                </select>
+                <input type="number" min="0" className={inputCls} value={gross} onChange={(e) => setGross(e.target.value)}
+                  placeholder={tx('客戶支付金額(報價)', '客户支付金额(报价)', 'Amount the client pays (your quote)')} />
+              </div>
+              {grossN > 0 && (
+                <p className="text-xs text-green-300">{tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview} <span className="text-gray-500">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span></p>
+              )}
+              <textarea className={`${inputCls} min-h-[60px] resize-y`} value={message} onChange={(e) => setMessage(e.target.value)}
+                placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')} />
+              {err && <p className="text-red-400 text-xs">{err}</p>}
+              <button onClick={submitQuote} disabled={busy} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm transition">
+                {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出報價', '送出报价', 'Submit quote')}
+              </button>
+            </div>
+          )}
         </>
       )}
+    </div>
+  );
+}
 
-      {myQuote ? (
-        <div className="border-t border-white/10 pt-3 text-sm">
-          <span className="text-green-300">
-            {isCasting ? tx('已試音', '已试音', 'Auditioned') : tx('已報價', '已报价', 'Quoted')}:{' '}
-            {myQuote.currency} {myQuote.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}
-          </span>
-          <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {myQuote.status}</span>
-          {myQuote.sample_url && <audio controls src={myQuote.sample_url} className="w-full h-9 mt-2" />}
-        </div>
-      ) : (
-        <div className="border-t border-white/10 pt-3 space-y-2">
-          {isCasting && (
-            <>
-              <label className="block">
-                <span className="text-xs text-gray-400">{tx('上傳試音音檔(必填)', '上传试音音档(必填)', 'Upload your audition (required)')}</span>
-                <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
-                  className="block w-full text-xs text-gray-400 mt-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
-              </label>
-              {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
-              {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
-              <textarea className={`${inputCls} min-h-[56px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
-                placeholder={tx('自我介紹(你是誰、經驗、為何適合)', '自我介绍(你是谁、经验、为何适合)', 'Self-intro (who you are, experience, why you fit)')} />
-              <div className="flex gap-2 items-center text-xs text-gray-400">
-                <span>{tx('含修改次數', '含修改次数', 'Included revisions')}</span>
-                <input type="number" min="0" className={`${inputCls} w-16 py-1.5`} value={inclRev} onChange={(e) => setInclRev(e.target.value)} />
-                <input className={`${inputCls} flex-1 py-1.5`} value={extraRev} onChange={(e) => setExtraRev(e.target.value)}
-                  placeholder={tx('額外每次修改費用(選填)', '额外每次修改费用(选填)', 'Price per extra revision (optional)')} />
-              </div>
-            </>
+// One role's audition: view its line → upload audition → write your price/terms.
+// Full roles are disabled (no count shown); near-full nudges to try another.
+function RoleAudition({
+  brief, role, count, popularThreshold, done, token, tx, onQuoted,
+}: {
+  brief: Brief;
+  role: Role;
+  count: number;          // how many have auditioned this role (shown to talents)
+  popularThreshold: number; // soft nudge threshold — NOT a hard cap
+  done?: Quote;
+  token: string;
+  tx: (tw: string, cn: string, en: string) => string;
+  onQuoted: (q: Quote) => void;
+}) {
+  const isPopular = count >= popularThreshold;
+  const [open, setOpen] = useState(false);
+  const [audioUrl, setAudioUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [gross, setGross] = useState('');
+  const [currency, setCurrency] = useState('CNY');
+  const [intro, setIntro] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  const meta = [role.gender, role.age].filter(Boolean).join('·');
+
+  async function uploadAudio(file: File) {
+    setErr(''); setUploading(true);
+    try {
+      const u = await fetch('/api/talent/audition-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setAudioUrl(uj.publicUrl);
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setUploading(false); }
+  }
+
+  async function submit() {
+    setErr('');
+    if (!audioUrl) return setErr(tx('請先上傳試音音檔', '请先上传试音音档', 'Please upload your audition first'));
+    const g = Number(gross);
+    if (!isFinite(g) || g <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
+    setBusy(true);
+    const res = await fetch('/api/talent/quotes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: g, currency, intro, message: intro }),
+    });
+    setBusy(false);
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) return setErr(j.error || tx('送出失敗', '送出失败', 'Submit failed'));
+    onQuoted(j.quote);
+  }
+
+  // Already auditioned this role.
+  if (done) {
+    return (
+      <div className="rounded-lg px-3 py-2 border border-green-500/30 bg-green-500/5 text-sm">
+        <span className="text-gray-100 font-medium">{role.name}</span>{role.is_lead && <span className="ml-1 text-amber-300">★</span>}
+        <span className="text-green-300 ml-2">{tx('✓ 已試音', '✓ 已试音', '✓ Auditioned')}</span>
+        {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-lg border ${role.is_lead ? 'border-amber-400/30 bg-amber-400/5' : 'border-white/10 bg-white/[0.02]'}`}>
+      <button onClick={() => setOpen((o) => !o)} className="w-full text-left px-3 py-2 text-sm">
+        <span className="text-gray-100 font-medium">{role.name}</span>
+        {role.is_lead && <span className="ml-1 text-amber-300">★{tx('主角', '主角', 'Lead')}</span>}
+        {meta && <span className="text-gray-500 ml-2 text-xs">{meta}</span>}
+        {role.personality && <span className="text-gray-400 ml-2 text-xs">{role.personality}</span>}
+        <span className={`ml-2 text-xs ${isPopular ? 'text-amber-300' : 'text-gray-500'}`}>· {count} {tx('人已試', '人已试', 'auditioned')}</span>
+        <span className="float-right text-green-400 text-xs">{open ? '▴' : tx('試這個角色 ▾', '试这个角色 ▾', 'Audition ▾')}</span>
+      </button>
+      {isPopular && !open && (
+        <p className="px-3 pb-2 text-xs text-amber-300/70">{tx('這個角色很多人試了,試別的角色中選機會更高', '这个角色很多人试了,试别的角色中选机会更高', 'This role is popular — try another to improve your odds')}</p>
+      )}
+      {open && (
+        <div className="px-3 pb-3 space-y-2 border-t border-white/10 pt-2">
+          {role.sample_line && (
+            <div className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded p-2.5 select-none"
+              style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
+              {role.sample_line}
+            </div>
           )}
+          <label className="block">
+            <span className="text-xs text-gray-400">{tx('上傳這個角色的試音', '上传这个角色的试音', 'Upload your audition for this role')}</span>
+            <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
+              className="block w-full text-xs text-gray-400 mt-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+          </label>
+          {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
+          {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
           <div className="flex gap-2">
-            <select className={`${inputCls} w-24`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c} className="bg-black">{c}</option>
-              ))}
+            <select className={`${inputCls} w-20 py-1.5`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
             </select>
-            <input
-              type="number"
-              min="0"
-              className={inputCls}
-              value={gross}
-              onChange={(e) => setGross(e.target.value)}
-              placeholder={tx('客戶支付金額(報價)', '客户支付金额(报价)', 'Amount the client pays (your quote)')}
-            />
+            <input type="number" min="0" className={`${inputCls} py-1.5`} value={gross} onChange={(e) => setGross(e.target.value)}
+              placeholder={tx('你的報價(整案/每句/每小時皆可)', '你的报价(整案/每句/每小时皆可)', 'Your price (per case / per line / per hour)')} />
           </div>
-          {grossN > 0 && (
-            <p className="text-xs text-green-300">
-              {tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview}{' '}
-              <span className="text-gray-500">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span>
-            </p>
-          )}
-          {!isCasting && (
-            <textarea
-              className={`${inputCls} min-h-[60px] resize-y`}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')}
-            />
-          )}
+          <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
+            placeholder={tx('報價說明 + 自我介紹(計價方式、修改政策、為何適合)', '报价说明 + 自我介绍(计价方式、修改政策、为何适合)', 'Pricing notes + intro (how you charge, revisions, why you fit)')} />
           {err && <p className="text-red-400 text-xs">{err}</p>}
-          <button
-            onClick={submit}
-            disabled={busy || uploading}
-            className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm transition"
-          >
-            {busy ? tx('送出中…', '送出中…', 'Submitting…') : isCasting ? tx('送出試音 + 報價', '送出试音 + 报价', 'Submit audition + quote') : tx('送出報價', '送出报价', 'Submit quote')}
+          <button onClick={submit} disabled={busy || uploading} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">
+            {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出這個角色的試音', '送出这个角色的试音', 'Submit audition')}
           </button>
         </div>
       )}

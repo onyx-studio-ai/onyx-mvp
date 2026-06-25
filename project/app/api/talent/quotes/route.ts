@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     const intro = String(body.intro || '').slice(0, 3000) || null;
     const inclRev = Number.isFinite(Number(body.included_revisions)) ? Math.max(0, Math.trunc(Number(body.included_revisions))) : null;
     const extraRevPrice = String(body.extra_revision_price || '').slice(0, 200) || null;
+    const roleName = String(body.role_name || '').slice(0, 80) || null;  // which role this audition is for (casting)
 
     if (!briefId) return NextResponse.json({ error: 'brief_id is required' }, { status: 400 });
     if (!isFinite(gross) || gross <= 0) return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 });
@@ -45,14 +46,17 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (!brief) return NextResponse.json({ error: 'Brief not found' }, { status: 404 });
     if (brief.status !== 'open') return NextResponse.json({ error: 'This brief is no longer open' }, { status: 400 });
+    // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
+    // roles), NOT a hard cap — a busy role can still receive more auditions.
 
     const { data, error } = await r.db
       .from('marketplace_quotes')
       .insert({
         brief_id: briefId, talent_id: talent.id, gross_amount: gross, currency, message,
         sample_url: sampleUrl, intro, included_revisions: inclRev, extra_revision_price: extraRevPrice,
+        role_name: roleName,
       })
-      .select('id, gross_amount, net_amount, commission_rate, currency, status, sample_url')
+      .select('id, brief_id, role_name, gross_amount, net_amount, commission_rate, currency, status, sample_url')
       .single();
     if (error) {
       if (error.code === '23505') return NextResponse.json({ error: 'You already have an active quote on this brief' }, { status: 409 });
