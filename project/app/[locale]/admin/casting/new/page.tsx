@@ -78,6 +78,7 @@ export default function NewCasting() {
   const [inviteMsg, setInviteMsg] = useState('');
   const [inviting, setInviting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
 
   function pickCategory(label: string) {
     setCategory(label);
@@ -141,24 +142,34 @@ export default function NewCasting() {
     } catch (e) { setErr(e instanceof Error ? e.message : '解析失敗'); } finally { setWorking(''); }
   }
 
-  async function submit() {
-    setErr('');
-    if (!title.trim()) return setErr('請填標題');
-    if (!brief.trim()) return setErr('請填案件說明');
-    setBusy(true);
-    // general (single-voice) calls have no roles; talents respond with a demo + price.
-    // role calls: text roles (editable) + merge xlsx-extracted images by role name.
-    const roles = mode === 'general' ? [] : parseRoles().map((r) => {
+  // text roles (editable) merged with xlsx-extracted images by name — exactly what publishes
+  function mergedRoles(): ParsedRole[] {
+    return parseRoles().map((r) => {
       const p = parsedRoles.find((pr) => pr.name === r.name);
       return p?.image ? { ...r, image: p.image } : r;
     });
-    // assemble the rate note from the structured currency/amount inputs (both optional)
-    const rateParts = [];
-    if (rateAmt1.trim()) rateParts.push(fmtRate(rateCur1, rateAmt1));
-    if (rateAmt2.trim()) rateParts.push(fmtRate(rateCur2, rateAmt2));
-    const rateNote = rateParts.length ? `${rateParts.join(' · ')} / ${rateUnit}` : '';
+  }
+  // assemble the rate note from the structured currency/amount inputs (both optional)
+  function buildRateNote() {
+    const parts = [];
+    if (rateAmt1.trim()) parts.push(fmtRate(rateCur1, rateAmt1));
+    if (rateAmt2.trim()) parts.push(fmtRate(rateCur2, rateAmt2));
+    return parts.length ? `${parts.join(' · ')} / ${rateUnit}` : '';
+  }
+  function goPreview() {
+    setErr('');
+    if (!title.trim()) return setErr('請填標題');
+    if (!brief.trim()) return setErr('請填案件說明');
+    setPreviewing(true);
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+  }
+
+  async function submit() {
+    setErr('');
+    setBusy(true);
+    const roles = mode === 'general' ? [] : mergedRoles();
     const payload = {
-      title, content_type: category, language, brief, rate_note: rateNote, base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
+      title, content_type: category, language, brief, rate_note: buildRateNote(), base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
       audition_deadline: auditionDeadline, recording_start: recordingStart,
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
       roles, audition_script: auditionScript,
@@ -217,11 +228,94 @@ export default function NewCasting() {
     );
   }
 
+  if (previewing) {
+    const rn = buildRateNote();
+    const roles = mergedRoles();
+    const methodList = Object.keys(methods).filter((k) => methods[k]);
+    const methodLabel = (k: string) => (k === 'home' ? '在家錄' : k === 'studio' ? '錄音室' : k === 'online' ? '線上監錄' : k);
+    return (
+      <main className="min-h-screen px-4 py-12 text-gray-900">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">發佈前預覽</h1>
+            <span className="text-xs text-gray-500">這就是配音員會看到的內容</span>
+          </div>
+
+          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 space-y-3">
+            {title && <h2 className="text-lg font-semibold">{title}</h2>}
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">試音案</span>
+              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{category}</span>
+              {language && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{language}</span>}
+              {rn && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{rn}</span>}
+              {methodList.map((m) => <span key={m} className="text-xs bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">{methodLabel(m)}</span>)}
+            </div>
+            {brief && <p className="text-sm text-gray-800 whitespace-pre-wrap">{brief}</p>}
+            {auditionScript && (
+              <div>
+                <p className="text-xs text-gray-500 mb-1">試音方向 / 聲音方向</p>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-lg p-3">{auditionScript}</div>
+              </div>
+            )}
+            {(refFiles.length > 0 || refLinks.some((l) => l.trim())) && (
+              <div>
+                <p className="text-xs text-gray-500 mb-1">參考素材</p>
+                {refFiles.map((f, i) => <div key={i} className="text-xs text-gray-600 truncate">📎 {f.name}</div>)}
+                {refLinks.filter((l) => l.trim()).map((l, i) => <div key={i} className="text-xs text-sky-700 truncate">{l}</div>)}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+              {auditionDeadline && <span>試音截止 {auditionDeadline}</span>}
+              {recordingStart && <span>預計開錄 {recordingStart}</span>}
+              {Number(baseRev) > 0 && <span>含修改 {baseRev} 次</span>}
+            </div>
+            <p className="text-xs text-green-700">平台不抽成 —— 配音員報多少拿多少</p>
+
+            <div className="border-t border-gray-200 pt-3">
+              {mode === 'general' ? (
+                <p className="text-sm text-gray-600">一般配音案:配音員用平台現有 demo 或上傳 demo + 報價回應(不分角色)。</p>
+              ) : roles.length ? (
+                <>
+                  <p className="text-xs text-gray-500 mb-2">{roles.length} 個試音角色</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {roles.map((r, i) => (
+                      <div key={i} className="flex gap-2 items-start bg-gray-50 border border-gray-200 rounded-lg p-2">
+                        {r.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={r.image} alt={r.name} className="w-11 h-11 rounded object-cover shrink-0 border border-gray-200" />
+                        ) : (
+                          <div className="w-11 h-11 rounded shrink-0 border border-dashed border-gray-300 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">無圖</div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-gray-900 truncate">{r.is_lead && <span className="text-amber-500">★</span>}{r.name} <span className="text-xs text-gray-500">{[r.gender, r.age].filter(Boolean).join('·')}</span></p>
+                          {r.personality && <p className="text-xs text-gray-500 truncate">{r.personality}</p>}
+                          {r.sample_line && <p className="text-xs text-gray-700 truncate">{r.sample_line}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-amber-700">⚠ 還沒有角色 —— 返回上傳 xlsx 或手動填角色。</p>
+              )}
+            </div>
+          </div>
+
+          {err && <p className="text-red-600 text-sm">{err}</p>}
+          <div className="flex gap-3">
+            <button onClick={() => setPreviewing(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-5 py-2.5 text-sm">← 返回修改</button>
+            <button onClick={submit} disabled={busy} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2.5 text-sm">{busy ? '發布中…' : '✓ 確認發佈'}</button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen px-4 py-12 text-gray-900">
       <div className="max-w-2xl mx-auto space-y-4">
         <h1 className="text-2xl font-semibold">發案 · 人聲試音案</h1>
-        <p className="text-gray-500 text-sm">填好後配音員會在「案件機會」看到並試音。</p>
+        <p className="text-gray-500 text-sm">填好後先預覽,確認沒問題再發佈。</p>
 
         <Field label="標題 *"><input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例:遊戲角色配音 · 女王百貨" /></Field>
 
@@ -308,7 +402,7 @@ export default function NewCasting() {
           return (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
               <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                <p className="text-sm text-gray-900">發佈前預覽 · 共 {preview.length} 個角色</p>
+                <p className="text-sm text-gray-900">角色解析預覽 · 共 {preview.length} 個角色</p>
                 <div className="flex gap-1.5 text-xs">
                   <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{withImg} 有圖</span>
                   {preview.length - withImg > 0 && <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{preview.length - withImg} 無圖</span>}
@@ -367,8 +461,8 @@ export default function NewCasting() {
 
         {working && <p className="text-xs text-gray-500">{working}</p>}
         {err && <p className="text-red-600 text-sm">{err}</p>}
-        <button onClick={submit} disabled={busy || !!working} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2.5 text-sm">
-          {busy ? '發布中…' : '發布案件'}
+        <button onClick={goPreview} disabled={busy || !!working} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2.5 text-sm">
+          預覽 →
         </button>
       </div>
     </main>
