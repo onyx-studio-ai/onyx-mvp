@@ -6,9 +6,19 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 
 // Client sheets are simplified Chinese; Taiwan voice actors read traditional.
-// Convert role text (name / personality / line) to Traditional (Taiwan) at parse.
-const s2t = OpenCC.Converter({ from: 'cn', to: 'twp' });
-const tw = (s: string) => (s ? s2t(s) : s);
+// Convert role text (name / personality / line) to Traditional (Taiwan). Lazy +
+// fail-safe: if OpenCC can't init or convert (e.g. dicts not bundled), we just
+// return the original text rather than failing the whole parse.
+let _s2t: ((s: string) => string) | null = null;
+function tw(s: string): string {
+  if (!s) return s;
+  try {
+    if (!_s2t) _s2t = OpenCC.Converter({ from: 'cn', to: 'twp' });
+    return _s2t(s);
+  } catch {
+    return s;
+  }
+}
 
 /*
   POST /api/admin/casting/parse-xlsx — the poster uploads the client's audition
