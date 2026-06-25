@@ -15,11 +15,14 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
   sample_line,is_lead,image}] }.
 */
 const BUCKET = 'casting';
-// header text → role field
+// header text → role field. `line` is matched EXACTLY (not "includes") so a
+// 台词功能 ("line function") column never gets mistaken for the real 台词内容.
 const COLS: Record<string, string> = {
   name: '角色名|角色名稱|角色', gender: '性别|性別', age: '年龄|年齡|年龄段|年齡段',
-  personality: '性格|个性|個性', line: '台词|台詞|台词内容|台詞內容',
+  personality: '性格|个性|個性', intro: '角色介绍|角色介紹|角色简介|角色簡介|人物介绍|人物介紹',
+  line: '台词内容|台詞內容|台词|台詞',
 };
+const EXACT_ONLY = new Set(['name', 'line']); // these must equal the header, not just be contained in it
 const norm = (s: unknown) => String(s ?? '').replace(/\s+/g, '').trim();
 
 function publicUrl(path: string) {
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
         const t = norm(cell.value);
         for (const [field, pat] of Object.entries(COLS)) {
           if (map[field]) continue;
-          if (pat.split('|').some((p) => t === p || (field === 'name' ? t === p : t.includes(p)))) map[field] = c;
+          if (pat.split('|').some((p) => t === p || (EXACT_ONLY.has(field) ? false : t.includes(p)))) map[field] = c;
         }
       });
       if (map.name) { ws = sheet; headerRow = rn; Object.assign(colIdx, map); break; }
@@ -78,9 +81,12 @@ export async function POST(request: NextRequest) {
     const rawName = colIdx.name ? String(row.getCell(colIdx.name).value ?? '').trim() : '';
     if (!rawName) continue;
     const name = rawName.split(/\s|（|\(|:|：/)[0].trim();
+    // fold the character intro into personality (e.g. "理性 · 侦探") for richer context
+    const intro = get(row, 'intro').slice(0, 24);
+    const personality = [get(row, 'personality'), intro].filter(Boolean).join(' · ');
     roles.push({
       name, gender: get(row, 'gender'), age: get(row, 'age').replace(/[岁歲]/g, ''),
-      personality: get(row, 'personality'), sample_line: colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : '',
+      personality, sample_line: colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : '',
       is_lead: /主角/.test(rawName),
     });
     rowOfRole[rn] = roles.length - 1;
