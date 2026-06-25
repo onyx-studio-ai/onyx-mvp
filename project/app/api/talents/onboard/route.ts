@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 import { verifyOnboardToken } from '@/lib/onboard-token';
 import { talentAccountSetupEmail } from '@/lib/mail-templates';
-import { sendEmail } from '@/lib/mail';
+import { sendEmail, emailLocaleForTalent } from '@/lib/mail';
 
 /*
   Post-approval onboarding (token-gated, no login). GET validates the token
@@ -70,10 +70,13 @@ export async function POST(request: NextRequest) {
 
         const { data: appRow } = await db
           .from('talent_applications')
-          .select('locale')
+          .select('locale, languages')
           .eq('id', appId)
           .single();
-        const locale = appRow?.locale || 'en';
+        // Stored locale = which page-language they applied from, which mis-tags
+        // foreign VOs who used a /zh-TW/ link (e.g. Jose, Spanish/English → zh-TW).
+        // Resolve to the language they actually read so the setup mail + link match.
+        const locale = emailLocaleForTalent(appRow?.locale, appRow?.languages);
 
         // Create the auth user (or find the existing one if the email is taken).
         let userId: string | null = null;

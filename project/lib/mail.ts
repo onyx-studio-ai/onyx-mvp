@@ -85,3 +85,31 @@ export async function sendInternalError(context: string, errorDetail: string): P
 }
 
 export { SENDER_MAP };
+
+// Chinese-family languages (matches the apply form's English option values like
+// "Chinese · Taiwan" / "Mandarin · Mainland" / "Cantonese · Hong Kong", plus
+// Hokkien/Hakka who read 中文, and CJK-typed values just in case).
+const CHINESE_LANG_RE =
+  /chinese|cantonese|mandarin|hokkien|hakka|taiwanese|中文|國語|国语|普通話|普通话|粵|粤|廣東|广东|台語|台语|客家|閩|闽/i;
+
+function readsChinese(languages: unknown): boolean {
+  const arr = Array.isArray(languages) ? languages : languages ? [languages] : [];
+  return arr.some((l) => typeof l === 'string' && CHINESE_LANG_RE.test(l));
+}
+
+/**
+ * Which locale a talent's SYSTEM emails should use. The stored `locale` only reflects
+ * which language version of the apply page they submitted from — wrong when someone
+ * followed a cross-locale link (e.g. a Spanish/English VO who used the /zh-TW/ apply
+ * link got locale=zh-TW and would otherwise receive Chinese mail). So: if the stored
+ * locale is Chinese but the talent lists no Chinese-family language, fall back to
+ * English. Otherwise trust the stored locale.
+ */
+export function emailLocaleForTalent(
+  storedLocale: string | null | undefined,
+  languages: unknown,
+): string {
+  const loc = storedLocale || 'en';
+  if (loc.startsWith('zh') && !readsChinese(languages)) return 'en';
+  return loc;
+}

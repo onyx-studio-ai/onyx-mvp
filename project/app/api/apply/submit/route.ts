@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendEmail } from '@/lib/mail';
+import { sendEmail, emailLocaleForTalent } from '@/lib/mail';
 import { applicationReceivedEmail, applicationTeamNotifyEmail } from '@/lib/mail-templates';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -64,11 +64,14 @@ export async function POST(request: NextRequest) {
     const applicantEmail = formData.email;
 
     if (applicantEmail) {
+      // Use the language the applicant actually reads, not just the page they applied
+      // from — a foreign VO who used a /zh-TW/ link shouldn't get a Chinese confirmation.
+      const emailLocale = emailLocaleForTalent(locale, formData.languages);
       const { subject: confirmSubject, html: confirmHtml } = applicationReceivedEmail({
         applicantName,
         applicationNumber: appNumber,
         email: applicantEmail,
-        locale,
+        locale: emailLocale,
       });
       await sendEmail({ category: 'HELLO', to: applicantEmail, subject: confirmSubject, html: confirmHtml });
 

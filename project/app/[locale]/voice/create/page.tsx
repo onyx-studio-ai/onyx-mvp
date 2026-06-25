@@ -123,7 +123,7 @@ export default function VoiceConfiguratorPage() {
     try {
       const r = await fetch('/api/voice/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: config.scriptText, language: config.language, voiceId: previewVoiceId, preview: true }),
+        body: JSON.stringify({ text: config.scriptText, language: config.language, voiceId: previewVoiceId, tone: config.tone, preview: true }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Preview failed');
@@ -134,6 +134,14 @@ export default function VoiceConfiguratorPage() {
       setPreviewLoading(false);
     }
   };
+
+  // A preview is specific to the exact voice + tone + language + script. When any of
+  // those change, drop the stale audio so the customer never mistakes the previous
+  // tone's clip for their new selection — they re-press 試聽 to hear the new register.
+  useEffect(() => {
+    setPreviewUrl('');
+    setPreviewErr('');
+  }, [config.voiceSelection, config.tone, config.language, config.scriptText]);
 
   // Live talent catalogue (Onyx Alpha / Bravo / Delta / future). Sourced
   // from /api/talents — same endpoint that powers the /voices wall — so the

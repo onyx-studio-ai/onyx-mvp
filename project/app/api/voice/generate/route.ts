@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Rate limit: max ${RATE_PER_MIN}/min` }, { status: 429 });
   }
 
-  let body: { text?: string; language?: string; voiceId?: string; voice?: string; preview?: boolean; modelSize?: string };
+  let body: { text?: string; language?: string; voiceId?: string; voice?: string; tone?: string; preview?: boolean; modelSize?: string };
   try {
     body = await request.json();
   } catch {
@@ -50,11 +50,17 @@ export async function POST(request: NextRequest) {
 
   let embeddingUrl: string | undefined;
   let refText: string | undefined;
+  let resolvedTone: string | undefined;
+  let toneTemperature: number | undefined;
   if (body.voiceId) {
-    const v = getVoiceEmbedding(String(body.voiceId));
+    // tone = the UI tone value (e.g. "Professional"); resolves to that register's
+    // embedding, falling back to the voice's default register if not recorded.
+    const v = getVoiceEmbedding(String(body.voiceId), body.tone ? String(body.tone) : undefined);
     if (!v) return NextResponse.json({ error: `Unknown voiceId "${body.voiceId}"` }, { status: 404 });
     embeddingUrl = v.embeddingUrl;
     refText = v.refText;
+    resolvedTone = v.tone;
+    toneTemperature = v.temperature; // single-register voices vary tone via temperature
   }
 
   try {
@@ -66,8 +72,11 @@ export async function POST(request: NextRequest) {
       refText,
       preview: !!body.preview,
       modelSize: body.modelSize === '0.6B' ? '0.6B' : '1.7B',
+      temperature: toneTemperature,
     });
-    return NextResponse.json(result);
+    // resolvedTone tells the caller which register actually played — may differ from
+    // the requested tone if the talent hasn't recorded it (fell back to default).
+    return NextResponse.json({ ...result, tone: resolvedTone });
   } catch (err) {
     if (err instanceof TtsError) {
       return NextResponse.json({ error: err.message, code: err.code }, { status: STATUS[err.code] });
