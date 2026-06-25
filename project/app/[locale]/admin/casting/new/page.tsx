@@ -233,7 +233,7 @@ export default function NewCasting() {
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
-          <Field label="報酬說明"><input className={input} value={rateNote} onChange={(e) => setRateNote(e.target.value)} placeholder="例:¥65/句,含1次修改" /></Field>
+          <Field label="報酬說明(客戶預算,給配音員看)"><input className={input} value={rateNote} onChange={(e) => setRateNote(e.target.value)} placeholder="例:¥65/句" /></Field>
         </div>
         <Field label="案件說明 *"><textarea className={`${input} min-h-[90px] resize-y`} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="全劇共 X 條台詞… 先試音,通過後正式錄。試音範圍…" /></Field>
 

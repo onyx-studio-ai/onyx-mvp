@@ -30,7 +30,7 @@ export default function ApplyIndexPage() {
 
   const paths = [
     {
-      num: '01', icon: UserPlus, href: '/apply/voice',
+      num: '01', icon: UserPlus, href: '/apply/talent',
       title: tx('Voice Talent / 配音人才', 'Voice Talent / 配音人才', 'Voice Talent'),
       desc: tx(
         '個人配音員 / 歌手加入 Onyx 真人配音陣容 — 廣告、旁白、遊戲、角色配音。',
