@@ -35,7 +35,10 @@ export default function NewCasting() {
   const [busy, setBusy] = useState(false);
   const [working, setWorking] = useState('');
   const [err, setErr] = useState('');
-  const [done, setDone] = useState<{ brief_number: string } | null>(null);
+  const [done, setDone] = useState<{ id: string; brief_number: string } | null>(null);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteMsg, setInviteMsg] = useState('');
+  const [inviting, setInviting] = useState(false);
 
   function parseRoles() {
     return rolesText.split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
@@ -106,7 +109,17 @@ export default function NewCasting() {
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || '發案失敗');
-    setDone({ brief_number: j.brief_number });
+    setDone({ id: j.id, brief_number: j.brief_number });
+  }
+
+  async function invite() {
+    if (!done || !inviteEmails.trim()) return;
+    setInviteMsg(''); setInviting(true);
+    const res = await fetch('/api/admin/casting/invite', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brief_id: done.id, emails: inviteEmails }) });
+    setInviting(false);
+    const j = await res.json().catch(() => ({}));
+    setInviteMsg(res.ok ? `✅ 已寄出 ${j.invited} 封邀請(對方點連結即可免註冊試音)` : (j.error || '邀請失敗'));
+    if (res.ok) setInviteEmails('');
   }
 
   if (done) {
@@ -115,7 +128,16 @@ export default function NewCasting() {
         <div className="max-w-xl mx-auto text-center">
           <h1 className="text-2xl font-semibold mb-2">✅ 案件已發布</h1>
           <p className="text-gray-400 mb-1">案號:{done.brief_number}</p>
-          <p className="text-gray-500 text-sm mb-6">配音員登入後在「案件機會」就看得到了。</p>
+          <p className="text-gray-500 text-sm mb-6">已註冊的配音員在「案件機會」就看得到了。</p>
+
+          <div className="text-left bg-white/[0.02] border border-white/10 rounded-xl p-4 mb-6">
+            <p className="text-sm text-green-200 mb-1">📨 邀請配音員(免註冊試音)</p>
+            <p className="text-xs text-gray-500 mb-2">貼上 email(每行一個或逗號分隔)。對方收到專屬連結 → 一鍵免註冊試音 → 隨時點同一連結回來補上傳。</p>
+            <textarea className={`${input} min-h-[70px] resize-y`} value={inviteEmails} onChange={(e) => setInviteEmails(e.target.value)} placeholder={'a@example.com\nb@example.com'} />
+            <button onClick={invite} disabled={inviting || !inviteEmails.trim()} className="mt-2 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{inviting ? '寄送中…' : '寄出邀請'}</button>
+            {inviteMsg && <p className="text-xs text-gray-300 mt-2">{inviteMsg}</p>}
+          </div>
+
           <button onClick={() => router.push('/talent/opportunities')} className="text-green-400 hover:underline text-sm mr-4">查看(配音員視角) →</button>
           <button onClick={() => location.reload()} className="text-gray-400 hover:underline text-sm">再發一個</button>
         </div>
