@@ -64,6 +64,7 @@ type Quote = {
   message: string | null;
   sample_url?: string | null;
 };
+type Demo = { url: string; name?: string; category?: string; language?: string };
 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60 transition';
@@ -79,6 +80,7 @@ export default function Opportunities() {
   const [briefs, setBriefs] = useState<Brief[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
+  const [myDemos, setMyDemos] = useState<Demo[]>([]);
 
   const load = useCallback(async (accessToken: string) => {
     setToken(accessToken);
@@ -88,6 +90,7 @@ export default function Opportunities() {
     setBriefs(j.briefs || []);
     setQuotes(j.myQuotes || []);
     setRoleCounts(j.roleCounts || {});
+    setMyDemos(j.myDemos || []);
     setPhase('ready');
   }, []);
 
@@ -138,6 +141,7 @@ export default function Opportunities() {
             brief={b}
             myQuotes={quotes.filter((q) => q.brief_id === b.id)}
             roleCounts={roleCounts[b.id] || {}}
+            myDemos={myDemos}
             token={token}
             tx={tx}
             onQuoted={(q) => setQuotes((prev) => [q, ...prev])}
@@ -152,6 +156,7 @@ function BriefCard({
   brief,
   myQuotes,
   roleCounts,
+  myDemos,
   token,
   tx,
   onQuoted,
@@ -159,12 +164,14 @@ function BriefCard({
   brief: Brief;
   myQuotes: Quote[];
   roleCounts: Record<string, number>;
+  myDemos: Demo[];
   token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
 }) {
   const popularThreshold = Number(brief.audition_cap) || 5;
   const isCasting = brief.kind === 'casting';
+  const hasRoles = (brief.roles || []).length > 0; // casting WITHOUT roles = general single-voice call
   const myQuote = myQuotes[0]; // regular briefs have a single quote per talent
   const [gross, setGross] = useState('');
   const [currency, setCurrency] = useState('USD');
@@ -244,26 +251,31 @@ function BriefCard({
             {brief.recording_start && <span>{tx('預計開錄', '预计开录', 'Recording starts')}: {brief.recording_start}</span>}
           </div>
 
-          {/* Per-role auditions. Pick a role → upload an audition for it. Full roles
-              grey out (no count shown — we only nudge "try another"). One per role. */}
-          <div className="border-t border-white/10 pt-3">
-            <p className="text-xs text-gray-500 mb-2">{tx('選一個(或多個)角色試音', '选一个(或多个)角色试音', 'Pick a role (or several) to audition')}</p>
-            <div className="space-y-2">
-              {(brief.roles || []).map((ro, i) => (
-                <RoleAudition
-                  key={i}
-                  brief={brief}
-                  role={ro}
-                  count={roleCounts[ro.name || ''] || 0}
-                  popularThreshold={popularThreshold}
-                  done={myQuotes.find((q) => (q.role_name || '') === (ro.name || ''))}
-                  token={token}
-                  tx={tx}
-                  onQuoted={onQuoted}
-                />
-              ))}
+          {hasRoles ? (
+            /* Per-role auditions. Pick a role → upload an audition for it. Full roles
+               grey out (no count shown — we only nudge "try another"). One per role. */
+            <div className="border-t border-white/10 pt-3">
+              <p className="text-xs text-gray-500 mb-2">{tx('選一個(或多個)角色試音', '选一个(或多个)角色试音', 'Pick a role (or several) to audition')}</p>
+              <div className="space-y-2">
+                {(brief.roles || []).map((ro, i) => (
+                  <RoleAudition
+                    key={i}
+                    brief={brief}
+                    role={ro}
+                    count={roleCounts[ro.name || ''] || 0}
+                    popularThreshold={popularThreshold}
+                    done={myQuotes.find((q) => (q.role_name || '') === (ro.name || ''))}
+                    token={token}
+                    tx={tx}
+                    onQuoted={onQuoted}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* General (single-voice) call — respond with an existing demo OR an upload + price. */
+            <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} token={token} tx={tx} onQuoted={onQuoted} />
+          )}
         </>
       ) : (
         <>
@@ -434,6 +446,120 @@ function RoleAudition({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// General (single-voice) casting response: apply with an EXISTING platform demo
+// or upload one, then quote a price. No per-role audition — used for ad/narration/
+// IVR/audiobook etc. One response per call.
+function GeneralResponse({
+  brief, myDemos, done, token, tx, onQuoted,
+}: {
+  brief: Brief;
+  myDemos: Demo[];
+  done?: Quote;
+  token: string;
+  tx: (tw: string, cn: string, en: string) => string;
+  onQuoted: (q: Quote) => void;
+}) {
+  const [src, setSrc] = useState<'demo' | 'upload'>(myDemos.length ? 'demo' : 'upload');
+  const [pickedDemo, setPickedDemo] = useState(myDemos[0]?.url || '');
+  const [audioUrl, setAudioUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [gross, setGross] = useState('');
+  const [currency, setCurrency] = useState('CNY');
+  const [intro, setIntro] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
+  const grossN = Number(gross);
+  const netPreview = isFinite(grossN) && grossN > 0 ? Math.round(grossN * (1 - COMMISSION) * 100) / 100 : 0;
+
+  async function uploadAudio(file: File) {
+    setErr(''); setUploading(true);
+    try {
+      const u = await fetch('/api/talent/audition-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setAudioUrl(uj.publicUrl);
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setUploading(false); }
+  }
+
+  async function submit() {
+    setErr('');
+    if (!sampleUrl) return setErr(tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
+    if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
+    setBusy(true);
+    const res = await fetch('/api/talent/quotes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossN, currency, intro, message: intro }),
+    });
+    setBusy(false);
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) return setErr(j.error || tx('送出失敗', '送出失败', 'Submit failed'));
+    onQuoted(j.quote);
+  }
+
+  if (done) {
+    return (
+      <div className="border-t border-white/10 pt-3 text-sm">
+        <span className="text-green-300">{tx('已應徵', '已应征', 'Applied')}: {done.currency} {done.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}</span>
+        <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {done.status}</span>
+        {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-white/10 pt-3 space-y-2">
+      <p className="text-xs text-gray-500">{tx('用你的 demo 應徵(挑平台現有的,或上傳一段),再報價即可。', '用你的 demo 应征(挑平台现有的,或上传一段),再报价即可。', 'Apply with a demo — pick an existing one or upload — then quote.')}</p>
+      {myDemos.length > 0 && (
+        <div className="flex gap-2 text-xs">
+          {([['demo', '挑現有 demo', '挑现有 demo', 'My demos'], ['upload', '上傳新 demo', '上传新 demo', 'Upload']] as const).map(([k, twl, cnl, enl]) => (
+            <button key={k} type="button" onClick={() => setSrc(k)}
+              className={`flex-1 rounded-lg px-2 py-1.5 border transition ${src === k ? 'bg-green-500/20 border-green-400/60 text-green-100' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{tx(twl, cnl, enl)}</button>
+          ))}
+        </div>
+      )}
+      {src === 'demo' && myDemos.length > 0 && (
+        <div className="space-y-1.5">
+          <select className={inputCls} value={pickedDemo} onChange={(e) => setPickedDemo(e.target.value)}>
+            {myDemos.map((d, i) => (<option key={i} value={d.url} className="bg-black">{[d.category, d.name, d.language].filter(Boolean).join(' · ') || `Demo ${i + 1}`}</option>))}
+          </select>
+          {pickedDemo && <audio controls src={pickedDemo} className="w-full h-9" />}
+        </div>
+      )}
+      {src === 'upload' && (
+        <>
+          <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
+            className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+          {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
+          {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
+        </>
+      )}
+      <div className="flex gap-2">
+        <select className={`${inputCls} w-20 py-1.5`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
+        </select>
+        <input type="number" min="0" className={`${inputCls} py-1.5`} value={gross} onChange={(e) => setGross(e.target.value)}
+          placeholder={tx('你的報價(整案/每句/每分鐘皆可)', '你的报价(整案/每句/每分钟皆可)', 'Your price (per case / line / minute)')} />
+      </div>
+      {grossN > 0 && (
+        <p className="text-xs text-green-300">{tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview} <span className="text-gray-500">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span></p>
+      )}
+      <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
+        placeholder={tx('報價說明 + 自我介紹(計價方式、修改政策、為何適合)', '报价说明 + 自我介绍(计价方式、修改政策、为何适合)', 'Pricing notes + intro (how you charge, revisions, why you fit)')} />
+      {err && <p className="text-red-400 text-xs">{err}</p>}
+      <button onClick={submit} disabled={busy || uploading} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm">
+        {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出應徵', '送出应征', 'Submit')}
+      </button>
     </div>
   );
 }

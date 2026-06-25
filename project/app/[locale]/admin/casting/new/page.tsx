@@ -15,9 +15,35 @@ type RefFile = { name: string; url: string };
 type ParsedRole = { name: string; gender?: string; age?: string; personality?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 
+// 19 業界類別 → 對應的回應方式。roles = 分角色試音(遊戲/動畫/戲劇);
+// general = 單一聲音,配音員用平台現有 demo 或上傳 demo + 報價(廣告/旁白等)。
+const CATEGORIES: { label: string; mode: 'roles' | 'general' }[] = [
+  { label: '廣告 Commercial', mode: 'general' },
+  { label: '旁白 Narration', mode: 'general' },
+  { label: '有聲書 Audiobook', mode: 'general' },
+  { label: '工商簡介 Corporate', mode: 'general' },
+  { label: '教育教學 E-Learning', mode: 'general' },
+  { label: '紀錄片 Documentary', mode: 'general' },
+  { label: '電視 TV', mode: 'general' },
+  { label: '廣播電台 Radio', mode: 'general' },
+  { label: '電影預告 Trailer', mode: 'general' },
+  { label: '網路影片 Web Video', mode: 'general' },
+  { label: 'Podcast', mode: 'general' },
+  { label: '來電語音 IVR', mode: 'general' },
+  { label: '語音助理 Voice Assistant', mode: 'general' },
+  { label: '新聞播報 News', mode: 'general' },
+  { label: '流行歌配唱 Pop Singing', mode: 'general' },
+  { label: '遊戲 Video Game', mode: 'roles' },
+  { label: '動畫 Animation', mode: 'roles' },
+  { label: '戲劇·角色 Drama', mode: 'roles' },
+  { label: '角色配唱 Character Singing', mode: 'roles' },
+];
+
 export default function NewCasting() {
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('遊戲 Video Game');
+  const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('中文 · 台灣國語');
   const [brief, setBrief] = useState('');
   const [rateNote, setRateNote] = useState('');
@@ -39,6 +65,12 @@ export default function NewCasting() {
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteMsg, setInviteMsg] = useState('');
   const [inviting, setInviting] = useState(false);
+
+  function pickCategory(label: string) {
+    setCategory(label);
+    const m = CATEGORIES.find((c) => c.label === label)?.mode;
+    if (m) setMode(m); // category drives the default flow; toggle can still override
+  }
 
   function parseRoles() {
     return rolesText.split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
@@ -93,13 +125,14 @@ export default function NewCasting() {
     if (!title.trim()) return setErr('請填標題');
     if (!brief.trim()) return setErr('請填案件說明');
     setBusy(true);
-    // text roles (editable) + merge xlsx-extracted images by role name
-    const roles = parseRoles().map((r) => {
+    // general (single-voice) calls have no roles; talents respond with a demo + price.
+    // role calls: text roles (editable) + merge xlsx-extracted images by role name.
+    const roles = mode === 'general' ? [] : parseRoles().map((r) => {
       const p = parsedRoles.find((pr) => pr.name === r.name);
       return p?.image ? { ...r, image: p.image } : r;
     });
     const payload = {
-      title, language, brief, rate_note: rateNote, base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
+      title, content_type: category, language, brief, rate_note: rateNote, base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
       audition_deadline: auditionDeadline, recording_start: recordingStart,
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
       roles, audition_script: auditionScript,
@@ -152,6 +185,28 @@ export default function NewCasting() {
         <p className="text-gray-500 text-sm">填好後配音員會在「案件機會」看到並試音。</p>
 
         <Field label="標題 *"><input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例:遊戲角色配音 · 女王百貨" /></Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="類別">
+            <select className={input} value={category} onChange={(e) => pickCategory(e.target.value)}>
+              {CATEGORIES.map((c) => <option key={c.label} value={c.label} className="bg-black">{c.label}</option>)}
+            </select>
+          </Field>
+          <Field label="回應方式">
+            <div className="flex gap-2">
+              {([['roles', '角色試音(多角色)'], ['general', '一般(單一聲音)']] as const).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setMode(k)}
+                  className={`flex-1 rounded-lg px-2 py-2.5 text-xs border transition ${mode === k ? 'bg-green-500/20 border-green-400/60 text-green-100' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{l}</button>
+              ))}
+            </div>
+          </Field>
+        </div>
+        <p className="text-xs text-gray-500 -mt-2">
+          {mode === 'roles'
+            ? '配音員分角色試音(遊戲 / 動畫 / 戲劇)。每個角色一張卡、可上傳角色圖片。'
+            : '配音員用平台現有 demo 或上傳一段 demo + 報價即可,不需逐角色錄音(廣告 / 旁白 / 有聲書等)。'}
+        </p>
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
           <Field label="報酬說明"><input className={input} value={rateNote} onChange={(e) => setRateNote(e.target.value)} placeholder="例:¥65/句,含1次修改" /></Field>
@@ -174,6 +229,7 @@ export default function NewCasting() {
           </div>
         </Field>
 
+        {mode === 'roles' && <>
         <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-3">
           <p className="text-sm text-green-200 mb-0.5">⚡ 推薦:上傳客戶 xlsx,自動帶入角色 + 角色圖片</p>
           <p className="text-xs text-gray-500 mb-2">系統解析角色名/性別/年齡/性格/台詞,並抽出角色圖片(配音員看長相幫助試音)。解析後可在下方編輯。沒有 xlsx 就手動填。</p>
@@ -197,7 +253,8 @@ export default function NewCasting() {
           <textarea className={`${input} min-h-[120px] resize-y font-mono text-xs`} value={rolesText} onChange={(e) => setRolesText(e.target.value)}
             placeholder={'★顧冶 | 男 | 28 | 果斷 | 我從來不遲到…\n福爾森 | 男 | 35 | 理性 | 排除所有不可能的…'} />
         </Field>
-        <Field label="試音稿(配音員只能線上看、不可下載)">
+        </>}
+        <Field label={mode === 'general' ? '試音稿 / 方向(選填,配音員只能線上看)' : '試音稿(配音員只能線上看、不可下載)'}>
           <textarea className={`${input} min-h-[100px] resize-y`} value={auditionScript} onChange={(e) => setAuditionScript(e.target.value)} placeholder="貼上樣本台詞 / 方向說明…" />
         </Field>
 

@@ -75,14 +75,21 @@ export default function GuestCasting() {
 
       {closed && <p className="text-amber-300 text-sm mb-3">{tx('這個試音案已結束。', 'This casting call has closed.')}</p>}
 
-      <p className="text-xs text-gray-500 mb-2">{tx('選角色試音(可試多個):', 'Pick roles to audition (you can do several):')}</p>
-      <div className="space-y-2">
-        {(brief.roles || []).map((ro, i) => (
-          <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
-            popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
-            done={mine.find((m) => (m.role_name || '') === (ro.name || ''))} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
-        ))}
-      </div>
+      {(brief.roles || []).length > 0 ? (
+        <>
+          <p className="text-xs text-gray-500 mb-2">{tx('選角色試音(可試多個):', 'Pick roles to audition (you can do several):')}</p>
+          <div className="space-y-2">
+            {(brief.roles || []).map((ro, i) => (
+              <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
+                popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
+                done={mine.find((m) => (m.role_name || '') === (ro.name || ''))} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
+            ))}
+          </div>
+        </>
+      ) : (
+        /* General (single-voice) call — upload a demo + price (no per-role audition). */
+        <GuestGeneral token={token} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
+      )}
 
       <div className="mt-8 border-t border-white/10 pt-4 text-center">
         <p className="text-sm text-gray-400 mb-2">{tx('想以後接更多案?建立正式帳號,資料不會遺失。', 'Want more work? Create a full account — nothing is lost.')}</p>
@@ -171,6 +178,67 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
           <button onClick={submit} disabled={busy || uploading} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{busy ? tx('送出中…', 'Submitting…') : tx('送出試音', 'Submit')}</button>
         </div>
       )}
+    </div>
+  );
+}
+
+// General (single-voice) guest response: upload one demo + price. No roles.
+function GuestGeneral({ token, done, closed, tx, onDone }: {
+  token: string; done?: Audition; closed: boolean;
+  tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
+}) {
+  const [audioUrl, setAudioUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [gross, setGross] = useState('');
+  const [currency, setCurrency] = useState('CNY');
+  const [intro, setIntro] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function uploadAudio(file: File) {
+    setErr(''); setUploading(true);
+    try {
+      const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json();
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
+      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (error) throw new Error(error.message);
+      setAudioUrl(uj.publicUrl);
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
+  }
+  async function submit() {
+    setErr('');
+    if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
+    if (!(Number(gross) > 0)) return setErr(tx('請填報價', 'Enter your price'));
+    setBusy(true);
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: audioUrl, gross_amount: Number(gross), currency, intro }) });
+    setBusy(false);
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
+    onDone(j.audition);
+  }
+
+  if (done) return (
+    <div className="rounded-lg px-3 py-2 border border-green-500/30 bg-green-500/5 text-sm">
+      <span className="text-green-300">{tx('✓ 已送出', '✓ Submitted')}</span>
+      {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
+    </div>
+  );
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+      <p className="text-xs text-gray-500">{tx('上傳一段 demo + 報價即可(不需逐角色錄)。', 'Upload one demo + your price (no per-role recording).')}</p>
+      <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading || closed} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
+        className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+      {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
+      {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
+      <div className="flex gap-2">
+        <select className={`${cls} w-20`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>
+        <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('你的報價', 'Your price')} />
+      </div>
+      <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
+      {err && <p className="text-red-400 text-xs">{err}</p>}
+      <button onClick={submit} disabled={busy || uploading || closed} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{busy ? tx('送出中…', 'Submitting…') : tx('送出應徵', 'Submit')}</button>
     </div>
   );
 }

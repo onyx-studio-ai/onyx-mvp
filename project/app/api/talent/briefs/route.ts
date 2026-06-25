@@ -13,8 +13,16 @@ import { resolveTalentFromRequest } from '@/lib/talent-auth';
   dashboard keeps working.
 */
 export async function GET(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id, languages');
+  const r = await resolveTalentFromRequest(request, 'id, languages, demos');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
+
+  // The talent's own published demos — offered as "pick an existing demo" when
+  // responding to a general (single-voice) casting call.
+  const rawDemos = (r.talent as { demos?: unknown }).demos;
+  const myDemos = Array.isArray(rawDemos)
+    ? rawDemos.filter((d): d is { url: string; name?: string; category?: string; language?: string } =>
+        !!d && typeof (d as { url?: unknown }).url === 'string').slice(0, 60)
+    : [];
 
   try {
     const { data: briefsRaw, error: bErr } = await r.db
@@ -49,7 +57,7 @@ export async function GET(request: NextRequest) {
       .eq('talent_id', (r.talent as { id: string }).id)
       .order('created_at', { ascending: false });
 
-    return NextResponse.json({ briefs, myQuotes: myQuotes || [], roleCounts });
+    return NextResponse.json({ briefs, myQuotes: myQuotes || [], roleCounts, myDemos });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });

@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
     client_email: 'casting@onyxstudios.ai',     // poster-side placeholder (NOT NULL); talents never see it
     client_name: 'Onyx Casting',
     title,
+    content_type: String(b.content_type || '').slice(0, 80) || null, // 類別(廣告/旁白/遊戲…)
     brief: briefText,
     language: String(b.language || '').slice(0, 80) || null,
     rate_note: String(b.rate_note || '').slice(0, 200) || null,
