@@ -54,10 +54,8 @@ export default function NewCasting() {
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('中文 · 台灣國語');
   const [brief, setBrief] = useState('');
-  const [rateCur1, setRateCur1] = useState('TWD');
-  const [rateAmt1, setRateAmt1] = useState('');
-  const [rateCur2, setRateCur2] = useState('USD');
-  const [rateAmt2, setRateAmt2] = useState('');
+  const [rateCur, setRateCur] = useState('TWD');
+  const [rateAmt, setRateAmt] = useState('');
   const [rateUnit, setRateUnit] = useState('句');
   const [baseRev, setBaseRev] = useState('1');
   const [cap, setCap] = useState('5');
@@ -151,10 +149,7 @@ export default function NewCasting() {
   }
   // assemble the rate note from the structured currency/amount inputs (both optional)
   function buildRateNote() {
-    const parts = [];
-    if (rateAmt1.trim()) parts.push(fmtRate(rateCur1, rateAmt1));
-    if (rateAmt2.trim()) parts.push(fmtRate(rateCur2, rateAmt2));
-    return parts.length ? `${parts.join(' · ')} / ${rateUnit}` : '';
+    return rateAmt.trim() ? `${fmtRate(rateCur, rateAmt)} / ${rateUnit}` : '';
   }
   function goPreview() {
     setErr('');
@@ -341,19 +336,14 @@ export default function NewCasting() {
         </p>
 
         <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
-        <Field label="報酬(客戶預算,給配音員看 · 美金/台幣可只填一個或都填)">
-          <div className="flex flex-wrap items-center gap-2">
-            <select className={`${input} w-24`} value={rateCur1} onChange={(e) => setRateCur1(e.target.value)}>
+        <Field label="報酬(客戶預算,給配音員看 · 台幣/美金二選一)">
+          <div className="flex items-center gap-2">
+            <select className={`${input} w-28`} value={rateCur} onChange={(e) => setRateCur(e.target.value)}>
               {CCYS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <input type="number" min="0" className={`${input} w-28`} value={rateAmt1} onChange={(e) => setRateAmt1(e.target.value)} placeholder="金額" />
-            <span className="text-gray-400 text-sm">+</span>
-            <select className={`${input} w-24`} value={rateCur2} onChange={(e) => setRateCur2(e.target.value)}>
-              {CCYS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <input type="number" min="0" className={`${input} w-28`} value={rateAmt2} onChange={(e) => setRateAmt2(e.target.value)} placeholder="金額(選填)" />
+            <input type="number" min="0" className={input} value={rateAmt} onChange={(e) => setRateAmt(e.target.value)} placeholder="金額" />
             <span className="text-gray-500 text-sm">/</span>
-            <select className={`${input} w-24`} value={rateUnit} onChange={(e) => setRateUnit(e.target.value)}>
+            <select className={`${input} w-28`} value={rateUnit} onChange={(e) => setRateUnit(e.target.value)}>
               {RATE_UNITS.map((u) => <option key={u} value={u}>每{u}</option>)}
             </select>
           </div>
