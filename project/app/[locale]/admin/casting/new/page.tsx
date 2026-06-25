@@ -5,6 +5,7 @@
   fills roles, an online-only audition script, reference materials (links +
   files re-hosted on our `casting` bucket), recording logistics, rate. On submit
   the call goes live at /talent/opportunities. Internal tool (admin-cookie auth).
+  Light theme to match the admin shell.
 */
 
 import { useState } from 'react';
@@ -13,7 +14,8 @@ import { supabase } from '@/lib/supabase';
 
 type RefFile = { name: string; url: string };
 type ParsedRole = { name: string; gender?: string; age?: string; personality?: string; sample_line?: string; is_lead?: boolean; image?: string };
-const input = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
+const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
+const SITE = 'https://www.onyxstudios.ai';
 
 // 19 業界類別 → 對應的回應方式。roles = 分角色試音(遊戲/動畫/戲劇);
 // general = 單一聲音,配音員用平台現有 demo 或上傳 demo + 報價(廣告/旁白等)。
@@ -65,6 +67,7 @@ export default function NewCasting() {
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteMsg, setInviteMsg] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   function pickCategory(label: string) {
     setCategory(label);
@@ -156,30 +159,43 @@ export default function NewCasting() {
   }
 
   if (done) {
+    const joinLink = `${SITE}/casting/join/${done.id}`;
     return (
-      <main className="min-h-screen bg-black text-white px-4 py-16">
+      <main className="min-h-screen px-4 py-16 text-gray-900">
         <div className="max-w-xl mx-auto text-center">
           <h1 className="text-2xl font-semibold mb-2">✅ 案件已發布</h1>
-          <p className="text-gray-400 mb-1">案號:{done.brief_number}</p>
+          <p className="text-gray-600 mb-1">案號:{done.brief_number}</p>
           <p className="text-gray-500 text-sm mb-6">已註冊的配音員在「案件機會」就看得到了。</p>
 
-          <div className="text-left bg-white/[0.02] border border-white/10 rounded-xl p-4 mb-6">
-            <p className="text-sm text-green-200 mb-1">📨 邀請配音員(免註冊試音)</p>
-            <p className="text-xs text-gray-500 mb-2">貼上 email(每行一個或逗號分隔)。對方收到專屬連結 → 一鍵免註冊試音 → 隨時點同一連結回來補上傳。</p>
-            <textarea className={`${input} min-h-[70px] resize-y`} value={inviteEmails} onChange={(e) => setInviteEmails(e.target.value)} placeholder={'a@example.com\nb@example.com'} />
-            <button onClick={invite} disabled={inviting || !inviteEmails.trim()} className="mt-2 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{inviting ? '寄送中…' : '寄出邀請'}</button>
-            {inviteMsg && <p className="text-xs text-gray-300 mt-2">{inviteMsg}</p>}
+          {/* Shareable open link — paste anywhere (WeChat/LINE). Anyone opens, enters
+              their email, auditions without registering, and can upgrade later. */}
+          <div className="text-left bg-sky-50 border border-sky-200 rounded-xl p-4 mb-4">
+            <p className="text-sm text-sky-800 mb-1">🔗 公開試音連結(給平台外的人)</p>
+            <p className="text-xs text-gray-500 mb-2">把這條連結貼到微信 / LINE 群都可以。任何人點開 → 填 email → 免註冊直接試音,之後可升級成正式配音員。</p>
+            <div className="flex gap-2">
+              <input readOnly value={joinLink} className={`${input} text-xs`} onFocus={(e) => e.target.select()} />
+              <button onClick={() => { navigator.clipboard?.writeText(joinLink); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+                className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded-lg px-3 whitespace-nowrap">{copied ? '已複製 ✓' : '複製'}</button>
+            </div>
           </div>
 
-          <button onClick={() => router.push('/talent/opportunities')} className="text-green-400 hover:underline text-sm mr-4">查看(配音員視角) →</button>
-          <button onClick={() => location.reload()} className="text-gray-400 hover:underline text-sm">再發一個</button>
+          <div className="text-left bg-white border border-gray-200 shadow-sm rounded-xl p-4 mb-6">
+            <p className="text-sm text-green-700 mb-1">📨 指定 email 邀請(系統幫你寄)</p>
+            <p className="text-xs text-gray-500 mb-2">貼上 email(每行一個或逗號分隔)。對方收到專屬連結 → 一鍵免註冊試音 → 隨時點同一連結回來補上傳。</p>
+            <textarea className={`${input} min-h-[70px] resize-y`} value={inviteEmails} onChange={(e) => setInviteEmails(e.target.value)} placeholder={'a@example.com\nb@example.com'} />
+            <button onClick={invite} disabled={inviting || !inviteEmails.trim()} className="mt-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-1.5 text-sm">{inviting ? '寄送中…' : '寄出邀請'}</button>
+            {inviteMsg && <p className="text-xs text-gray-600 mt-2">{inviteMsg}</p>}
+          </div>
+
+          <button onClick={() => router.push('/talent/opportunities')} className="text-green-700 hover:underline text-sm mr-4">查看(配音員視角) →</button>
+          <button onClick={() => location.reload()} className="text-gray-500 hover:underline text-sm">再發一個</button>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-white px-4 py-12">
+    <main className="min-h-screen px-4 py-12 text-gray-900">
       <div className="max-w-2xl mx-auto space-y-4">
         <h1 className="text-2xl font-semibold">發案 · 人聲試音案</h1>
         <p className="text-gray-500 text-sm">填好後配音員會在「案件機會」看到並試音。</p>
@@ -189,14 +205,14 @@ export default function NewCasting() {
         <div className="grid grid-cols-2 gap-3">
           <Field label="類別">
             <select className={input} value={category} onChange={(e) => pickCategory(e.target.value)}>
-              {CATEGORIES.map((c) => <option key={c.label} value={c.label} className="bg-black">{c.label}</option>)}
+              {CATEGORIES.map((c) => <option key={c.label} value={c.label}>{c.label}</option>)}
             </select>
           </Field>
           <Field label="回應方式">
             <div className="flex gap-2">
               {([['roles', '角色試音(多角色)'], ['general', '一般(單一聲音)']] as const).map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setMode(k)}
-                  className={`flex-1 rounded-lg px-2 py-2.5 text-xs border transition ${mode === k ? 'bg-green-500/20 border-green-400/60 text-green-100' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{l}</button>
+                  className={`flex-1 rounded-lg px-2 py-2.5 text-xs border transition ${mode === k ? 'bg-green-100 border-green-500 text-green-800' : 'bg-white border-gray-300 text-gray-600 hover:text-gray-900'}`}>{l}</button>
               ))}
             </div>
           </Field>
@@ -220,7 +236,7 @@ export default function NewCasting() {
           <Field label="熱門門檻(人數提示)"><input type="number" min="1" className={input} value={cap} onChange={(e) => setCap(e.target.value)} /></Field>
         </div>
         <Field label="錄音方式(可複選)">
-          <div className="flex gap-4 text-sm">
+          <div className="flex gap-4 text-sm text-gray-700">
             {([['home', '在家錄'], ['studio', '錄音室'], ['online', '線上監錄']] as const).map(([k, l]) => (
               <label key={k} className="flex items-center gap-1.5 cursor-pointer">
                 <input type="checkbox" checked={methods[k]} onChange={(e) => setMethods((m) => ({ ...m, [k]: e.target.checked }))} /> {l}
@@ -230,13 +246,13 @@ export default function NewCasting() {
         </Field>
 
         {mode === 'roles' && <>
-        <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-3">
-          <p className="text-sm text-green-200 mb-0.5">⚡ 推薦:上傳客戶 xlsx,自動帶入角色 + 角色圖片</p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p className="text-sm text-green-700 mb-0.5">⚡ 推薦:上傳客戶 xlsx,自動帶入角色 + 角色圖片</p>
           <p className="text-xs text-gray-500 mb-2">系統解析角色名/性別/年齡/性格/台詞,並抽出角色圖片(配音員看長相幫助試音)。解析後可在下方編輯。沒有 xlsx 就手動填。</p>
           <input type="file" accept=".xlsx" disabled={!!working} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadXlsx(f); }}
-            className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-green-500/20 file:text-green-100 file:text-xs" />
+            className="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-green-100 file:text-green-700 file:text-xs" />
           {parsedRoles.length > 0 && (
-            <p className="text-xs text-green-300 mt-2">✓ 解析到 {parsedRoles.length} 個角色({parsedRoles.filter((r) => r.image).length} 個有圖片)。下方有發佈前預覽。</p>
+            <p className="text-xs text-green-700 mt-2">✓ 解析到 {parsedRoles.length} 個角色({parsedRoles.filter((r) => r.image).length} 個有圖片)。下方有發佈前預覽。</p>
           )}
         </div>
         <Field label="試音角色(每行一個:★主角 | 性別 | 年齡 | 性格 | 台詞;上傳 xlsx 會自動填)">
@@ -253,28 +269,28 @@ export default function NewCasting() {
           const withImg = preview.filter((r) => r.image).length;
           const noLine = preview.filter((r) => !r.sample_line).length;
           return (
-            <div className="bg-white/[0.02] border border-white/10 rounded-lg p-3">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
               <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                <p className="text-sm text-white">發佈前預覽 · 共 {preview.length} 個角色</p>
+                <p className="text-sm text-gray-900">發佈前預覽 · 共 {preview.length} 個角色</p>
                 <div className="flex gap-1.5 text-xs">
-                  <span className="bg-green-500/15 text-green-200 px-2 py-0.5 rounded-full">{withImg} 有圖</span>
-                  {preview.length - withImg > 0 && <span className="bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{preview.length - withImg} 無圖</span>}
-                  {noLine > 0 && <span className="bg-red-500/15 text-red-200 px-2 py-0.5 rounded-full">{noLine} 缺台詞</span>}
+                  <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{withImg} 有圖</span>
+                  {preview.length - withImg > 0 && <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{preview.length - withImg} 無圖</span>}
+                  {noLine > 0 && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{noLine} 缺台詞</span>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {preview.map((r, i) => (
-                  <div key={i} className="flex gap-2 items-start bg-black/30 border border-white/10 rounded-lg p-2">
+                  <div key={i} className="flex gap-2 items-start bg-white border border-gray-200 rounded-lg p-2">
                     {r.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.image} alt={r.name} className="w-11 h-11 rounded object-cover shrink-0 border border-white/10" />
+                      <img src={r.image} alt={r.name} className="w-11 h-11 rounded object-cover shrink-0 border border-gray-200" />
                     ) : (
-                      <div className="w-11 h-11 rounded shrink-0 border border-dashed border-white/15 bg-white/5 flex items-center justify-center text-[10px] text-gray-500">無圖</div>
+                      <div className="w-11 h-11 rounded shrink-0 border border-dashed border-gray-300 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">無圖</div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-white truncate">{r.is_lead && <span className="text-amber-300">★</span>}{r.name} <span className="text-xs text-gray-500">{[r.gender, r.age].filter(Boolean).join('·')}</span></p>
-                      {r.personality && <p className="text-xs text-gray-400 truncate">{r.personality}</p>}
-                      <p className={`text-xs truncate ${r.sample_line ? 'text-gray-300' : 'text-red-300'}`}>{r.sample_line || '⚠ 缺台詞'}</p>
+                      <p className="text-sm text-gray-900 truncate">{r.is_lead && <span className="text-amber-500">★</span>}{r.name} <span className="text-xs text-gray-500">{[r.gender, r.age].filter(Boolean).join('·')}</span></p>
+                      {r.personality && <p className="text-xs text-gray-500 truncate">{r.personality}</p>}
+                      <p className={`text-xs truncate ${r.sample_line ? 'text-gray-700' : 'text-red-600'}`}>{r.sample_line || '⚠ 缺台詞'}</p>
                     </div>
                   </div>
                 ))}
@@ -292,29 +308,29 @@ export default function NewCasting() {
           {refLinks.map((l, i) => (
             <div key={i} className="flex gap-2 mb-1.5">
               <input className={input} value={l} onChange={(e) => setRefLinks((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder="https://…(樣音 / 方向連結)" />
-              <button onClick={() => setRefLinks((arr) => arr.filter((_, j) => j !== i))} className="text-gray-500 px-2">✕</button>
+              <button onClick={() => setRefLinks((arr) => arr.filter((_, j) => j !== i))} className="text-gray-400 px-2">✕</button>
             </div>
           ))}
-          <button onClick={() => setRefLinks((arr) => [...arr, ''])} className="text-xs text-sky-300 hover:underline">+ 再加一條連結</button>
+          <button onClick={() => setRefLinks((arr) => [...arr, ''])} className="text-xs text-sky-700 hover:underline">+ 再加一條連結</button>
         </Field>
         <Field label="參考素材 — 檔案(上傳 / 貼客戶直連自動抓進平台)">
           {refFiles.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-gray-300 mb-1">
+            <div key={i} className="flex items-center gap-2 text-xs text-gray-700 mb-1">
               <span className="truncate flex-1">📎 {f.name}</span>
-              <button onClick={() => setRefFiles((arr) => arr.filter((_, j) => j !== i))} className="text-gray-500">✕</button>
+              <button onClick={() => setRefFiles((arr) => arr.filter((_, j) => j !== i))} className="text-gray-400">✕</button>
             </div>
           ))}
           <input type="file" disabled={!!working} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }}
-            className="block w-full text-xs text-gray-400 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+            className="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 file:text-xs" />
           <div className="flex gap-2">
             <input className={input} value={fetchUrl} onChange={(e) => setFetchUrl(e.target.value)} placeholder="貼客戶的直接下載連結 → 自動抓進平台" />
-            <button onClick={rehostUrl} disabled={!!working} className="text-xs bg-white/10 hover:bg-white/15 px-3 rounded-lg whitespace-nowrap">抓進來</button>
+            <button onClick={rehostUrl} disabled={!!working} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 rounded-lg whitespace-nowrap">抓進來</button>
           </div>
         </Field>
 
-        {working && <p className="text-xs text-gray-400">{working}</p>}
-        {err && <p className="text-red-400 text-sm">{err}</p>}
-        <button onClick={submit} disabled={busy || !!working} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2.5 text-sm">
+        {working && <p className="text-xs text-gray-500">{working}</p>}
+        {err && <p className="text-red-600 text-sm">{err}</p>}
+        <button onClick={submit} disabled={busy || !!working} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2.5 text-sm">
           {busy ? '發布中…' : '發布案件'}
         </button>
       </div>
@@ -325,7 +341,7 @@ export default function NewCasting() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-xs text-gray-400 mb-1 block">{label}</span>
+      <span className="text-xs text-gray-600 mb-1 block">{label}</span>
       {children}
     </label>
   );
