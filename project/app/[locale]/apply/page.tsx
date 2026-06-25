@@ -33,9 +33,9 @@ export default function ApplyIndexPage() {
       num: '01', icon: UserPlus, href: '/apply/voice',
       title: tx('Voice Talent / 配音人才', 'Voice Talent / 配音人才', 'Voice Talent'),
       desc: tx(
-        '個人配音員 / 歌手加入 Onyx 全球陣容。涵蓋廣告、旁白、角色、TTS。',
-        '个人配音员 / 歌手加入 Onyx 全球阵容。涵盖广告、旁白、角色、TTS。',
-        'Individual voice actors / singers joining the Onyx global roster — commercial, narration, character, TTS.'
+        '個人配音員 / 歌手加入 Onyx 真人配音陣容 — 廣告、旁白、遊戲、角色配音。',
+        '个人配音员 / 歌手加入 Onyx 真人配音阵容 — 广告、旁白、游戏、角色配音。',
+        'Individual voice actors / singers joining the Onyx human-voice roster — commercial, narration, games, character.'
       ),
     },
     {

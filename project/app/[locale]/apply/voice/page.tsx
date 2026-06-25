@@ -390,7 +390,7 @@ export default function ApplyVoicePage() {
         ? form.vocal_range.length > 0 && form.vocal_tone.length > 0 && form.singer_genres.length > 0 && !!form.experience_years
         : form.voice_types.length > 0 && form.specialties.length > 0 && !!form.experience_years;
       case 4: return form.recording_environment !== '';
-      case 5: return form.role_type === 'VO' ? form.consent_ai_twin : !!(form.rate_lead_vocal && form.rate_hook_chorus);
+      case 5: return form.role_type === 'VO' ? true : !!(form.rate_lead_vocal && form.rate_hook_chorus);
       case 6: return file !== null && !fileError;
       case 7: return form.consent_data_processing && form.consent_terms && form.consent_moral_rights && form.consent_voice_id && form.consent_age_verified && form.consent_legal_agreement;
       default: return true;
@@ -913,122 +913,44 @@ export default function ApplyVoicePage() {
                   </div>
 
                   {form.role_type === 'VO' && (
-                    <>
-                      <div
-                        onClick={() => update('consent_ai_twin', !form.consent_ai_twin)}
-                        className={`p-5 rounded-xl border cursor-pointer transition-all ${
-                          form.consent_ai_twin
-                            ? 'bg-amber-500/10 border-amber-500/40'
-                            : 'bg-zinc-900 border-zinc-700 hover:border-zinc-500'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border transition-all ${
-                            form.consent_ai_twin
-                              ? 'bg-amber-500 border-amber-500'
-                              : 'border-zinc-600 bg-zinc-800'
-                          }`}>
-                            {form.consent_ai_twin && <Check className="w-3.5 h-3.5 text-black" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-white mb-2">
-                              {t('aiTwinTitle')} <span className="text-red-400">*</span>
-                            </p>
-                            <p className="text-xs text-gray-400 leading-relaxed">
-                              I agree to provide 1 hour of clean, home-studio audio based on Onyx&apos;s provided script.
-                              In return, Onyx will train and host my secure AI voice model at no cost.
-                              I grant Onyx the right to license my AI voice for all commercial uses across all supported languages.
-                              I will receive a flat <span className="text-amber-300 font-semibold">25% royalty</span> on
-                              the final sale price of every pure-AI generation that uses my voice.
-                            </p>
-                            <p className="text-xs text-gray-500 leading-relaxed mt-2 border-t border-zinc-700/50 pt-2">
-                              <span className="text-gray-400 font-medium">Micro-Patch Protocol:</span> If
-                              a client needs a 100% human re-record of a specific AI-generated line to
-                              perfect a track, I agree to provide this quick patch at a platform-standard
-                              flat fee of <span className="text-white font-medium">US$10</span> per request.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <InputField
-                        label={t('labelMinLiveGig')}
-                        value={form.min_live_gig_budget}
-                        onChange={v => update('min_live_gig_budget', v)}
-                        type="number"
-                        placeholder={t('placeholderMinLiveGig')}
-                        hint={t('hintMinLiveGig')}
-                      />
-                    </>
+                    <InputField
+                      label={t('labelMinLiveGig')}
+                      value={form.min_live_gig_budget}
+                      onChange={v => update('min_live_gig_budget', v)}
+                      type="number"
+                      placeholder={t('placeholderMinLiveGig')}
+                      hint={t('hintMinLiveGig')}
+                    />
                   )}
 
                   {form.role_type === 'Singer' && (
-                    <>
-                      {/* Path A: AI Vocal Twin Program */}
-                      <div className="p-5 rounded-xl border border-amber-500/30 bg-amber-500/5">
-                        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-1">{t('pathALabel')}</p>
-                        <p className="text-sm font-bold text-white mb-3">{t('pathATitle')} <span className="text-xs font-normal text-gray-400">{t('pathAOptional')}</span></p>
+                    <div className="p-5 rounded-xl border border-zinc-700 bg-zinc-900">
+                      <p className="text-sm font-bold text-white mb-2">{t('pathBTitle')}</p>
+                      <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                        {t('pathBDesc')}
+                      </p>
 
-                        <div
-                          onClick={() => update('consent_ai_twin', !form.consent_ai_twin)}
-                          className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                            form.consent_ai_twin
-                              ? 'bg-amber-500/10 border-amber-500/40'
-                              : 'bg-zinc-900 border-zinc-700 hover:border-zinc-500'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border transition-all ${
-                              form.consent_ai_twin
-                                ? 'bg-amber-500 border-amber-500'
-                                : 'border-zinc-600 bg-zinc-800'
-                            }`}>
-                              {form.consent_ai_twin && <Check className="w-3.5 h-3.5 text-black" />}
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-white mb-2">{t('singerAiTwinTitle')}</p>
-                              <p className="text-xs text-gray-400 leading-relaxed">
-                                Yes, I want to earn passive income! I agree to provide dry vocal stems for Onyx to train and host my secure AI Vocal model.
-                                I grant Onyx commercial licensing rights across all supported languages and will receive a flat <span className="text-amber-300 font-semibold">25% royalty</span> on all pure-AI vocal generations.
-                              </p>
-                              <p className="text-xs text-gray-500 leading-relaxed mt-2 border-t border-zinc-700/50 pt-2">
-                                <span className="text-gray-400 font-medium">Micro-Patch Protocol:</span> I agree to provide quick human punch-ins (up to 4 bars) for AI tracks at a flat fee of <span className="text-white font-medium">US$15</span> per request.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                      <div className="space-y-4">
+                        <InputField
+                          label={t('labelLeadVocal')}
+                          value={form.rate_lead_vocal}
+                          onChange={v => update('rate_lead_vocal', v)}
+                          type="number"
+                          placeholder={t('placeholderLeadVocal')}
+                          hint={t('hintLeadVocal')}
+                          required
+                        />
+                        <InputField
+                          label={t('labelHookChorus')}
+                          value={form.rate_hook_chorus}
+                          onChange={v => update('rate_hook_chorus', v)}
+                          type="number"
+                          placeholder={t('placeholderHookChorus')}
+                          hint={t('hintHookChorus')}
+                          required
+                        />
                       </div>
-
-                      {/* Path B: Traditional Studio Recording */}
-                      <div className="p-5 rounded-xl border border-zinc-700 bg-zinc-900">
-                        <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1">{t('pathBLabel')}</p>
-                        <p className="text-sm font-bold text-white mb-2">{t('pathBTitle')} <span className="text-xs font-normal text-gray-400">{t('pathBTag')}</span></p>
-                        <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                          {t('pathBDesc')}
-                        </p>
-
-                        <div className="space-y-4">
-                          <InputField
-                            label={t('labelLeadVocal')}
-                            value={form.rate_lead_vocal}
-                            onChange={v => update('rate_lead_vocal', v)}
-                            type="number"
-                            placeholder={t('placeholderLeadVocal')}
-                            hint={t('hintLeadVocal')}
-                            required
-                          />
-                          <InputField
-                            label={t('labelHookChorus')}
-                            value={form.rate_hook_chorus}
-                            onChange={v => update('rate_hook_chorus', v)}
-                            type="number"
-                            placeholder={t('placeholderHookChorus')}
-                            hint={t('hintHookChorus')}
-                            required
-                          />
-                        </div>
-                      </div>
-                    </>
+                    </div>
                   )}
 
                   <div>
