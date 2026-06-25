@@ -96,8 +96,11 @@ export default function AdminMarketplace() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto text-white">
-      <h1 className="text-xl font-semibold mb-1">案源與報價 Marketplace</h1>
-      <p className="text-gray-500 text-sm mb-6">客戶發案 + 配音員報價,由 Onyx 居中媒合。</p>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-xl font-semibold">案源與報價 Marketplace</h1>
+        <a href="/admin/casting/new" className="text-sm bg-green-500 hover:bg-green-400 text-black font-semibold rounded-lg px-3 py-1.5">+ 發案(試音案)</a>
+      </div>
+      <p className="text-gray-500 text-sm mb-6">客戶發案 + 配音員報價,由 Onyx 居中媒合。「+ 發案」開人聲試音案。</p>
 
       {unavailable && (
         <div className="mb-4 text-amber-300 text-sm bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
