@@ -14,6 +14,8 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
   multipart form-data: { file }. Returns { roles: [{name,gender,age,personality,
   sample_line,is_lead,image}] }.
 */
+export const maxDuration = 60; // client xlsx can be tens of MB w/ many images — give the parse room
+
 const BUCKET = 'casting';
 // header text → role field. `line` is matched EXACTLY (not "includes") so a
 // 台词功能 ("line function") column never gets mistaken for the real 台词内容.
@@ -34,12 +36,28 @@ export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
 
+  // Two ways in. JSON { path }: the client already uploaded the xlsx straight to
+  // Supabase (signed URL) — we download it server-side. This is the main path,
+  // because a big client xlsx (tens of MB) can't go through a Vercel function
+  // (≈4.5 MB body limit). Multipart { file } stays as a fallback for small files.
   let buf: Buffer;
+  let tmpPath = '';
+  const ctype = request.headers.get('content-type') || '';
   try {
-    const form = await request.formData();
-    const file = form.get('file');
-    if (!(file instanceof File)) return NextResponse.json({ error: '請選擇 xlsx 檔' }, { status: 400 });
-    buf = Buffer.from(await file.arrayBuffer());
+    if (ctype.includes('application/json')) {
+      const body = (await request.json()) as { path?: string };
+      tmpPath = String(body.path || '');
+      if (!tmpPath) return NextResponse.json({ error: '缺少檔案路徑' }, { status: 400 });
+      const db = getSupabaseServiceClient();
+      const { data, error } = await db.storage.from(BUCKET).download(tmpPath);
+      if (error || !data) return NextResponse.json({ error: '讀取上傳的檔案失敗,請重試' }, { status: 400 });
+      buf = Buffer.from(await data.arrayBuffer());
+    } else {
+      const form = await request.formData();
+      const file = form.get('file');
+      if (!(file instanceof File)) return NextResponse.json({ error: '請選擇 xlsx 檔' }, { status: 400 });
+      buf = Buffer.from(await file.arrayBuffer());
+    }
   } catch {
     return NextResponse.json({ error: '讀取檔案失敗' }, { status: 400 });
   }
@@ -94,26 +112,38 @@ export async function POST(request: NextRequest) {
   if (!roles.length) return NextResponse.json({ error: '沒有解析到角色,請確認 xlsx 或改用手動' }, { status: 422 });
 
   // Extract embedded character images → re-host → attach to the role on that row.
+  // Done in PARALLEL — a sheet can hold 30+ multi-MB portraits, and serial
+  // sharp+upload would blow the function's time budget.
   try {
     const db = getSupabaseServiceClient();
-    const imgs = ws.getImages();
-    for (const im of imgs) {
+    const seen = new Set<number>(); // one image per role (first wins)
+    const jobs: { idx: number; imageId: string | number }[] = [];
+    for (const im of ws.getImages()) {
       const anchorRow = (im.range?.tl?.nativeRow ?? -1) + 1; // nativeRow is 0-indexed
-      // map the image's anchor to a role row (only the row it sits on, ± 1)
       let idx = rowOfRole[anchorRow];
       if (idx === undefined) { for (let k = anchorRow; k <= anchorRow + 1; k++) if (rowOfRole[k] !== undefined) { idx = rowOfRole[k]; break; } }
-      if (idx === undefined || roles[idx].image) continue;   // skip unmapped / already-has-image — no wasted upload
-      const media = wb.getImage(Number(im.imageId)) as { buffer?: Buffer } | undefined;
-      if (!media?.buffer) continue;
-      // Downsize hard — embedded portraits are multi-MB; 480px jpeg ≈ tens of KB.
-      const small = await sharp(media.buffer as Buffer).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
-      const path = `reference/roleimg/${Date.now()}_${crypto.randomUUID()}.jpg`;
-      const { error } = await db.storage.from(BUCKET).upload(path, small, { contentType: 'image/jpeg', upsert: false });
-      if (!error) roles[idx].image = publicUrl(path);
+      if (idx === undefined || seen.has(idx)) continue;        // skip unmapped / already-claimed
+      seen.add(idx);
+      jobs.push({ idx, imageId: im.imageId });
     }
+
+    await Promise.all(jobs.map(async ({ idx, imageId }) => {
+      try {
+        const media = wb.getImage(Number(imageId)) as { buffer?: Buffer } | undefined;
+        if (!media?.buffer) return;
+        // Downsize hard — embedded portraits are multi-MB; 480px jpeg ≈ tens of KB.
+        const small = await sharp(media.buffer as Buffer).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
+        const path = `reference/roleimg/${Date.now()}_${crypto.randomUUID()}.jpg`;
+        const { error } = await db.storage.from(BUCKET).upload(path, small, { contentType: 'image/jpeg', upsert: false });
+        if (!error) roles[idx].image = publicUrl(path);
+      } catch { /* per-image best-effort */ }
+    }));
   } catch {
     // image extraction is best-effort — the roles still return without faces.
   }
+
+  // Best-effort cleanup of the temp xlsx the client uploaded for parsing.
+  if (tmpPath) getSupabaseServiceClient().storage.from(BUCKET).remove([tmpPath]).catch(() => {});
 
   return NextResponse.json({ roles });
 }

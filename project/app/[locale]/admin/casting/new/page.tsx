@@ -110,10 +110,18 @@ export default function NewCasting() {
   }
 
   async function uploadXlsx(file: File) {
-    setErr(''); setWorking('解析中…');
+    setErr(''); setWorking('上傳中…');
     try {
-      const fd = new FormData(); fd.append('file', file);
-      const u = await fetch('/api/admin/casting/parse-xlsx', { method: 'POST', credentials: 'include', body: fd });
+      // A client xlsx with many images can be tens of MB — too big to POST through
+      // a Vercel function (~4.5MB body cap). Upload straight to Supabase via a
+      // signed URL, then parse by path (the route downloads it server-side).
+      const up = await fetch('/api/admin/casting/upload', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const upj = await up.json();
+      if (!up.ok) throw new Error(upj.error || '上傳準備失敗');
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(upj.path, upj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setWorking('解析中…');
+      const u = await fetch('/api/admin/casting/parse-xlsx', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: upj.path }) });
       const uj = await u.json();
       if (!u.ok) throw new Error(uj.error || '解析失敗');
       const rs: ParsedRole[] = uj.roles || [];
