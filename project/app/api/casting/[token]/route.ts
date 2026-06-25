@@ -67,8 +67,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await db.from('casting_invites').update({ talent_id: talentId }).eq('id', invite.id);
   }
 
+  // casting = no platform cut; the price the guest enters is their take-home.
   const { data, error } = await db.from('marketplace_quotes')
-    .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id })
+    .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id, commission_rate: 0 })
     .select('id, brief_id, role_name, gross_amount, currency, status, sample_url').single();
   if (error) {
     if (error.code === '23505') return NextResponse.json({ error: '你已經試過這個角色了' }, { status: 409 });

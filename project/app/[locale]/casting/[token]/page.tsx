@@ -77,7 +77,7 @@ export default function GuestCasting() {
 
       {(brief.roles || []).length > 0 ? (
         <>
-          <p className="text-xs text-gray-500 mb-2">{tx('選角色試音(可試多個):', 'Pick roles to audition (you can do several):')}</p>
+          <p className="text-xs text-gray-500 mb-2">{tx('選角色試音(可試多個)· 平台不抽成,你報多少拿多少:', 'Pick roles to audition · no platform fee, you keep what you quote:')}</p>
           <div className="space-y-2">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
@@ -227,7 +227,7 @@ function GuestGeneral({ token, done, closed, tx, onDone }: {
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
-      <p className="text-xs text-gray-500">{tx('上傳一段 demo + 報價即可(不需逐角色錄)。', 'Upload one demo + your price (no per-role recording).')}</p>
+      <p className="text-xs text-gray-500">{tx('上傳一段 demo + 報價即可(不需逐角色錄)。平台不抽成,你報多少拿多少。', 'Upload one demo + your price (no per-role recording). No platform fee — you keep what you quote.')}</p>
       <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading || closed} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
       {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}

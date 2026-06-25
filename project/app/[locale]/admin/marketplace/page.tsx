@@ -184,10 +184,14 @@ export default function AdminMarketplace() {
                     <div className="flex items-center justify-between gap-3 text-sm bg-gray-50 rounded-lg px-3 py-2">
                       <div className="min-w-0">
                         <span className="text-gray-800">{q.talents?.name || '配音員'}</span>
-                        <span className="text-gray-500 ml-2">
-                          客戶付 {q.currency} {q.gross_amount} · 淨得 {q.currency} {q.net_amount}{' '}
-                          <span className="text-gray-400">({Math.round(q.commission_rate * 100)}%)</span>
-                        </span>
+                        {b.kind === 'casting' ? (
+                          <span className="text-gray-500 ml-2">報價 {q.currency} {q.gross_amount} <span className="text-gray-400">(平台不抽成)</span></span>
+                        ) : (
+                          <span className="text-gray-500 ml-2">
+                            客戶付 {q.currency} {q.gross_amount} · 淨得 {q.currency} {q.net_amount}{' '}
+                            <span className="text-gray-400">({Math.round(q.commission_rate * 100)}%)</span>
+                          </span>
+                        )}
                         {q.message && <p className="text-xs text-gray-500 truncate">{q.message}</p>}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">

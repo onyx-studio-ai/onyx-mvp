@@ -255,7 +255,7 @@ function BriefCard({
             /* Per-role auditions. Pick a role → upload an audition for it. Full roles
                grey out (no count shown — we only nudge "try another"). One per role. */
             <div className="border-t border-white/10 pt-3">
-              <p className="text-xs text-gray-500 mb-2">{tx('選一個(或多個)角色試音', '选一个(或多个)角色试音', 'Pick a role (or several) to audition')}</p>
+              <p className="text-xs text-gray-500 mb-2">{tx('選一個(或多個)角色試音 · 平台不抽成,你報多少拿多少', '选一个(或多个)角色试音 · 平台不抽成,你报多少拿多少', 'Pick a role (or several) to audition · no platform fee, you keep what you quote')}</p>
               <div className="space-y-2">
                 {(brief.roles || []).map((ro, i) => (
                   <RoleAudition
@@ -474,7 +474,6 @@ function GeneralResponse({
   const [err, setErr] = useState('');
   const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
   const grossN = Number(gross);
-  const netPreview = isFinite(grossN) && grossN > 0 ? Math.round(grossN * (1 - COMMISSION) * 100) / 100 : 0;
 
   async function uploadAudio(file: File) {
     setErr(''); setUploading(true);
@@ -551,9 +550,7 @@ function GeneralResponse({
         <input type="number" min="0" className={`${inputCls} py-1.5`} value={gross} onChange={(e) => setGross(e.target.value)}
           placeholder={tx('你的報價(整案/每句/每分鐘皆可)', '你的报价(整案/每句/每分钟皆可)', 'Your price (per case / line / minute)')} />
       </div>
-      {grossN > 0 && (
-        <p className="text-xs text-green-300">{tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview} <span className="text-gray-500">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span></p>
-      )}
+      <p className="text-xs text-gray-500">{tx('平台不抽成 —— 你填的就是你實拿。', '平台不抽成 —— 你填的就是你实拿。', 'No platform fee — what you enter is what you take home.')}</p>
       <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
         placeholder={tx('報價說明 + 自我介紹(計價方式、修改政策、為何適合)', '报价说明 + 自我介绍(计价方式、修改政策、为何适合)', 'Pricing notes + intro (how you charge, revisions, why you fit)')} />
       {err && <p className="text-red-400 text-xs">{err}</p>}
