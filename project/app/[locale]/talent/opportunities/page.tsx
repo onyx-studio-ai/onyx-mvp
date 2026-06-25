@@ -19,9 +19,20 @@ import { supabase } from '@/lib/supabase';
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
 
+type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; sample_line?: string; is_lead?: boolean };
 type Brief = {
   id: string;
   brief_number: string;
+  kind?: string | null;             // 'casting' = admin casting call
+  title?: string | null;
+  roles?: Role[] | null;
+  audition_script?: string | null;  // shown view-only (no download)
+  reference_links?: string[] | null;
+  reference_files?: { name?: string; url: string }[] | null;
+  recording_start?: string | null;
+  recording_methods?: string[] | null;
+  rate_note?: string | null;
+  base_revisions?: number | null;
   categories: string[] | null;
   content_type: string | null;
   media_scope: string | null;
@@ -49,6 +60,7 @@ type Quote = {
   currency: string;
   status: string;
   message: string | null;
+  sample_url?: string | null;
 };
 
 const inputCls =
@@ -139,23 +151,50 @@ function BriefCard({
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
 }) {
+  const isCasting = brief.kind === 'casting';
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState(isCasting ? 'CNY' : 'USD');
   const [message, setMessage] = useState('');
+  const [intro, setIntro] = useState('');
+  const [inclRev, setInclRev] = useState(String(brief.base_revisions ?? 1));
+  const [extraRev, setExtraRev] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
   const grossN = Number(gross);
   const netPreview = isFinite(grossN) && grossN > 0 ? Math.round(grossN * (1 - COMMISSION) * 100) / 100 : 0;
 
+  async function uploadAudio(file: File) {
+    setErr(''); setUploading(true);
+    try {
+      const u = await fetch('/api/talent/audition-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setAudioUrl(uj.publicUrl);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed'));
+    } finally { setUploading(false); }
+  }
+
   async function submit() {
     setErr('');
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請輸入大於 0 的金額', '请输入大于 0 的金额', 'Enter an amount greater than 0'));
+    if (isCasting && !audioUrl) return setErr(tx('請先上傳試音音檔', '请先上传试音音档', 'Please upload your audition first'));
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ brief_id: brief.id, gross_amount: grossN, currency, message }),
+      body: JSON.stringify({
+        brief_id: brief.id, gross_amount: grossN, currency, message,
+        ...(isCasting ? { sample_url: audioUrl, intro, included_revisions: Number(inclRev) || 0, extra_revision_price: extraRev } : {}),
+      }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -169,36 +208,127 @@ function BriefCard({
         <span className="text-xs text-gray-500 font-mono">{brief.brief_number}</span>
         {brief.deadline && <span className="text-xs text-amber-300/80">{tx('截止', '截止', 'Due')}: {brief.deadline}</span>}
       </div>
-      <div className="flex flex-wrap gap-1.5 mb-2">
-        {brief.content_type && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{brief.content_type}</span>}
-        {brief.has_singing && <span className="text-xs bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', '+ Singing')}</span>}
-        {brief.wants_live_session && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('線上同步錄音', '线上同步录音', 'Live session')}{brief.live_session_tool ? ` · ${brief.live_session_tool}` : ''}</span>}
-        {brief.wants_director && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('聲音導演', '声音导演', 'Director')}</span>}
-        {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
-        {!brief.content_type && (brief.categories || []).map((c, i) => (
-          <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{c}</span>
-        ))}
-      </div>
-      <p className="text-sm text-gray-200 whitespace-pre-wrap mb-2">{brief.brief}</p>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
-        {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
-        {brief.territory && <span>{tx('地區', '地区', 'Territory')}: {brief.territory}</span>}
-        {brief.license_term && <span>{tx('授權', '授权', 'License')}: {brief.license_term}</span>}
-        {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')}: {brief.audition_deadline}</span>}
-        {brief.length && <span>{tx('長度', '长度', 'Length')}: {brief.length}</span>}
-        {brief.budget && <span>{tx('預算', '预算', 'Budget')}: {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
-      </div>
+
+      {isCasting ? (
+        <>
+          {brief.title && <h3 className="text-lg font-semibold text-white mb-1">{brief.title}</h3>}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            <span className="text-xs bg-purple-500/15 text-purple-200 px-2 py-0.5 rounded-full">{tx('試音案', '试音案', 'Casting')}</span>
+            {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
+            {brief.rate_note && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{brief.rate_note}</span>}
+            {(brief.recording_methods || []).map((m) => (
+              <span key={m} className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">
+                {m === 'home' ? tx('在家錄', '在家录', 'Home') : m === 'studio' ? tx('錄音室', '录音室', 'Studio') : m === 'online' ? tx('線上監錄', '线上监录', 'Online') : m}
+              </span>
+            ))}
+          </div>
+          {brief.brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{brief.brief}</p>}
+
+          {(brief.roles || []).length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1.5">{tx('試音角色', '试音角色', 'Audition roles')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {(brief.roles || []).map((ro, i) => (
+                  <div key={i} className={`text-xs rounded-lg px-2.5 py-1.5 border ${ro.is_lead ? 'border-amber-400/40 bg-amber-400/5' : 'border-white/10 bg-white/[0.02]'}`}>
+                    <span className="text-gray-100 font-medium">{ro.name}</span>
+                    {ro.is_lead && <span className="ml-1 text-amber-300">★{tx('主角', '主角', 'Lead')}</span>}
+                    <span className="text-gray-500 ml-1">{[ro.gender, ro.age].filter(Boolean).join('·')}</span>
+                    {ro.personality && <span className="text-gray-400 block">{ro.personality}{ro.emotion ? ` · ${ro.emotion}` : ''}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {brief.audition_script && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1.5">{tx('試音稿(僅供線上閱讀,不可下載)', '试音稿(仅供线上阅读,不可下载)', 'Audition script (read-only — no download)')}</p>
+              <div
+                className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 select-none"
+                style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                {brief.audition_script}
+              </div>
+            </div>
+          )}
+
+          {((brief.reference_files || []).length > 0 || (brief.reference_links || []).length > 0) && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1.5">{tx('參考素材(樣音 / 方向)', '参考素材(样音 / 方向)', 'Reference (sample voice / direction)')}</p>
+              {(brief.reference_files || []).map((f, i) => (
+                <div key={i} className="mb-1.5">
+                  {f.name && <span className="text-xs text-gray-400 block mb-0.5">{f.name}</span>}
+                  <audio controls src={f.url} className="w-full h-9" />
+                </div>
+              ))}
+              {(brief.reference_links || []).map((l, i) => (
+                <a key={i} href={l} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-300 hover:underline block truncate">{l}</a>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+            {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition due')}: {brief.audition_deadline}</span>}
+            {brief.recording_start && <span>{tx('預計開錄', '预计开录', 'Recording starts')}: {brief.recording_start}</span>}
+            {typeof brief.base_revisions === 'number' && <span>{tx('含修改', '含修改', 'Revisions')}: {brief.base_revisions}</span>}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {brief.content_type && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{brief.content_type}</span>}
+            {brief.has_singing && <span className="text-xs bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', '+ Singing')}</span>}
+            {brief.wants_live_session && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('線上同步錄音', '线上同步录音', 'Live session')}{brief.live_session_tool ? ` · ${brief.live_session_tool}` : ''}</span>}
+            {brief.wants_director && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('聲音導演', '声音导演', 'Director')}</span>}
+            {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
+            {!brief.content_type && (brief.categories || []).map((c, i) => (
+              <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{c}</span>
+            ))}
+          </div>
+          <p className="text-sm text-gray-200 whitespace-pre-wrap mb-2">{brief.brief}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+            {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
+            {brief.territory && <span>{tx('地區', '地区', 'Territory')}: {brief.territory}</span>}
+            {brief.license_term && <span>{tx('授權', '授权', 'License')}: {brief.license_term}</span>}
+            {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')}: {brief.audition_deadline}</span>}
+            {brief.length && <span>{tx('長度', '长度', 'Length')}: {brief.length}</span>}
+            {brief.budget && <span>{tx('預算', '预算', 'Budget')}: {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
+          </div>
+        </>
+      )}
 
       {myQuote ? (
         <div className="border-t border-white/10 pt-3 text-sm">
           <span className="text-green-300">
-            {tx('已報價', '已报价', 'Quoted')}:{' '}
+            {isCasting ? tx('已試音', '已试音', 'Auditioned') : tx('已報價', '已报价', 'Quoted')}:{' '}
             {myQuote.currency} {myQuote.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}
           </span>
           <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {myQuote.status}</span>
+          {myQuote.sample_url && <audio controls src={myQuote.sample_url} className="w-full h-9 mt-2" />}
         </div>
       ) : (
         <div className="border-t border-white/10 pt-3 space-y-2">
+          {isCasting && (
+            <>
+              <label className="block">
+                <span className="text-xs text-gray-400">{tx('上傳試音音檔(必填)', '上传试音音档(必填)', 'Upload your audition (required)')}</span>
+                <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
+                  className="block w-full text-xs text-gray-400 mt-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+              </label>
+              {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
+              {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
+              <textarea className={`${inputCls} min-h-[56px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
+                placeholder={tx('自我介紹(你是誰、經驗、為何適合)', '自我介绍(你是谁、经验、为何适合)', 'Self-intro (who you are, experience, why you fit)')} />
+              <div className="flex gap-2 items-center text-xs text-gray-400">
+                <span>{tx('含修改次數', '含修改次数', 'Included revisions')}</span>
+                <input type="number" min="0" className={`${inputCls} w-16 py-1.5`} value={inclRev} onChange={(e) => setInclRev(e.target.value)} />
+                <input className={`${inputCls} flex-1 py-1.5`} value={extraRev} onChange={(e) => setExtraRev(e.target.value)}
+                  placeholder={tx('額外每次修改費用(選填)', '额外每次修改费用(选填)', 'Price per extra revision (optional)')} />
+              </div>
+            </>
+          )}
           <div className="flex gap-2">
             <select className={`${inputCls} w-24`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {CURRENCIES.map((c) => (
@@ -220,19 +350,21 @@ function BriefCard({
               <span className="text-gray-500">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span>
             </p>
           )}
-          <textarea
-            className={`${inputCls} min-h-[60px] resize-y`}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')}
-          />
+          {!isCasting && (
+            <textarea
+              className={`${inputCls} min-h-[60px] resize-y`}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')}
+            />
+          )}
           {err && <p className="text-red-400 text-xs">{err}</p>}
           <button
             onClick={submit}
-            disabled={busy}
+            disabled={busy || uploading}
             className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm transition"
           >
-            {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出報價', '送出报价', 'Submit quote')}
+            {busy ? tx('送出中…', '送出中…', 'Submitting…') : isCasting ? tx('送出試音 + 報價', '送出试音 + 报价', 'Submit audition + quote') : tx('送出報價', '送出报价', 'Submit quote')}
           </button>
         </div>
       )}

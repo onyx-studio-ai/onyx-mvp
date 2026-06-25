@@ -27,6 +27,12 @@ export async function POST(request: NextRequest) {
     const gross = Number(body.gross_amount);
     const currency = CURRENCIES.includes(body.currency) ? body.currency : 'USD';
     const message = String(body.message || '').slice(0, 2000);
+    // Casting-call audition fields (optional — present when responding to a casting call):
+    // the uploaded audition audio, the talent's self-intro, and their own revision policy.
+    const sampleUrl = String(body.sample_url || '').slice(0, 1000) || null;
+    const intro = String(body.intro || '').slice(0, 3000) || null;
+    const inclRev = Number.isFinite(Number(body.included_revisions)) ? Math.max(0, Math.trunc(Number(body.included_revisions))) : null;
+    const extraRevPrice = String(body.extra_revision_price || '').slice(0, 200) || null;
 
     if (!briefId) return NextResponse.json({ error: 'brief_id is required' }, { status: 400 });
     if (!isFinite(gross) || gross <= 0) return NextResponse.json({ error: 'Amount must be greater than 0' }, { status: 400 });
@@ -42,8 +48,11 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await r.db
       .from('marketplace_quotes')
-      .insert({ brief_id: briefId, talent_id: talent.id, gross_amount: gross, currency, message })
-      .select('id, gross_amount, net_amount, commission_rate, currency, status')
+      .insert({
+        brief_id: briefId, talent_id: talent.id, gross_amount: gross, currency, message,
+        sample_url: sampleUrl, intro, included_revisions: inclRev, extra_revision_price: extraRevPrice,
+      })
+      .select('id, gross_amount, net_amount, commission_rate, currency, status, sample_url')
       .single();
     if (error) {
       if (error.code === '23505') return NextResponse.json({ error: 'You already have an active quote on this brief' }, { status: 409 });
