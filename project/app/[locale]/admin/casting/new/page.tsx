@@ -236,23 +236,53 @@ export default function NewCasting() {
           <input type="file" accept=".xlsx" disabled={!!working} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadXlsx(f); }}
             className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-green-500/20 file:text-green-100 file:text-xs" />
           {parsedRoles.length > 0 && (
-            <>
-              <p className="text-xs text-green-300 mt-2">✓ 解析到 {parsedRoles.length} 個角色({parsedRoles.filter((r) => r.image).length} 個有圖片)</p>
-              {parsedRoles.some((r) => r.image) && (
-                <div className="flex gap-1.5 flex-wrap mt-2">
-                  {parsedRoles.filter((r) => r.image).slice(0, 12).map((r, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img key={i} src={r.image} alt={r.name} title={r.name} className="w-10 h-10 rounded object-cover border border-white/10" />
-                  ))}
-                </div>
-              )}
-            </>
+            <p className="text-xs text-green-300 mt-2">✓ 解析到 {parsedRoles.length} 個角色({parsedRoles.filter((r) => r.image).length} 個有圖片)。下方有發佈前預覽。</p>
           )}
         </div>
         <Field label="試音角色(每行一個:★主角 | 性別 | 年齡 | 性格 | 台詞;上傳 xlsx 會自動填)">
           <textarea className={`${input} min-h-[120px] resize-y font-mono text-xs`} value={rolesText} onChange={(e) => setRolesText(e.target.value)}
             placeholder={'★顧冶 | 男 | 28 | 果斷 | 我從來不遲到…\n福爾森 | 男 | 35 | 理性 | 排除所有不可能的…'} />
         </Field>
+
+        {/* 發佈前預覽 — 這就是按「發佈」會送出的角色(文字框 + xlsx 圖片合併後),讓你先確認有沒有漏 */}
+        {rolesText.trim() && (() => {
+          const preview: ParsedRole[] = parseRoles().map((r) => {
+            const p = parsedRoles.find((pr) => pr.name === r.name);
+            return p?.image ? { ...r, image: p.image } : r;
+          });
+          const withImg = preview.filter((r) => r.image).length;
+          const noLine = preview.filter((r) => !r.sample_line).length;
+          return (
+            <div className="bg-white/[0.02] border border-white/10 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <p className="text-sm text-white">發佈前預覽 · 共 {preview.length} 個角色</p>
+                <div className="flex gap-1.5 text-xs">
+                  <span className="bg-green-500/15 text-green-200 px-2 py-0.5 rounded-full">{withImg} 有圖</span>
+                  {preview.length - withImg > 0 && <span className="bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{preview.length - withImg} 無圖</span>}
+                  {noLine > 0 && <span className="bg-red-500/15 text-red-200 px-2 py-0.5 rounded-full">{noLine} 缺台詞</span>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {preview.map((r, i) => (
+                  <div key={i} className="flex gap-2 items-start bg-black/30 border border-white/10 rounded-lg p-2">
+                    {r.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={r.image} alt={r.name} className="w-11 h-11 rounded object-cover shrink-0 border border-white/10" />
+                    ) : (
+                      <div className="w-11 h-11 rounded shrink-0 border border-dashed border-white/15 bg-white/5 flex items-center justify-center text-[10px] text-gray-500">無圖</div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-white truncate">{r.is_lead && <span className="text-amber-300">★</span>}{r.name} <span className="text-xs text-gray-500">{[r.gender, r.age].filter(Boolean).join('·')}</span></p>
+                      {r.personality && <p className="text-xs text-gray-400 truncate">{r.personality}</p>}
+                      <p className={`text-xs truncate ${r.sample_line ? 'text-gray-300' : 'text-red-300'}`}>{r.sample_line || '⚠ 缺台詞'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">無圖不影響發佈(配音員會看到灰底佔位)。這裡讓你確認角色數、圖片、台詞有沒有漏 —— 改上方文字框會即時更新。</p>
+            </div>
+          );
+        })()}
         </>}
         <Field label={mode === 'general' ? '試音稿 / 方向(選填,配音員只能線上看)' : '試音稿(配音員只能線上看、不可下載)'}>
           <textarea className={`${input} min-h-[100px] resize-y`} value={auditionScript} onChange={(e) => setAuditionScript(e.target.value)} placeholder="貼上樣本台詞 / 方向說明…" />
