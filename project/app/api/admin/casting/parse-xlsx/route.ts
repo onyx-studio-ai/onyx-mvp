@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import sharp from 'sharp';
+import * as OpenCC from 'opencc-js';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+
+// Client sheets are simplified Chinese; Taiwan voice actors read traditional.
+// Convert role text (name / personality / line) to Traditional (Taiwan) at parse.
+const s2t = OpenCC.Converter({ from: 'cn', to: 'twp' });
+const tw = (s: string) => (s ? s2t(s) : s);
 
 /*
   POST /api/admin/casting/parse-xlsx — the poster uploads the client's audition
@@ -103,8 +109,8 @@ export async function POST(request: NextRequest) {
     const intro = get(row, 'intro').slice(0, 24);
     const personality = [get(row, 'personality'), intro].filter(Boolean).join(' · ');
     roles.push({
-      name, gender: get(row, 'gender'), age: get(row, 'age').replace(/[岁歲]/g, ''),
-      personality, sample_line: colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : '',
+      name: tw(name), gender: get(row, 'gender'), age: get(row, 'age').replace(/[岁歲]/g, ''),
+      personality: tw(personality), sample_line: tw(colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : ''),
       is_lead: /主角/.test(rawName),
     });
     rowOfRole[rn] = roles.length - 1;

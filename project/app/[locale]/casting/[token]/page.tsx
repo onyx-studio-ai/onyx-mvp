@@ -78,7 +78,7 @@ export default function GuestCasting() {
       {(brief.roles || []).length > 0 ? (
         <>
           <p className="text-xs text-gray-500 mb-2">{tx('選角色試音(可試多個)· 平台不抽成,你報多少拿多少:', 'Pick roles to audition · no platform fee, you keep what you quote:')}</p>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3 items-start">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
@@ -140,44 +140,63 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
   }
 
   if (done) return (
-    <div className="rounded-lg px-3 py-2 border border-green-500/30 bg-green-500/5 text-sm flex items-center gap-2">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {role.image && <img src={role.image} alt={role.name} className="w-9 h-9 rounded object-cover" />}
-      <span className="text-gray-100 font-medium">{role.name}</span><span className="text-green-300">{tx('✓ 已試音', '✓ Auditioned')}</span>
+    <div className="rounded-xl border border-green-500/30 bg-green-500/[0.06] overflow-hidden">
+      <div className="h-20 bg-white/5 flex items-center justify-center">
+        {role.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={role.image} alt={role.name} className="w-full h-full object-cover" />
+        ) : <span className="text-green-300 text-2xl">✓</span>}
+      </div>
+      <div className="p-3">
+        <p className="text-sm font-medium text-gray-100">{role.name}{role.is_lead && <span className="ml-1 text-amber-300">★</span>} <span className="text-green-300 text-xs">{tx('✓ 已試音', '✓ Auditioned')}</span></p>
+      </div>
     </div>
   );
 
   return (
-    <div className={`rounded-lg border ${role.is_lead ? 'border-amber-400/30 bg-amber-400/5' : 'border-white/10 bg-white/[0.02]'}`}>
-      <button onClick={() => setOpen((o) => !o)} disabled={closed} className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 disabled:opacity-50">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {role.image && <img src={role.image} alt={role.name} className="w-9 h-9 rounded object-cover shrink-0 border border-white/10" />}
-        <span className="flex-1 min-w-0">
-          <span className="text-gray-100 font-medium">{role.name}</span>
-          {role.is_lead && <span className="ml-1 text-amber-300">★{tx('主角', 'Lead')}</span>}
-          <span className="text-gray-500 ml-2 text-xs">{[role.gender, role.age].filter(Boolean).join('·')}</span>
-          {role.personality && <span className="text-gray-400 ml-2 text-xs">{role.personality}</span>}
-          <span className={`ml-2 text-xs ${popular ? 'text-amber-300' : 'text-gray-500'}`}>· {count} {tx('人已試', 'auditioned')}</span>
-        </span>
-        {!closed && <span className="text-green-400 text-xs shrink-0">{open ? '▴' : tx('試 ▾', 'Audition ▾')}</span>}
-      </button>
-      {popular && !open && !closed && <p className="px-3 pb-2 text-xs text-amber-300/70">{tx('很多人試了,試別的中選機會更高', 'Popular — try another for better odds')}</p>}
-      {open && !closed && (
-        <div className="px-3 pb-3 space-y-2 border-t border-white/10 pt-2">
-          {role.sample_line && <div className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded p-2.5 select-none" style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>{role.sample_line}</div>}
-          <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
-            className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
-          {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
-          {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
-          <div className="flex gap-2">
-            <select className={`${cls} w-20`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>
-            <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('你的報價', 'Your price')} />
+    <div className={`rounded-xl border overflow-hidden ${role.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
+      <div className="h-24 bg-white/[0.04] flex items-center justify-center relative">
+        {role.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={role.image} alt={role.name} className="w-full h-full object-cover" />
+        ) : <span className="text-gray-600 text-2xl">🎭</span>}
+        {role.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded">★{tx('主角', 'Lead')}</span>}
+      </div>
+      <div className="p-3">
+        <p className="text-sm font-medium text-gray-100">{role.name}</p>
+        {([role.gender, role.age].filter(Boolean).join('·') || role.personality) && (
+          <p className="text-xs text-gray-500 mt-0.5 truncate">{[[role.gender, role.age].filter(Boolean).join('·'), role.personality].filter(Boolean).join(' · ')}</p>
+        )}
+        {role.sample_line && (
+          <div className="mt-2">
+            <p className="text-[10px] text-gray-500 mb-0.5 tracking-wide">{tx('台詞', 'Line')}</p>
+            <p className={`text-xs text-gray-300 leading-relaxed border-l-2 border-white/15 pl-2 select-none ${open ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}
+              style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>{role.sample_line}</p>
           </div>
-          <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
-          {err && <p className="text-red-400 text-xs">{err}</p>}
-          <button onClick={submit} disabled={busy || uploading} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{busy ? tx('送出中…', 'Submitting…') : tx('送出試音', 'Submit')}</button>
+        )}
+        <div className="flex items-center justify-between mt-2.5">
+          <span className={`text-xs ${popular ? 'text-amber-300' : 'text-gray-500'}`}>{count} {tx('人已試', 'auditioned')}{popular && tx(' · 熱門', ' · popular')}</span>
+          {!closed && (
+            <button onClick={() => setOpen((o) => !o)} className="text-xs bg-green-500 hover:bg-green-400 text-black font-medium rounded-lg px-3 py-1 transition">{open ? tx('收起', 'Close') : tx('試音 →', 'Audition →')}</button>
+          )}
         </div>
-      )}
+        {popular && !open && !closed && <p className="text-[11px] text-amber-300/70 mt-1.5">{tx('很多人試了,試別的中選機會更高', 'Popular — try another for better odds')}</p>}
+        {open && !closed && (
+          <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+            <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
+              className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+            {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
+            {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
+            <div className="flex gap-2">
+              <select className={`${cls} w-20`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>
+              <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('你的報價(你實拿)', 'Your price (you keep it all)')} />
+            </div>
+            <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
+            {err && <p className="text-red-400 text-xs">{err}</p>}
+            <button onClick={submit} disabled={busy || uploading} className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{busy ? tx('送出中…', 'Submitting…') : tx('送出試音', 'Submit')}</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
