@@ -256,7 +256,7 @@ function BriefCard({
                grey out (no count shown — we only nudge "try another"). One per role. */
             <div className="border-t border-white/10 pt-3">
               <p className="text-xs text-gray-500 mb-2">{tx('選一個(或多個)角色試音 · 平台不抽成,你報多少拿多少', '选一个(或多个)角色试音 · 平台不抽成,你报多少拿多少', 'Pick a role (or several) to audition · no platform fee, you keep what you quote')}</p>
-              <div className="grid grid-cols-2 gap-3 items-start">
+              <div className="space-y-3">
                 {(brief.roles || []).map((ro, i) => (
                   <RoleAudition
                     key={i}
@@ -390,15 +390,16 @@ function RoleAudition({
   // Already auditioned this role.
   if (done) {
     return (
-      <div className="rounded-xl border border-green-500/30 bg-green-500/[0.06] overflow-hidden">
-        <div className="h-20 bg-white/5 flex items-center justify-center">
+      <div className="flex items-stretch rounded-xl border border-green-500/30 bg-green-500/[0.06] overflow-hidden">
+        <div className="w-24 sm:w-28 shrink-0 bg-white/5 flex items-center justify-center">
           {role.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={role.image} alt={role.name} className="w-full h-full object-cover" />
+            <img src={role.image} alt={role.name} className="w-full h-full object-cover object-top" />
           ) : <span className="text-green-300 text-2xl">✓</span>}
         </div>
-        <div className="p-3">
+        <div className="flex-1 min-w-0 p-3">
           <p className="text-sm font-medium text-gray-100">{role.name}{role.is_lead && <span className="ml-1 text-amber-300">★</span>} <span className="text-green-300 text-xs">{tx('✓ 已試音', '✓ 已试音', '✓ Auditioned')}</span></p>
+          {(meta || role.personality) && <p className="text-xs text-gray-500 mt-0.5 truncate">{[meta, role.personality].filter(Boolean).join(' · ')}</p>}
           {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
         </div>
       </div>
@@ -406,16 +407,16 @@ function RoleAudition({
   }
 
   return (
-    <div className={`rounded-xl border overflow-hidden ${role.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
-      {/* character portrait (game art) — the main visual */}
-      <div className="h-24 bg-white/[0.04] flex items-center justify-center relative">
+    <div className={`flex items-stretch rounded-xl border overflow-hidden ${role.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
+      {/* rectangular character portrait on the left — face-focused (object-top) */}
+      <div className="w-24 sm:w-28 shrink-0 bg-white/[0.04] relative flex items-center justify-center self-stretch">
         {role.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={role.image} alt={role.name} className="w-full h-full object-cover" />
+          <img src={role.image} alt={role.name} className="absolute inset-0 w-full h-full object-cover object-top" />
         ) : <span className="text-gray-600 text-2xl">🎭</span>}
-        {role.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded">★{tx('主角', '主角', 'Lead')}</span>}
+        {role.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded z-10">★{tx('主角', '主角', 'Lead')}</span>}
       </div>
-      <div className="p-3">
+      <div className="flex-1 min-w-0 p-3">
         <p className="text-sm font-medium text-gray-100">{role.name}</p>
         {(meta || role.personality) && <p className="text-xs text-gray-500 mt-0.5 truncate">{[meta, role.personality].filter(Boolean).join(' · ')}</p>}
 

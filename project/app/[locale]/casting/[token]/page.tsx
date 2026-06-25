@@ -78,7 +78,7 @@ export default function GuestCasting() {
       {(brief.roles || []).length > 0 ? (
         <>
           <p className="text-xs text-gray-500 mb-2">{tx('選角色試音(可試多個)· 平台不抽成,你報多少拿多少:', 'Pick roles to audition · no platform fee, you keep what you quote:')}</p>
-          <div className="grid grid-cols-2 gap-3 items-start">
+          <div className="space-y-3">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
@@ -140,29 +140,32 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
   }
 
   if (done) return (
-    <div className="rounded-xl border border-green-500/30 bg-green-500/[0.06] overflow-hidden">
-      <div className="h-20 bg-white/5 flex items-center justify-center">
+    <div className="flex items-stretch rounded-xl border border-green-500/30 bg-green-500/[0.06] overflow-hidden">
+      <div className="w-24 sm:w-28 shrink-0 bg-white/5 flex items-center justify-center">
         {role.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={role.image} alt={role.name} className="w-full h-full object-cover" />
+          <img src={role.image} alt={role.name} className="w-full h-full object-cover object-top" />
         ) : <span className="text-green-300 text-2xl">✓</span>}
       </div>
-      <div className="p-3">
+      <div className="flex-1 min-w-0 p-3">
         <p className="text-sm font-medium text-gray-100">{role.name}{role.is_lead && <span className="ml-1 text-amber-300">★</span>} <span className="text-green-300 text-xs">{tx('✓ 已試音', '✓ Auditioned')}</span></p>
+        {([role.gender, role.age].filter(Boolean).join('·') || role.personality) && (
+          <p className="text-xs text-gray-500 mt-0.5 truncate">{[[role.gender, role.age].filter(Boolean).join('·'), role.personality].filter(Boolean).join(' · ')}</p>
+        )}
       </div>
     </div>
   );
 
   return (
-    <div className={`rounded-xl border overflow-hidden ${role.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
-      <div className="h-24 bg-white/[0.04] flex items-center justify-center relative">
+    <div className={`flex items-stretch rounded-xl border overflow-hidden ${role.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
+      <div className="w-24 sm:w-28 shrink-0 bg-white/[0.04] relative flex items-center justify-center self-stretch">
         {role.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={role.image} alt={role.name} className="w-full h-full object-cover" />
+          <img src={role.image} alt={role.name} className="absolute inset-0 w-full h-full object-cover object-top" />
         ) : <span className="text-gray-600 text-2xl">🎭</span>}
-        {role.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded">★{tx('主角', 'Lead')}</span>}
+        {role.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded z-10">★{tx('主角', 'Lead')}</span>}
       </div>
-      <div className="p-3">
+      <div className="flex-1 min-w-0 p-3">
         <p className="text-sm font-medium text-gray-100">{role.name}</p>
         {([role.gender, role.age].filter(Boolean).join('·') || role.personality) && (
           <p className="text-xs text-gray-500 mt-0.5 truncate">{[[role.gender, role.age].filter(Boolean).join('·'), role.personality].filter(Boolean).join(' · ')}</p>
