@@ -17,6 +17,12 @@ type ParsedRole = { name: string; gender?: string; age?: string; personality?: s
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 const SITE = 'https://www.onyxstudios.ai';
 
+// Rate = currency + amount (USD / TWD lead; both optional, fill one or both).
+const CCYS = ['TWD', 'USD', 'CNY', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
+const CCY_SYM: Record<string, string> = { USD: 'US$', TWD: 'NT$', CNY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', JPY: 'JP¥', SGD: 'S$' };
+const fmtRate = (cur: string, amt: string) => `${CCY_SYM[cur] || cur + ' '}${amt.trim()}`;
+const RATE_UNITS = ['句', '字', '分鐘', '小時', '整案'];
+
 // 19 業界類別 → 對應的回應方式。roles = 分角色試音(遊戲/動畫/戲劇);
 // general = 單一聲音,配音員用平台現有 demo 或上傳 demo + 報價(廣告/旁白等)。
 const CATEGORIES: { label: string; mode: 'roles' | 'general' }[] = [
@@ -48,7 +54,11 @@ export default function NewCasting() {
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('中文 · 台灣國語');
   const [brief, setBrief] = useState('');
-  const [rateNote, setRateNote] = useState('');
+  const [rateCur1, setRateCur1] = useState('TWD');
+  const [rateAmt1, setRateAmt1] = useState('');
+  const [rateCur2, setRateCur2] = useState('USD');
+  const [rateAmt2, setRateAmt2] = useState('');
+  const [rateUnit, setRateUnit] = useState('句');
   const [baseRev, setBaseRev] = useState('1');
   const [cap, setCap] = useState('5');
   const [auditionDeadline, setAuditionDeadline] = useState('');
@@ -142,6 +152,11 @@ export default function NewCasting() {
       const p = parsedRoles.find((pr) => pr.name === r.name);
       return p?.image ? { ...r, image: p.image } : r;
     });
+    // assemble the rate note from the structured currency/amount inputs (both optional)
+    const rateParts = [];
+    if (rateAmt1.trim()) rateParts.push(fmtRate(rateCur1, rateAmt1));
+    if (rateAmt2.trim()) rateParts.push(fmtRate(rateCur2, rateAmt2));
+    const rateNote = rateParts.length ? `${rateParts.join(' · ')} / ${rateUnit}` : '';
     const payload = {
       title, content_type: category, language, brief, rate_note: rateNote, base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
       audition_deadline: auditionDeadline, recording_start: recordingStart,
@@ -231,10 +246,24 @@ export default function NewCasting() {
             : '配音員用平台現有 demo 或上傳一段 demo + 報價即可,不需逐角色錄音(廣告 / 旁白 / 有聲書等)。'}
         </p>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
-          <Field label="報酬說明(客戶預算,給配音員看)"><input className={input} value={rateNote} onChange={(e) => setRateNote(e.target.value)} placeholder="例:¥65/句" /></Field>
-        </div>
+        <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
+        <Field label="報酬(客戶預算,給配音員看 · 美金/台幣可只填一個或都填)">
+          <div className="flex flex-wrap items-center gap-2">
+            <select className={`${input} w-24`} value={rateCur1} onChange={(e) => setRateCur1(e.target.value)}>
+              {CCYS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input type="number" min="0" className={`${input} w-28`} value={rateAmt1} onChange={(e) => setRateAmt1(e.target.value)} placeholder="金額" />
+            <span className="text-gray-400 text-sm">+</span>
+            <select className={`${input} w-24`} value={rateCur2} onChange={(e) => setRateCur2(e.target.value)}>
+              {CCYS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input type="number" min="0" className={`${input} w-28`} value={rateAmt2} onChange={(e) => setRateAmt2(e.target.value)} placeholder="金額(選填)" />
+            <span className="text-gray-500 text-sm">/</span>
+            <select className={`${input} w-24`} value={rateUnit} onChange={(e) => setRateUnit(e.target.value)}>
+              {RATE_UNITS.map((u) => <option key={u} value={u}>每{u}</option>)}
+            </select>
+          </div>
+        </Field>
         <Field label="案件說明 *"><textarea className={`${input} min-h-[90px] resize-y`} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="全劇共 X 條台詞… 先試音,通過後正式錄。試音範圍…" /></Field>
 
         <div className="grid grid-cols-4 gap-3">
@@ -308,8 +337,8 @@ export default function NewCasting() {
           );
         })()}
         </>}
-        <Field label={mode === 'general' ? '試音稿 / 方向(選填,配音員只能線上看)' : '試音稿(配音員只能線上看、不可下載)'}>
-          <textarea className={`${input} min-h-[100px] resize-y`} value={auditionScript} onChange={(e) => setAuditionScript(e.target.value)} placeholder="貼上樣本台詞 / 方向說明…" />
+        <Field label="試音方向 / 聲音方向(選填,配音員只能線上看)">
+          <textarea className={`${input} min-h-[100px] resize-y`} value={auditionScript} onChange={(e) => setAuditionScript(e.target.value)} placeholder="情緒、語速、聲音方向…(或共用樣詞)" />
         </Field>
 
         <Field label="參考素材 — 連結">

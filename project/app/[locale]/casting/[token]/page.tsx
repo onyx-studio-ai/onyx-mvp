@@ -56,7 +56,7 @@ export default function GuestCasting() {
 
       {brief.audition_script && (
         <div className="mb-4">
-          <p className="text-xs text-gray-500 mb-1">{tx('試音稿(不可下載)', 'Audition script (no download)')}</p>
+          <p className="text-xs text-gray-500 mb-1">{tx('試音方向 / 聲音方向', 'Audition / voice direction')}</p>
           <div className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 select-none" style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>{brief.audition_script}</div>
         </div>
       )}

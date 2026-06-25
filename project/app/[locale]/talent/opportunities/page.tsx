@@ -220,7 +220,7 @@ function BriefCard({
 
           {brief.audition_script && (
             <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1.5">{tx('試音稿(僅供線上閱讀,不可下載)', '试音稿(仅供线上阅读,不可下载)', 'Audition script (read-only — no download)')}</p>
+              <p className="text-xs text-gray-500 mb-1.5">{tx('試音方向 / 聲音方向(僅供線上閱讀)', '试音方向 / 声音方向(仅供线上阅读)', 'Audition / voice direction (read-only)')}</p>
               <div
                 className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 select-none"
                 style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
