@@ -125,10 +125,11 @@ export default function GuestCasting() {
             <h2 className="text-lg font-semibold text-white" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{tx('試音角色', 'Roles')}</h2>
             {(() => { const rs = brief.roles || []; const m = rs.filter((r) => (r.gender || '').includes('男')).length; const f = rs.filter((r) => (r.gender || '').includes('女')).length; return <span className="text-xs text-gray-500">{tx(`共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `${rs.length} roles · ${m}M / ${f}F`)}</span>; })()}
           </div>
-          <p className="text-xs text-gray-400 mb-3">{tx('挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。', 'Pick a role → read its line aloud and record → upload + quote. Audition several; no platform fee, you keep what you quote.')}</p>
+          <p className="text-xs text-gray-400 mb-3">{tx('挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角。', 'Pick a role → read its line aloud and record → upload + quote. Audition several.')}</p>
           <div className="space-y-3">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
+                source={brief.source} rateNote={brief.rate_note}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
                 done={mine.find((m) => (m.role_name || '') === (ro.name || ''))} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
             ))}
@@ -136,7 +137,7 @@ export default function GuestCasting() {
         </>
       ) : (
         /* General (single-voice) call — upload a demo + price (no per-role audition). */
-        <GuestGeneral token={token} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
+        <GuestGeneral token={token} source={brief.source} rateNote={brief.rate_note} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
       )}
 
       <div className="mt-8 border-t border-white/10 pt-4 text-center">
@@ -151,8 +152,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   return <main className="min-h-screen bg-black text-white px-4 pt-24 pb-12"><div className="max-w-4xl mx-auto">{children}</div></main>;
 }
 
-function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
+function GuestRole({ token, role, count, popular, done, closed, source, rateNote, tx, onDone }: {
   token: string; role: Role; count: number; popular: boolean; done?: Audition; closed: boolean;
+  source?: 'platform' | 'client'; rateNote?: string;
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -179,9 +181,12 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
   async function submit() {
     setErr('');
     if (!audioUrl) return setErr(tx('請先上傳試音音檔', 'Upload your audition first'));
-    if (!(Number(gross) > 0)) return setErr(tx('請填報價', 'Enter your price'));
+    const earnN = Number(gross); // input = take-home
+    if (!(earnN > 0)) return setErr(tx('請填報價', 'Enter your price'));
+    const fee = source === 'client' ? 0.2 : 0;
+    const clientPays = fee ? Math.round((earnN / (1 - fee)) * 100) / 100 : earnN;
     setBusy(true);
-    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role_name: role.name, sample_url: audioUrl, gross_amount: Number(gross), currency, intro }) });
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role_name: role.name, sample_url: audioUrl, gross_amount: clientPays, currency, intro }) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
@@ -244,10 +249,19 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
               className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
             {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
+            {rateNote && <p className="text-[11px] text-gray-500">{tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{rateNote}</span></p>}
             <div className="flex gap-2">
               <select className={`${cls} w-20`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>
-              <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('你的報價(你實拿)', 'Your price (you keep it all)')} />
+              <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('你實拿', 'Your earnings')} />
             </div>
+            {(() => {
+              const fee = source === 'client' ? 0.2 : 0; const earnN = Number(gross) || 0;
+              if (earnN <= 0) return null;
+              const clientPays = fee ? Math.round((earnN / (1 - fee)) * 100) / 100 : earnN;
+              return fee
+                ? <p className="text-[11px] text-gray-400">{tx('客戶看到', 'Client sees')} <span className="text-gray-200">{currency} {clientPays}</span> · {tx('平台費', 'Platform fee')} 20% {currency} {Math.round((clientPays - earnN) * 100) / 100}</p>
+                : <p className="text-[11px] text-[#6FCF97]">{tx('平台不抽成 · 你報多少拿多少', 'No platform fee — you keep it all')}</p>;
+            })()}
             <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button onClick={submit} disabled={busy || uploading} className="w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>{busy ? tx('送出中…', 'Submitting…') : tx('送出試音', 'Submit')}</button>
@@ -259,8 +273,8 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
 }
 
 // General (single-voice) guest response: upload one demo + price. No roles.
-function GuestGeneral({ token, done, closed, tx, onDone }: {
-  token: string; done?: Audition; closed: boolean;
+function GuestGeneral({ token, done, closed, source, rateNote, tx, onDone }: {
+  token: string; done?: Audition; closed: boolean; source?: 'platform' | 'client'; rateNote?: string;
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [audioUrl, setAudioUrl] = useState('');
@@ -286,9 +300,12 @@ function GuestGeneral({ token, done, closed, tx, onDone }: {
   async function submit() {
     setErr('');
     if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
-    if (!(Number(gross) > 0)) return setErr(tx('請填報價', 'Enter your price'));
+    const earnN = Number(gross);
+    if (!(earnN > 0)) return setErr(tx('請填報價', 'Enter your price'));
+    const fee = source === 'client' ? 0.2 : 0;
+    const clientPays = fee ? Math.round((earnN / (1 - fee)) * 100) / 100 : earnN;
     setBusy(true);
-    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: audioUrl, gross_amount: Number(gross), currency, intro }) });
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: audioUrl, gross_amount: clientPays, currency, intro }) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
@@ -304,15 +321,24 @@ function GuestGeneral({ token, done, closed, tx, onDone }: {
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
-      <p className="text-xs text-gray-500">{tx('上傳一段 demo + 報價即可(不需逐角色錄)。平台不抽成,你報多少拿多少。', 'Upload one demo + your price (no per-role recording). No platform fee — you keep what you quote.')}</p>
+      <p className="text-xs text-gray-500">{tx('上傳一段 demo + 報價即可(不需逐角色錄)。', 'Upload one demo + your price (no per-role recording).')}</p>
       <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading || closed} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
       {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
       {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
+      {rateNote && <p className="text-[11px] text-gray-500">{tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{rateNote}</span></p>}
       <div className="flex gap-2">
         <select className={`${cls} w-20`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>
-        <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('你的報價', 'Your price')} />
+        <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('你實拿', 'Your earnings')} />
       </div>
+      {(() => {
+        const fee = source === 'client' ? 0.2 : 0; const earnN = Number(gross) || 0;
+        if (earnN <= 0) return null;
+        const clientPays = fee ? Math.round((earnN / (1 - fee)) * 100) / 100 : earnN;
+        return fee
+          ? <p className="text-[11px] text-gray-400">{tx('客戶看到', 'Client sees')} <span className="text-gray-200">{currency} {clientPays}</span> · {tx('平台費', 'Platform fee')} 20% {currency} {Math.round((clientPays - earnN) * 100) / 100}</p>
+          : <p className="text-[11px] text-[#6FCF97]">{tx('平台不抽成 · 你報多少拿多少', 'No platform fee — you keep it all')}</p>;
+      })()}
       <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
       {err && <p className="text-red-400 text-xs">{err}</p>}
       <button onClick={submit} disabled={busy || uploading || closed} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{busy ? tx('送出中…', 'Submitting…') : tx('送出應徵', 'Submit')}</button>

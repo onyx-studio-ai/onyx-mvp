@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Brief must exist and be open.
     const { data: brief } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, status, kind')
+      .select('id, brief_number, status, kind, client_email')
       .eq('id', briefId)
       .maybeSingle();
     if (!brief) return NextResponse.json({ error: 'Brief not found' }, { status: 404 });
@@ -49,10 +49,10 @@ export async function POST(request: NextRequest) {
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
 
-    // Onyx-posted casting calls take NO platform cut — the price the talent enters
-    // IS their take-home (Onyx's margin lives in the Onyx↔client deal). Only
-    // client self-serve briefs carry the 20% commission.
-    const isCasting = brief.kind === 'casting';
+    // Commission keys off the SOURCE, not kind (every case is kind='casting' now):
+    // Onyx PLATFORM-posted cases take NO cut (the price IS the talent's take-home;
+    // Onyx's margin lives in the Onyx↔client deal). CLIENT-posted cases carry 20%.
+    const isPlatform = brief.client_email === 'casting@onyxstudios.ai';
 
     const { data, error } = await r.db
       .from('marketplace_quotes')
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         brief_id: briefId, talent_id: talent.id, gross_amount: gross, currency, message,
         sample_url: sampleUrl, intro, included_revisions: inclRev, extra_revision_price: extraRevPrice,
         role_name: roleName,
-        ...(isCasting ? { commission_rate: 0 } : {}),
+        commission_rate: isPlatform ? 0 : 0.20,
       })
       .select('id, brief_id, role_name, gross_amount, net_amount, commission_rate, currency, status, sample_url')
       .single();
