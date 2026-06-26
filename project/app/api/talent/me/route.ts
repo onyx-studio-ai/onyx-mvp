@@ -87,6 +87,14 @@ export async function GET(request: NextRequest) {
           if (ord) { isClient = true; break; }
         } catch { /* non-fatal — table/RLS quirk shouldn't block the profile load */ }
       }
+      // Also a client if they've POSTED a voiceover request via /hire (no paid
+      // order yet) — they still need the client area to track its status.
+      if (!isClient) {
+        try {
+          const { data: brief } = await r.db.from('marketplace_briefs').select('id').ilike('client_email', email).limit(1).maybeSingle();
+          if (brief) isClient = true;
+        } catch { /* non-fatal */ }
+      }
     }
     return NextResponse.json({ talent: r.talent, isClient });
   } catch (err) {

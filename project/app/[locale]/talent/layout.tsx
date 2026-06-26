@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
-import { User, Briefcase, MessageSquare, DollarSign, ShoppingBag, LogOut, Bell } from 'lucide-react';
+import { User, Briefcase, MessageSquare, DollarSign, LogOut, Bell, ClipboardList, FileAudio, Receipt, Settings } from 'lucide-react';
 
 export default function TalentLayout({ children }: { children: React.ReactNode }) {
   const locale = useLocale();
@@ -80,6 +80,13 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
     { href: '/talent/earnings', label: tx('收款', '收款', 'Earnings'), icon: DollarSign, badge: 0 },
     { href: '/talent/messages', label: tx('訊息', '消息', 'Messages'), icon: MessageSquare, badge: 0 },
   ];
+  // Client (dual-role) group — links into the existing /dashboard client area.
+  const clientNav = [
+    { href: '/dashboard/requests', label: tx('配音需求', '配音需求', 'Requests'), icon: ClipboardList },
+    { href: '/dashboard', label: tx('專案訂單', '项目订单', 'Projects'), icon: FileAudio },
+    { href: '/dashboard/invoices', label: tx('發票', '发票', 'Invoices'), icon: Receipt },
+    { href: '/dashboard/settings', label: tx('設定', '设置', 'Settings'), icon: Settings },
+  ];
   const active = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
   const signOut = async () => { await supabase.auth.signOut(); router.push('/auth'); };
 
@@ -95,7 +102,8 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
           <p className="text-sm font-semibold mt-1 truncate">{name || tx('配音員', '配音员', 'Talent')}</p>
           <p className="text-[11px] text-gray-500">{tx('配音員後台', '配音员后台', 'Talent dashboard')}</p>
         </div>
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto">
+          <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tx('配音員', '配音员', 'Talent')}</p>
           {nav.map((n) => {
             const A = active(n.href, n.exact); const I = n.icon;
             return (
@@ -104,13 +112,21 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
+          {isClient && (
+            <div className="pt-3 mt-3 border-t border-white/10">
+              <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tx('客戶', '客户', 'Client')}</p>
+              {clientNav.map((n) => {
+                const I = n.icon;
+                return (
+                  <Link key={n.href} href={n.href} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                    <I className="w-4 h-4" /> {n.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </nav>
         <div className="space-y-1 pt-2 border-t border-white/10">
-          {isClient && (
-            <Link href="/dashboard" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">
-              <ShoppingBag className="w-4 h-4" /> {tx('客戶後台', '客户后台', 'Client area')}
-            </Link>
-          )}
           <button onClick={signOut} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">
             <LogOut className="w-4 h-4" /> {tx('登出', '登出', 'Sign out')}
           </button>

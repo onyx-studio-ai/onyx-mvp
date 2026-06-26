@@ -128,12 +128,9 @@ export default function Opportunities() {
 
   return shell(
     <>
-      <div className="flex items-center justify-between mb-2 gap-3">
+      <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-semibold">{tx('案件', '案件', 'Cases')}</h1>
-        <div className="flex items-center gap-3 text-xs shrink-0">
-          <Link href="/client" className="text-gray-400 hover:text-white transition">{tx('我發的需求', '我发的需求', 'My requests')}</Link>
-          <Link href="/talent" className="text-gray-400 hover:text-white transition">{tx('我的檔案', '我的资料', 'My profile')}</Link>
-        </div>
+        <Link href="/talent" className="text-xs text-gray-400 hover:text-white transition">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
       </div>
       <p className="text-gray-500 text-sm mb-8">
         {tx('以下是 Onyx 開放中的配音需求。報酬是該案配音員實際收入。', '以下是 Onyx 开放中的配音需求。报酬是该案配音员实际收入。', "These are Onyx's open voice-over cases. The rate shown is the talent's actual take-home.")}

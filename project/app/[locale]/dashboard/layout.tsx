@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { useRouter as useLocaleRouter } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt, Mic2 } from 'lucide-react';
+import { FileAudio, Settings, LogOut, Receipt, Mic2, ClipboardList } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
 
@@ -92,6 +92,7 @@ function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
   // portal. A pure client never sees it; a pure talent never reaches /dashboard.
   const nav = [
     { href: '/dashboard', label: tr('navProjects', '專案') , icon: FileAudio },
+    { href: '/dashboard/requests', label: tr('navRequests', '配音需求'), icon: ClipboardList },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票'), icon: Receipt },
     { href: '/dashboard/settings', label: tr('navSettings', '設定'), icon: Settings },
     ...(showTalentLink ? [{ href: '/talent', label: tr('navTalentPortal', '配音員後台'), icon: Mic2 }] : []),
@@ -144,6 +145,7 @@ function MobileNav({ showTalentLink }: { showTalentLink: boolean }) {
   };
   const nav = [
     { href: '/dashboard', label: tr('navProjects', '專案') },
+    { href: '/dashboard/requests', label: tr('navRequests', '配音需求') },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票') },
     { href: '/dashboard/settings', label: tr('navSettings', '設定') },
     ...(showTalentLink ? [{ href: '/talent', label: tr('navTalentPortal', '配音員後台') }] : []),
