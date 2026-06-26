@@ -36,6 +36,7 @@ type Brief = {
   audition_deadline: string | null;
   deadline: string | null;
   brief: string;
+  requested_talent: string | null;
   status: string;
   created_at: string;
 };
@@ -114,6 +115,12 @@ export default function AdminRequests() {
             )}
 
             <p className="text-sm text-gray-800 whitespace-pre-wrap mb-3">{b.brief}</p>
+
+            {b.requested_talent && (
+              <p className="text-sm mb-3 inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-2.5 py-1">
+                <span className="font-semibold">🎯 指定配音員</span> {b.requested_talent}
+              </p>
+            )}
 
             {/* full case data */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-1.5 text-sm mb-3">

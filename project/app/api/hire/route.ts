@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
           budget: b.budget || null,
           deadline: b.deadline || null,
           brief: String(b.brief),
+          requested_talent: (typeof b.requested_talent === 'string' && b.requested_talent.trim()) ? b.requested_talent.trim().slice(0, 200) : null,
           locale: b.locale || '',
         })
         .select('brief_number')

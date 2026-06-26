@@ -56,6 +56,8 @@ type Quote = {
   created_at: string;
   role_name?: string | null;
   sample_url?: string | null;
+  delivery_url?: string | null;
+  delivery_uploaded_at?: string | null;
   talents?: { name: string; email: string } | null;
 };
 
@@ -118,11 +120,20 @@ export default function AdminMarketplace() {
   }
 
   async function toOrder(b: Brief) {
+    const isPlatform = !b.client_email || b.client_email === 'casting@onyxstudios.ai';
+    // Platform-posted cases have no client email on file — ask for the end client's
+    // email so the production order has a billing/delivery contact.
+    let clientEmail = '';
+    if (isPlatform) {
+      clientEmail = (window.prompt('平台發案：請輸入這筆訂單的客戶 email（用於帳務與交付通知）：') || '').trim();
+      if (!clientEmail) return;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) { alert('email 格式不正確'); return; }
+    }
     if (!confirm(`將「${b.title || caseCode(b)}」轉成製作單?\n會進入「訂單」系統管理製作與交付,此試音案隨之結案。`)) return;
     try {
       const res = await fetch('/api/admin/casting/to-order', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ briefId: b.id }),
+        body: JSON.stringify({ briefId: b.id, clientEmail: clientEmail || undefined }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { alert(j.error || '建單失敗'); return; }
@@ -274,10 +285,14 @@ export default function AdminMarketplace() {
               {b.script_status && <span>稿件 {b.script_status}</span>}
             </div>
 
-            {/* awarded → create the production order (client cases) */}
-            {b.status === 'awarded' && b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (
+            {/* awarded → create the production order. Client cases bill the client on
+                file; platform cases prompt for the end-client email at conversion. */}
+            {b.status === 'awarded' && (
               <div className="mb-3 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                <span className="text-xs text-blue-800">已採用配音員 —— 接著建立製作單,進訂單系統管理錄製與交付。</span>
+                <span className="text-xs text-blue-800">
+                  已採用配音員 —— 接著建立製作單,進訂單系統管理錄製與交付。
+                  {(!b.client_email || b.client_email === 'casting@onyxstudios.ai') && '(平台發案:建單時會請你輸入客戶 email)'}
+                </span>
                 <button onClick={() => toOrder(b)} className="ml-auto text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg px-3 py-1.5 whitespace-nowrap">→ 建立製作單</button>
               </div>
             )}
@@ -327,6 +342,13 @@ export default function AdminMarketplace() {
                     {q.sample_url
                       ? <audio controls src={q.sample_url} className="w-full h-9 mt-2" />
                       : <p className="text-xs text-gray-400 mt-1">(無試音音檔)</p>}
+                    {q.delivery_url && (
+                      <div className="mt-2 flex items-center gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1.5">
+                        <span className="text-blue-700 font-medium">✓ 完成交付</span>
+                        <a href={q.delivery_url} target="_blank" rel="noreferrer" download className="text-blue-600 underline">下載</a>
+                        {q.delivery_uploaded_at && <span className="text-gray-400">{new Date(q.delivery_uploaded_at).toLocaleString('zh-TW')}</span>}
+                      </div>
+                    )}
                     </div>
                     {openThread === tkey && <AdminThread briefId={b.id} talentId={q.talent_id} />}
                   </div>

@@ -69,11 +69,63 @@ type Quote = {
   status: string;
   message: string | null;
   sample_url?: string | null;
+  delivery_url?: string | null;
+  delivery_uploaded_at?: string | null;
 };
 type Demo = { url: string; name?: string; category?: string; language?: string };
 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60 transition';
+
+// Won-job delivery: the talent hands in the finished recording against an accepted
+// quote. Final files are NOT transcoded (preserve 48k/24-bit); zip allowed for bundles.
+function DeliveryUpload({ quote, token, tx, onDone }: { quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  async function upload(file: File) {
+    setErr(''); setBusy(true);
+    try {
+      const u = await fetch('/api/talent/delivery-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      const p = await fetch('/api/talent/quotes', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: quote.id, delivery_url: uj.publicUrl }),
+      });
+      const pj = await p.json().catch(() => ({}));
+      if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
+      onDone({ ...quote, delivery_url: uj.publicUrl, delivery_uploaded_at: new Date().toISOString() });
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
+  }
+  const ACCEPT = '.wav,.mp3,.m4a,.aac,.ogg,.flac,.zip';
+  if (quote.delivery_url) {
+    return (
+      <div className="mt-1.5 flex items-center gap-3 text-xs">
+        <span className="text-[#6FCF97]">{tx('✓ 已交付', '✓ 已交付', '✓ Delivered')}</span>
+        <a href={quote.delivery_url} target="_blank" rel="noreferrer" className="text-gray-400 underline hover:text-white">{tx('檢視', '查看', 'View')}</a>
+        <label className="text-gray-500 underline cursor-pointer hover:text-white">
+          {busy ? '…' : tx('重新上傳', '重新上传', 'Replace')}
+          <input type="file" accept={ACCEPT} className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+        </label>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1.5">
+      <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
+        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳完成音檔', '⬆ 上传完成音档', '⬆ Upload final audio')}
+        <input type="file" accept={ACCEPT} className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+      </label>
+      <p className="text-[10px] text-gray-500 mt-1">{tx('正式錄製檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '正式录制档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Final file (48kHz/24-bit WAV preferred; zip for multiple)')}</p>
+      {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
+    </div>
+  );
+}
 
 export default function Opportunities() {
   const locale = useLocale();
@@ -150,10 +202,13 @@ export default function Opportunities() {
                     <span className="text-sm font-medium text-white truncate">{w.title || w.content_type || tx('配音案', '配音案', 'Voice case')}</span>
                     <span className="text-[11px] text-[#6FCF97] whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>
                   </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-gray-400">
-                    {myAccepted.map((q) => <span key={q.id}>{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} {q.currency} {q.net_amount}</span>)}
-                  </div>
-                  <p className="text-[11px] text-gray-500 mt-1">{tx('Onyx 會與您聯繫正式錄製的稿件與交付時程。', 'Onyx 会与您联系正式录制的稿件与交付时程。', 'Onyx will be in touch with the final script and delivery schedule.')}</p>
+                  {myAccepted.map((q) => (
+                    <div key={q.id} className="mt-1.5">
+                      <div className="text-xs text-gray-400">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} {q.currency} {q.net_amount}</div>
+                      <DeliveryUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-gray-500 mt-2">{tx('Onyx 會與您聯繫正式錄製的稿件與交付時程;完成後可在此上傳最終音檔。', 'Onyx 会与您联系正式录制的稿件与交付时程;完成后可在此上传最终音档。', 'Onyx will be in touch with the final script and schedule; upload your finished audio here.')}</p>
                 </div>
               );
             })}

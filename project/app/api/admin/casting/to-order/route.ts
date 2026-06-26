@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
   try { b = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const briefId = String(b.briefId || '').trim();
   if (!briefId) return NextResponse.json({ error: 'missing briefId' }, { status: 400 });
+  // Optional end-client email for platform-posted cases (which carry no client_email).
+  const clientEmailOverride = String(b.clientEmail || '').trim().toLowerCase();
 
   const db = getSupabaseServiceClient();
   const { data: brief } = await db.from('marketplace_briefs')
@@ -25,8 +27,12 @@ export async function POST(request: NextRequest) {
     .eq('id', briefId).maybeSingle();
   if (!brief) return NextResponse.json({ error: '找不到案件' }, { status: 404 });
   if (brief.status !== 'awarded' || !brief.awarded_quote_id) return NextResponse.json({ error: '此案尚未採用配音員,無法建單' }, { status: 400 });
-  if (!brief.client_email || brief.client_email === 'casting@onyxstudios.ai') {
-    return NextResponse.json({ error: '平台發案沒有客戶 email,請用「新增即時訂單」手動建單。' }, { status: 400 });
+  // Platform-posted cases (casting@) have no client on file — require an override
+  // email from the admin so the order has a billing/delivery contact.
+  const isPlatform = !brief.client_email || brief.client_email === 'casting@onyxstudios.ai';
+  const orderEmail = isPlatform ? clientEmailOverride : String(brief.client_email).toLowerCase();
+  if (!orderEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(orderEmail)) {
+    return NextResponse.json({ error: '平台發案請提供客戶 email(用於帳務與交付)。' }, { status: 400 });
   }
 
   const { data: quote } = await db.from('marketplace_quotes')
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   const { data: order, error } = await db.from('voice_orders').insert({
     order_number: orderNumber,
-    email: String(brief.client_email).toLowerCase(),
+    email: orderEmail,
     language: brief.language || '',
     voice_selection: (talent?.name as string) || '',
     script_text: brief.brief || '',

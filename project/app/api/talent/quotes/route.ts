@@ -80,6 +80,46 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/*
+  PATCH /api/talent/quotes — the won talent attaches their finished delivery to an
+  ACCEPTED quote. Only their own accepted quote can receive a delivery. Onyx is
+  notified so production can pick it up.
+*/
+export async function PATCH(request: NextRequest) {
+  const r = await resolveTalentFromRequest(request, 'id, name');
+  if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
+  const talent = r.talent as { id: string; name: string };
+  try {
+    const body = await request.json();
+    const id = String(body.id || '');
+    const deliveryUrl = String(body.delivery_url || '').slice(0, 1000);
+    if (!id || !deliveryUrl) return NextResponse.json({ error: 'id and delivery_url are required' }, { status: 400 });
+    if (!/^https?:\/\//i.test(deliveryUrl)) return NextResponse.json({ error: 'invalid delivery_url' }, { status: 400 });
+
+    const { data, error } = await r.db
+      .from('marketplace_quotes')
+      .update({ delivery_url: deliveryUrl, delivery_uploaded_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('talent_id', talent.id)
+      .eq('status', 'accepted')
+      .select('id, brief_id, delivery_url, delivery_uploaded_at')
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!data) return NextResponse.json({ error: '只能為已採用的案件上傳交付' }, { status: 400 });
+
+    // Notify Onyx production that a delivery landed (best-effort).
+    sendEmail({
+      category: 'PRODUCTION', to: 'produce@onyxstudios.ai',
+      subject: `配音員交付已上傳 · ${talent.name}`,
+      html: `<p>配音員 <b>${talent.name}</b> 已上傳完成音檔。</p><p>報價 ID：${data.id}</p><p><a href="${deliveryUrl}">下載交付</a></p>`,
+    }).catch(() => {});
+
+    return NextResponse.json({ quote: data });
+  } catch {
+    return NextResponse.json({ error: 'Could not save delivery' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   const r = await resolveTalentFromRequest(request, 'id');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
