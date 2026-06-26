@@ -142,8 +142,8 @@ export default function AdminRequests() {
               {ROW('授權', b.license_term)}
               {ROW('長度', b.length)}
               {ROW('當地錄音室', b.local_studio_region)}
-              {ROW('希望試音', b.audition_deadline)}
-              {ROW('希望完成', b.deadline)}
+              {ROW('試音截止', b.audition_deadline)}
+              {ROW('預計完成', b.deadline)}
               {b.ref_audio_url && ROW('參考', <a href={b.ref_audio_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{b.ref_audio_url}</a>)}
             </div>
 

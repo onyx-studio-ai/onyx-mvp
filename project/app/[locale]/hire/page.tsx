@@ -482,8 +482,8 @@ export default function Hire() {
 
               {/* Timeline — both optional, an estimate that gives buffer */}
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-semibold mb-2">{tx('希望試音回覆時間', '希望试音回复时间', 'Preferred audition date')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
-                <div><label className="block text-sm font-semibold mb-2">{tx('希望完成時間(預計)', '希望完成时间(预计)', 'Target delivery (estimate)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.deadline} onChange={(e) => set('deadline', e.target.value)} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('試音截止日', '试音截止日', 'Audition deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('預計完成日', '预计完成日', 'Estimated delivery date')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.deadline} onChange={(e) => set('deadline', e.target.value)} /></div>
               </div>
 
               {/* Recording add-ons */}
