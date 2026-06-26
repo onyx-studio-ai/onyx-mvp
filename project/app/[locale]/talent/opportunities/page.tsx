@@ -300,7 +300,7 @@ function BriefCard({
                 <h4 className="text-lg font-semibold text-white" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{tx('試音角色', '试音角色', 'Roles')}</h4>
                 {(() => { const rs = brief.roles || []; const m = rs.filter((r) => (r.gender || '').includes('男')).length; const f = rs.filter((r) => (r.gender || '').includes('女')).length; return <span className="text-xs text-gray-500">{tx(`共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `${rs.length} roles · ${m}M / ${f}F`)}</span>; })()}
               </div>
-              <p className="text-xs text-gray-400 mb-3">{tx('挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。', '挑角色 → 念出它的台词、录音 → 上传 + 报价。可试多角,平台不抽成、你报多少拿多少。', 'Pick a role → read its line aloud and record → upload + quote. Audition several; no platform fee, you keep what you quote.')}</p>
+              <p className="text-xs text-gray-400 mb-3">{tx('挑選角色 → 唸出台詞並錄音 → 上傳試音並報價。可應徵多個角色。', '挑选角色 → 念出台词并录音 → 上传试音并报价。可应征多个角色。', 'Pick a role → read its line aloud and record → upload your audition and quote. You may audition for several roles.')}</p>
               <div className="space-y-3">
                 {(brief.roles || []).map((ro, i) => (
                   <RoleAudition
@@ -567,7 +567,7 @@ function RoleAudition({
               const feeAmt = Math.round((clientPays - earnN) * 100) / 100;
               return fee
                 ? <p className="text-[11px] text-gray-400">{tx('客戶看到', '客户看到', 'Client sees')} <span className="text-gray-200">{currency} {clientPays}</span> · {tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}</p>
-                : <p className="text-[11px] text-[#6FCF97]">{tx('平台不抽成 · 你報多少拿多少', '平台不抽成 · 你报多少拿多少', 'No platform fee — you keep it all')}</p>;
+                : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 平台不收費,報價即您的酬勞', '平台发案 · 平台不收费,报价即您的酬劳', 'Platform-posted — no fee; your quote is your fee')}</p>;
             })()}
             <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
               placeholder={tx('報價說明 + 自我介紹', '报价说明 + 自我介绍', 'Pricing notes + intro')} />
@@ -688,12 +688,12 @@ function GeneralResponse({
       </div>
       {(() => {
         const fee = brief.source === 'client' ? 0.2 : 0; const earnN = Number(gross) || 0;
-        if (earnN <= 0) return <p className="text-xs text-gray-500">{fee ? tx('客戶案:平台抽 20%,自動加在客戶看到的金額上。', '客户案:平台抽 20%,自动加在客户看到的金额上。', 'Client case: 20% platform fee added on top of what the client sees.') : tx('平台不抽成 —— 你填的就是你實拿。', '平台不抽成 —— 你填的就是你实拿。', 'No platform fee — what you enter is your take-home.')}</p>;
+        if (earnN <= 0) return <p className="text-xs text-gray-500">{fee ? tx('客戶委託 · 平台費 20%,自動計入客戶端報價。', '客户委托 · 平台费 20%,自动计入客户端报价。', 'Client brief · 20% platform fee is added to the client-facing quote.') : tx('平台發案 · 平台不收費,報價即您的酬勞。', '平台发案 · 平台不收费,报价即您的酬劳。', 'Platform-posted — no fee; your quote is your fee.')}</p>;
         const clientPays = fee ? Math.round((earnN / (1 - fee)) * 100) / 100 : earnN;
         const feeAmt = Math.round((clientPays - earnN) * 100) / 100;
         return fee
           ? <p className="text-xs text-gray-400">{tx('客戶看到', '客户看到', 'Client sees')} <span className="text-gray-200">{currency} {clientPays}</span> · {tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}</p>
-          : <p className="text-xs text-[#6FCF97]">{tx('平台不抽成 —— 你填的就是你實拿。', '平台不抽成 —— 你填的就是你实拿。', 'No platform fee — what you enter is your take-home.')}</p>;
+          : <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 平台不收費,報價即您的酬勞。', '平台发案 · 平台不收费,报价即您的酬劳。', 'Platform-posted — no fee; your quote is your fee.')}</p>;
       })()}
       <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
         placeholder={tx('報價說明 + 自我介紹(計價方式、修改政策、為何適合)', '报价说明 + 自我介绍(计价方式、修改政策、为何适合)', 'Pricing notes + intro (how you charge, revisions, why you fit)')} />

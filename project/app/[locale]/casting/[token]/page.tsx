@@ -260,7 +260,7 @@ function GuestRole({ token, role, count, popular, done, closed, source, rateNote
               const clientPays = fee ? Math.round((earnN / (1 - fee)) * 100) / 100 : earnN;
               return fee
                 ? <p className="text-[11px] text-gray-400">{tx('客戶看到', 'Client sees')} <span className="text-gray-200">{currency} {clientPays}</span> · {tx('平台費', 'Platform fee')} 20% {currency} {Math.round((clientPays - earnN) * 100) / 100}</p>
-                : <p className="text-[11px] text-[#6FCF97]">{tx('平台不抽成 · 你報多少拿多少', 'No platform fee — you keep it all')}</p>;
+                : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 平台不收費,報價即您的酬勞', 'Platform-posted — no fee; your quote is your fee')}</p>;
             })()}
             <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
             {err && <p className="text-red-400 text-xs">{err}</p>}
@@ -337,7 +337,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, tx, onDone }: {
         const clientPays = fee ? Math.round((earnN / (1 - fee)) * 100) / 100 : earnN;
         return fee
           ? <p className="text-[11px] text-gray-400">{tx('客戶看到', 'Client sees')} <span className="text-gray-200">{currency} {clientPays}</span> · {tx('平台費', 'Platform fee')} 20% {currency} {Math.round((clientPays - earnN) * 100) / 100}</p>
-          : <p className="text-[11px] text-[#6FCF97]">{tx('平台不抽成 · 你報多少拿多少', 'No platform fee — you keep it all')}</p>;
+          : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 平台不收費,報價即您的酬勞', 'Platform-posted — no fee; your quote is your fee')}</p>;
       })()}
       <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
       {err && <p className="text-red-400 text-xs">{err}</p>}
