@@ -182,6 +182,33 @@ export async function PATCH(request: NextRequest) {
   const id = String(b.id || '').trim();
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 });
   const db = getSupabaseServiceClient();
+
+  // Full edit (fields + roles, e.g. correcting a role's 台詞) — no status change, no notify.
+  if (b.edit && typeof b.edit === 'object') {
+    const e = b.edit as Record<string, unknown>;
+    const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const setStr = (k: string, max: number) => { if (e[k] !== undefined) upd[k] = String(e[k] ?? '').slice(0, max) || null; };
+    for (const [k, max] of [['title', 200], ['content_type', 80], ['language', 80], ['brief', 20000], ['rate_note', 200], ['audition_deadline', 120], ['recording_start', 120], ['deadline', 120], ['length', 120], ['media_scope', 200], ['territory', 120], ['license_term', 200], ['accent', 120], ['voice_style', 120], ['voice_age', 120], ['audition_script', 20000]] as [string, number][]) setStr(k, max);
+    if (e.base_revisions !== undefined) upd.base_revisions = Math.max(0, Math.trunc(Number(e.base_revisions) || 0));
+    if (e.audition_cap !== undefined) upd.audition_cap = Math.max(1, Math.trunc(Number(e.audition_cap) || 5));
+    if (Array.isArray(e.roles)) {
+      upd.roles = (e.roles as RoleIn[]).filter((r) => r && String(r.name || '').trim()).slice(0, 100).map((r) => ({
+        name: String(r.name).trim().slice(0, 80),
+        gender: String(r.gender || '').trim().slice(0, 20),
+        age: String(r.age || '').trim().slice(0, 20),
+        personality: String(r.personality || '').trim().slice(0, 60),
+        emotion: String(r.emotion || '').trim().slice(0, 120),
+        speed: String(r.speed || '').trim().slice(0, 40),
+        sample_line: String(r.sample_line || '').trim().slice(0, 500),
+        is_lead: !!r.is_lead,
+        image: String(r.image || '').trim().slice(0, 1000) || undefined,
+      }));
+    }
+    const { data, error } = await db.from('marketplace_briefs').update(upd).eq('id', id).eq('kind', 'casting').select('id').single();
+    if (error || !data) return NextResponse.json({ error: error?.message || '更新失敗' }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note').eq('id', id).maybeSingle();
   if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
   if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });

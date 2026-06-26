@@ -463,12 +463,14 @@ function RoleAudition({
   async function submit() {
     setErr('');
     if (!audioUrl) return setErr(tx('請先上傳試音音檔', '请先上传试音音档', 'Please upload your audition first'));
-    const grossN = Number(gross); // input = the quote (what the client pays); platform = no fee
-    if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
+    const earn = Number(gross); // input = the talent's take-home fee
+    if (!isFinite(earn) || earn <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
+    // client cases: platform adds 20% on top → the client pays earn / 0.8
+    const grossAmount = brief.source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossN, currency, intro, message: intro }),
+      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message: intro }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -555,16 +557,14 @@ function RoleAudition({
                 {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
               </select>
               <input type="number" min="0" className={`${inputCls} py-1.5`} value={gross} onChange={(e) => setGross(e.target.value)}
-                placeholder={tx('您的報價', '您的报价', 'Your quote')} />
+                placeholder={tx('您的酬勞', '您的酬劳', 'Your fee')} />
             </div>
             {(() => {
-              const fee = brief.source === 'client' ? 0.2 : 0; const grossN = Number(gross) || 0;
-              if (grossN <= 0) return null;
-              const net = Math.round((grossN * (1 - fee)) * 100) / 100;
-              const feeAmt = Math.round((grossN * fee) * 100) / 100;
-              return fee
-                ? <p className="text-[11px] text-gray-400">{tx('您實拿', '您实拿', 'You receive')} <span className="text-gray-200">{currency} {net}</span> · {tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}</p>
-                : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 報價即您的酬勞', '平台发案 · 报价即您的酬劳', 'Platform-posted — your quote is your fee')}</p>;
+              const isClient = brief.source === 'client'; const earn = Number(gross) || 0;
+              if (!isClient) return <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 不收取平台費', '平台发案 · 不收取平台费', 'Platform-posted — no platform fee')}</p>;
+              if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動計算)', '客户委托 · 平台另收 20% 费用(自动计算)', 'Client brief — 20% platform fee added (auto)')}</p>;
+              const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
+              return <p className="text-[11px] text-gray-400">{tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', '自动', 'auto')}）</p>;
             })()}
             <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
               placeholder={tx('報價說明 + 自我介紹', '报价说明 + 自我介绍', 'Pricing notes + intro')} />
@@ -625,10 +625,11 @@ function GeneralResponse({
     setErr('');
     if (!sampleUrl) return setErr(tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
+    const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossN, currency, intro, message: intro }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message: intro }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -679,16 +680,14 @@ function GeneralResponse({
           {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
         </select>
         <input type="number" min="0" className={`${inputCls} py-1.5`} value={gross} onChange={(e) => setGross(e.target.value)}
-          placeholder={tx('您的報價(整案/每句/每分鐘)', '您的报价(整案/每句/每分钟)', 'Your quote (per case / line / minute)')} />
+          placeholder={tx('您的酬勞(整案/每句/每分鐘)', '您的酬劳(整案/每句/每分钟)', 'Your fee (per case / line / minute)')} />
       </div>
       {(() => {
-        const fee = brief.source === 'client' ? 0.2 : 0; const grossN = Number(gross) || 0;
-        if (grossN <= 0) return <p className="text-xs text-gray-500">{fee ? tx('客戶委託 · 報價將扣除 20% 平台費。', '客户委托 · 报价将扣除 20% 平台费。', 'Client brief · a 20% platform fee applies to your quote.') : tx('平台發案 · 報價即您的酬勞。', '平台发案 · 报价即您的酬劳。', 'Platform-posted — your quote is your fee.')}</p>;
-        const net = Math.round((grossN * (1 - fee)) * 100) / 100;
-        const feeAmt = Math.round((grossN * fee) * 100) / 100;
-        return fee
-          ? <p className="text-xs text-gray-400">{tx('您實拿', '您实拿', 'You receive')} <span className="text-gray-200">{currency} {net}</span> · {tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}</p>
-          : <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 報價即您的酬勞。', '平台发案 · 报价即您的酬劳。', 'Platform-posted — your quote is your fee.')}</p>;
+        const isClient = brief.source === 'client'; const earn = Number(gross) || 0;
+        if (!isClient) return <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 不收取平台費', '平台发案 · 不收取平台费', 'Platform-posted — no platform fee')}</p>;
+        if (earn <= 0) return <p className="text-xs text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動計算)', '客户委托 · 平台另收 20% 费用(自动计算)', 'Client brief — 20% platform fee added (auto)')}</p>;
+        const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
+        return <p className="text-xs text-gray-400">{tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', '自动', 'auto')}）</p>;
       })()}
       <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
         placeholder={tx('報價說明 + 自我介紹(計價方式、修改政策、為何適合)', '报价说明 + 自我介绍(计价方式、修改政策、为何适合)', 'Pricing notes + intro (how you charge, revisions, why you fit)')} />

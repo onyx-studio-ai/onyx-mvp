@@ -210,7 +210,7 @@ export default function AdminMarketplace() {
                     </button>
                   )}
                 </div>
-                {/* inline 報酬 edit */}
+                {/* inline 報酬 edit + full case edit */}
                 <div className="flex items-center gap-2 mt-2 text-sm">
                   <span className="text-gray-500 text-xs">報酬</span>
                   {editRate?.id === b.id ? (
