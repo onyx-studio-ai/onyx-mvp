@@ -28,7 +28,7 @@ async function notifyMatchingTalents(db: ReturnType<typeof getSupabaseServiceCli
   if (!isZh && !isEn) return 0; // unknown language → skip auto-notify
   const { data: talents } = await db.from('talents')
     .select('email, languages, native_languages')
-    .eq('type', 'voice_actor').eq('is_active', true)
+    .eq('type', 'VO').eq('is_active', true)
     .not('email', 'is', null)
     .limit(600);
   const re = isZh ? ZH_RE : EN_RE;

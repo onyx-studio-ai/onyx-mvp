@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     if (!talentId) {
       const { data: t, error: tErr } = await db.from('talents')
-        .insert({ type: 'voice_actor', name: invite.name || email, email, is_active: false })
+        .insert({ type: 'VO', name: invite.name || email, email, is_active: false })
         .select('id').single();
       if (tErr || !t) {
         console.error('[casting] talent create failed:', tErr?.code, tErr?.message);
