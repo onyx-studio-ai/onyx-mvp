@@ -59,7 +59,7 @@ const LICENSE: Opt[] = [
   { v: '3 years', tw: '三年', cn: '三年' },
   { v: '5 years', tw: '五年', cn: '五年' },
   { v: 'Perpetual / Buyout', tw: '永久 / 買斷', cn: '永久 / 买断' },
-  { v: 'Not sure', tw: '其他 / 不確定', cn: '其他 / 不确定' },
+  { v: 'Other', tw: '其他(自行填寫)', cn: '其他(自行填写)' },
 ];
 // Base language (accent captured separately, below). The world has too many
 // languages to enumerate — "Other" lets the client type their own.
@@ -154,7 +154,9 @@ export default function Hire() {
   const [liveSessionOther, setLiveSessionOther] = useState('');
   const [media, setMedia] = useState('');
   const [territory, setTerritory] = useState('');
+  const [territoryOther, setTerritoryOther] = useState('');
   const [license, setLicense] = useState('');
+  const [licenseOther, setLicenseOther] = useState('');
   // language + accent (free-text fallback)
   const [language, setLanguage] = useState('');
   const [languageOther, setLanguageOther] = useState('');
@@ -270,13 +272,19 @@ export default function Hire() {
   const submit = async () => {
     setError('');
     if (!form.email || !emailOk) return setError(tx('請填寫有效的 Email', '请填写有效的 Email', 'Please enter a valid email'));
+    if (!form.name.trim()) return setError(tx('請填寫您的稱呼', '请填写您的称呼', 'Please enter your name'));
+    if (!form.title.trim()) return setError(tx('請填寫案件標題', '请填写案件标题', 'Please enter a project title'));
     if (!contentType) return setError(tx('請選擇案件類型', '请选择案件类型', 'Please choose a project type'));
     if (!media) return setError(tx('請選擇播放媒體', '请选择播放媒体', 'Please choose the media'));
     if (!territory) return setError(tx('請選擇播放地區', '请选择播放地区', 'Please choose the territory'));
+    if (territory === 'Other' && !territoryOther.trim()) return setError(tx('請填寫播放地區', '请填写播放地区', 'Please specify the territory'));
     if (!license) return setError(tx('請選擇授權期間', '请选择授权期间', 'Please choose the license term'));
+    if (license === 'Other' && !licenseOther.trim()) return setError(tx('請填寫授權期間', '请填写授权期间', 'Please specify the license term'));
     if (!language) return setError(tx('請選擇語言', '请选择语言', 'Please choose the language'));
     if (language === '__other__' && !languageOther.trim()) return setError(tx('請填寫語言', '请填写语言', 'Please specify the language'));
     if (accent === '__other__' && !accentOther.trim()) return setError(tx('請填寫口音', '请填写口音', 'Please specify the accent'));
+    if (maleVoices === '0' && femaleVoices === '0') return setError(tx('請選擇需要幾位配音員(至少 1 位)', '请选择需要几位配音员(至少 1 位)', 'Please choose how many voices (at least 1)'));
+    if (!form.length.trim()) return setError(tx('請填寫長度', '请填写长度', 'Please enter the length'));
     if (wantsLocalStudio && !studioRegion) return setError(tx('請選擇當地錄音室地區', '请选择当地录音室地区', 'Please choose the local studio region'));
     if (wantsLocalStudio && studioRegion === '__other__' && !studioRegionOther.trim()) return setError(tx('請填寫當地錄音室地區', '请填写当地录音室地区', 'Please specify the local studio region'));
     if (!form.budget.trim()) return setError(tx('請填預算金額', '请填预算金额', 'Please enter a budget amount'));
@@ -322,8 +330,8 @@ export default function Hire() {
           categories: contentType ? [contentType] : [],
           has_singing: hasSinging,
           media_scope: media,
-          territory,
-          license_term: license,
+          territory: territory === 'Other' ? (territoryOther.trim() || 'Other') : territory,
+          license_term: license === 'Other' ? (licenseOther.trim() || 'Other') : license,
           // script (paste OR upload), typed as audition / final
           script_type: hasScript ? scriptType : '',
           script_text: scriptMode === 'paste' ? scriptText.trim() : '',
@@ -396,12 +404,12 @@ export default function Hire() {
 
         <div className="space-y-8">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-semibold mb-2">{tx('您的稱呼', '您的称呼', 'Your name')}</label><input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
+            <div><label className="block text-sm font-semibold mb-2">{tx('您的稱呼', '您的称呼', 'Your name')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
             <div><label className="block text-sm font-semibold mb-2">{tx('公司 / 品牌', '公司 / 品牌', 'Company / brand')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.company} onChange={(e) => set('company', e.target.value)} /></div>
           </div>
           <div><label className="block text-sm font-semibold mb-2">Email <span className="text-red-400">＊</span></label><input className={inputCls} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder={tx('我們會將報價回覆到這裡', '我们会将报价回复到这里', 'We’ll send the quote here')} /></div>
 
-          <div><label className="block text-sm font-semibold mb-2">{tx('案件標題', '案件标题', 'Project title')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder={tx('例:手機遊戲角色配音', '例:手机游戏角色配音', 'e.g. Mobile game character voiceover')} /></div>
+          <div><label className="block text-sm font-semibold mb-2">{tx('案件標題', '案件标题', 'Project title')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder={tx('例:手機遊戲角色配音', '例:手机游戏角色配音', 'e.g. Mobile game character voiceover')} /></div>
 
           <div>
             <label className="block text-sm font-semibold mb-2">{tx('案件類型', '案件类型', 'Project type')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('單選', '单选', 'Choose one')}</span></label>
@@ -434,8 +442,16 @@ export default function Hire() {
           ) : (
             <>
               <div><label className="block text-sm font-semibold mb-2">{tx('播放媒體', '播放媒体', 'Media')} <span className="text-red-400">＊</span></label><Select value={media} onChange={setMedia} opts={MEDIA} /></div>
-              <div><label className="block text-sm font-semibold mb-2">{tx('播放地區', '播放地区', 'Territory')} <span className="text-red-400">＊</span></label><Select value={territory} onChange={setTerritory} opts={TERRITORY} /></div>
-              <div><label className="block text-sm font-semibold mb-2">{tx('授權期間', '授权期间', 'License term')} <span className="text-red-400">＊</span></label><Select value={license} onChange={setLicense} opts={LICENSE} /></div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">{tx('播放地區', '播放地区', 'Territory')} <span className="text-red-400">＊</span></label>
+                <Select value={territory} onChange={setTerritory} opts={TERRITORY} />
+                {territory === 'Other' && <input className={`${inputCls} mt-2`} value={territoryOther} onChange={(e) => setTerritoryOther(e.target.value)} placeholder={tx('請填寫播放地區,例:東南亞、日本+韓國', '请填写播放地区,例:东南亚、日本+韩国', 'Specify the territory, e.g. SE Asia, Japan + Korea')} />}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">{tx('授權期間', '授权期间', 'License term')} <span className="text-red-400">＊</span></label>
+                <Select value={license} onChange={setLicense} opts={LICENSE} />
+                {license === 'Other' && <input className={`${inputCls} mt-2`} value={licenseOther} onChange={(e) => setLicenseOther(e.target.value)} placeholder={tx('請填寫授權期間,例:兩年、活動期間', '请填写授权期间,例:两年、活动期间', 'Specify the term, e.g. 2 years, campaign period')} />}
+              </div>
 
               {/* Language + accent (accent optional; free-text fallback for both) */}
               <div className="grid grid-cols-2 gap-4">
@@ -453,7 +469,7 @@ export default function Hire() {
 
               {/* How many voices — by gender. 0 = none of that gender. */}
               <div>
-                <label className="block text-sm font-semibold mb-2">{tx('需要幾位配音員', '需要几位配音员', 'How many voices')} <span className="text-xs text-gray-500">{tx('選填 · 各性別填人數,沒有就留 0', '选填 · 各性别填人数,没有就留 0', 'Optional · count per gender, 0 if none')}</span></label>
+                <label className="block text-sm font-semibold mb-2">{tx('需要幾位配音員', '需要几位配音员', 'How many voices')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('各性別填人數,沒有就留 0', '各性别填人数,没有就留 0', 'count per gender, 0 if none')}</span></label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-300 w-12 shrink-0">{tx('男聲', '男声', 'Male')}</span>
@@ -472,7 +488,7 @@ export default function Hire() {
 
               {/* Length by minutes OR words */}
               <div>
-                <label className="block text-sm font-semibold mb-2">{tx('長度', '长度', 'Length')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
+                <label className="block text-sm font-semibold mb-2">{tx('長度', '长度', 'Length')} <span className="text-red-400">＊</span></label>
                 <div className="flex items-center gap-2">
                   <input type="number" min="0" className={`${inputCls} flex-1`} value={form.length} onChange={(e) => set('length', e.target.value)} placeholder={tx('數量', '数量', 'Amount')} />
                   <div className="flex">
