@@ -1114,6 +1114,77 @@ export function castingNotifyEmail(p: { title: string; caseCode?: string; langua
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, layoutLocale) };
 }
 
+/** Invite a specific person (by email, no account needed) to audition for a casting
+ *  call via their personal link — branded, consistent with our other emails. */
+export function castingInviteEmail(p: { title?: string; link: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const title = mpEsc(p.title || '');
+  const strong = `<strong style="color:#f3f4f6;">${title || (L === 'en' ? 'a voiceover audition' : '配音試音案')}</strong>`;
+  const C = {
+    tw: { subject: `Onyx Studios · 試音邀請${title ? ` —— ${title}` : ''}`, headline: '試音邀請', sub: '邀請您參與一個配音試音案', card: title || '配音試音案',
+      l1: `Onyx Studios 誠摯邀請您試音 ——「${strong}」。`,
+      l2: '點下方按鈕即可<strong style="color:#f3f4f6;">直接試音,免註冊、免密碼</strong>。您可以先查看案件內容,有空再回來上傳;隨時點同一條連結都能回到原進度。',
+      note: '這是您專屬的試音連結,建議保留此信,方便日後回來上傳。', cta: '前往試音', sign: 'Onyx Studios 配音團隊 敬上' },
+    cn: { subject: `Onyx Studios · 试音邀请${title ? ` —— ${title}` : ''}`, headline: '试音邀请', sub: '邀请您参与一个配音试音案', card: title || '配音试音案',
+      l1: `Onyx Studios 诚挚邀请您试音 ——「${strong}」。`,
+      l2: '点下方按钮即可<strong style="color:#f3f4f6;">直接试音,免注册、免密码</strong>。您可以先查看案件内容,有空再回来上传;随时点同一条链接都能回到原进度。',
+      note: '这是您专属的试音链接,建议保留此邮件,方便日后回来上传。', cta: '前往试音', sign: 'Onyx Studios 配音团队 敬上' },
+    en: { subject: `Onyx Studios · Audition invitation${title ? ` — ${title}` : ''}`, headline: 'Audition invitation', sub: 'You’re invited to audition for a voiceover casting', card: title || 'Voiceover casting',
+      l1: `Onyx Studios would be glad to have you audition for ${strong}.`,
+      l2: 'Use the button below to <strong style="color:#f3f4f6;">audition directly — no sign-up, no password</strong>. You can review the brief first and come back to upload later; the same link always returns you to where you left off.',
+      note: 'This is your personal audition link — keep this email so you can return to upload.', cta: 'Go to audition', sign: 'The Onyx Studios Talent Team' },
+  }[L];
+  const content = `
+    ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
+    ${bodyCard(C.card, `${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}
+    ${ctaRow(C.cta, p.link, BRAND_GREEN)}
+    ${bodyCard('', `<p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${C.note}</p>`)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
+/** Email verification code (OTP) for the application / sign-in flows. */
+export function verificationCodeEmail(p: { code: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const code = mpEsc(p.code);
+  const C = {
+    tw: { subject: `Onyx Studios 驗證碼:${code}`, headline: '電子郵件驗證', sub: '請使用以下驗證碼完成驗證', card: '驗證碼', l1: '請在頁面輸入以下 6 位數驗證碼。驗證碼將於 10 分鐘後失效。', note: '若您並未發起此驗證,請忽略此信。' },
+    cn: { subject: `Onyx Studios 验证码:${code}`, headline: '电子邮件验证', sub: '请使用以下验证码完成验证', card: '验证码', l1: '请在页面输入以下 6 位数验证码。验证码将在 10 分钟后失效。', note: '若您并未发起此验证,请忽略此邮件。' },
+    en: { subject: `Your Onyx Studios verification code: ${code}`, headline: 'Email verification', sub: 'Use the code below to verify your email', card: 'Verification code', l1: 'Enter the 6-digit code below to continue. It expires in 10 minutes.', note: 'If you didn’t request this, you can safely ignore this email.' },
+  }[L];
+  const codeBlock = `<p style="font-size:30px;font-weight:700;letter-spacing:8px;color:#f3f4f6;margin:4px 0 14px;text-align:center;">${code}</p>`;
+  const content = `
+    ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
+    ${bodyCard(C.card, `${codeBlock}<p style="color:#d1d5db;font-size:14px;line-height:1.7;margin:0 0 12px;text-align:center;">${C.l1}</p><p style="color:#9ca3af;font-size:13px;margin:0;text-align:center;">${C.note}</p>`)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
+/** Admin-composed one-off message to a user — wraps the admin's plain-text body in
+ *  the unified branded layout (logo header + footer) so manual sends match the rest. */
+export function adminMessageEmail(p: { subject: string; body: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const paras = (p.body || '').split('\n').map((line) => `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 12px;">${line.trim() ? mpEsc(line) : '&nbsp;'}</p>`).join('');
+  const content = `
+    ${headlineBlock(mpEsc(p.subject), '', BRAND_GREEN)}
+    ${bodyCard('', paras)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: p.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
+/** Internal (Onyx) notification that a won talent uploaded their finished delivery. */
+export function deliveryUploadedEmail(p: { talentName: string; quoteId: string; url: string }): { subject: string; html: string } {
+  const content = `
+    ${headlineBlock('配音員交付已上傳 Delivery uploaded', '中選配音員已上傳完成音檔,請至後台接續製作。', BRAND_GREEN)}
+    ${infoCard('DELIVERY', [
+      { label: '配音員 Talent', value: mpEsc(p.talentName) },
+      { label: '報價 ID Quote', value: mpEsc(p.quoteId) },
+    ])}
+    ${ctaRow('下載交付 Download', p.url, BRAND_GREEN)}
+    ${ctaRow('後台 Marketplace', `${SITE_URL}/admin/marketplace`, '#6b7280')}`;
+  return { subject: `配音員交付已上傳 · ${p.talentName}`, html: baseLayout(content) };
+}
+
 export function passwordResetEmail(p: { resetLink: string; locale?: string }): { subject: string; html: string } {
   const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
   const C = {

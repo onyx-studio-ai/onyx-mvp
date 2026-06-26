@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import { sendEmail } from '@/lib/mail';
+import { verificationCodeEmail } from '@/lib/mail-templates';
 
 /*
   Stateless email-verification OTP — no DB table / no migration.
@@ -22,23 +23,7 @@ function sign(email: string, code: string, exp: number): string {
   return createHmac('sha256', SECRET).update(`${email.toLowerCase()}:${code}:${exp}`).digest('hex');
 }
 
-function codeEmail(code: string, locale?: string): { subject: string; html: string } {
-  const L = locale === 'zh-CN' ? 'cn' : locale?.startsWith('zh') ? 'tw' : 'en';
-  const t = {
-    tw: { subject: 'Onyx 報名驗證碼', line: '你的 Onyx 配音員報名驗證碼:', note: '10 分鐘內有效。若不是你本人操作,請忽略這封信。' },
-    cn: { subject: 'Onyx 报名验证码', line: '你的 Onyx 配音员报名验证码:', note: '10 分钟内有效。若不是你本人操作,请忽略这封信。' },
-    en: { subject: 'Your Onyx verification code', line: 'Your Onyx talent-application verification code:', note: 'Valid for 10 minutes. If this wasn’t you, please ignore this email.' },
-  }[L];
-  return {
-    subject: t.subject,
-    html: `<div style="font-family:system-ui,sans-serif;background:#000;color:#fff;padding:32px;border-radius:12px;max-width:420px;margin:auto;text-align:center;">
-      <img src="https://www.onyxstudios.ai/logo-email.png" alt="Onyx Studios" width="180" style="display:block;width:180px;max-width:60%;height:auto;margin:0 auto 24px;border:0;" />
-      <p style="color:#d1d5db;font-size:15px;margin:0 0 16px;">${t.line}</p>
-      <p style="font-size:34px;letter-spacing:8px;font-weight:700;color:#f59e0b;margin:0 0 16px;">${code}</p>
-      <p style="color:#6b7280;font-size:12px;margin:0;">${t.note}</p>
-    </div>`,
-  };
-}
+// Verification-code email now uses the shared branded template (verificationCodeEmail).
 
 export async function POST(request: NextRequest) {
   if (!SECRET) {
@@ -56,7 +41,7 @@ export async function POST(request: NextRequest) {
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     const exp = Date.now() + TTL_MS;
     const token = sign(email, code, exp);
-    const { subject, html } = codeEmail(code, typeof body.locale === 'string' ? body.locale : undefined);
+    const { subject, html } = verificationCodeEmail({ code, locale: typeof body.locale === 'string' ? body.locale : undefined });
     const res = await sendEmail({ category: 'HELLO', to: email, subject, html });
     if (!res.success) return NextResponse.json({ error: res.error || 'Failed to send code' }, { status: 502 });
     return NextResponse.json({ token, exp });

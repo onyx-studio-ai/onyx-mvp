@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
-import { quoteReceivedEmail } from '@/lib/mail-templates';
+import { quoteReceivedEmail, deliveryUploadedEmail } from '@/lib/mail-templates';
 
 /*
   POST /api/talent/quotes — a talent submits a quote on an open brief.
@@ -107,12 +107,9 @@ export async function PATCH(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!data) return NextResponse.json({ error: '只能為已採用的案件上傳交付' }, { status: 400 });
 
-    // Notify Onyx production that a delivery landed (best-effort).
-    sendEmail({
-      category: 'PRODUCTION', to: 'produce@onyxstudios.ai',
-      subject: `配音員交付已上傳 · ${talent.name}`,
-      html: `<p>配音員 <b>${talent.name}</b> 已上傳完成音檔。</p><p>報價 ID：${data.id}</p><p><a href="${deliveryUrl}">下載交付</a></p>`,
-    }).catch(() => {});
+    // Notify Onyx production that a delivery landed (best-effort, branded).
+    const dnote = deliveryUploadedEmail({ talentName: talent.name, quoteId: data.id, url: deliveryUrl });
+    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: dnote.subject, html: dnote.html }).catch(() => {});
 
     return NextResponse.json({ quote: data });
   } catch {

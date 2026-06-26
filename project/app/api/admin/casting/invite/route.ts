@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
+import { castingInviteEmail } from '@/lib/mail-templates';
 
 /*
   POST /api/admin/casting/invite — invite known voice actors to a casting call by
@@ -41,16 +42,8 @@ export async function POST(request: NextRequest) {
       if (error) continue;
     }
     const link = `${SITE}/zh-TW/casting/${token}`;
-    const html = `<div style="font-family:'PingFang TC',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#222;max-width:540px">
-<p>您好，</p>
-<p>Onyx Studios 邀請您試音 —— <strong>${brief.title || '配音試音案'}</strong>。</p>
-<p>點下面的連結即可<strong>直接試音，免註冊、免密碼</strong>。可以先看案子，之後有空再回來上傳 —— <strong>隨時點同一條連結都回得來</strong>，您的進度會保留。</p>
-<p><a href="${link}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px">前往試音 →</a></p>
-<p style="font-size:12px;color:#999">這是您專屬的連結，請保留這封信以便日後回來上傳。</p>
-<p style="margin-bottom:2px">Onyx Studios 配音團隊</p>
-<p style="margin-top:0;color:#666">onyxstudios.ai</p>
-</div>`;
-    await sendEmail({ category: 'HELLO', to: email, subject: `試音邀請 · ${brief.title || 'Onyx Studios'}`, html }).catch(() => {});
+    const mail = castingInviteEmail({ title: brief.title || undefined, link, locale: 'zh-TW' });
+    await sendEmail({ category: 'HELLO', to: email, subject: mail.subject, html: mail.html }).catch(() => {});
     invited++;
   }
   return NextResponse.json({ ok: true, invited });
