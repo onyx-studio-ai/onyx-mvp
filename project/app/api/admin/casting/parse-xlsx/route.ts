@@ -115,14 +115,17 @@ export async function POST(request: NextRequest) {
     const row = ws.getRow(rn);
     const rawName = colIdx.name ? String(row.getCell(colIdx.name).value ?? '').trim() : '';
     if (!rawName) continue;
-    const name = rawName.split(/\s|（|\(|:|：/)[0].trim();
-    // fold the character intro into personality (e.g. "理性 · 侦探") for richer context
-    const intro = get(row, 'intro').slice(0, 24);
-    const personality = [get(row, 'personality'), intro].filter(Boolean).join(' · ');
+    // Strip only trailing instruction notes (space / parens), KEEP colon names like
+    // 「顧冶皮膚2:疾速之風」.
+    const name = rawName.split(/\s|（|\(/)[0].trim();
+    // personality = ONE faithful column (角色介紹, else 性格特點) — no merging/embellishment.
+    const personality = (get(row, 'intro') || get(row, 'personality')).slice(0, 60);
     roles.push({
       name: tw(name), gender: get(row, 'gender'), age: get(row, 'age').replace(/[岁歲]/g, ''),
       personality: tw(personality), emotion: tw(get(row, 'emotion')).slice(0, 120), speed: tw(get(row, 'speed')).slice(0, 40),
-      sample_line: tw(colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : ''),
+      // 台詞 = the verbatim script the actor reads aloud — keep EXACTLY as the client
+      // wrote it (no 簡→繁 conversion, which mis-converts particles like 了→瞭).
+      sample_line: (colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : '').slice(0, 500),
       is_lead: /主角/.test(rawName),
     });
     rowOfRole[rn] = roles.length - 1;
