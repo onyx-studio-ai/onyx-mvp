@@ -54,9 +54,25 @@ const LICENSE: Opt[] = [
 ];
 const SCRIPT_STATUS: Opt[] = [
   { v: 'Final script ready', tw: '已有完整稿件', cn: '已有完整稿件' },
-  { v: 'Direction only', tw: '有方向,細節可討論', cn: '有方向,细节可讨论' },
-  { v: 'No script — match by demo', tw: '沒稿,聽既有 demo 抓 feel', cn: '没稿,听既有 demo 抓 feel' },
+  { v: 'Direction set, details to discuss', tw: '已有方向,細節可再討論', cn: '已有方向,细节可再讨论' },
+  { v: 'No script yet — match by demo', tw: '尚無稿件,先以試聽 Demo 確認方向', cn: '尚无稿件,先以试听 Demo 确认方向' },
 ];
+// Language / accent — a dropdown so clients don't free-type (fewer errors, faster).
+const LANGUAGES: Opt[] = [
+  { v: 'Chinese · Taiwan (Mandarin)', tw: '中文 · 台灣國語', cn: '中文 · 台湾国语' },
+  { v: 'Chinese · Mainland (Mandarin)', tw: '中文 · 大陸普通話', cn: '中文 · 大陆普通话' },
+  { v: 'Cantonese · Hong Kong', tw: '粵語 · 香港', cn: '粤语 · 香港' },
+  { v: 'Taiwanese Hokkien', tw: '台語 · 台灣閩南語', cn: '台语 · 台湾闽南语' },
+  { v: 'English · American', tw: '英文 · 美式', cn: '英文 · 美式' },
+  { v: 'English · British', tw: '英文 · 英式', cn: '英文 · 英式' },
+  { v: 'Japanese', tw: '日語', cn: '日语' },
+  { v: 'Korean', tw: '韓語', cn: '韩语' },
+  { v: 'Spanish', tw: '西班牙語', cn: '西班牙语' },
+  { v: 'French', tw: '法語', cn: '法语' },
+  { v: 'German', tw: '德語', cn: '德语' },
+  { v: 'Other (note in brief)', tw: '其他(請於說明欄註明)', cn: '其他(请于说明栏注明)' },
+];
+const CURRENCIES = ['USD', 'TWD', 'CNY', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
 
 const inputCls =
   'w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:border-amber-500/60 focus:outline-none placeholder:text-gray-600';
@@ -70,8 +86,9 @@ export default function Hire() {
   const lbl = (o: Opt) => (L === 'en' ? o.v : o[L]);
   const localePath = (p: string) => (locale === 'en' ? p : `/${locale}${p}`);
 
-  const [form, setForm] = useState({ name: '', company: '', email: '', language: '', length: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
+  const [form, setForm] = useState({ title: '', name: '', company: '', email: '', language: '', length: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const [budgetCurrency, setBudgetCurrency] = useState('USD');
   const [contentType, setContentType] = useState('');
   const [hasSinging, setHasSinging] = useState(false);
   const [wantsDirector, setWantsDirector] = useState(false);
@@ -103,6 +120,8 @@ export default function Hire() {
   }, []);
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
+  // a real link must start with http(s):// and have a domain — blocks "123" / "fdf"
+  const refUrlOk = !form.refUrl.trim() || /^https?:\/\/[^\s.]+\.[^\s]{2,}/i.test(form.refUrl.trim());
 
   const pickContent = (v: string) => { setRedirect(null); setContentType(v); };
   const pickAi = (a: (typeof AI_TYPES)[number]) => {
@@ -134,7 +153,8 @@ export default function Hire() {
     if (!license) return setError(tx('請選擇授權期間', '请选择授权期间', 'Please choose the license term'));
     if (!form.auditionDeadline.trim()) return setError(tx('請填試音 / Demo 截止', '请填试音 / Demo 截止', 'Please enter the audition deadline'));
     if (!form.deadline.trim()) return setError(tx('請填完成 / 交付截止', '请填完成 / 交付截止', 'Please enter the delivery deadline'));
-    if (!form.budget.trim()) return setError(tx('請填預算', '请填预算', 'Please enter a budget'));
+    if (!form.budget.trim()) return setError(tx('請填預算金額', '请填预算金额', 'Please enter a budget amount'));
+    if (!refUrlOk) return setError(tx('參考連結格式不正確,請貼完整網址(http(s)://…)或留空', '参考链接格式不正确,请贴完整网址(http(s)://…)或留空', 'Reference link must be a full URL (http(s)://…) or left blank'));
     if (!form.brief.trim()) return setError(tx('請簡述您的需求', '请简述您的需求', 'Please describe your project'));
     setSubmitting(true);
     try {
@@ -142,6 +162,10 @@ export default function Hire() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          title: form.title,
+          // budget carries its currency so the admin sees e.g. "Up to USD 500"
+          budget: `${budgetCurrency} ${form.budget.trim()}`,
+          budget_currency: budgetCurrency,
           // Prepend the requested talent into the brief so it's visible regardless
           // of schema, and also pass it as explicit fields.
           brief: requestedTalent ? `${tx('指定配音員', '指定配音员', 'Requested talent')}: ${requestedTalent}\n\n${form.brief}` : form.brief,
@@ -218,6 +242,8 @@ export default function Hire() {
           </div>
           <div><label className="block text-sm font-semibold mb-2">Email <span className="text-red-400">＊</span></label><input className={inputCls} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder={tx('我們會將報價回覆到這裡', '我们会将报价回复到这里', 'We’ll send the quote here')} /></div>
 
+          <div><label className="block text-sm font-semibold mb-2">{tx('案件標題', '案件标题', 'Project title')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder={tx('例:手機遊戲角色配音', '例:手机游戏角色配音', 'e.g. Mobile game character voiceover')} /></div>
+
           <div>
             <label className="block text-sm font-semibold mb-2">{tx('案件類型', '案件类型', 'Project type')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('單選', '单选', 'Choose one')}</span></label>
             <div>{CONTENT_TYPES.map((c) => (
@@ -253,12 +279,18 @@ export default function Hire() {
               <div><label className="block text-sm font-semibold mb-2">{tx('授權期間', '授权期间', 'License term')} <span className="text-red-400">＊</span></label><Select value={license} onChange={setLicense} opts={LICENSE} placeholder={tx('使用多久?', '使用多久?', 'How long?')} /></div>
               <div><label className="block text-sm font-semibold mb-2">{tx('稿件狀態', '稿件状态', 'Script status')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={scriptStatus} onChange={setScriptStatus} opts={SCRIPT_STATUS} placeholder={tx('有稿件嗎?', '有稿件吗?', 'Got a script?')} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-semibold mb-2">{tx('語言 / 口音', '语言 / 口音', 'Language / accent')}</label><input className={inputCls} value={form.language} onChange={(e) => set('language', e.target.value)} placeholder={tx('例:中文台灣 / 英文美國', '例:中文台湾 / 英文美国', 'e.g. Chinese (TW) / English (US)')} /></div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">{tx('語言 / 口音', '语言 / 口音', 'Language / accent')}</label>
+                  <select className={inputCls} value={form.language} onChange={(e) => set('language', e.target.value)}>
+                    <option value="" className="bg-zinc-900">{tx('請選擇', '请选择', 'Select')}</option>
+                    {LANGUAGES.map((o) => <option key={o.v} value={lbl(o)} className="bg-zinc-900">{lbl(o)}</option>)}
+                  </select>
+                </div>
                 <div><label className="block text-sm font-semibold mb-2">{tx('長度 / 字數', '长度 / 字数', 'Length / word count')}</label><input className={inputCls} value={form.length} onChange={(e) => set('length', e.target.value)} placeholder={tx('例:30 秒 / 約 200 字', '例:30 秒 / 约 200 字', 'e.g. 30 sec / ~200 words')} /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-semibold mb-2">{tx('試音 / Demo 截止', '试音 / Demo 截止', 'Audition / demo deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} placeholder={tx('例:6/15 前收試音', '例:6/15 前收试音', 'e.g. auditions by 6/15')} /></div>
-                <div><label className="block text-sm font-semibold mb-2">{tx('完成 / 交付截止', '完成 / 交付截止', 'Delivery deadline')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.deadline} onChange={(e) => set('deadline', e.target.value)} placeholder={tx('例:6/30 前交件', '例:6/30 前交件', 'e.g. final by 6/30')} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('試音 / Demo 截止', '试音 / Demo 截止', 'Audition / demo deadline')} <span className="text-red-400">＊</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('完成 / 交付截止', '完成 / 交付截止', 'Delivery deadline')} <span className="text-red-400">＊</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.deadline} onChange={(e) => set('deadline', e.target.value)} /></div>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-2">{tx('錄製需求', '录制需求', 'Recording options')} <span className="text-xs text-gray-500">{tx('選填 · 加值', '选填 · 加值', 'Optional · add-on')}</span></label>
@@ -279,13 +311,16 @@ export default function Hire() {
               <div>
                 <label className="block text-sm font-semibold mb-2">{tx('預算', '预算', 'Budget')} <span className="text-red-400">＊</span></label>
                 <div className="flex flex-wrap items-center gap-2">
-                  {([{ v: 'Up to', tw: '上限 Up to', cn: '上限 Up to' }, { v: 'Fixed', tw: '固定 Fixed', cn: '固定 Fixed' }] as Opt[]).map((o) => (
+                  {([{ v: 'Up to', tw: '預算上限', cn: '预算上限' }, { v: 'Fixed', tw: '固定預算', cn: '固定预算' }] as Opt[]).map((o) => (
                     <button key={o.v} type="button" onClick={() => setBudgetType(o.v)} className={pill(budgetType === o.v)}>{lbl(o)}</button>
                   ))}
-                  <input className={`${inputCls} flex-1 min-w-[160px] mb-2`} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('例:USD 500', '例:USD 500', 'e.g. USD 500')} />
+                  <select className={`${inputCls} w-24`} value={budgetCurrency} onChange={(e) => setBudgetCurrency(e.target.value)}>
+                    {CURRENCIES.map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
+                  </select>
+                  <input type="number" min="0" className={`${inputCls} flex-1 min-w-[140px] mb-2`} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('金額', '金额', 'Amount')} />
                 </div>
               </div>
-              <div><label className="block text-sm font-semibold mb-2">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼您喜歡的聲音 / 參考 demo 連結', '贴您喜欢的声音 / 参考 demo 链接', 'Link to a voice / demo you like')} /></div>
+              <div><label className="block text-sm font-semibold mb-2">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} ${form.refUrl && !refUrlOk ? 'border-red-500/60' : ''}`} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼完整網址,例:https://…', '贴完整网址,例:https://…', 'Full URL, e.g. https://…')} />{form.refUrl && !refUrlOk && <p className="text-xs text-red-400 mt-1">{tx('請貼完整連結(http(s)://…)', '请贴完整链接(http(s)://…)', 'Enter a full URL (http(s)://…)')}</p>}</div>
               <div><label className="block text-sm font-semibold mb-2">{tx('需求說明 / 稿件', '需求说明 / 稿件', 'Brief / script')} <span className="text-red-400">＊</span></label><textarea className={`${inputCls} min-h-[120px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣、參考、稿件內容…越清楚我們越好媒合。', '用途、语气、参考、稿件内容…越清楚我们越好媒合。', 'Use case, tone, references, the script… the clearer, the better we can match.')} /></div>
 
               {error && <p className="text-sm text-red-400">{error}</p>}

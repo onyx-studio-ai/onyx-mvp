@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
           // talent take-home rate, then publishes it from the admin.
           kind: 'casting',
           status: 'reviewing',
+          title: b.title || null,
           client_email: email.toLowerCase(), // normalized for exact-match thread lookup
           client_name: b.name || null,
           company: b.company || null,
