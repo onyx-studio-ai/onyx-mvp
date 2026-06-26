@@ -296,9 +296,6 @@ export default function AdminMarketplace() {
                         <span className={`text-xs ${q.status === 'accepted' ? 'text-blue-700' : q.status === 'rejected' || q.status === 'withdrawn' ? 'text-gray-400' : 'text-green-700'}`}>{q.status}</span>
                         {['submitted', 'shortlisted'].includes(q.status) && (
                           <>
-                            {q.status === 'submitted' && (
-                              <button onClick={() => patch('quote', q.id, 'shortlisted')} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded px-2 py-0.5">入圍</button>
-                            )}
                             <button onClick={() => patch('quote', q.id, 'accepted')} className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded px-2 py-0.5">採用</button>
                             <button onClick={() => patch('quote', q.id, 'rejected')} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded px-2 py-0.5">婉拒</button>
                           </>
