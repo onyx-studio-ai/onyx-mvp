@@ -271,7 +271,7 @@ export default function NewCasting() {
               <p className="text-sm text-gray-300">一般配音案 · 配音員用平台現有 demo 或上傳 demo + 報價回應。平台不抽成。</p>
             ) : roles.length ? (
               <>
-                <p className="text-xs text-gray-500 mb-2">選一個(或多個)角色試音 · 平台不抽成,你報多少拿多少</p>
+                <p className="text-xs text-gray-400 mb-2">挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。</p>
                 <div className="space-y-3">
                   {roles.map((r, i) => (
                     <div key={i} className={`flex items-stretch rounded-xl border overflow-hidden ${r.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
@@ -288,14 +288,14 @@ export default function NewCasting() {
                           <p className="text-xs text-gray-500 mt-0.5 truncate">{[[r.gender, r.age].filter(Boolean).join('·'), r.personality].filter(Boolean).join(' · ')}</p>
                         )}
                         {r.sample_line && (
-                          <div className="mt-2">
-                            <p className="text-[10px] text-gray-500 mb-0.5 tracking-wide">台詞</p>
-                            <p className="text-xs text-gray-300 leading-relaxed border-l-2 border-white/15 pl-2 line-clamp-2">{r.sample_line}</p>
+                          <div className="mt-2 bg-white/[0.05] border border-white/10 rounded-lg p-2.5">
+                            <p className="text-[10px] text-amber-300/90 mb-1 tracking-wide">試音台詞 · 請唸這段錄音</p>
+                            <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap">{r.sample_line}</p>
                           </div>
                         )}
-                        <div className="flex items-center justify-between mt-2.5">
+                        <div className="flex items-center justify-between mt-3">
                           <span className="text-xs text-gray-500">0 人已試</span>
-                          <span className="text-xs bg-green-500/30 text-green-100/60 font-medium rounded-lg px-3 py-1">試音 →</span>
+                          <span className="text-sm bg-green-500/30 text-green-100/60 font-semibold rounded-lg px-4 py-1.5">上傳我的試音 →</span>
                         </div>
                       </div>
                     </div>

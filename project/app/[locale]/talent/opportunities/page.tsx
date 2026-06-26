@@ -255,7 +255,7 @@ function BriefCard({
             /* Per-role auditions. Pick a role → upload an audition for it. Full roles
                grey out (no count shown — we only nudge "try another"). One per role. */
             <div className="border-t border-white/10 pt-3">
-              <p className="text-xs text-gray-500 mb-2">{tx('選一個(或多個)角色試音 · 平台不抽成,你報多少拿多少', '选一个(或多个)角色试音 · 平台不抽成,你报多少拿多少', 'Pick a role (or several) to audition · no platform fee, you keep what you quote')}</p>
+              <p className="text-xs text-gray-400 mb-2">{tx('挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。', '挑角色 → 念出它的台词、录音 → 上传 + 报价。可试多角,平台不抽成、你报多少拿多少。', 'Pick a role → read its line aloud and record → upload + quote. Audition several; no platform fee, you keep what you quote.')}</p>
               <div className="space-y-3">
                 {(brief.roles || []).map((ro, i) => (
                   <RoleAudition
@@ -421,21 +421,21 @@ function RoleAudition({
         {(meta || role.personality) && <p className="text-xs text-gray-500 mt-0.5 truncate">{[meta, role.personality].filter(Boolean).join(' · ')}</p>}
 
         {role.sample_line && (
-          <div className="mt-2">
-            <p className="text-[10px] text-gray-500 mb-0.5 tracking-wide">{tx('台詞', '台词', 'Line')}</p>
-            <p className={`text-xs text-gray-300 leading-relaxed border-l-2 border-white/15 pl-2 select-none ${open ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}
+          <div className="mt-2 bg-white/[0.05] border border-white/10 rounded-lg p-2.5">
+            <p className="text-[10px] text-amber-300/90 mb-1 tracking-wide">{tx('試音台詞 · 請唸這段錄音', '试音台词 · 请念这段录音', 'Audition line — read this aloud')}</p>
+            <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap select-none"
               style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
               {role.sample_line}
             </p>
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-2.5">
+        <div className="flex items-center justify-between mt-3">
           <span className={`text-xs ${isPopular ? 'text-amber-300' : 'text-gray-500'}`}>
             {count} {tx('人已試', '人已试', 'auditioned')}{isPopular && tx(' · 熱門', ' · 热门', ' · popular')}
           </span>
-          <button onClick={() => setOpen((o) => !o)} className="text-xs bg-green-500 hover:bg-green-400 text-black font-medium rounded-lg px-3 py-1 transition">
-            {open ? tx('收起', '收起', 'Close') : tx('試音 →', '试音 →', 'Audition →')}
+          <button onClick={() => setOpen((o) => !o)} className="text-sm bg-green-500 hover:bg-green-400 text-black font-semibold rounded-lg px-4 py-1.5 transition">
+            {open ? tx('收起', '收起', 'Close') : tx('上傳我的試音 →', '上传我的试音 →', 'Upload my audition →')}
           </button>
         </div>
         {isPopular && !open && (
