@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resolveCaller, threadRole } from '@/lib/marketplace-auth';
 import { sendEmail } from '@/lib/mail';
 import { newMessageEmail } from '@/lib/mail-templates';
+import { sanitizeMessage } from '@/lib/message-filter';
 
 /*
   Thread messages for a (brief, talent) pairing.
@@ -44,9 +45,11 @@ export async function POST(request: NextRequest) {
   if (!c) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   try {
     const { brief_id: briefId, talent_id: talentId, body: rawBody } = await request.json();
-    const body = String(rawBody || '').trim().slice(0, 4000);
+    const raw = String(rawBody || '').trim().slice(0, 4000);
     if (!briefId || !talentId) return NextResponse.json({ error: 'brief_id and talent_id are required' }, { status: 400 });
-    if (!body) return NextResponse.json({ error: 'Message cannot be empty' }, { status: 400 });
+    if (!raw) return NextResponse.json({ error: 'Message cannot be empty' }, { status: 400 });
+    // Redact off-platform contact details (links / emails / phone) before storing.
+    const { clean: body, redacted } = sanitizeMessage(raw);
 
     const role = await threadRole(c, briefId, talentId);
     if (!role) return NextResponse.json({ error: 'Not a participant in this thread' }, { status: 403 });
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
       sendEmail({ category: 'PRODUCTION', to, subject: note.subject, html: note.html }).catch(() => {});
     }
 
-    return NextResponse.json({ message: msg });
+    return NextResponse.json({ message: msg, redacted });
   } catch (err) {
     console.error('[marketplace/messages] POST error:', err);
     return NextResponse.json({ error: 'Could not send message' }, { status: 500 });

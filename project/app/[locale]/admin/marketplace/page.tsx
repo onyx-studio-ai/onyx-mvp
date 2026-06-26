@@ -187,6 +187,8 @@ export default function AdminMarketplace() {
                 <div className="flex items-center gap-2">
                   <input readOnly value={`${SITE}/casting/join/${b.id}`} onFocus={(e) => e.target.select()}
                     className="flex-1 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 font-mono" />
+                  <a href={`/casting/preview/${b.id}`} target="_blank" rel="noopener noreferrer"
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded px-2.5 py-1 whitespace-nowrap" title="以配音員視角預覽前台(唯讀)">👁 預覽前台</a>
                   <button onClick={() => { navigator.clipboard?.writeText(`${SITE}/casting/join/${b.id}`); setCopiedId(b.id); setTimeout(() => setCopiedId(null), 1500); }}
                     className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded px-2.5 py-1 whitespace-nowrap">{copiedId === b.id ? '已複製 ✓' : '🔗 複製試音連結'}</button>
                   {b.status === 'open' && (
