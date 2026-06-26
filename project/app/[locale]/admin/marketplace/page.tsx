@@ -8,6 +8,7 @@
 */
 
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { caseCode } from '@/lib/casting';
 
 const SITE = 'https://www.onyxstudios.ai';
@@ -109,14 +110,14 @@ export default function AdminMarketplace() {
         body: JSON.stringify({ id: b.id, send: false }),
       }).then((r) => r.json());
       const n = pre.notified || 0;
-      if (!n) { alert('沒有符合語言的配音員可通知(檢查案件語言是否中文/英文)。'); return; }
+      if (!n) { toast.error('沒有符合語言的配音員可通知(檢查案件語言是否中文/英文)。'); return; }
       if (!confirm(`「${b.title || caseCode(b)}」符合 ${n} 位配音員。\n確定現在寄出試音通知信?`)) return;
       const res = await fetch('/api/admin/casting', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ id: b.id, send: true }),
       }).then((r) => r.json());
-      alert(res.sent ? `已寄出 ${res.notified} 封通知信 ✓` : '寄送失敗,請稍後再試');
-    } catch { alert('寄送失敗,請稍後再試'); } finally { setNotifying(null); }
+      if (res.sent) toast.success(`已寄出 ${res.notified} 封通知信`); else toast.error('寄送失敗,請稍後再試');
+    } catch { toast.error('寄送失敗,請稍後再試'); } finally { setNotifying(null); }
   }
 
   async function toOrder(b: Brief) {
@@ -127,7 +128,7 @@ export default function AdminMarketplace() {
     if (isPlatform) {
       clientEmail = (window.prompt('平台發案：請輸入這筆訂單的客戶 email（用於帳務與交付通知）：') || '').trim();
       if (!clientEmail) return;
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) { alert('email 格式不正確'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) { toast.error('email 格式不正確'); return; }
     }
     if (!confirm(`將「${b.title || caseCode(b)}」轉成製作單?\n會進入「訂單」系統管理製作與交付,此試音案隨之結案。`)) return;
     try {
@@ -136,10 +137,10 @@ export default function AdminMarketplace() {
         body: JSON.stringify({ briefId: b.id, clientEmail: clientEmail || undefined }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(j.error || '建單失敗'); return; }
-      alert(`已建立製作單 ${j.order_number} ✓\n請到「訂單」管理製作、交付;客戶也會在自己的後台看到。`);
+      if (!res.ok) { toast.error(j.error || '建單失敗'); return; }
+      toast.success(`已建立製作單 ${j.order_number} —— 請到「訂單」管理製作與交付`);
       load();
-    } catch { alert('建單失敗,請稍後再試'); }
+    } catch { toast.error('建單失敗,請稍後再試'); }
   }
 
   async function saveRate(id: string, val: string) {

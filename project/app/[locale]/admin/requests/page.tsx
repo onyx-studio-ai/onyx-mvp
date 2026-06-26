@@ -9,6 +9,7 @@
 */
 
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { caseCode } from '@/lib/casting';
 
 type Brief = {
@@ -69,8 +70,8 @@ export default function AdminRequests() {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ kind: 'brief', id, status }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => ({})); alert(j.error || '更新失敗,請稍後再試'); }
-    } catch { alert('網路錯誤,請稍後再試'); } finally { setBusy(null); }
+      if (!res.ok) { const j = await res.json().catch(() => ({})); toast.error(j.error || '更新失敗,請稍後再試'); }
+    } catch { toast.error('網路錯誤,請稍後再試'); } finally { setBusy(null); }
     load();
   }
 
