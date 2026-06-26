@@ -54,6 +54,8 @@ type Quote = {
   message: string | null;
   status: string;
   created_at: string;
+  role_name?: string | null;
+  sample_url?: string | null;
   talents?: { name: string; email: string } | null;
 };
 
@@ -271,16 +273,18 @@ export default function AdminMarketplace() {
                 const tkey = `${b.id}:${q.talent_id}`;
                 return (
                   <div key={q.id}>
-                    <div className="flex items-center justify-between gap-3 text-sm bg-gray-50 rounded-lg px-3 py-2">
+                    <div className="bg-gray-50 rounded-lg px-3 py-2">
+                    <div className="flex items-center justify-between gap-3 text-sm">
                       <div className="min-w-0">
                         <span className="text-gray-800">{q.talents?.name || '配音員'}</span>
-                        {b.kind === 'casting' ? (
-                          <span className="text-gray-500 ml-2">報價 {q.currency} {q.gross_amount} <span className="text-gray-400">(平台不抽成)</span></span>
-                        ) : (
+                        {q.role_name && <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{q.role_name}</span>}
+                        {q.commission_rate > 0 ? (
                           <span className="text-gray-500 ml-2">
-                            客戶付 {q.currency} {q.gross_amount} · 淨得 {q.currency} {q.net_amount}{' '}
-                            <span className="text-gray-400">({Math.round(q.commission_rate * 100)}%)</span>
+                            客戶付 {q.currency} {q.gross_amount} · 配音員淨得 {q.currency} {q.net_amount}{' '}
+                            <span className="text-gray-400">(抽 {Math.round(q.commission_rate * 100)}%)</span>
                           </span>
+                        ) : (
+                          <span className="text-gray-500 ml-2">報價 {q.currency} {q.gross_amount} <span className="text-gray-400">(平台不抽成)</span></span>
                         )}
                         {q.message && <p className="text-xs text-gray-500 truncate">{q.message}</p>}
                       </div>
@@ -297,6 +301,10 @@ export default function AdminMarketplace() {
                           </>
                         )}
                       </div>
+                    </div>
+                    {q.sample_url
+                      ? <audio controls src={q.sample_url} className="w-full h-9 mt-2" />
+                      : <p className="text-xs text-gray-400 mt-1">(無試音音檔)</p>}
                     </div>
                     {openThread === tkey && <AdminThread briefId={b.id} talentId={q.talent_id} />}
                   </div>
