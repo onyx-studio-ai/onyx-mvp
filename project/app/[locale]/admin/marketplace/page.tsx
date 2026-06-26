@@ -211,6 +211,9 @@ export default function AdminMarketplace() {
                       {notifying === b.id ? '處理中…' : '📣 通知配音員'}
                     </button>
                   )}
+                  {quotesFor(b.id).some((q) => q.sample_url) && (
+                    <a href={`/api/admin/casting/${b.id}/download`} className="text-xs bg-blue-600 hover:bg-blue-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title="打包下載全部試音音檔(檔名:角色_配音員)">⬇️ 下載全部試音</a>
+                  )}
                 </div>
                 {/* inline 報酬 edit + full case edit */}
                 <div className="flex items-center gap-2 mt-2 text-sm">
