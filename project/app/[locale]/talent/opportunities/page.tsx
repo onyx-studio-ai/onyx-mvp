@@ -16,6 +16,7 @@ import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
+import { toMp3 } from '@/lib/to-mp3';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
@@ -439,9 +440,10 @@ function RoleAudition({
 
   const meta = [role.gender, role.age].filter(Boolean).join('·');
 
-  async function uploadAudio(file: File) {
+  async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
     try {
+      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
       const u = await fetch('/api/talent/audition-upload', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ fileName: file.name }),
@@ -589,9 +591,10 @@ function GeneralResponse({
   const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
   const grossN = Number(gross);
 
-  async function uploadAudio(file: File) {
+  async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
     try {
+      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
       const u = await fetch('/api/talent/audition-upload', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ fileName: file.name }),

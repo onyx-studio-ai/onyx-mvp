@@ -12,6 +12,7 @@ import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { toMp3 } from '@/lib/to-mp3';
 
 const CURRENCIES = ['CNY', 'TWD', 'USD', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
@@ -160,9 +161,10 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  async function uploadAudio(file: File) {
+  async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
     try {
+      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
       const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json();
       if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
@@ -266,9 +268,10 @@ function GuestGeneral({ token, done, closed, tx, onDone }: {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  async function uploadAudio(file: File) {
+  async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
     try {
+      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
       const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json();
       if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
