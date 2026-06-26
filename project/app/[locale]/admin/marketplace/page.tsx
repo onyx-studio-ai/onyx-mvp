@@ -117,6 +117,20 @@ export default function AdminMarketplace() {
     } catch { alert('寄送失敗,請稍後再試'); } finally { setNotifying(null); }
   }
 
+  async function toOrder(b: Brief) {
+    if (!confirm(`將「${b.title || caseCode(b)}」轉成製作單?\n會進入「訂單」系統管理製作與交付,此試音案隨之結案。`)) return;
+    try {
+      const res = await fetch('/api/admin/casting/to-order', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ briefId: b.id }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { alert(j.error || '建單失敗'); return; }
+      alert(`已建立製作單 ${j.order_number} ✓\n請到「訂單」管理製作、交付;客戶也會在自己的後台看到。`);
+      load();
+    } catch { alert('建單失敗,請稍後再試'); }
+  }
+
   async function saveRate(id: string, val: string) {
     await fetch('/api/admin/marketplace', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -259,6 +273,14 @@ export default function AdminMarketplace() {
               {b.deadline && <span>交付截止 {b.deadline}</span>}
               {b.script_status && <span>稿件 {b.script_status}</span>}
             </div>
+
+            {/* awarded → create the production order (client cases) */}
+            {b.status === 'awarded' && b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (
+              <div className="mb-3 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                <span className="text-xs text-blue-800">已採用配音員 —— 接著建立製作單,進訂單系統管理錄製與交付。</span>
+                <button onClick={() => toOrder(b)} className="ml-auto text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg px-3 py-1.5 whitespace-nowrap">→ 建立製作單</button>
+              </div>
+            )}
 
             {/* brief status controls */}
             <div className="flex flex-wrap gap-2 mb-3">
