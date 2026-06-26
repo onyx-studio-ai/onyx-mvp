@@ -109,8 +109,10 @@ const VOICE_COUNTS: Opt3[] = [
   { v: '5+', tw: '5 位以上', cn: '5 位以上', en: '5+' },
 ];
 const LENGTH_UNITS: Opt3[] = [
-  { v: 'minutes', tw: '分鐘', cn: '分钟', en: 'minutes' },
-  { v: 'words', tw: '字數', cn: '字数', en: 'words' },
+  { v: 'seconds', tw: '秒', cn: '秒', en: 'sec' },
+  { v: 'minutes', tw: '分鐘', cn: '分钟', en: 'min' },
+  { v: 'hours', tw: '小時', cn: '小时', en: 'hr' },
+  { v: 'words', tw: '字', cn: '字', en: 'words' },
 ];
 const SCRIPT_TYPES: Opt3[] = [
   { v: 'audition', tw: '試音稿', cn: '试音稿', en: 'Audition script' },

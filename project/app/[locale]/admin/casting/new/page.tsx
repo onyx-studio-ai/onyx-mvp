@@ -32,6 +32,9 @@ const ACCENT_OPTS = ['', '中文 · 台灣國語', '中文 · 大陸普通話', 
 const STYLE_OPTS = ['', '對話自然', '旁白沉穩', '權威 / 正式', '溫暖', '活潑 / 年輕', '角色演繹', '不限', '其他'];
 const AGE_OPTS = ['', '兒童', '青少年', '青年', '中年', '熟齡', '全年齡 / 不限', '其他'];
 const optEl = (o: string) => <option key={o || '_'} value={o}>{o || '— 不指定 —'}</option>;
+// include an imported value as a selectable option even if it's not in the standard
+// list — so a client's free-text value (e.g. 香港 / 2年 / All Media) shows + persists.
+const optsWith = (opts: string[], val?: string) => (val && !opts.includes(val) ? [...opts, val] : opts);
 
 // 19 業界類別 → 對應的回應方式。roles = 分角色試音(遊戲/動畫/戲劇);
 // general = 單一聲音,配音員用平台現有 demo 或上傳 demo + 報價(廣告/旁白等)。
@@ -56,6 +59,22 @@ const CATEGORIES: { label: string; mode: 'roles' | 'general' }[] = [
   { label: '戲劇·角色 Drama', mode: 'roles' },
   { label: '角色配唱 Character Singing', mode: 'roles' },
 ];
+
+// /hire content_type (English key) → casting category label, so a client request
+// lands on the right category + mode instead of the 遊戲 default.
+const CT_MAP: Record<string, string> = {
+  Commercial: '廣告 Commercial', Narration: '旁白 Narration', Audiobook: '有聲書 Audiobook',
+  Corporate: '工商簡介 Corporate', 'E-Learning': '教育教學 E-Learning', Documentary: '紀錄片 Documentary',
+  Podcast: 'Podcast', IVR: '來電語音 IVR', Game: '遊戲 Video Game', Animation: '動畫 Animation',
+  'Film / Drama': '戲劇·角色 Drama',
+};
+function resolveCategory(ct?: string): string {
+  if (!ct) return '';
+  if (CT_MAP[ct]) return CT_MAP[ct];
+  const exact = CATEGORIES.find((c) => c.label === ct); if (exact) return exact.label;
+  const fuzzy = CATEGORIES.find((c) => c.label.includes(ct) || ct.includes(c.label));
+  return fuzzy ? fuzzy.label : '';
+}
 
 export default function NewCastingPage() {
   return <Suspense fallback={<main className="min-h-screen px-4 py-16 text-gray-500 text-sm">載入中…</main>}><NewCasting /></Suspense>;
@@ -124,13 +143,15 @@ function NewCasting() {
       setFromId(id);
       setFromClient({ name: bf.client_name, company: bf.company, email: bf.client_email, budget: bf.budget, budget_type: bf.budget_type, has_singing: bf.has_singing, wants_director: bf.wants_director, wants_live_session: bf.wants_live_session });
       if (bf.title) setTitle(bf.title);
-      if (bf.content_type) { const m = CATEGORIES.find((c) => c.label === bf.content_type || c.label.startsWith(bf.content_type)); if (m) pickCategory(m.label); }
+      { const cat = resolveCategory(bf.content_type); if (cat) pickCategory(cat); }
       if (bf.language) setLanguage(bf.language);
       if (bf.brief) setBrief(bf.brief);
-      // dropdowns: only set when the client's value is one of our options (else leave for admin)
-      if (USAGE_OPTS.includes(bf.media_scope)) setMediaScope(bf.media_scope);
-      if (TERRITORY_OPTS.includes(bf.territory)) setTerritory(bf.territory);
-      if (LICENSE_OPTS.includes(bf.license_term)) setLicenseTerm(bf.license_term);
+      // carry the client's values straight in — the selects render any non-standard
+      // value too (optsWith), so nothing is silently dropped or overwritten on publish.
+      if (bf.media_scope) setMediaScope(bf.media_scope);
+      if (bf.territory) setTerritory(bf.territory);
+      if (bf.license_term) setLicenseTerm(bf.license_term);
+      if (bf.accent) setAccent(bf.accent);
       if (bf.length) setScale(bf.length);
       if (bf.deadline) setDeadline(bf.deadline);
       if (bf.audition_deadline) setAuditionDeadline(bf.audition_deadline);
@@ -535,12 +556,12 @@ function NewCasting() {
           <Field label="交付截止(最終交件)"><input className={input} value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="例:7/15" /></Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="使用範圍"><select className={input} value={mediaScope} onChange={(e) => setMediaScope(e.target.value)}>{USAGE_OPTS.map(optEl)}</select></Field>
-          <Field label="地區"><select className={input} value={territory} onChange={(e) => setTerritory(e.target.value)}>{TERRITORY_OPTS.map(optEl)}</select></Field>
-          <Field label="授權期"><select className={input} value={licenseTerm} onChange={(e) => setLicenseTerm(e.target.value)}>{LICENSE_OPTS.map(optEl)}</select></Field>
+          <Field label="使用範圍"><select className={input} value={mediaScope} onChange={(e) => setMediaScope(e.target.value)}>{optsWith(USAGE_OPTS, mediaScope).map(optEl)}</select></Field>
+          <Field label="地區"><select className={input} value={territory} onChange={(e) => setTerritory(e.target.value)}>{optsWith(TERRITORY_OPTS, territory).map(optEl)}</select></Field>
+          <Field label="授權期"><select className={input} value={licenseTerm} onChange={(e) => setLicenseTerm(e.target.value)}>{optsWith(LICENSE_OPTS, licenseTerm).map(optEl)}</select></Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="口音"><select className={input} value={accent} onChange={(e) => setAccent(e.target.value)}>{ACCENT_OPTS.map(optEl)}</select></Field>
+          <Field label="口音"><select className={input} value={accent} onChange={(e) => setAccent(e.target.value)}>{optsWith(ACCENT_OPTS, accent).map(optEl)}</select></Field>
           <Field label="聲音風格"><select className={input} value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)}>{STYLE_OPTS.map(optEl)}</select></Field>
           <Field label="聲音年齡"><select className={input} value={voiceAge} onChange={(e) => setVoiceAge(e.target.value)}>{AGE_OPTS.map(optEl)}</select></Field>
         </div>
