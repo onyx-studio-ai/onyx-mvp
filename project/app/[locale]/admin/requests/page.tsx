@@ -57,6 +57,7 @@ export default function AdminRequests() {
   const [requests, setRequests] = useState<Brief[]>([]);
   const [phase, setPhase] = useState<'loading' | 'unauth' | 'ready'>('loading');
   const [busy, setBusy] = useState<string | null>(null);
+  const [openThread, setOpenThread] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/marketplace', { credentials: 'include' });
@@ -167,11 +168,59 @@ export default function AdminRequests() {
 
             <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">
               <a href={`/admin/casting/new?from=${b.id}`} className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3.5 py-1.5">開試音案 →</a>
-              <a href={`mailto:${b.client_email}?subject=Onyx Studios — 您的配音需求`} className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-lg px-3.5 py-1.5">回覆客戶</a>
+              <button onClick={() => setOpenThread(openThread === b.id ? null : b.id)} className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-lg px-3.5 py-1.5">{openThread === b.id ? '收合訊息' : '💬 回覆客戶'}</button>
               <button onClick={() => setStatus(b.id, 'closed')} disabled={busy === b.id} className="text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-600 border border-gray-200 rounded-lg px-3.5 py-1.5">標記已處理</button>
+            </div>
+
+            {openThread === b.id && <RequestThread briefId={b.id} />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type Msg = { id: string; sender_type: string; sender_name: string | null; body: string; created_at: string };
+
+// In-platform Onyx↔client thread on a request. Onyx replies as "Onyx Studios 製作團隊".
+function RequestThread({ briefId }: { briefId: string }) {
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const load = useCallback(async () => {
+    const r = await fetch(`/api/admin/requests/messages?brief_id=${briefId}`, { credentials: 'include' });
+    const j = await r.json().catch(() => ({}));
+    setMsgs(j.messages || []);
+  }, [briefId]);
+  useEffect(() => { load(); }, [load]);
+  async function send() {
+    const body = text.trim();
+    if (!body) return;
+    setSending(true);
+    try {
+      const r = await fetch('/api/admin/requests/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ brief_id: briefId, body }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast.error(j.error || '送出失敗'); return; }
+      setText(''); setMsgs((m) => [...m, j.message]);
+    } catch { toast.error('送出失敗,請稍後再試'); } finally { setSending(false); }
+  }
+  return (
+    <div className="mt-3 border-t border-gray-200 pt-3">
+      <p className="text-xs text-gray-500 mb-2">站內訊息 · 以「Onyx Studios 製作團隊」回覆;客戶會收到通知並在自己的後台看到。</p>
+      <div className="space-y-2 mb-3 max-h-72 overflow-y-auto">
+        {msgs.length === 0 && <p className="text-xs text-gray-400">尚無訊息。在下方輸入即可開始對話。</p>}
+        {msgs.map((m) => (
+          <div key={m.id} className={`flex ${m.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${m.sender_type === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
+              <div className={`text-[10px] mb-0.5 ${m.sender_type === 'admin' ? 'text-blue-100' : 'text-gray-500'}`}>{m.sender_name || (m.sender_type === 'admin' ? 'Onyx Studios' : '客戶')} · {(m.created_at || '').slice(0, 16).replace('T', ' ')}</div>
+              <p className="whitespace-pre-wrap">{m.body}</p>
             </div>
           </div>
         ))}
+      </div>
+      <div className="flex gap-2">
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm resize-y" placeholder="輸入回覆給客戶…" />
+        <button onClick={send} disabled={sending || !text.trim()} className="text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-lg px-4 self-end py-2">{sending ? '送出中…' : '送出'}</button>
       </div>
     </div>
   );

@@ -160,6 +160,55 @@ export default function ClientRequestDetail() {
           {canEdit && <button onClick={() => setEditing(true)} className="mt-4 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg px-5 py-2 text-sm">{tx('編輯需求', '编辑需求', 'Edit request')}</button>}
         </div>
       )}
+
+      <ClientThread id={id} token={token} tx={tx} />
     </>
+  );
+}
+
+type Msg = { id: string; sender_type: string; sender_name: string | null; body: string; created_at: string };
+
+// Client ↔ Onyx in-platform thread on this request (Onyx replies as a team).
+function ClientThread({ id, token, tx }: { id: string; token: string; tx: (tw: string, cn: string, en: string) => string }) {
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const load = useCallback(async () => {
+    if (!token) return;
+    const r = await fetch(`/api/client/requests/${id}/messages`, { headers: { Authorization: `Bearer ${token}` } });
+    const j = await r.json().catch(() => ({}));
+    setMsgs(j.messages || []);
+  }, [id, token]);
+  useEffect(() => { load(); }, [load]);
+  async function send() {
+    const body = text.trim();
+    if (!body) return;
+    setSending(true);
+    try {
+      const r = await fetch(`/api/client/requests/${id}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ body }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) { setText(''); setMsgs((m) => [...m, j.message]); }
+    } finally { setSending(false); }
+  }
+  return (
+    <div className="mt-6 bg-white/[0.02] border border-white/10 rounded-2xl p-5">
+      <h2 className="text-sm font-semibold mb-1">{tx('與 Onyx 對話', '与 Onyx 对话', 'Message Onyx')}</h2>
+      <p className="text-xs text-gray-500 mb-3">{tx('有問題或補充,直接在這裡與 Onyx 團隊聯繫。', '有问题或补充,直接在这里与 Onyx 团队联系。', 'Questions or updates? Talk to the Onyx team here.')}</p>
+      <div className="space-y-2 mb-3 max-h-80 overflow-y-auto">
+        {msgs.length === 0 && <p className="text-xs text-gray-500">{tx('尚無訊息。', '尚无消息。', 'No messages yet.')}</p>}
+        {msgs.map((m) => (
+          <div key={m.id} className={`flex ${m.sender_type === 'client' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${m.sender_type === 'client' ? 'bg-amber-500 text-black' : 'bg-white/10 text-gray-100'}`}>
+              <div className={`text-[10px] mb-0.5 ${m.sender_type === 'client' ? 'text-amber-900/70' : 'text-gray-400'}`}>{m.sender_type === 'admin' ? (m.sender_name || 'Onyx Studios') : tx('您', '您', 'You')} · {(m.created_at || '').slice(0, 16).replace('T', ' ')}</div>
+              <p className="whitespace-pre-wrap">{m.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} className={`${input} flex-1 resize-y`} placeholder={tx('輸入訊息…', '输入消息…', 'Type a message…')} />
+        <button onClick={send} disabled={sending || !text.trim()} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 self-end py-2 text-sm">{sending ? tx('送出中…', '送出中…', 'Sending…') : tx('送出', '送出', 'Send')}</button>
+      </div>
+    </div>
   );
 }
