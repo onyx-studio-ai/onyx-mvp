@@ -38,6 +38,13 @@ type Brief = {
   deadline: string | null;
   brief: string;
   requested_talent: string | null;
+  accent: string | null;
+  voices_needed: number | null;
+  gender_needs: string | null;
+  script_text: string | null;
+  script_file_url: string | null;
+  script_type: string | null;
+  local_studio_region: string | null;
   status: string;
   created_at: string;
 };
@@ -126,16 +133,29 @@ export default function AdminRequests() {
             {/* full case data */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-1.5 text-sm mb-3">
               {ROW('語言', b.language)}
+              {ROW('口音', b.accent)}
+              {ROW('配音員人數', b.voices_needed ? `${b.voices_needed}${b.voices_needed >= 3 ? '+' : ''} 位` : null)}
+              {ROW('聲音性別', b.gender_needs)}
               {ROW('預算', b.budget ? `${b.budget_type ? `${b.budget_type} ` : ''}${b.budget}` : null)}
               {ROW('使用範圍', b.media_scope)}
               {ROW('地區', b.territory)}
               {ROW('授權', b.license_term)}
               {ROW('長度', b.length)}
-              {ROW('試音截止', b.audition_deadline)}
-              {ROW('交付截止', b.deadline)}
-              {ROW('稿件', b.script_status)}
+              {ROW('當地錄音室', b.local_studio_region)}
+              {ROW('希望試音', b.audition_deadline)}
+              {ROW('希望完成', b.deadline)}
               {b.ref_audio_url && ROW('參考', <a href={b.ref_audio_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{b.ref_audio_url}</a>)}
             </div>
+
+            {(b.script_text || b.script_file_url) && (
+              <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <p className="text-xs font-semibold text-gray-600 mb-1">
+                  {b.script_type === 'final' ? '正式稿' : b.script_type === 'audition' ? '試音稿' : '稿件'}
+                  {b.script_file_url && <a href={b.script_file_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">下載檔案 ↓</a>}
+                </p>
+                {b.script_text && <p className="text-sm text-gray-800 whitespace-pre-wrap max-h-40 overflow-y-auto">{b.script_text}</p>}
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">
               <a href={`/admin/casting/new?from=${b.id}`} className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3.5 py-1.5">開試音案 →</a>
