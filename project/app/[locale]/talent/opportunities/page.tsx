@@ -141,11 +141,11 @@ export default function Opportunities() {
       )}
 
       <div className="space-y-3">
-        {briefs.map((b, i) => (
+        {briefs.map((b) => (
           <BriefCard
             key={b.id}
             brief={b}
-            defaultOpen={i === 0}
+            defaultOpen={false}
             myQuotes={quotes.filter((q) => q.brief_id === b.id)}
             roleCounts={roleCounts[b.id] || {}}
             myDemos={myDemos}
