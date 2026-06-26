@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/mail';
 import { musicWorkflowEmail, stringsWorkflowEmail, voiceWorkflowEmail, type MusicNotificationType, type StringsNotificationType, type VoiceNotificationType } from '@/lib/mail-templates';
-import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
+import { requireAdmin, getSessionRole } from '@/app/api/admin/_utils/requireAdmin';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
+// Columns no admin workflow update should ever change (identity / audit).
+const IMMUTABLE_COLUMNS = new Set(['id', 'order_number', 'created_at', 'email', 'stripe_session_id', 'stripe_payment_intent_id', 'user_id']);
+// Financial columns only the full admin role may set — production-team users run
+// the production workflow (status/delivery), they don't approve payment or pricing.
+const FINANCIAL_COLUMNS = new Set(['payment_status', 'paid_at', 'price', 'talent_price', 'amount', 'billing_details', 'refunded_at', 'refund_amount']);
 
 function getServiceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -24,14 +30,32 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { orderId, orderType, updates } = body;
 
-    if (!orderId || !orderType || !updates) {
+    if (!orderId || !orderType || !updates || typeof updates !== 'object') {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Harden the (otherwise blind) mass-assignment: drop immutable identity columns,
+    // and reject financial columns unless the caller is the full admin role. This is
+    // the security boundary — UI gating alone is bypassable.
+    const role = getSessionRole(request);
+    const safeUpdates: Record<string, unknown> = {};
+    const blockedFinancial: string[] = [];
+    for (const [k, v] of Object.entries(updates as Record<string, unknown>)) {
+      if (IMMUTABLE_COLUMNS.has(k)) continue;
+      if (FINANCIAL_COLUMNS.has(k) && role !== 'admin') { blockedFinancial.push(k); continue; }
+      safeUpdates[k] = v;
+    }
+    if (blockedFinancial.length) {
+      return NextResponse.json({ error: `Forbidden — admin role required to change: ${blockedFinancial.join(', ')}` }, { status: 403 });
+    }
+    if (Object.keys(safeUpdates).length === 0) {
+      return NextResponse.json({ error: 'No updatable fields' }, { status: 400 });
     }
 
     const db = getServiceClient();
     const table = orderType === 'music' ? 'music_orders' : orderType === 'strings' ? 'orchestra_orders' : 'voice_orders';
 
-    const { error } = await db.from(table).update(updates).eq('id', orderId);
+    const { error } = await db.from(table).update(safeUpdates).eq('id', orderId);
 
     if (error) {
       console.error('Admin order update error:', error);
