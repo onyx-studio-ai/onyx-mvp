@@ -57,6 +57,15 @@ export default function NewCasting() {
   const [rateCur, setRateCur] = useState('TWD');
   const [rateAmt, setRateAmt] = useState('');
   const [rateUnit, setRateUnit] = useState('句');
+  // Voices-style data fields (most reuse existing brief columns)
+  const [scale, setScale] = useState('');        // length: 句數/字數/秒數/時數
+  const [deadline, setDeadline] = useState('');  // delivery deadline (vs audition)
+  const [mediaScope, setMediaScope] = useState(''); // usage: where it plays
+  const [territory, setTerritory] = useState('');   // territory
+  const [licenseTerm, setLicenseTerm] = useState(''); // license term
+  const [accent, setAccent] = useState('');
+  const [voiceStyle, setVoiceStyle] = useState('');
+  const [voiceAge, setVoiceAge] = useState('');
   const [baseRev, setBaseRev] = useState('1');
   const [cap, setCap] = useState('5');
   const [auditionDeadline, setAuditionDeadline] = useState('');
@@ -170,6 +179,8 @@ export default function NewCasting() {
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
       roles, audition_script: auditionScript,
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
+      length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
+      accent, voice_style: voiceStyle, voice_age: voiceAge,
     };
     const res = await fetch('/api/admin/casting', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setBusy(false);
@@ -261,12 +272,12 @@ export default function NewCasting() {
               {refLinks.filter((l) => l.trim()).map((l, i) => <div key={i} className="text-xs text-sky-300 truncate">{l}</div>)}
             </div>
           )}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
             {[
               { l: '報酬', v: rn || '面議', gold: true },
               { l: '試音截止', v: auditionDeadline || '待定' },
-              { l: '預計開錄', v: recordingStart || '待定' },
-              { l: '含修改', v: Number(baseRev) > 0 ? `${baseRev} 次` : '待定' },
+              { l: '交付截止', v: deadline || '待定' },
+              { l: '規模', v: scale || '待定' },
             ].map((s, i) => (
               <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
                 <p className="text-[11px] text-gray-500">{s.l}</p>
@@ -274,6 +285,20 @@ export default function NewCasting() {
               </div>
             ))}
           </div>
+          {(() => {
+            const ml = (m: string) => (m === 'home' ? '在家錄' : m === 'studio' ? '錄音室' : m === 'online' ? '線上監錄' : m);
+            const info = ([
+              ['語言', language], ['口音', accent], ['聲音風格', voiceStyle], ['聲音年齡', voiceAge],
+              ['使用範圍', mediaScope], ['地區', territory], ['授權', licenseTerm], ['預計開錄', recordingStart],
+              ['含修改', Number(baseRev) > 0 ? `${baseRev} 次` : ''],
+              ['錄音方式', Object.keys(methods).filter((k) => methods[k]).map(ml).join(' / ')],
+            ] as [string, string][]).filter((x) => !!x[1]);
+            return info.length ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-2 text-sm bg-[#1d1b25] border border-white/[0.08] rounded-xl p-4 mb-4">
+                {info.map(([k, v], i) => <div key={i} className="min-w-0"><span className="text-gray-500">{k} </span><span className="text-gray-200">{v}</span></div>)}
+              </div>
+            ) : null;
+          })()}
 
           <div className="border-t border-white/10 pt-4">
             {mode === 'general' ? (
@@ -411,6 +436,24 @@ export default function NewCasting() {
             ))}
           </div>
         </Field>
+
+        {/* Voices-style case data (all optional). Shown on the casting card; ads
+            care most about 使用範圍/秒數, games about 句數, audiobooks about 時數. */}
+        <p className="text-xs text-gray-400 -mb-1 pt-1">案件資料(選填,會顯示在配音員看到的卡上)</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="規模(句數 / 字數 / 秒數 / 時數)"><input className={input} value={scale} onChange={(e) => setScale(e.target.value)} placeholder="例:全劇 129 句 / 30 秒 / 5 小時" /></Field>
+          <Field label="交付截止(最終交件)"><input className={input} value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="例:7/15" /></Field>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="使用範圍"><input className={input} value={mediaScope} onChange={(e) => setMediaScope(e.target.value)} placeholder="例:網路 / 電視 / App 內" /></Field>
+          <Field label="地區"><input className={input} value={territory} onChange={(e) => setTerritory(e.target.value)} placeholder="例:台灣 / 全球" /></Field>
+          <Field label="授權期"><input className={input} value={licenseTerm} onChange={(e) => setLicenseTerm(e.target.value)} placeholder="例:一年 / 永久 / 買斷" /></Field>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="口音"><input className={input} value={accent} onChange={(e) => setAccent(e.target.value)} placeholder="例:台灣國語 / 大陸普通話 / 粵語" /></Field>
+          <Field label="聲音風格"><input className={input} value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)} placeholder="例:對話自然 / 權威 / 溫暖" /></Field>
+          <Field label="聲音年齡"><input className={input} value={voiceAge} onChange={(e) => setVoiceAge(e.target.value)} placeholder="例:青年 / 中年 / 兒童" /></Field>
+        </div>
 
         {mode === 'roles' && <>
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">

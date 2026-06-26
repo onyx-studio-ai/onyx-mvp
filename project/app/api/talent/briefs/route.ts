@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: briefsRaw, error: bErr } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, kind, title, roles, audition_script, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, language, length, budget, budget_type, deadline, brief, created_at, status')
+      .select('id, brief_number, kind, title, roles, audition_script, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, accent, voice_style, voice_age, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, language, length, budget, budget_type, deadline, brief, created_at, status')
       .eq('status', 'open')
       .order('created_at', { ascending: false })
       .limit(50);

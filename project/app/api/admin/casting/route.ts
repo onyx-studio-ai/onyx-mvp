@@ -70,6 +70,15 @@ export async function POST(request: NextRequest) {
     audition_script: String(b.audition_script || '').slice(0, 20000) || null,
     reference_links: refLinks,
     reference_files: refFiles,
+    // Voices-style case data (all optional; surfaced on the casting card)
+    length: String(b.length || '').slice(0, 120) || null,
+    deadline: String(b.deadline || '').slice(0, 120) || null,
+    media_scope: String(b.media_scope || '').slice(0, 200) || null,
+    territory: String(b.territory || '').slice(0, 120) || null,
+    license_term: String(b.license_term || '').slice(0, 200) || null,
+    accent: String(b.accent || '').slice(0, 120) || null,
+    voice_style: String(b.voice_style || '').slice(0, 120) || null,
+    voice_age: String(b.voice_age || '').slice(0, 120) || null,
     locale: String(b.locale || 'zh-TW'),
     status: 'open',
   };

@@ -16,7 +16,7 @@ import { supabase } from '@/lib/supabase';
 const CURRENCIES = ['CNY', 'TWD', 'USD', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number };
+type Brief = { id: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -67,12 +67,12 @@ export default function GuestCasting() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
         {[
           { l: tx('報酬', 'Rate'), v: brief.rate_note || tx('面議', 'TBD'), gold: true },
           { l: tx('試音截止', 'Audition due'), v: brief.audition_deadline || tx('待定', 'TBD') },
-          { l: tx('預計開錄', 'Records'), v: brief.recording_start || tx('待定', 'TBD') },
-          { l: tx('含修改', 'Revisions'), v: brief.base_revisions != null ? `${brief.base_revisions} ${tx('次', '×')}` : tx('待定', 'TBD') },
+          { l: tx('交付截止', 'Delivery'), v: brief.deadline || tx('待定', 'TBD') },
+          { l: tx('規模', 'Scale'), v: brief.length || tx('待定', 'TBD') },
         ].map((s, i) => (
           <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
             <p className="text-[11px] text-gray-500">{s.l}</p>
@@ -80,6 +80,26 @@ export default function GuestCasting() {
           </div>
         ))}
       </div>
+      {(() => {
+        const ml = (m: string) => (m === 'home' ? tx('在家錄', 'Home') : m === 'studio' ? tx('錄音室', 'Studio') : m === 'online' ? tx('線上監錄', 'Online') : m);
+        const info = ([
+          [tx('語言', 'Language'), brief.language],
+          [tx('口音', 'Accent'), brief.accent],
+          [tx('聲音風格', 'Style'), brief.voice_style],
+          [tx('聲音年齡', 'Voice age'), brief.voice_age],
+          [tx('使用範圍', 'Usage'), brief.media_scope],
+          [tx('地區', 'Territory'), brief.territory],
+          [tx('授權', 'License'), brief.license_term],
+          [tx('預計開錄', 'Records'), brief.recording_start],
+          [tx('含修改', 'Revisions'), brief.base_revisions != null ? `${brief.base_revisions} ${tx('次', '×')}` : ''],
+          [tx('錄音方式', 'Recording'), (brief.recording_methods || []).map(ml).join(' / ')],
+        ] as [string, string | null | undefined][]).filter((x): x is [string, string] => !!x[1]);
+        return info.length ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-2 text-sm bg-[#1d1b25] border border-white/[0.08] rounded-xl p-4 mb-4">
+            {info.map(([k, v], i) => <div key={i} className="min-w-0"><span className="text-gray-500">{k} </span><span className="text-gray-200">{v}</span></div>)}
+          </div>
+        ) : null;
+      })()}
 
       {closed && <p className="text-amber-300 text-sm mb-3">{tx('這個試音案已結束。', 'This casting call has closed.')}</p>}
 

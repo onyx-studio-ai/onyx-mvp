@@ -39,6 +39,9 @@ type Brief = {
   media_scope: string | null;
   territory: string | null;
   license_term: string | null;
+  accent: string | null;
+  voice_style: string | null;
+  voice_age: string | null;
   script_status: string | null;
   has_singing: boolean | null;
   wants_director: boolean | null;
@@ -245,13 +248,13 @@ function BriefCard({
             </div>
           )}
 
-          {/* stat-card summary — always show the four key facts (待定 if not set yet) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+          {/* stat-card summary — the four headline facts (待定 if not set yet) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
             {[
               { l: tx('報酬', '报酬', 'Rate'), v: brief.rate_note || tx('面議', '面议', 'TBD'), gold: true },
               { l: tx('試音截止', '试音截止', 'Audition due'), v: brief.audition_deadline || tx('待定', '待定', 'TBD') },
-              { l: tx('預計開錄', '预计开录', 'Records'), v: brief.recording_start || tx('待定', '待定', 'TBD') },
-              { l: tx('含修改', '含修改', 'Revisions'), v: brief.base_revisions != null ? `${brief.base_revisions} ${tx('次', '次', '×')}` : tx('待定', '待定', 'TBD') },
+              { l: tx('交付截止', '交付截止', 'Delivery'), v: brief.deadline || tx('待定', '待定', 'TBD') },
+              { l: tx('規模', '规模', 'Scale'), v: brief.length || tx('待定', '待定', 'TBD') },
             ].map((s, i) => (
               <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
                 <p className="text-[11px] text-gray-500">{s.l}</p>
@@ -259,6 +262,27 @@ function BriefCard({
               </div>
             ))}
           </div>
+          {/* detail grid — every other field filled in, in a tidy key:value block */}
+          {(() => {
+            const methodLabel = (m: string) => (m === 'home' ? tx('在家錄', '在家录', 'Home') : m === 'studio' ? tx('錄音室', '录音室', 'Studio') : m === 'online' ? tx('線上監錄', '线上监录', 'Online') : m);
+            const info: [string, string][] = ([
+              [tx('語言', '语言', 'Language'), brief.language],
+              [tx('口音', '口音', 'Accent'), brief.accent],
+              [tx('聲音風格', '声音风格', 'Style'), brief.voice_style],
+              [tx('聲音年齡', '声音年龄', 'Voice age'), brief.voice_age],
+              [tx('使用範圍', '使用范围', 'Usage'), brief.media_scope],
+              [tx('地區', '地区', 'Territory'), brief.territory],
+              [tx('授權', '授权', 'License'), brief.license_term],
+              [tx('預計開錄', '预计开录', 'Records'), brief.recording_start],
+              [tx('含修改', '含修改', 'Revisions'), brief.base_revisions != null ? `${brief.base_revisions} ${tx('次', '次', '×')}` : ''],
+              [tx('錄音方式', '录音方式', 'Recording'), (brief.recording_methods || []).map(methodLabel).join(' / ')],
+            ] as [string, string | null | undefined][]).filter((x): x is [string, string] => !!x[1]);
+            return info.length ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-2 text-sm bg-[#1d1b25] border border-white/[0.08] rounded-xl p-4 mb-4">
+                {info.map(([k, v], i) => <div key={i} className="min-w-0"><span className="text-gray-500">{k} </span><span className="text-gray-200">{v}</span></div>)}
+              </div>
+            ) : null;
+          })()}
 
           {hasRoles ? (
             <div className="border-t border-white/10 pt-4">
