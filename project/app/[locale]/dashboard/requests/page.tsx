@@ -73,7 +73,7 @@ export default function ClientRequests() {
         {briefs.map((b) => {
           const st = statusInfo(b.status, counts[b.id] || 0);
           return (
-            <div key={b.id} className="bg-white/[0.02] border border-white/10 rounded-2xl p-5">
+            <Link key={b.id} href={`/dashboard/requests/${b.id}`} className="block bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 hover:border-white/20 rounded-2xl p-5 transition">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
                   <span className="text-xs text-gray-500 font-mono">{b.kind === 'casting' ? caseCode(b) : b.brief_number}</span>
@@ -89,9 +89,9 @@ export default function ClientRequests() {
                 {b.budget && <span>{tx('預算', '预算', 'Budget')} {b.budget_type ? `${b.budget_type} ` : ''}{b.budget}</span>}
                 {b.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')} {b.audition_deadline}</span>}
                 {b.deadline && <span>{tx('交付截止', '交付截止', 'Delivery')} {b.deadline}</span>}
-                <span>{(b.created_at || '').slice(0, 10)}</span>
+                <span className="ml-auto text-amber-300/70">{tx('查看 / 編輯 →', '查看 / 编辑 →', 'View / edit →')}</span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
