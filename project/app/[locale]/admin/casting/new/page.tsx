@@ -228,78 +228,89 @@ export default function NewCasting() {
     const roles = mergedRoles();
     const methodList = Object.keys(methods).filter((k) => methods[k]);
     const methodLabel = (k: string) => (k === 'home' ? '在家錄' : k === 'studio' ? '錄音室' : k === 'online' ? '線上監錄' : k);
+    // Preview = the EXACT voice-actor view (dark, 立繪 cards) so what the poster
+    // sees is what the talent sees. Audition controls are shown read-only.
     return (
-      <main className="min-h-screen px-4 py-12 text-gray-900">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">發佈前預覽</h1>
-            <span className="text-xs text-gray-500">這就是配音員會看到的內容</span>
+      <main className="min-h-screen bg-black text-white px-4 py-12">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-1">
+            <h1 className="text-lg font-semibold">發佈前預覽</h1>
+            <span className="text-xs text-amber-300/80">↓ 配音員會看到的畫面</span>
+          </div>
+          <p className="text-xs text-gray-500 mb-5">確認沒問題再發佈。</p>
+
+          {title && <h2 className="text-2xl font-semibold mb-1">{title}</h2>}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            <span className="text-xs bg-purple-500/15 text-purple-200 px-2 py-0.5 rounded-full">試音案</span>
+            {language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{language}</span>}
+            {rn && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{rn}</span>}
+            {methodList.map((m) => <span key={m} className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{methodLabel(m)}</span>)}
+          </div>
+          {brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{brief}</p>}
+          {auditionScript && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1.5">試音方向 / 聲音方向</p>
+              <div className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3">{auditionScript}</div>
+            </div>
+          )}
+          {(refFiles.length > 0 || refLinks.some((l) => l.trim())) && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1.5">參考素材</p>
+              {refFiles.map((f, i) => <div key={i} className="text-xs text-gray-400 truncate">📎 {f.name}</div>)}
+              {refLinks.filter((l) => l.trim()).map((l, i) => <div key={i} className="text-xs text-sky-300 truncate">{l}</div>)}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+            {auditionDeadline && <span>試音截止 {auditionDeadline}</span>}
+            {recordingStart && <span>預計開錄 {recordingStart}</span>}
+            {Number(baseRev) > 0 && <span>含修改 {baseRev} 次</span>}
           </div>
 
-          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 space-y-3">
-            {title && <h2 className="text-lg font-semibold">{title}</h2>}
-            <div className="flex flex-wrap gap-1.5">
-              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">試音案</span>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{category}</span>
-              {language && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{language}</span>}
-              {rn && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{rn}</span>}
-              {methodList.map((m) => <span key={m} className="text-xs bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">{methodLabel(m)}</span>)}
-            </div>
-            {brief && <p className="text-sm text-gray-800 whitespace-pre-wrap">{brief}</p>}
-            {auditionScript && (
-              <div>
-                <p className="text-xs text-gray-500 mb-1">試音方向 / 聲音方向</p>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded-lg p-3">{auditionScript}</div>
-              </div>
-            )}
-            {(refFiles.length > 0 || refLinks.some((l) => l.trim())) && (
-              <div>
-                <p className="text-xs text-gray-500 mb-1">參考素材</p>
-                {refFiles.map((f, i) => <div key={i} className="text-xs text-gray-600 truncate">📎 {f.name}</div>)}
-                {refLinks.filter((l) => l.trim()).map((l, i) => <div key={i} className="text-xs text-sky-700 truncate">{l}</div>)}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-              {auditionDeadline && <span>試音截止 {auditionDeadline}</span>}
-              {recordingStart && <span>預計開錄 {recordingStart}</span>}
-              {Number(baseRev) > 0 && <span>含修改 {baseRev} 次</span>}
-            </div>
-            <p className="text-xs text-green-700">平台不抽成 —— 配音員報多少拿多少</p>
-
-            <div className="border-t border-gray-200 pt-3">
-              {mode === 'general' ? (
-                <p className="text-sm text-gray-600">一般配音案:配音員用平台現有 demo 或上傳 demo + 報價回應(不分角色)。</p>
-              ) : roles.length ? (
-                <>
-                  <p className="text-xs text-gray-500 mb-2">{roles.length} 個試音角色</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {roles.map((r, i) => (
-                      <div key={i} className="flex gap-2 items-start bg-gray-50 border border-gray-200 rounded-lg p-2">
+          <div className="border-t border-white/10 pt-3">
+            {mode === 'general' ? (
+              <p className="text-sm text-gray-300">一般配音案 · 配音員用平台現有 demo 或上傳 demo + 報價回應。平台不抽成。</p>
+            ) : roles.length ? (
+              <>
+                <p className="text-xs text-gray-500 mb-2">選一個(或多個)角色試音 · 平台不抽成,你報多少拿多少</p>
+                <div className="space-y-3">
+                  {roles.map((r, i) => (
+                    <div key={i} className={`flex items-stretch rounded-xl border overflow-hidden ${r.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
+                      <div className="w-24 sm:w-28 shrink-0 bg-white/[0.04] relative flex items-center justify-center self-stretch">
                         {r.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={r.image} alt={r.name} className="w-11 h-11 rounded object-cover shrink-0 border border-gray-200" />
-                        ) : (
-                          <div className="w-11 h-11 rounded shrink-0 border border-dashed border-gray-300 bg-gray-100 flex items-center justify-center text-[10px] text-gray-500">無圖</div>
+                          <img src={r.image} alt={r.name} className="absolute inset-0 w-full h-full object-cover object-top" />
+                        ) : <span className="text-gray-600 text-2xl">🎭</span>}
+                        {r.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded z-10">★主角</span>}
+                      </div>
+                      <div className="flex-1 min-w-0 p-3">
+                        <p className="text-sm font-medium text-gray-100">{r.name}</p>
+                        {([r.gender, r.age].filter(Boolean).join('·') || r.personality) && (
+                          <p className="text-xs text-gray-500 mt-0.5 truncate">{[[r.gender, r.age].filter(Boolean).join('·'), r.personality].filter(Boolean).join(' · ')}</p>
                         )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-gray-900 truncate">{r.is_lead && <span className="text-amber-500">★</span>}{r.name} <span className="text-xs text-gray-500">{[r.gender, r.age].filter(Boolean).join('·')}</span></p>
-                          {r.personality && <p className="text-xs text-gray-500 truncate">{r.personality}</p>}
-                          {r.sample_line && <p className="text-xs text-gray-700 truncate">{r.sample_line}</p>}
+                        {r.sample_line && (
+                          <div className="mt-2">
+                            <p className="text-[10px] text-gray-500 mb-0.5 tracking-wide">台詞</p>
+                            <p className="text-xs text-gray-300 leading-relaxed border-l-2 border-white/15 pl-2 line-clamp-2">{r.sample_line}</p>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between mt-2.5">
+                          <span className="text-xs text-gray-500">0 人已試</span>
+                          <span className="text-xs bg-green-500/30 text-green-100/60 font-medium rounded-lg px-3 py-1">試音 →</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-amber-700">⚠ 還沒有角色 —— 返回上傳 xlsx 或手動填角色。</p>
-              )}
-            </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-amber-300">⚠ 還沒有角色 —— 返回上傳 xlsx 或手動填角色。</p>
+            )}
           </div>
 
-          {err && <p className="text-red-600 text-sm">{err}</p>}
-          <div className="flex gap-3">
-            <button onClick={() => setPreviewing(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-5 py-2.5 text-sm">← 返回修改</button>
-            <button onClick={submit} disabled={busy} className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2.5 text-sm">{busy ? '發布中…' : '✓ 確認發佈'}</button>
+          {err && <p className="text-red-400 text-sm mt-4">{err}</p>}
+          <div className="flex gap-3 mt-6">
+            <button onClick={() => setPreviewing(false)} className="bg-white/10 hover:bg-white/15 text-white rounded-lg px-5 py-2.5 text-sm">← 返回修改</button>
+            <button onClick={submit} disabled={busy} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2.5 text-sm">{busy ? '發布中…' : '✓ 確認發佈'}</button>
           </div>
         </div>
       </main>
