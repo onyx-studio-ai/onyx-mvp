@@ -1039,6 +1039,51 @@ export function quoteReceivedEmail(p: { talentName: string; briefNumber?: string
   return { subject: `新報價 ${n} — ${p.talentName}`, html: baseLayout(content) };
 }
 
+/** Invite a matching-language talent (an approved applicant) to audition for a
+ *  casting call — branded, professional, and consistent with our other emails. */
+export function castingNotifyEmail(p: { title: string; caseCode?: string; language?: string; rateNote?: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const title = mpEsc(p.title);
+  const strong = `<strong style="color:#f3f4f6;">${title}</strong>`;
+  const C = {
+    tw: {
+      subject: `Onyx Studios · 新試音案邀請 —— ${title}`,
+      headline: '新試音案邀請', sub: '有一個符合您語言的配音試音案', card: p.caseCode || '試音案',
+      l1: `Onyx Studios 目前有一個新的配音試音案 ——「${strong}」,與您登記的語言相符,誠摯邀請您參與試音。`,
+      l2: '登入配音員後台,即可查看角色設定與試音樣詞、上傳您的試音並提出報價。本案由 Onyx 居中媒合,配音員所提報價即為您的實際酬勞,平台不另外收取費用。',
+      l3: '若您的個人資料尚未填寫完整,也歡迎一併補齊,有助於我們為您媒合更多合適的案件。',
+      cta: '前往試音', sign: 'Onyx Studios 配音團隊 敬上', rate: '報酬', lang: '語言', info: '案件資訊',
+    },
+    cn: {
+      subject: `Onyx Studios · 新试音案邀请 —— ${title}`,
+      headline: '新试音案邀请', sub: '有一个符合您语言的配音试音案', card: p.caseCode || '试音案',
+      l1: `Onyx Studios 目前有一个新的配音试音案 ——「${strong}」,与您登记的语言相符,诚挚邀请您参与试音。`,
+      l2: '登录配音员后台,即可查看角色设定与试音样词、上传您的试音并提出报价。本案由 Onyx 居中媒合,配音员所报价格即为您的实际酬劳,平台不另外收取费用。',
+      l3: '若您的个人资料尚未填写完整,也欢迎一并补齐,有助于我们为您匹配更多合适的案件。',
+      cta: '前往试音', sign: 'Onyx Studios 配音团队 敬上', rate: '报酬', lang: '语言', info: '案件信息',
+    },
+    en: {
+      subject: `Onyx Studios · New audition invitation — ${title}`,
+      headline: 'New audition invitation', sub: 'A casting call matching your language', card: p.caseCode || 'Casting',
+      l1: `Onyx Studios has a new voiceover casting call — “${strong}” — that matches your registered language, and we would be glad to have you audition.`,
+      l2: 'Sign in to your talent dashboard to view the roles and audition lines, upload your audition and submit your quote. Onyx mediates the project; the quote you submit is your actual fee, with no platform commission.',
+      l3: 'If your profile is not yet complete, you are welcome to finish it — it helps us match you to more suitable projects.',
+      cta: 'Go to auditions', sign: 'The Onyx Studios Talent Team', rate: 'Rate', lang: 'Language', info: 'CASTING',
+    },
+  }[L];
+  const rows = [
+    ...(p.rateNote ? [{ label: C.rate, value: mpEsc(p.rateNote) }] : []),
+    ...(p.language ? [{ label: C.lang, value: mpEsc(p.language) }] : []),
+  ];
+  const content = `
+    ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
+    ${bodyCard(C.card, `${mp(C.l1)}${mp(C.l2)}${mp(C.l3)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}
+    ${rows.length ? infoCard(C.info, rows) : ''}
+    ${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const layoutLocale: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, layoutLocale) };
+}
+
 export function passwordResetEmail(p: { resetLink: string; locale?: string }): { subject: string; html: string } {
   const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
   const C = {

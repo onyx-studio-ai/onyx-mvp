@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
+import { castingNotifyEmail } from '@/lib/mail-templates';
+import { caseCode } from '@/lib/casting';
 
 /*
   POST /api/admin/casting — create a human-VO casting call (kind='casting').
@@ -20,18 +22,23 @@ const SITE = 'https://www.onyxstudios.ai';
 const ZH_RE = /中文|國語|国语|普通话|普通話|台語|台语|粵|粤|cantonese|mandarin|chinese/i;
 const EN_RE = /english|英語|英语|英文/i;
 
-// Email active talents whose language matches the case, in the case's language.
-async function notifyMatchingTalents(db: ReturnType<typeof getSupabaseServiceClient>, brief: { title: string; language: string }, opts: { dryRun?: boolean } = {}) {
+// Email approved applicants whose language matches the case, in the case's language,
+// using the branded casting-invite template. Recipients = approved applicants
+// (application_id set) — this excludes guest-created lightweight talents and the
+// internal Onyx personas. Invites them to audition AND finish their profile.
+async function notifyMatchingTalents(
+  db: ReturnType<typeof getSupabaseServiceClient>,
+  brief: { title: string; language: string; rate_note?: string | null; code?: string },
+  opts: { dryRun?: boolean } = {},
+) {
   const lang = brief.language || '';
   const isZh = ZH_RE.test(lang);
   const isEn = !isZh && EN_RE.test(lang);
   if (!isZh && !isEn) return 0; // unknown language → skip auto-notify
-  // Scope B: notify ALL recruited talent of the matching language, not only the
-  // published (is_active) ones — recruited-but-not-yet-listed actors are exactly
-  // who wants a real paying casting call. Junk/internal/dup emails filtered below.
   const { data: talents } = await db.from('talents')
     .select('email, languages, native_languages')
     .eq('type', 'VO')
+    .not('application_id', 'is', null) // approved applicants only (no guests / internal personas)
     .not('email', 'is', null)
     .limit(800);
   const re = isZh ? ZH_RE : EN_RE;
@@ -48,14 +55,12 @@ async function notifyMatchingTalents(db: ReturnType<typeof getSupabaseServiceCli
     return true;
   }).slice(0, 250);
   if (opts.dryRun) return matched.length; // preview count only — no emails sent
-  const link = `${SITE}/${isZh ? 'zh-TW/' : ''}talent`;
-  await Promise.all(matched.map(async (t) => {
-    const subject = isZh ? `新試音案 · ${brief.title}` : `New audition · ${brief.title}`;
-    const html = isZh
-      ? `<div style="font-family:'PingFang TC',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#222;max-width:540px"><p>您好,</p><p>有一個新的配音試音案符合您的語言 —— <strong>${brief.title}</strong>。</p><p>登入後台即可查看角色、唸樣詞、上傳試音並報價。平台不抽成,您報多少就拿多少。</p><p><a href="${link}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px">前往試音 →</a></p><p style="margin-bottom:2px">Onyx Studios 配音團隊</p><p style="margin-top:0;color:#666">onyxstudios.ai</p></div>`
-      : `<div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#222;max-width:540px"><p>Hi,</p><p>A new voiceover casting matches your language — <strong>${brief.title}</strong>.</p><p>Sign in to view the roles, read the lines, upload your audition and quote. No platform fee — you keep what you quote.</p><p><a href="${link}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px">Go to auditions →</a></p><p style="margin-bottom:2px">The Onyx Studios Talent Team</p><p style="margin-top:0;color:#666">onyxstudios.ai</p></div>`;
-    await sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {});
-  }));
+  const url = `${SITE}/${isZh ? 'zh-TW/' : ''}talent`;
+  const { subject, html } = castingNotifyEmail({
+    title: brief.title, caseCode: brief.code, language: brief.language,
+    rateNote: brief.rate_note || undefined, url, locale: isZh ? 'zh-TW' : 'en',
+  });
+  await Promise.all(matched.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
   return matched.length;
 }
 
@@ -148,15 +153,20 @@ export async function POST(request: NextRequest) {
   // keep the client's identity + budget (no duplicate row). From scratch: insert
   // with the poster-side placeholder client (talents never see it).
   const result = fromId
-    ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number').single()
-    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number').single();
+    ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number, created_at').single()
+    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number, created_at').single();
   const { data, error } = result;
   if (error || !data) return NextResponse.json({ error: error?.message || '發案失敗' }, { status: 500 });
 
   // Notify matching-language talents (default on; client can opt out with notify:false).
   let notified = 0;
   if (b.notify !== false) {
-    try { notified = await notifyMatchingTalents(db, { title, language: row.language || '' }); } catch { /* best-effort */ }
+    try {
+      notified = await notifyMatchingTalents(db, {
+        title, language: row.language || '', rate_note: row.rate_note,
+        code: caseCode({ content_type: row.content_type, created_at: data.created_at, brief_number: data.brief_number }),
+      });
+    } catch { /* best-effort */ }
   }
   return NextResponse.json({ ok: true, id: data.id, brief_number: data.brief_number, notified });
 }
@@ -172,9 +182,12 @@ export async function PATCH(request: NextRequest) {
   const id = String(b.id || '').trim();
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 });
   const db = getSupabaseServiceClient();
-  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status').eq('id', id).maybeSingle();
+  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note').eq('id', id).maybeSingle();
   if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
   if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });
-  const notified = await notifyMatchingTalents(db, { title: String(brief.title || ''), language: String(brief.language || '') }, { dryRun: b.send !== true });
+  const notified = await notifyMatchingTalents(db, {
+    title: String(brief.title || ''), language: String(brief.language || ''),
+    rate_note: brief.rate_note, code: caseCode(brief),
+  }, { dryRun: b.send !== true });
   return NextResponse.json({ ok: true, notified, sent: b.send === true });
 }
