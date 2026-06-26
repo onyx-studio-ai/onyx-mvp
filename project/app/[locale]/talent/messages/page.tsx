@@ -5,5 +5,5 @@
 import MessagesView from '@/components/marketplace/MessagesView';
 
 export default function TalentMessagesPage() {
-  return <MessagesView embedded />;
+  return <MessagesView embedded filterRole="talent" />;
 }

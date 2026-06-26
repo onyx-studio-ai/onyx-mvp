@@ -101,7 +101,7 @@ function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
     { href: '/dashboard', label: tr('navProjects', '專案'), icon: FileAudio },
     { href: '/dashboard/requests', label: tr('navRequests', '配音需求'), icon: ClipboardList },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票'), icon: Receipt },
-    { href: '/dashboard/settings', label: tr('navSettings', '設定'), icon: Settings },
+    { href: '/dashboard/messages', label: tr('navClientMessages', '訊息'), icon: MessageSquare },
   ];
   const isActive = (href: string) =>
     href === '/dashboard' ? (safePathname === '/dashboard' || safePathname.startsWith('/dashboard/orders'))
@@ -130,6 +130,7 @@ function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
       </nav>
 
       <div className="p-4 border-t border-white/10">
+        <Link href="/dashboard/settings" className={`${itemCls(isActive('/dashboard/settings'))} mb-2`}><Settings className="w-4 h-4" />{tr('navSettings', '設定')}</Link>
         <div className="px-1">
           <p className="text-xs text-gray-300 font-medium truncate">{displayName}</p>
           <p className="text-[11px] text-gray-500 truncate mt-0.5">{user.email}</p>

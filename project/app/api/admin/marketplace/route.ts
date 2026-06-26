@@ -42,12 +42,19 @@ export async function PATCH(request: NextRequest) {
   if (unauthorized) return unauthorized;
   try {
     const db = getSupabaseServiceClient();
-    const { kind, id, status } = await request.json();
+    const body = await request.json();
+    const { kind, id, status } = body;
     const now = new Date().toISOString();
-    if (!id || !status) return NextResponse.json({ error: 'id and status are required' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
 
     if (kind === 'brief') {
-      if (!BRIEF_STATUSES.includes(status)) return NextResponse.json({ error: 'Invalid brief status' }, { status: 400 });
+      // Field edit (e.g. 報酬 rate_note) — no status transition involved.
+      if (status === undefined && body.rate_note !== undefined) {
+        const { error } = await db.from('marketplace_briefs').update({ rate_note: String(body.rate_note).slice(0, 200) || null, updated_at: now }).eq('id', id);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ ok: true });
+      }
+      if (!status || !BRIEF_STATUSES.includes(status)) return NextResponse.json({ error: 'Invalid brief status' }, { status: 400 });
       // Reopening/cancelling clears the stale award pointer so it can't linger.
       const patch: Record<string, unknown> = { status, updated_at: now };
       if (['open', 'reviewing', 'cancelled'].includes(status)) patch.awarded_quote_id = null;

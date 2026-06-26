@@ -24,7 +24,7 @@ type Msg = { id: string; sender_type: string; sender_name: string | null; body: 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60 transition';
 
-export default function MessagesView({ embedded = false }: { embedded?: boolean }) {
+export default function MessagesView({ embedded = false, filterRole }: { embedded?: boolean; filterRole?: 'client' | 'talent' }) {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
   const isZhCN = locale === 'zh-CN';
@@ -152,13 +152,14 @@ export default function MessagesView({ embedded = false }: { embedded?: boolean 
     );
   }
 
-  // thread list
+  // thread list — optionally scoped to one role (talent vs client side)
+  const shownThreads = filterRole ? threads.filter((t) => t.role === filterRole) : threads;
   return shell(
     <>
       <h1 className="text-2xl font-semibold mb-6">{tx('訊息', '消息', 'Messages')}</h1>
-      {threads.length === 0 && <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有對話。報價或發案後,對話會出現在這裡。', '目前没有对话。报价或发案后,对话会出现在这里。', 'No threads yet. They appear once you quote on or post a brief.')}</p>}
+      {shownThreads.length === 0 && <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有對話。報價或發案後,對話會出現在這裡。', '目前没有对话。报价或发案后,对话会出现在这里。', 'No threads yet. They appear once you quote on or post a brief.')}</p>}
       <div className="space-y-2">
-        {threads.map((t) => (
+        {shownThreads.map((t) => (
           <button key={t.key} onClick={() => openThread(t)} className="w-full text-left bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 rounded-xl p-4 transition">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-200">{tx('與', '与', 'With')} <b>{t.counterpart}</b></span>

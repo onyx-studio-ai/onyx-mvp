@@ -73,6 +73,7 @@ export default function AdminMarketplace() {
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notifying, setNotifying] = useState<string | null>(null);
+  const [editRate, setEditRate] = useState<{ id: string; val: string } | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const isOpen = (id: string) => openIds.has(id);
   const toggleOpen = (id: string) => setOpenIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -81,9 +82,9 @@ export default function AdminMarketplace() {
     const res = await fetch('/api/admin/marketplace', { credentials: 'include' });
     if (res.status === 401) return setPhase('unauth');
     const j = await res.json().catch(() => ({}));
-    // Un-actioned client requests (status='reviewing') live in 客戶請求 (/admin/requests),
-    // not here — this page is for actual casting calls + their quotes.
-    setBriefs((j.briefs || []).filter((b: Brief) => b.status !== 'reviewing'));
+    // Hide ONLY un-actioned CLIENT requests (they live in 客戶請求 /admin/requests).
+    // Onyx-posted cases (client_email = casting@) always show here, any status.
+    setBriefs((j.briefs || []).filter((b: Brief) => !(b.status === 'reviewing' && b.client_email && b.client_email !== 'casting@onyxstudios.ai')));
     setQuotes(j.quotes || []);
     setUnavailable(!!j.unavailable);
     setPhase('ready');
@@ -112,6 +113,15 @@ export default function AdminMarketplace() {
       }).then((r) => r.json());
       alert(res.sent ? `已寄出 ${res.notified} 封通知信 ✓` : '寄送失敗,請稍後再試');
     } catch { alert('寄送失敗,請稍後再試'); } finally { setNotifying(null); }
+  }
+
+  async function saveRate(id: string, val: string) {
+    await fetch('/api/admin/marketplace', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ kind: 'brief', id, rate_note: val.trim() }),
+    }).catch(() => {});
+    setEditRate(null);
+    load();
   }
 
   async function patch(kind: 'brief' | 'quote', id: string, status: string) {

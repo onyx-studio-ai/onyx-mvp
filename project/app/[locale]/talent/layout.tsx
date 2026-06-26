@@ -85,7 +85,7 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
     { href: '/dashboard/requests', label: tx('配音需求', '配音需求', 'Requests'), icon: ClipboardList },
     { href: '/dashboard', label: tx('專案訂單', '项目订单', 'Projects'), icon: FileAudio },
     { href: '/dashboard/invoices', label: tx('發票', '发票', 'Invoices'), icon: Receipt },
-    { href: '/dashboard/settings', label: tx('設定', '设置', 'Settings'), icon: Settings },
+    { href: '/dashboard/messages', label: tx('訊息', '消息', 'Messages'), icon: MessageSquare },
   ];
   const active = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
   const signOut = async () => { await supabase.auth.signOut(); router.push('/auth'); };
@@ -127,6 +127,11 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
           )}
         </nav>
         <div className="space-y-1 pt-2 border-t border-white/10">
+          {isClient && (
+            <Link href="/dashboard/settings" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+              <Settings className="w-4 h-4" /> {tx('設定', '设置', 'Settings')}
+            </Link>
+          )}
           <button onClick={signOut} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">
             <LogOut className="w-4 h-4" /> {tx('登出', '登出', 'Sign out')}
           </button>
