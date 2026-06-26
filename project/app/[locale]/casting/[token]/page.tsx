@@ -16,7 +16,7 @@ import { toMp3 } from '@/lib/to-mp3';
 
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
-type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
@@ -221,11 +221,13 @@ function GuestRole({ token, role, count, popular, done, closed, source, rateNote
       {imageLeft}
       <div className="flex-1 min-w-0 p-4 space-y-2.5">
         {nameRow}
+        {role.timbre && <p className="text-sm text-[#C9A86A] leading-snug">{tx('聲線', 'Voice')} · {role.timbre}</p>}
         {role.personality && <p className="text-sm text-gray-400 leading-snug">{role.personality}</p>}
-        {(role.emotion || role.speed) && (
+        {(role.emotion || role.speed || role.volume) && (
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
             {role.emotion && <span><span className="text-gray-500">{tx('情緒', 'Emotion')} </span><span className="text-gray-200">{role.emotion}</span></span>}
             {role.speed && <span><span className="text-gray-500">{tx('語速', 'Pace')} </span><span className="text-gray-200">{role.speed}</span></span>}
+            {role.volume && <span><span className="text-gray-500">{tx('台詞量', 'Volume')} </span><span className="text-gray-200">{role.volume}</span></span>}
           </div>
         )}
         {role.sample_line && (
@@ -234,6 +236,7 @@ function GuestRole({ token, role, count, popular, done, closed, source, rateNote
             <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{role.sample_line}</p>
           </div>
         )}
+        {role.note && <p className="text-xs text-gray-500 leading-snug"><span className="text-gray-600">{tx('備註', 'Note')} </span>{role.note}</p>}
         <div className="flex items-center justify-between">
           <span className={`text-xs ${popular ? 'text-[#E4CB94]' : 'text-gray-500'}`}>{count} {tx('人已試', 'auditioned')}{popular && tx(' · 熱門', ' · popular')}</span>
           {!closed && (

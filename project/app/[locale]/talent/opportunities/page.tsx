@@ -21,7 +21,7 @@ import { toMp3 } from '@/lib/to-mp3';
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 const CURRENCIES = ['USD', 'TWD'];
 
-type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = {
   id: string;
   brief_number: string;
@@ -595,12 +595,14 @@ function RoleAudition({
       {imageLeft}
       <div className="flex-1 min-w-0 p-4 space-y-2.5">
         {nameRow}
+        {role.timbre && <p className="text-sm text-[#C9A86A] leading-snug">{tx('聲線', '声线', 'Voice')} · {role.timbre}</p>}
         {role.personality && <p className="text-sm text-gray-400 leading-snug">{role.personality}</p>}
 
-        {(role.emotion || role.speed) && (
+        {(role.emotion || role.speed || role.volume) && (
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
             {role.emotion && <span><span className="text-gray-500">{tx('情緒', '情绪', 'Emotion')} </span><span className="text-gray-200">{role.emotion}</span></span>}
             {role.speed && <span><span className="text-gray-500">{tx('語速', '语速', 'Pace')} </span><span className="text-gray-200">{role.speed}</span></span>}
+            {role.volume && <span><span className="text-gray-500">{tx('台詞量', '台词量', 'Volume')} </span><span className="text-gray-200">{role.volume}</span></span>}
           </div>
         )}
 
@@ -611,6 +613,7 @@ function RoleAudition({
             <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{role.sample_line}</p>
           </div>
         )}
+        {role.note && <p className="text-xs text-gray-500 leading-snug"><span className="text-gray-600">{tx('備註', '备注', 'Note')} </span>{role.note}</p>}
 
         <div className="flex items-center justify-between">
           <span className={`text-xs ${isPopular ? 'text-[#E4CB94]' : 'text-gray-500'}`}>{count} {tx('人已試', '人已试', 'auditioned')}{isPopular && tx(' · 熱門', ' · 热门', ' · popular')}</span>

@@ -13,7 +13,7 @@ import { caseCode } from '@/lib/casting';
 const serif = { fontFamily: '"Songti TC","Noto Serif TC",serif' } as const;
 const gold = { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 } as const;
 
-type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = {
   id: string; brief_number?: string | null; title?: string | null; content_type?: string | null; language?: string | null;
   rate_note?: string | null; status?: string | null; created_at?: string | null;
@@ -130,11 +130,13 @@ export default function CastingPreview() {
                       <span className="text-lg font-semibold text-white leading-tight" style={serif}>{r.name}</span>
                       {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
                     </div>
+                    {r.timbre && <p className="text-sm text-[#C9A86A] leading-snug">聲線 · {r.timbre}</p>}
                     {r.personality && <p className="text-sm text-gray-400 leading-snug">{r.personality}</p>}
-                    {(r.emotion || r.speed) && (
+                    {(r.emotion || r.speed || r.volume) && (
                       <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
                         {r.emotion && <span><span className="text-gray-500">情緒 </span><span className="text-gray-200">{r.emotion}</span></span>}
                         {r.speed && <span><span className="text-gray-500">語速 </span><span className="text-gray-200">{r.speed}</span></span>}
+                        {r.volume && <span><span className="text-gray-500">台詞量 </span><span className="text-gray-200">{r.volume}</span></span>}
                       </div>
                     )}
                     {r.sample_line && (
@@ -143,6 +145,7 @@ export default function CastingPreview() {
                         <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{r.sample_line}</p>
                       </div>
                     )}
+                    {r.note && <p className="text-xs text-gray-500 leading-snug"><span className="text-gray-600">備註 </span>{r.note}</p>}
                   </div>
                 </div>
               );
