@@ -14,7 +14,9 @@ function tw(s: string): string {
   if (!s) return s;
   try {
     if (!_s2t) _s2t = OpenCC.Converter({ from: 'cn', to: 'twp' });
-    return _s2t(s);
+    // OpenCC mis-converts the aspect particle 了 → 瞭 (e.g. "演了"→"演瞭"). In casting
+    // scripts 瞭 is virtually always that mistake, so map it back to 了.
+    return _s2t(s).replace(/瞭/g, '了');
   } catch {
     return s;
   }
@@ -123,9 +125,9 @@ export async function POST(request: NextRequest) {
     roles.push({
       name: tw(name), gender: get(row, 'gender'), age: get(row, 'age').replace(/[岁歲]/g, ''),
       personality: tw(personality), emotion: tw(get(row, 'emotion')).slice(0, 120), speed: tw(get(row, 'speed')).slice(0, 40),
-      // 台詞 = the verbatim script the actor reads aloud — keep EXACTLY as the client
-      // wrote it (no 簡→繁 conversion, which mis-converts particles like 了→瞭).
-      sample_line: (colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : '').slice(0, 500),
+      // 台詞 = the script the actor reads — convert to Traditional (with the 瞭→了
+      // fix in tw()) so it's faithful content in TW characters, no embellishment.
+      sample_line: tw((colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : '')).slice(0, 500),
       is_lead: /主角/.test(rawName),
     });
     rowOfRole[rn] = roles.length - 1;
