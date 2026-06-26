@@ -21,8 +21,8 @@ type Brief = {
   id: string; brief_number: string; kind?: string | null; title?: string | null; content_type?: string | null;
   language?: string | null; status: string; budget?: string | null; budget_type?: string | null;
   media_scope?: string | null; territory?: string | null; license_term?: string | null; length?: string | null;
-  audition_deadline?: string | null; deadline?: string | null; has_singing?: boolean | null;
-  wants_director?: boolean | null; wants_live_session?: boolean | null; ref_audio_url?: string | null;
+  audition_deadline?: string | null; deadline?: string | null; has_singing?: boolean | null; script_status?: string | null;
+  wants_director?: boolean | null; wants_live_session?: boolean | null; live_session_tool?: string | null; ref_audio_url?: string | null;
   brief: string; created_at: string;
 };
 
@@ -147,8 +147,10 @@ export default function ClientRequestDetail() {
             {row(tx('地區', '地区', 'Territory'), b.territory)}
             {row(tx('授權', '授权', 'License'), b.license_term)}
             {row(tx('長度', '长度', 'Length'), b.length)}
+            {row(tx('稿件', '稿件', 'Script'), b.script_status)}
             {row(tx('試音截止', '试音截止', 'Audition'), b.audition_deadline)}
             {row(tx('交付截止', '交付截止', 'Delivery'), b.deadline)}
+            {b.wants_live_session && row(tx('監錄工具', '监录工具', 'Live tool'), b.live_session_tool)}
             {b.has_singing && row(tx('含唱歌', '含唱歌', 'Singing'), tx('是', '是', 'Yes'))}
             {b.wants_director && row(tx('聲音導演', '声音导演', 'Director'), tx('是', '是', 'Yes'))}
             {b.wants_live_session && row(tx('線上監錄', '线上监录', 'Live session'), tx('是', '是', 'Yes'))}

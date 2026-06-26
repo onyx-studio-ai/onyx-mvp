@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { requireAdmin, requireAdminOnly } from '@/app/api/admin/_utils/requireAdmin';
+import { sendEmail } from '@/lib/mail';
+import { castingAwardedTalentEmail, castingAwardedClientEmail } from '@/lib/mail-templates';
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
 
 /*
   Admin marketplace view — Onyx mediates briefs + quotes (managed model).
@@ -73,7 +77,7 @@ export async function PATCH(request: NextRequest) {
           .update({ status: 'accepted', updated_at: now })
           .eq('id', id)
           .in('status', ['submitted', 'shortlisted'])
-          .select('brief_id')
+          .select('brief_id, talent_id')
           .maybeSingle();
         if (!q) return NextResponse.json({ error: 'Quote is no longer available to accept' }, { status: 409 });
 
@@ -97,6 +101,21 @@ export async function PATCH(request: NextRequest) {
           .eq('brief_id', q.brief_id)
           .neq('id', id)
           .in('status', ['submitted', 'shortlisted']);
+
+        // Notify the winning talent + the client that a selection was made (best-effort).
+        try {
+          const { data: brief } = await db.from('marketplace_briefs').select('title, content_type, client_email, locale').eq('id', q.brief_id).maybeSingle();
+          const { data: talent } = await db.from('talents').select('name, email').eq('id', q.talent_id).maybeSingle();
+          const title = String(brief?.title || brief?.content_type || '配音案');
+          if (talent?.email) {
+            const m = castingAwardedTalentEmail({ talentName: talent.name as string, title, url: `${SITE}/talent`, locale: brief?.locale as string });
+            sendEmail({ category: 'HELLO', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
+          }
+          if (brief?.client_email && brief.client_email !== 'casting@onyxstudios.ai') {
+            const m = castingAwardedClientEmail({ title, url: `${SITE}/dashboard/requests`, locale: brief?.locale as string });
+            sendEmail({ category: 'HELLO', to: brief.client_email as string, subject: m.subject, html: m.html }).catch(() => {});
+          }
+        } catch { /* award notify is best-effort */ }
         return NextResponse.json({ ok: true });
       }
 

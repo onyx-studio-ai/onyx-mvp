@@ -987,22 +987,52 @@ const mpLocale = (locale?: string) => (locale === 'zh-CN' ? 'cn' : locale?.start
 const mpEsc = (s: unknown) => String(s ?? '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string));
 
 /** Client confirmation after posting a brief via /hire. */
-export function briefReceivedEmail(p: { clientName?: string; briefNumber?: string; locale?: string }): { subject: string; html: string } {
+export function briefReceivedEmail(p: { clientName?: string; briefNumber?: string; locale?: string; setupUrl?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);
   const name = mpEsc((p.clientName || '').trim());
   const n = (p.briefNumber || '').trim();
   const C = {
     tw: { subject: `Onyx Studios 已收到您的配音需求${n ? `(${n})` : ''}`, headline: '已收到您的配音需求', sub: '我們將盡快為您安排合適的配音人選。', card: n ? `案件編號 ${n}` : '配音需求',
-      greet: `${name ? name + ' ' : ''}您好,`, l1: '感謝您的委託與信任。您的配音需求我們已收到,專案團隊將盡快為您篩選合適的配音員,並備妥報價與試聽供您參考。', l2: '若有任何補充說明,或希望優先指定的聲音風格,歡迎直接回覆本信,我們將儘速為您處理。', sign: 'Onyx Studios 團隊 敬上' },
+      greet: `${name ? name + ' ' : ''}您好,`, l1: '感謝您的委託與信任。您的配音需求我們已收到,專案團隊將盡快為您篩選合適的配音員,並備妥報價與試聽供您參考。', l2: '若有任何補充說明,或希望優先指定的聲音風格,歡迎直接回覆本信,我們將儘速為您處理。', sign: 'Onyx Studios 團隊 敬上', track: '我們已為您建立專屬帳號。點下方設定密碼,即可隨時登入後台查看此案的進度、配音員試音與報價。', cta: '設定密碼 · 登入後台' },
     cn: { subject: `Onyx Studios 已收到您的配音需求${n ? `(${n})` : ''}`, headline: '已收到您的配音需求', sub: '我们将尽快为您安排合适的配音人选。', card: n ? `案件编号 ${n}` : '配音需求',
-      greet: `${name ? name + ' ' : ''}您好,`, l1: '感谢您的委托与信任。您的配音需求我们已收到,项目团队将尽快为您筛选合适的配音员,并备妥报价与试听供您参考。', l2: '若有任何补充说明,或希望优先指定的声音风格,欢迎直接回复本邮件,我们将尽快为您处理。', sign: 'Onyx Studios 团队 敬上' },
+      greet: `${name ? name + ' ' : ''}您好,`, l1: '感谢您的委托与信任。您的配音需求我们已收到,项目团队将尽快为您筛选合适的配音员,并备妥报价与试听供您参考。', l2: '若有任何补充说明,或希望优先指定的声音风格,欢迎直接回复本邮件,我们将尽快为您处理。', sign: 'Onyx Studios 团队 敬上', track: '我们已为您建立专属账号。点下方设置密码,即可随时登录后台查看此案的进度、配音员试音与报价。', cta: '设置密码 · 登录后台' },
     en: { subject: `Onyx Studios — your voiceover brief has been received${n ? ` (${n})` : ''}`, headline: 'Your brief has been received', sub: 'We will arrange the right voices for you shortly.', card: n ? `Brief ${n}` : 'Voiceover brief',
-      greet: `Dear ${name || 'there'},`, l1: 'Thank you for your enquiry. We have received your voiceover brief, and our team will shortlist suitable voice talent and prepare quotes and samples for your review shortly.', l2: 'If there is anything you would like to add, or a particular voice style you have in mind, simply reply to this email and we will be glad to assist.', sign: 'Kind regards,<br/>The Onyx Studios Team' },
+      greet: `Dear ${name || 'there'},`, l1: 'Thank you for your enquiry. We have received your voiceover brief, and our team will shortlist suitable voice talent and prepare quotes and samples for your review shortly.', l2: 'If there is anything you would like to add, or a particular voice style you have in mind, simply reply to this email and we will be glad to assist.', sign: 'Kind regards,<br/>The Onyx Studios Team', track: 'We have created an account for you. Set your password below to sign in any time and track this project — talent auditions, quotes and status.', cta: 'Set password · Sign in' },
   }[L];
   const content = `
     ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
-    ${bodyCard(C.card, `${mp(C.greet)}${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}`;
-  return { subject: C.subject, html: baseLayout(content) };
+    ${bodyCard(C.card, `${mp(C.greet)}${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}
+    ${p.setupUrl ? `${bodyCard('', mp(C.track))}${ctaRow(C.cta, p.setupUrl, BRAND_GREEN)}` : ''}`;
+  const layoutLocale: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, layoutLocale) };
+}
+
+/** Notify the winning talent that their audition was selected. */
+export function castingAwardedTalentEmail(p: { talentName?: string; title: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const t = mpEsc(p.title);
+  const C = {
+    tw: { subject: `恭喜!您的試音獲選 —— ${t}`, headline: '恭喜!您的試音獲選', sub: '客戶選擇了您的試音', card: '獲選通知', l1: `您為「<strong style="color:#f3f4f6;">${t}</strong>」提交的試音已獲選錄取。Onyx 將盡快與您聯繫正式錄製的稿件、規格與時程。`, l2: '請登入配音員後台查看詳情。', cta: '前往後台', sign: 'Onyx Studios 配音團隊 敬上' },
+    cn: { subject: `恭喜!您的试音获选 —— ${t}`, headline: '恭喜!您的试音获选', sub: '客户选择了您的试音', card: '获选通知', l1: `您为「<strong style="color:#f3f4f6;">${t}</strong>」提交的试音已获选录取。Onyx 将尽快与您联系正式录制的稿件、规格与时程。`, l2: '请登录配音员后台查看详情。', cta: '前往后台', sign: 'Onyx Studios 配音团队 敬上' },
+    en: { subject: `Congratulations — your audition was selected: ${t}`, headline: 'Your audition was selected', sub: 'The client chose your audition', card: 'You\'ve been selected', l1: `Your audition for “<strong style="color:#f3f4f6;">${t}</strong>” has been selected. Onyx will be in touch shortly with the final script, specs and schedule for the full recording.`, l2: 'Sign in to your talent dashboard for details.', cta: 'Go to dashboard', sign: 'The Onyx Studios Talent Team' },
+  }[L];
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
+/** Notify the client that a talent has been selected for their brief. */
+export function castingAwardedClientEmail(p: { clientName?: string; title: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const t = mpEsc(p.title); const name = mpEsc((p.clientName || '').trim());
+  const C = {
+    tw: { subject: `已為您選定配音員 —— ${t}`, headline: '已為您選定配音員', sub: '您的案件進入製作階段', card: '選角完成', greet: `${name ? name + ' ' : ''}您好,`, l1: `「<strong style="color:#f3f4f6;">${t}</strong>」已選定配音員,接下來進入正式錄製。Onyx 將與您確認最終稿件與交付時程。`, l2: '可登入後台查看進度。', cta: '登入查看', sign: 'Onyx Studios 團隊 敬上' },
+    cn: { subject: `已为您选定配音员 —— ${t}`, headline: '已为您选定配音员', sub: '您的案件进入制作阶段', card: '选角完成', greet: `${name ? name + ' ' : ''}您好,`, l1: `「<strong style="color:#f3f4f6;">${t}</strong>」已选定配音员,接下来进入正式录制。Onyx 将与您确认最终稿件与交付时程。`, l2: '可登录后台查看进度。', cta: '登录查看', sign: 'Onyx Studios 团队 敬上' },
+    en: { subject: `A talent has been selected — ${t}`, headline: 'A talent has been selected', sub: 'Your project is moving to production', card: 'Casting complete', greet: `Dear ${name || 'there'},`, l1: `A voice talent has been selected for “<strong style="color:#f3f4f6;">${t}</strong>”. We'll now move to the full recording and confirm the final script and delivery schedule with you.`, l2: 'Sign in to track progress.', cta: 'Sign in', sign: 'Kind regards,<br/>The Onyx Studios Team' },
+  }[L];
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.greet)}${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
 }
 
 /** New-message notification to the counterpart in a marketplace thread. */

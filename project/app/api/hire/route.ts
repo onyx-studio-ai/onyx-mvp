@@ -97,8 +97,25 @@ export async function POST(request: NextRequest) {
     </div>`;
     await sendEmail({ category: 'HELLO', to: 'hello@onyxstudios.ai', subject: `新配音需求 — ${b.name || email}${typeLabel ? ` (${typeLabel})` : ''}`, html: teamHtml, replyTo: email });
 
-    // 2) Confirm to the client (branded + localized)
-    const confirm = briefReceivedEmail({ clientName: b.name, briefNumber, locale: b.locale });
+    // 2) Provision a client account (so they can log in to /dashboard and track this
+    //    request) + a set-password link. Best-effort; reuses an existing user if the
+    //    email is already registered.
+    let setupUrl: string | undefined;
+    try {
+      const adb = getSupabaseServiceClient();
+      const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
+      const lc = String(b.locale || '');
+      const lp = lc && lc !== 'en' ? `/${lc}` : '';
+      await adb.auth.admin.createUser({ email: email.toLowerCase(), email_confirm: true }).catch(() => ({}));
+      const { data: link } = await adb.auth.admin.generateLink({
+        type: 'recovery', email: email.toLowerCase(),
+        options: { redirectTo: `${SITE}${lp}/auth/reset-password` },
+      });
+      setupUrl = link?.properties?.action_link || undefined;
+    } catch (e) { console.error('[hire] client account provisioning failed (non-fatal):', e); }
+
+    // 3) Confirm to the client (branded + localized) with the set-password / track CTA
+    const confirm = briefReceivedEmail({ clientName: b.name, briefNumber, locale: b.locale, setupUrl });
     await sendEmail({ category: 'HELLO', to: email, subject: confirm.subject, html: confirm.html });
 
     return NextResponse.json({ ok: true });

@@ -63,11 +63,13 @@ export default function AdminRequests() {
 
   async function setStatus(id: string, status: string) {
     setBusy(id);
-    await fetch('/api/admin/marketplace', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ kind: 'brief', id, status }),
-    }).catch(() => {});
-    setBusy(null);
+    try {
+      const res = await fetch('/api/admin/marketplace', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ kind: 'brief', id, status }),
+      });
+      if (!res.ok) { const j = await res.json().catch(() => ({})); alert(j.error || '更新失敗,請稍後再試'); }
+    } catch { alert('網路錯誤,請稍後再試'); } finally { setBusy(null); }
     load();
   }
 
