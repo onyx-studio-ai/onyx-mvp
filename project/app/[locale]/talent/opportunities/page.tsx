@@ -87,6 +87,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; rate_note?: string | null; status: string }[]>([]);
 
   const load = useCallback(async (accessToken: string) => {
     setToken(accessToken);
@@ -97,6 +98,7 @@ export default function Opportunities() {
     setQuotes(j.myQuotes || []);
     setRoleCounts(j.roleCounts || {});
     setMyDemos(j.myDemos || []);
+    setWonBriefs(j.wonBriefs || []);
     setPhase('ready');
   }, []);
 
@@ -136,7 +138,30 @@ export default function Opportunities() {
         {tx('以下是 Onyx 開放中的配音需求。報酬是該案配音員實際收入。', '以下是 Onyx 开放中的配音需求。报酬是该案配音员实际收入。', "These are Onyx's open voice-over cases. The rate shown is the talent's actual take-home.")}
       </p>
 
-      {briefs.length === 0 && (
+      {wonBriefs.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-[#6FCF97] mb-2">{tx('✓ 我接到的案件', '✓ 我接到的案件', '✓ Jobs I won')}</h2>
+          <div className="space-y-2">
+            {wonBriefs.map((w) => {
+              const myAccepted = quotes.filter((q) => q.brief_id === w.id && q.status === 'accepted');
+              return (
+                <div key={w.id} className="bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-xl px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-white truncate">{w.title || w.content_type || tx('配音案', '配音案', 'Voice case')}</span>
+                    <span className="text-[11px] text-[#6FCF97] whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-gray-400">
+                    {myAccepted.map((q) => <span key={q.id}>{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} {q.currency} {q.net_amount}</span>)}
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-1">{tx('Onyx 會與您聯繫正式錄製的稿件與交付時程。', 'Onyx 会与您联系正式录制的稿件与交付时程。', 'Onyx will be in touch with the final script and delivery schedule.')}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {briefs.length === 0 && wonBriefs.length === 0 && (
         <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
       )}
 

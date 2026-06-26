@@ -64,7 +64,21 @@ export async function GET(request: NextRequest) {
       delete o.client_email;
       return o;
     });
-    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos });
+
+    // Jobs the talent WON: accepted quotes whose brief is no longer 'open' (awarded/
+    // closed) — the open-only list above drops them, so the talent would lose sight
+    // of what they actually got. Surface them separately.
+    const acceptedBriefIds = [...new Set((myQuotes || []).filter((q) => q.status === 'accepted').map((q) => q.brief_id as string))];
+    const openIds = new Set(briefs.map((b) => (b as { id: string }).id));
+    const wonIds = acceptedBriefIds.filter((id) => !openIds.has(id));
+    let wonBriefs: unknown[] = [];
+    if (wonIds.length) {
+      const { data: wb } = await r.db.from('marketplace_briefs')
+        .select('id, brief_number, kind, title, content_type, language, status, rate_note')
+        .in('id', wonIds);
+      wonBriefs = wb || [];
+    }
+    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });
