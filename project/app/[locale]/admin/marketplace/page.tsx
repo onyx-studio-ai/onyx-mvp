@@ -225,6 +225,7 @@ export default function AdminMarketplace() {
                     <>
                       <span className="text-gray-900 font-medium">{b.rate_note || '—'}</span>
                       <button onClick={() => setEditRate({ id: b.id, val: b.rate_note || '' })} className="text-xs text-blue-600 hover:underline">編輯</button>
+                      <a href={`/admin/casting/${b.id}/edit`} className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded px-2.5 py-1 ml-auto">✏️ 編輯整個案件(角色/台詞)</a>
                     </>
                   )}
                 </div>
