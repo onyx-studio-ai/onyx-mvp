@@ -138,11 +138,12 @@ export default function Opportunities() {
         <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
       )}
 
-      <div className="space-y-4">
-        {briefs.map((b) => (
+      <div className="space-y-3">
+        {briefs.map((b, i) => (
           <BriefCard
             key={b.id}
             brief={b}
+            defaultOpen={i === 0}
             myQuotes={quotes.filter((q) => q.brief_id === b.id)}
             roleCounts={roleCounts[b.id] || {}}
             myDemos={myDemos}
@@ -158,6 +159,7 @@ export default function Opportunities() {
 
 function BriefCard({
   brief,
+  defaultOpen,
   myQuotes,
   roleCounts,
   myDemos,
@@ -166,6 +168,7 @@ function BriefCard({
   onQuoted,
 }: {
   brief: Brief;
+  defaultOpen?: boolean;
   myQuotes: Quote[];
   roleCounts: Record<string, number>;
   myDemos: Demo[];
@@ -177,6 +180,7 @@ function BriefCard({
   const isCasting = brief.kind === 'casting';
   const hasRoles = (brief.roles || []).length > 0; // casting WITHOUT roles = general single-voice call
   const myQuote = myQuotes[0]; // regular briefs have a single quote per talent
+  const [open, setOpen] = useState(!!defaultOpen);
   const [gross, setGross] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [message, setMessage] = useState('');
@@ -201,24 +205,13 @@ function BriefCard({
   }
 
   return (
-    <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-500 font-mono">{isCasting ? caseCode(brief) : brief.brief_number}</span>
-        {brief.deadline && <span className="text-xs text-amber-300/80">{tx('截止', '截止', 'Due')}: {brief.deadline}</span>}
-      </div>
+    <div className={`bg-white/[0.02] border rounded-2xl overflow-hidden transition ${open ? 'border-white/15' : 'border-white/10 hover:border-white/20'}`}>
+      <CaseHeader brief={brief} isCasting={isCasting} roleCount={(brief.roles || []).length} hasMine={myQuotes.length > 0} open={open} onToggle={() => setOpen((o) => !o)} tx={tx} />
 
+      {open && (
+      <div className="px-5 pb-5">
       {isCasting ? (
         <>
-          {brief.title && <h3 className="text-2xl font-semibold text-white mb-2" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{brief.title}</h3>}
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            <span className="text-xs px-2.5 py-1 rounded-full" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{tx('試音案', '试音案', 'Casting')}</span>
-            {brief.language && <span className="text-xs bg-white/[0.06] border border-white/10 text-gray-200 px-2.5 py-1 rounded-full">{brief.language}</span>}
-            {(brief.recording_methods || []).map((m) => (
-              <span key={m} className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">
-                {m === 'home' ? tx('在家錄', '在家录', 'Home') : m === 'studio' ? tx('錄音室', '录音室', 'Studio') : m === 'online' ? tx('線上監錄', '线上监录', 'Online') : m}
-              </span>
-            ))}
-          </div>
           {brief.brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{brief.brief}</p>}
 
           {brief.audition_script && (
@@ -329,16 +322,6 @@ function BriefCard({
         </>
       ) : (
         <>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {brief.content_type && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{brief.content_type}</span>}
-            {brief.has_singing && <span className="text-xs bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', '+ Singing')}</span>}
-            {brief.wants_live_session && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('線上同步錄音', '线上同步录音', 'Live session')}{brief.live_session_tool ? ` · ${brief.live_session_tool}` : ''}</span>}
-            {brief.wants_director && <span className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('聲音導演', '声音导演', 'Director')}</span>}
-            {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
-            {!brief.content_type && (brief.categories || []).map((c, i) => (
-              <span key={i} className="text-xs bg-white/5 border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{c}</span>
-            ))}
-          </div>
           <p className="text-sm text-gray-200 whitespace-pre-wrap mb-2">{brief.brief}</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
             {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
@@ -376,7 +359,57 @@ function BriefCard({
           )}
         </>
       )}
+      </div>
+      )}
     </div>
+  );
+}
+
+// Compact, always-visible case header (Voices-style list row). Click to expand the
+// full detail below. Shows the headline facts so several cases scan at a glance.
+function CaseHeader({
+  brief, isCasting, roleCount, hasMine, open, onToggle, tx,
+}: {
+  brief: Brief;
+  isCasting: boolean;
+  roleCount: number;
+  hasMine: boolean;
+  open: boolean;
+  onToggle: () => void;
+  tx: (tw: string, cn: string, en: string) => string;
+}) {
+  const due = brief.audition_deadline || brief.deadline;
+  const cat = brief.content_type || (brief.categories || [])[0];
+  return (
+    <button onClick={onToggle} className="w-full text-left px-5 py-4 hover:bg-white/[0.02] transition">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+            <span className="text-xs text-gray-500 font-mono">{isCasting ? caseCode(brief) : brief.brief_number}</span>
+            {isCasting
+              ? <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{tx('試音案', '试音案', 'Casting')}</span>
+              : cat && <span className="text-[11px] bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{cat}</span>}
+            {brief.language && <span className="text-[11px] bg-white/[0.06] border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{brief.language}</span>}
+            {brief.has_singing && <span className="text-[11px] bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', 'Singing')}</span>}
+            {brief.wants_live_session && <span className="text-[11px] bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('線上監錄', '线上监录', 'Live')}</span>}
+            {brief.wants_director && <span className="text-[11px] bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('聲音導演', '声音导演', 'Director')}</span>}
+          </div>
+          <h3 className="text-xl font-semibold text-white leading-snug truncate" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>
+            {brief.title || cat || tx('配音案', '配音案', 'Voice case')}
+          </h3>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs">
+            {brief.rate_note && <span className="text-[#E4CB94] font-medium">{brief.rate_note}</span>}
+            {isCasting && roleCount > 0 && <span className="text-gray-400">{tx(`共 ${roleCount} 角`, `共 ${roleCount} 角`, `${roleCount} roles`)}</span>}
+            {!isCasting && brief.budget && <span className="text-gray-400">{tx('預算', '预算', 'Budget')} {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
+            {due && <span className="text-amber-300/80">{tx('截止', '截止', 'Due')} {due}</span>}
+          </div>
+        </div>
+        <div className="shrink-0 flex items-center gap-2 pt-0.5">
+          {hasMine && <span className="text-[11px] text-[#6FCF97] whitespace-nowrap">{tx('已試', '已试', 'Done')}</span>}
+          <span className={`text-gray-500 text-xs transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+        </div>
+      </div>
+    </button>
   );
 }
 

@@ -36,6 +36,8 @@ type Brief = {
   budget: string | null;
   budget_type: string | null;
   deadline: string | null;
+  rate_note: string | null;
+  roles: { name?: string }[] | null;
   brief: string;
   status: string;
   awarded_quote_id: string | null;
@@ -71,6 +73,9 @@ export default function AdminMarketplace() {
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notifying, setNotifying] = useState<string | null>(null);
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  const isOpen = (id: string) => openIds.has(id);
+  const toggleOpen = (id: string) => setOpenIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/marketplace', { credentials: 'include' });
@@ -85,6 +90,9 @@ export default function AdminMarketplace() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // open the first case by default; respect the user's toggles after that
+  useEffect(() => { if (briefs.length) setOpenIds((s) => (s.size ? s : new Set([briefs[0].id]))); }, [briefs]);
 
   async function notifyCasting(b: Brief) {
     setNotifying(b.id);
@@ -122,10 +130,10 @@ export default function AdminMarketplace() {
   return (
     <div className="p-6 max-w-4xl mx-auto text-gray-900">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-xl font-semibold">案源與報價 Marketplace</h1>
+        <h1 className="text-xl font-semibold">案件 · 報價</h1>
         <a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-1.5">+ 發案(試音案)</a>
       </div>
-      <p className="text-gray-500 text-sm mb-6">客戶發案 + 配音員報價,由 Onyx 居中媒合。「+ 發案」開人聲試音案。</p>
+      <p className="text-gray-500 text-sm mb-6">客戶請求 + 自己發案 + 配音員報價,由 Onyx 居中媒合。點任一案展開細節。</p>
 
       {unavailable && (
         <div className="mb-4 text-amber-800 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -133,24 +141,38 @@ export default function AdminMarketplace() {
         </div>
       )}
 
-      {briefs.length === 0 && !unavailable && <p className="text-gray-500 text-sm">目前沒有案源。</p>}
+      {briefs.length === 0 && !unavailable && <p className="text-gray-500 text-sm">目前沒有案件。</p>}
 
-      <div className="space-y-5">
+      <div className="space-y-3">
         {briefs.map((b) => (
-          <div key={b.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-xs text-gray-500">{b.kind === 'casting' ? caseCode(b) : b.brief_number}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-                {b.status}
-              </span>
-            </div>
+          <div key={b.id} className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            {/* compact bar — always visible; click to expand the full case */}
+            <button onClick={() => toggleOpen(b.id)} className="w-full text-left px-5 py-3.5 hover:bg-gray-50 transition">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                    <span className="font-mono text-xs text-gray-500">{b.kind === 'casting' ? caseCode(b) : b.brief_number}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : b.status === 'reviewing' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{b.status}</span>
+                    {b.kind === 'casting' && <span className="text-[11px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">試音案</span>}
+                    {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">客戶請求</span>}
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 truncate">{b.title || b.client_name || b.client_email || '—'}</p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-500">
+                    {b.language && <span>{b.language}</span>}
+                    {b.rate_note && <span className="text-amber-700">{b.rate_note}</span>}
+                    {b.kind === 'casting' && (b.roles || []).length > 0 && <span>{(b.roles || []).length} 角</span>}
+                    <span>{quotesFor(b.id).length} 報價</span>
+                    {(b.audition_deadline || b.deadline) && <span>截止 {b.audition_deadline || b.deadline}</span>}
+                  </div>
+                </div>
+                <span className={`text-gray-400 text-xs pt-1 transition-transform ${isOpen(b.id) ? 'rotate-180' : ''}`}>▾</span>
+              </div>
+            </button>
+
+            {isOpen(b.id) && (
+            <div className="px-5 pb-5">
             {b.kind === 'casting' ? (
               <div className="mb-2">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">試音案</span>
-                  {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">客戶請求</span>}
-                  {b.title && <span className="text-sm font-medium text-gray-900">{b.title}</span>}
-                </div>
                 {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (
                   <div className="mb-1.5">
                     <p className="text-xs text-gray-600">📥 {b.client_name || '—'}{b.company ? ` · ${b.company}` : ''} · {b.client_email}{b.budget ? ` · 客戶預算 ${b.budget_type || ''} ${b.budget}` : ''}</p>
@@ -176,9 +198,7 @@ export default function AdminMarketplace() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-700 mb-1">
-                {b.client_name || '—'} {b.company ? `· ${b.company}` : ''} · <span className="text-gray-500">{b.client_email}</span>
-              </p>
+              b.company && <p className="text-sm text-gray-700 mb-1">{b.company}</p>
             )}
             <div className="flex flex-wrap gap-1.5 my-2">
               {b.content_type && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{b.content_type}</span>}
@@ -250,6 +270,8 @@ export default function AdminMarketplace() {
                 );
               })}
             </div>
+            </div>
+            )}
           </div>
         ))}
       </div>
