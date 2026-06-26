@@ -16,7 +16,7 @@ import { caseCode } from '@/lib/casting';
 */
 export const maxDuration = 60; // notifying matching talents can fan out
 
-type RoleIn = { name?: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; special?: string; accent?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type RoleIn = { name?: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const METHODS = ['home', 'studio', 'online'];
 const SITE = 'https://www.onyxstudios.ai';
 const ZH_RE = /中文|國語|国语|普通话|普通話|台語|台语|粵|粤|cantonese|mandarin|chinese/i;
@@ -104,8 +104,7 @@ export async function POST(request: NextRequest) {
         emotion: String(r.emotion || '').trim().slice(0, 120),
         speed: String(r.speed || '').trim().slice(0, 40),
         volume: String(r.volume || '').trim().slice(0, 60),
-        special: String(r.special || '').trim().slice(0, 120),
-        accent: String(r.accent || '').trim().slice(0, 80),
+        note: String(r.note || '').trim().slice(0, 300),
         sample_line: String(r.sample_line || '').trim().slice(0, 500),
         is_lead: !!r.is_lead,
         image: String(r.image || '').trim().slice(0, 1000) || undefined,
@@ -207,8 +206,7 @@ export async function PATCH(request: NextRequest) {
         emotion: String(r.emotion || '').trim().slice(0, 120),
         speed: String(r.speed || '').trim().slice(0, 40),
         volume: String(r.volume || '').trim().slice(0, 60),
-        special: String(r.special || '').trim().slice(0, 120),
-        accent: String(r.accent || '').trim().slice(0, 80),
+        note: String(r.note || '').trim().slice(0, 300),
         sample_line: String(r.sample_line || '').trim().slice(0, 500),
         is_lead: !!r.is_lead,
         image: String(r.image || '').trim().slice(0, 1000) || undefined,

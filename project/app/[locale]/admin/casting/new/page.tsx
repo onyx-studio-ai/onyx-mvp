@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 
 type RefFile = { name: string; url: string };
-type ParsedRole = { name: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; special?: string; accent?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type ParsedRole = { name: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -218,7 +218,7 @@ function NewCasting() {
     return parseRoles().map((r) => {
       const p = parsedRoles.find((pr) => pr.name === r.name);
       // fields not in the editable 5-col textarea ride along from the xlsx parse
-      return p ? { ...r, image: p.image, emotion: p.emotion, speed: p.speed, weight: p.weight, timbre: p.timbre, volume: p.volume, special: p.special, accent: p.accent, is_lead: r.is_lead || p.is_lead } : r;
+      return p ? { ...r, image: p.image, emotion: p.emotion, speed: p.speed, weight: p.weight, timbre: p.timbre, volume: p.volume, note: p.note, is_lead: r.is_lead || p.is_lead } : r;
     });
   }
   // assemble the rate note from the structured currency/amount inputs (both optional)
@@ -408,15 +408,14 @@ function NewCasting() {
                           </div>
                           {r.timbre && <p className="text-sm text-[#C9A86A] leading-snug">聲線 · {r.timbre}</p>}
                           {r.personality && <p className="text-sm text-gray-400 leading-snug">{r.personality}</p>}
-                          {(r.emotion || r.speed || r.volume || r.special || r.accent) && (
+                          {(r.emotion || r.speed || r.volume) && (
                             <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
                               {r.emotion && <span><span className="text-gray-500">台詞情緒 </span><span className="text-gray-200">{r.emotion}</span></span>}
                               {r.speed && <span><span className="text-gray-500">語速 </span><span className="text-gray-200">{r.speed}</span></span>}
                               {r.volume && <span><span className="text-gray-500">台詞量 </span><span className="text-gray-200">{r.volume}</span></span>}
-                              {r.special && <span><span className="text-gray-500">特殊聲音 </span><span className="text-gray-200">{r.special}</span></span>}
-                              {r.accent && <span><span className="text-gray-500">口音 </span><span className="text-gray-200">{r.accent}</span></span>}
                             </div>
                           )}
+                          {r.note && <p className="text-sm text-gray-400 leading-snug"><span className="text-gray-500">備註 </span>{r.note}</p>}
                           {r.sample_line && (
                             <div className="bg-[#14131a] border border-white/[0.08] rounded-xl px-3.5 py-3">
                               <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1">試音樣詞</span>

@@ -41,8 +41,8 @@ const COLS: Record<string, string> = {
   name: '角色名|角色名稱|角色', weight: '戲份|戏份|角色定位', gender: '性别|性別', age: '年龄|年齡|年龄段|年齡段|聲音年齡|声音年龄',
   timbre: '聲線|声线|音色', personality: '性格|个性|個性', intro: '角色介绍|角色介紹|角色简介|角色簡介|人物介绍|人物介紹',
   emotion: '台詞情緒|台词情绪|核心情绪|核心情緒|情绪|情緒|情感|語氣|语气', speed: '语速|語速',
-  volume: '台詞量|台词量|台詞數|台词数', special: '特殊聲音|特殊声音|特殊表現|特殊表现',
-  accent: '口音', imageUrl: '角色圖連結|角色图链接|角色圖|角色图|圖片連結|图片链接',
+  volume: '台詞量|台词量|台詞數|台词数',
+  imageUrl: '角色圖連結|角色图链接|角色圖|角色图|圖片連結|图片链接', note: '備註|备注|備注|備註/情境|备注/情境',
   line: '台词内容|台詞內容|台词|台詞',
 };
 const EXACT_ONLY = new Set(['name', 'line']); // these must equal the header, not just be contained in it
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
   }
   if (!ws || !colIdx.name) return NextResponse.json({ error: '找不到「角色名」欄,請確認 xlsx 格式或改用手動輸入' }, { status: 422 });
 
-  type R = { name: string; weight: string; gender: string; age: string; timbre: string; personality: string; emotion: string; speed: string; volume: string; special: string; accent: string; sample_line: string; is_lead: boolean; image?: string };
+  type R = { name: string; weight: string; gender: string; age: string; timbre: string; personality: string; emotion: string; speed: string; volume: string; note: string; sample_line: string; is_lead: boolean; image?: string };
   const roles: R[] = [];
   const rowOfRole: Record<number, number> = {}; // sheet rowNumber → roles[] index
   const get = (row: ExcelJS.Row, field: string) => (colIdx[field] ? norm(row.getCell(colIdx[field]).value) : '');
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       name: tw(name), weight: tw(weight), gender: get(row, 'gender'), age: get(row, 'age').replace(/[岁歲]/g, ''),
       timbre: tw(get(row, 'timbre')).slice(0, 80),
       personality: tw(personality), emotion: tw(get(row, 'emotion')).slice(0, 120), speed: tw(get(row, 'speed')).slice(0, 40),
-      volume: tw(get(row, 'volume')).slice(0, 60), special: tw(get(row, 'special')).slice(0, 120), accent: tw(get(row, 'accent')).slice(0, 80),
+      volume: tw(get(row, 'volume')).slice(0, 60), note: tw(get(row, 'note')).slice(0, 300),
       // 台詞 = the script the actor reads — convert to Traditional (with the 瞭→了
       // fix in tw()) so it's faithful content in TW characters, no embellishment.
       sample_line: tw((colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : '')).slice(0, 500),
