@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { useRouter as useLocaleRouter } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt, Mic2, ClipboardList } from 'lucide-react';
+import { FileAudio, Settings, LogOut, Receipt, ClipboardList, User, Briefcase, DollarSign, MessageSquare } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
 
@@ -88,44 +88,48 @@ function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
     return value === `dashboard.${key}` ? fallback : value;
   };
 
-  // Dual-role only: this account is also a talent → offer a switch to the talent
-  // portal. A pure client never sees it; a pure talent never reaches /dashboard.
-  const nav = [
-    { href: '/dashboard', label: tr('navProjects', '專案') , icon: FileAudio },
+  // Unified sidebar: same two groups as the talent dashboard, so switching between
+  // /talent/* and /dashboard/* keeps the SAME sidebar (no "jumped to another page"
+  // feeling). 配音員 group shows only for dual-role accounts.
+  const talentNav = [
+    { href: '/talent', label: tr('navTalentProfile', '我的檔案'), icon: User },
+    { href: '/talent/opportunities', label: tr('navTalentOpps', '案件機會'), icon: Briefcase },
+    { href: '/talent/earnings', label: tr('navTalentEarnings', '收款'), icon: DollarSign },
+    { href: '/talent/messages', label: tr('navTalentMessages', '訊息'), icon: MessageSquare },
+  ];
+  const clientNav = [
+    { href: '/dashboard', label: tr('navProjects', '專案'), icon: FileAudio },
     { href: '/dashboard/requests', label: tr('navRequests', '配音需求'), icon: ClipboardList },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票'), icon: Receipt },
     { href: '/dashboard/settings', label: tr('navSettings', '設定'), icon: Settings },
-    ...(showTalentLink ? [{ href: '/talent', label: tr('navTalentPortal', '配音員後台'), icon: Mic2 }] : []),
   ];
-
+  const isActive = (href: string) =>
+    href === '/dashboard' ? (safePathname === '/dashboard' || safePathname.startsWith('/dashboard/orders'))
+      : href === '/talent' ? safePathname === '/talent'
+        : safePathname === href || safePathname.startsWith(href + '/');
+  const itemCls = (active: boolean) => `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${active ? 'bg-amber-500/15 text-amber-200' : 'text-gray-400 hover:text-white hover:bg-white/5'}`;
   const displayName = user.user_metadata?.full_name || user.email;
 
   return (
-    <aside className="hidden md:flex w-56 flex-col fixed top-16 bottom-0 border-r border-white/[0.06] bg-[#050505] z-30">
-      <nav className="flex-1 p-4 space-y-1 pt-6">
-        {nav.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === '/dashboard'
-              ? safePathname === '/dashboard' || safePathname.startsWith('/dashboard/orders')
-              : safePathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                active
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </Link>
-          );
-        })}
+    <aside className="hidden md:flex w-56 flex-col fixed top-16 bottom-0 border-r border-white/10 bg-zinc-950 z-30">
+      <nav className="flex-1 p-4 space-y-1 pt-6 overflow-y-auto">
+        {showTalentLink && (
+          <>
+            <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tr('groupTalent', '配音員')}</p>
+            {talentNav.map(({ href, label, icon: Icon }) => (
+              <Link key={href} href={href} className={itemCls(isActive(href))}><Icon className="w-4 h-4" />{label}</Link>
+            ))}
+          </>
+        )}
+        <div className={showTalentLink ? 'pt-3 mt-3 border-t border-white/10' : ''}>
+          <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tr('groupClient', '客戶')}</p>
+          {clientNav.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className={itemCls(isActive(href))}><Icon className="w-4 h-4" />{label}</Link>
+          ))}
+        </div>
       </nav>
 
-      <div className="p-4 border-t border-white/[0.06]">
+      <div className="p-4 border-t border-white/10">
         <div className="px-1">
           <p className="text-xs text-gray-300 font-medium truncate">{displayName}</p>
           <p className="text-[11px] text-gray-500 truncate mt-0.5">{user.email}</p>
@@ -144,15 +148,20 @@ function MobileNav({ showTalentLink }: { showTalentLink: boolean }) {
     return value === `dashboard.${key}` ? fallback : value;
   };
   const nav = [
+    ...(showTalentLink ? [
+      { href: '/talent', label: tr('navTalentProfile', '我的檔案') },
+      { href: '/talent/opportunities', label: tr('navTalentOpps', '案件機會') },
+      { href: '/talent/earnings', label: tr('navTalentEarnings', '收款') },
+      { href: '/talent/messages', label: tr('navTalentMessages', '訊息') },
+    ] : []),
     { href: '/dashboard', label: tr('navProjects', '專案') },
     { href: '/dashboard/requests', label: tr('navRequests', '配音需求') },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票') },
     { href: '/dashboard/settings', label: tr('navSettings', '設定') },
-    ...(showTalentLink ? [{ href: '/talent', label: tr('navTalentPortal', '配音員後台') }] : []),
   ];
 
   return (
-    <div className="md:hidden flex items-center gap-1 px-4 py-2.5 border-b border-white/[0.06] bg-[#080808]">
+    <div className="md:hidden flex items-center gap-1 px-4 py-2.5 border-b border-white/[0.06] bg-[#080808] overflow-x-auto whitespace-nowrap">
       {nav.map(({ href, label }) => {
         const active =
           href === '/dashboard'
@@ -163,9 +172,7 @@ function MobileNav({ showTalentLink }: { showTalentLink: boolean }) {
             key={href}
             href={href}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              active
-                ? 'bg-white/[0.08] text-white'
-                : 'text-gray-500 hover:text-gray-300'
+              active ? 'bg-amber-500 text-black' : 'text-gray-400 hover:text-gray-200'
             }`}
           >
             {label}
