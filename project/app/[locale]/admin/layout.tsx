@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl';
 import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type BadgeKey = 'orders' | 'inquiries' | 'applications';
+type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests';
 
 type NavItem = { href: string; labelKey: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey };
 type NavGroup = { titleKey: string; items: NavItem[] };
@@ -17,7 +17,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/admin/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
       { href: '/admin/orders', labelKey: 'orders', icon: ShoppingCart, badgeKey: 'orders' },
-      { href: '/admin/requests', labelKey: 'requests', icon: Inbox },
+      { href: '/admin/requests', labelKey: 'requests', icon: Inbox, badgeKey: 'requests' },
       { href: '/admin/inquiries', labelKey: 'inquiries', icon: MessageSquare, badgeKey: 'inquiries' },
       { href: '/admin/marketplace', labelKey: 'marketplace', icon: Megaphone },
     ],
@@ -121,7 +121,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(true);
-  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0 });
+  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0 });
 
   // Admin panel uses a light theme — explicitly ensure dark class is not set
   // (it may linger from public dark pages on client-side navigation).
@@ -159,7 +159,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const fetchBadges = async () => {
       try {
         const params = new URLSearchParams();
-        (['orders', 'inquiries', 'applications'] as BadgeKey[]).forEach((key) => {
+        (['orders', 'inquiries', 'applications', 'requests'] as BadgeKey[]).forEach((key) => {
           const seen = localStorage.getItem(`admin_badge_seen_${key}`);
           if (seen) params.set(`${key}_since`, seen);
         });
@@ -169,6 +169,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           orders: data.orders || 0,
           inquiries: data.inquiries || 0,
           applications: data.applications || 0,
+          requests: data.requests || 0,
         });
       } catch { /* ignore */ }
     };
@@ -365,6 +366,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           "min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full text-white text-xs font-bold",
                           item.badgeKey === 'orders' ? 'bg-amber-600' :
                           item.badgeKey === 'applications' ? 'bg-yellow-600' :
+                          item.badgeKey === 'requests' ? 'bg-emerald-600' :
                           'bg-blue-600'
                         )}>
                           {badgeCount > 99 ? '99+' : badgeCount}

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const ordersSince = searchParams.get('orders_since');
     const inquiriesSince = searchParams.get('inquiries_since');
     const applicationsSince = searchParams.get('applications_since');
+    const requestsSince = searchParams.get('requests_since');
 
     let voiceQuery = supabase
       .from('voice_orders')
@@ -47,6 +48,17 @@ export async function GET(request: NextRequest) {
       .eq('status', 'pending');
     if (applicationsSince) appsQuery = appsQuery.gt('created_at', applicationsSince);
 
+    // Pending client requests = /hire casting briefs awaiting Onyx review (a real
+    // client, not Onyx's own casting@ posts). Gives 客戶請求 an unread badge so new
+    // requests aren't missed.
+    let requestsQuery = supabase
+      .from('marketplace_briefs')
+      .select('*', { count: 'exact', head: true })
+      .eq('kind', 'casting')
+      .eq('status', 'reviewing')
+      .neq('client_email', 'casting@onyxstudios.ai');
+    if (requestsSince) requestsQuery = requestsQuery.gt('created_at', requestsSince);
+
     let orchestraUrl = `${SUPABASE_URL}/rest/v1/orchestra_orders?status=eq.paid&select=id`;
     if (ordersSince) orchestraUrl += `&created_at=gt.${ordersSince}`;
 
@@ -55,12 +67,14 @@ export async function GET(request: NextRequest) {
       { count: paidMusic },
       { count: newInquiries },
       { count: pendingApps },
+      { count: pendingRequests },
       orchestraRes,
     ] = await Promise.all([
       voiceQuery,
       musicQuery,
       inquiriesQuery,
       appsQuery,
+      requestsQuery,
       fetch(orchestraUrl, {
         headers: {
           apikey: SERVICE_ROLE_KEY,
@@ -75,9 +89,10 @@ export async function GET(request: NextRequest) {
       orders: (paidVoice || 0) + (paidMusic || 0) + orchestraPaid,
       inquiries: newInquiries || 0,
       applications: pendingApps || 0,
+      requests: pendingRequests || 0,
     });
   } catch (err) {
     console.error('[Admin Badges] Error:', err);
-    return NextResponse.json({ inquiries: 0, orders: 0, applications: 0 });
+    return NextResponse.json({ inquiries: 0, orders: 0, applications: 0, requests: 0 });
   }
 }

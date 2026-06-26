@@ -354,7 +354,9 @@ export default function AdminOrdersPage() {
           .select('id, order_number, email, tier, price, status, payment_status, paid_at, created_at, vibe, description, reference_link, usage_type, download_url, string_addon, version_count, max_versions, confirmed_version_id, awaiting_final_upload, talent_id, talents(name)')
           .neq('status', 'draft')
           .order('created_at', { ascending: false }),
-        fetch('/api/orders/orchestra?all=1').then(r => r.json()).catch(() => []),
+        fetch('/api/orders/orchestra?all=1')
+          .then(async (r) => ({ ok: r.ok, body: await r.json().catch(() => null) }))
+          .catch(() => ({ ok: false, body: null })),
       ]);
 
       if (voiceResult.error) {
@@ -369,10 +371,17 @@ export default function AdminOrdersPage() {
         const raw = o as typeof o & { talents?: { name: string } | null };
         return { ...o, talent_name: raw.talents?.name ?? null, type: 'music' as const };
       }));
-      const stringsData = Array.isArray(strings) ? strings : [];
+      // Don't swallow orchestra failures — an error response used to map silently to
+      // [] and the orders just disappeared. Surface it like voice/music errors.
+      const stringsData = Array.isArray(strings.body) ? strings.body : [];
+      if (!strings.ok) {
+        const msg = (strings.body && typeof strings.body === 'object' && 'error' in strings.body) ? String((strings.body as { error: unknown }).error) : 'request failed';
+        setUpdateError('Failed to load orchestra orders: ' + msg);
+      }
       setStringsOrders(stringsData.map((o: any) => ({ ...o, type: 'strings' as const })));
     } catch (err) {
       console.error('Error fetching orders:', err);
+      setUpdateError('Failed to load orders: ' + (err instanceof Error ? err.message : 'unknown error'));
     } finally {
       setLoading(false);
     }

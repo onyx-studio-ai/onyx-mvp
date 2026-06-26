@@ -30,6 +30,7 @@ type SuccessState = { orderId: string; orderNumber: string; emailSent?: boolean;
 export default function VoiceForm() {
   const router = useRouter();
   const [talents, setTalents] = useState<Talent[]>([]);
+  const [talentLoadError, setTalentLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessState | null>(null);
   const [error, setError] = useState('');
@@ -55,8 +56,9 @@ export default function VoiceForm() {
     async function fetchTalents() {
       // Via the admin service-role API (not the public anon key) so talent email
       // isn't exposed publicly. Admin auth cookie rides the same-origin fetch.
-      const res = await fetch('/api/admin/talents');
-      if (!res.ok) return;
+      const res = await fetch('/api/admin/talents').catch(() => null);
+      if (!res || !res.ok) { setTalentLoadError('無法載入配音員清單,請重新整理或稍後再試。'); return; }
+      setTalentLoadError('');
       const all = (await res.json()) as Array<{ id: string; name: string; email: string | null; is_active: boolean; type: string }>;
       const list = (Array.isArray(all) ? all : [])
         .filter((t) => t.is_active && ['voice_actor', 'VO', 'Singer'].includes(t.type))
@@ -224,6 +226,7 @@ export default function VoiceForm() {
               <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
             ))}
           </select>
+          {talentLoadError && <p className="text-xs text-red-600 mt-1.5">{talentLoadError}</p>}
         </div>
       </div>
 
