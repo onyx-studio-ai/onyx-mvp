@@ -87,7 +87,6 @@ const LANGUAGES: Opt3[] = [
 // Accent — optional, but always offered. "None / no preference" and a free-text
 // "Other" cover the long tail (there are far too many accents to list).
 const ACCENTS: Opt3[] = [
-  { v: '__none__', tw: '不指定', cn: '不指定', en: 'No preference' },
   { v: 'Taiwan', tw: '台灣腔', cn: '台湾腔', en: 'Taiwan' },
   { v: 'Mainland', tw: '大陸 / 普通話', cn: '大陆 / 普通话', en: 'Mainland' },
   { v: 'Hong Kong', tw: '香港', cn: '香港', en: 'Hong Kong' },
@@ -100,17 +99,14 @@ const ACCENTS: Opt3[] = [
   { v: 'Canadian', tw: '加拿大', cn: '加拿大', en: 'Canadian' },
   { v: '__other__', tw: '其他(自行填寫)', cn: '其他(自行填写)', en: 'Other (type it)' },
 ];
-const VOICES_NEEDED: Opt3[] = [
-  { v: '1', tw: '1 位', cn: '1 位', en: '1 voice' },
-  { v: '2', tw: '2 位', cn: '2 位', en: '2 voices' },
-  { v: '3+', tw: '3 位以上', cn: '3 位以上', en: '3 or more' },
-];
-const GENDER_NEEDS: Opt3[] = [
-  { v: 'Any', tw: '不限', cn: '不限', en: 'No preference' },
-  { v: 'Male', tw: '限男聲', cn: '限男声', en: 'Male only' },
-  { v: 'Female', tw: '限女聲', cn: '限女声', en: 'Female only' },
-  { v: 'Mixed', tw: '男女皆需', cn: '男女皆需', en: 'Both' },
-  { v: '__other__', tw: '自訂組成', cn: '自订组成', en: 'Custom mix' },
+// Voice headcount by gender — "how many male / how many female". 0 = none of that gender.
+const VOICE_COUNTS: Opt3[] = [
+  { v: '0', tw: '0 位', cn: '0 位', en: '0' },
+  { v: '1', tw: '1 位', cn: '1 位', en: '1' },
+  { v: '2', tw: '2 位', cn: '2 位', en: '2' },
+  { v: '3', tw: '3 位', cn: '3 位', en: '3' },
+  { v: '4', tw: '4 位', cn: '4 位', en: '4' },
+  { v: '5+', tw: '5 位以上', cn: '5 位以上', en: '5+' },
 ];
 const LENGTH_UNITS: Opt3[] = [
   { v: 'minutes', tw: '分鐘', cn: '分钟', en: 'minutes' },
@@ -164,11 +160,10 @@ export default function Hire() {
   const [languageOther, setLanguageOther] = useState('');
   const [accent, setAccent] = useState('');
   const [accentOther, setAccentOther] = useState('');
-  // length unit, voices + gender
+  // length unit, voices by gender (how many male / how many female)
   const [lengthUnit, setLengthUnit] = useState('minutes');
-  const [voicesNeeded, setVoicesNeeded] = useState('1');
-  const [genderNeeds, setGenderNeeds] = useState('Any');
-  const [genderOther, setGenderOther] = useState('');
+  const [maleVoices, setMaleVoices] = useState('0');
+  const [femaleVoices, setFemaleVoices] = useState('0');
   // script: type + paste/upload
   const [scriptType, setScriptType] = useState('audition');
   const [scriptMode, setScriptMode] = useState<'paste' | 'upload'>('paste');
@@ -282,7 +277,6 @@ export default function Hire() {
     if (!language) return setError(tx('請選擇語言', '请选择语言', 'Please choose the language'));
     if (language === '__other__' && !languageOther.trim()) return setError(tx('請填寫語言', '请填写语言', 'Please specify the language'));
     if (accent === '__other__' && !accentOther.trim()) return setError(tx('請填寫口音', '请填写口音', 'Please specify the accent'));
-    if (genderNeeds === '__other__' && !genderOther.trim()) return setError(tx('請填寫聲音性別組成', '请填写声音性别组成', 'Please specify the gender composition'));
     if (wantsLocalStudio && !studioRegion) return setError(tx('請選擇當地錄音室地區', '请选择当地录音室地区', 'Please choose the local studio region'));
     if (wantsLocalStudio && studioRegion === '__other__' && !studioRegionOther.trim()) return setError(tx('請填寫當地錄音室地區', '请填写当地录音室地区', 'Please specify the local studio region'));
     if (!form.budget.trim()) return setError(tx('請填預算金額', '请填预算金额', 'Please enter a budget amount'));
@@ -292,11 +286,19 @@ export default function Hire() {
 
     const resolvedLanguage = resolve3(language, languageOther, LANGUAGES);
     const resolvedAccent = resolve3(accent, accentOther, ACCENTS);
-    const resolvedGender = resolve3(genderNeeds, genderOther, GENDER_NEEDS);
     const resolvedRegion = wantsLocalStudio ? resolve3(studioRegion, studioRegionOther, STUDIO_REGIONS) : '';
     const unitLabel = lbl3(LENGTH_UNITS.find((u) => u.v === lengthUnit) || LENGTH_UNITS[0]);
     const resolvedLength = form.length.trim() ? `${form.length.trim()} ${unitLabel}` : '';
     const hasScript = scriptMode === 'paste' ? !!scriptText.trim() : !!scriptFileUrl;
+    // voices by gender → a count total + a readable "男聲 N 位、女聲 M 位" string.
+    const cntLabel = (v: string) => lbl3(VOICE_COUNTS.find((o) => o.v === v) || VOICE_COUNTS[0]);
+    const maleN = maleVoices === '5+' ? 5 : parseInt(maleVoices, 10) || 0;
+    const femaleN = femaleVoices === '5+' ? 5 : parseInt(femaleVoices, 10) || 0;
+    const resolvedVoices = maleN + femaleN || null;
+    const genderParts: string[] = [];
+    if (maleVoices !== '0') genderParts.push(`${tx('男聲', '男声', 'Male')} ${cntLabel(maleVoices)}`);
+    if (femaleVoices !== '0') genderParts.push(`${tx('女聲', '女声', 'Female')} ${cntLabel(femaleVoices)}`);
+    const resolvedGender = genderParts.join(tx('、', '、', ', '));
 
     setSubmitting(true);
     try {
@@ -308,7 +310,7 @@ export default function Hire() {
           language: resolvedLanguage,
           accent: resolvedAccent,
           length: resolvedLength,
-          voices_needed: voicesNeeded,
+          voices_needed: resolvedVoices,
           gender_needs: resolvedGender,
           // budget carries its currency so the admin sees e.g. "Up to USD 500"
           budget: `${budgetCurrency} ${form.budget.trim()}`,
@@ -449,16 +451,22 @@ export default function Hire() {
                 </div>
               </div>
 
-              {/* Voices needed + gender composition */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2">{tx('需要幾位配音員', '需要几位配音员', 'How many voices')}</label>
-                  <NativeSelect value={voicesNeeded} onChange={setVoicesNeeded} opts={VOICES_NEEDED} placeholder={tx('請選擇', '请选择', 'Select')} />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">{tx('聲音性別', '声音性别', 'Voice gender')}</label>
-                  <NativeSelect value={genderNeeds} onChange={setGenderNeeds} opts={GENDER_NEEDS} placeholder={tx('不限', '不限', 'No preference')} />
-                  {genderNeeds === '__other__' && <input className={`${inputCls} mt-2`} value={genderOther} onChange={(e) => setGenderOther(e.target.value)} placeholder={tx('例:2 男 1 女', '例:2 男 1 女', 'e.g. 2 male, 1 female')} />}
+              {/* How many voices — by gender. 0 = none of that gender. */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">{tx('需要幾位配音員', '需要几位配音员', 'How many voices')} <span className="text-xs text-gray-500">{tx('選填 · 各性別填人數,沒有就留 0', '选填 · 各性别填人数,没有就留 0', 'Optional · count per gender, 0 if none')}</span></label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-300 w-12 shrink-0">{tx('男聲', '男声', 'Male')}</span>
+                    <select className={inputCls} value={maleVoices} onChange={(e) => setMaleVoices(e.target.value)}>
+                      {VOICE_COUNTS.map((o) => <option key={o.v} value={o.v} className="bg-zinc-900">{lbl3(o)}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-300 w-12 shrink-0">{tx('女聲', '女声', 'Female')}</span>
+                    <select className={inputCls} value={femaleVoices} onChange={(e) => setFemaleVoices(e.target.value)}>
+                      {VOICE_COUNTS.map((o) => <option key={o.v} value={o.v} className="bg-zinc-900">{lbl3(o)}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
 
