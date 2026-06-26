@@ -81,7 +81,9 @@ export default function AdminMarketplace() {
     const res = await fetch('/api/admin/marketplace', { credentials: 'include' });
     if (res.status === 401) return setPhase('unauth');
     const j = await res.json().catch(() => ({}));
-    setBriefs(j.briefs || []);
+    // Un-actioned client requests (status='reviewing') live in 客戶請求 (/admin/requests),
+    // not here — this page is for actual casting calls + their quotes.
+    setBriefs((j.briefs || []).filter((b: Brief) => b.status !== 'reviewing'));
     setQuotes(j.quotes || []);
     setUnavailable(!!j.unavailable);
     setPhase('ready');
@@ -133,7 +135,7 @@ export default function AdminMarketplace() {
         <h1 className="text-xl font-semibold">案件 · 報價</h1>
         <a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-1.5">+ 發案(試音案)</a>
       </div>
-      <p className="text-gray-500 text-sm mb-6">客戶請求 + 自己發案 + 配音員報價,由 Onyx 居中媒合。點任一案展開細節。</p>
+      <p className="text-gray-500 text-sm mb-6">Onyx 發的試音案 + 配音員報價。客戶送來的需求請看「客戶請求」頁。點任一案展開細節。</p>
 
       {unavailable && (
         <div className="mb-4 text-amber-800 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">

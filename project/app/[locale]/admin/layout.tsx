@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BadgeKey = 'orders' | 'inquiries' | 'applications';
@@ -17,6 +17,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/admin/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
       { href: '/admin/orders', labelKey: 'orders', icon: ShoppingCart, badgeKey: 'orders' },
+      { href: '/admin/requests', labelKey: 'requests', icon: Inbox },
       { href: '/admin/inquiries', labelKey: 'inquiries', icon: MessageSquare, badgeKey: 'inquiries' },
       { href: '/admin/marketplace', labelKey: 'marketplace', icon: Megaphone },
     ],
@@ -51,6 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const dict = isZhTW ? {
     orders: '訂單',
     dashboard: '總覽',
+    requests: '客戶請求',
     inquiries: '詢問單',
     marketplace: '案件 · 發案',
     people: '人員',
@@ -82,6 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   } : {
     orders: 'Orders',
     dashboard: 'Dashboard',
+    requests: 'Client Requests',
     inquiries: 'Inquiries',
     marketplace: 'Briefs · Casting',
     people: 'People',
