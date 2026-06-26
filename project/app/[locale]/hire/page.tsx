@@ -130,6 +130,8 @@ const STUDIO_REGIONS: Opt3[] = [
 ];
 const CURRENCIES = ['USD', 'TWD'];
 const SCRIPT_EXT = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md'];
+// Role-based content types — these get the per-character casting role sheet.
+const ROLE_TYPES = ['Game', 'Animation', 'Film / Drama'];
 
 const inputCls =
   'w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:border-amber-500/60 focus:outline-none placeholder:text-gray-600';
@@ -174,6 +176,10 @@ export default function Hire() {
   const [scriptFileUrl, setScriptFileUrl] = useState('');
   const [scriptFileName, setScriptFileName] = useState('');
   const [scriptUploading, setScriptUploading] = useState(false);
+  // role sheet (game / drama / animation only)
+  const [rolesFileUrl, setRolesFileUrl] = useState('');
+  const [rolesFileName, setRolesFileName] = useState('');
+  const [rolesUploading, setRolesUploading] = useState(false);
   // local studio add-on
   const [wantsLocalStudio, setWantsLocalStudio] = useState(false);
   const [studioRegion, setStudioRegion] = useState('');
@@ -232,6 +238,24 @@ export default function Hire() {
     } catch (e) {
       setError(e instanceof Error ? e.message : tx('稿件上傳失敗,請重試', '稿件上传失败,请重试', 'Script upload failed — please try again'));
     } finally { setScriptUploading(false); }
+  }
+
+  async function uploadRolesFile(file: File) {
+    setError('');
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!['xlsx', 'xls', 'csv'].includes(ext)) { setError(tx('請上傳 Excel(xlsx)角色表', '请上传 Excel(xlsx)角色表', 'Please upload an Excel (xlsx) role sheet')); return; }
+    if (file.size > 25 * 1024 * 1024) { setError(tx('角色表請勿超過 25MB', '角色表请勿超过 25MB', 'Role sheet must be under 25MB')); return; }
+    setRolesUploading(true);
+    try {
+      const u = await fetch('/api/hire/script-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || 'upload prep failed');
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setRolesFileUrl(uj.publicUrl); setRolesFileName(file.name);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : tx('角色表上傳失敗,請重試', '角色表上传失败,请重试', 'Role sheet upload failed — please try again'));
+    } finally { setRolesUploading(false); }
   }
 
   // Single-select rendered as pills to match the music/data brief design.
@@ -302,6 +326,7 @@ export default function Hire() {
           script_type: hasScript ? scriptType : '',
           script_text: scriptMode === 'paste' ? scriptText.trim() : '',
           script_file_url: scriptMode === 'upload' ? scriptFileUrl : '',
+          roles_file_url: ROLE_TYPES.includes(contentType) ? rolesFileUrl : '',
           ref_audio_url: form.refUrl,
           audition_deadline: form.auditionDeadline,
           wants_director: wantsDirector,
@@ -479,6 +504,22 @@ export default function Hire() {
                   </div>
                 )}
               </div>
+
+              {/* Role sheet — only for role-based content (game / drama / animation) */}
+              {ROLE_TYPES.includes(contentType) && (
+                <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-4 py-3.5">
+                  <label className="block text-sm font-semibold mb-1">{tx('角色表', '角色表', 'Character roster')} <span className="text-xs text-gray-500">{tx('選填 · 多角色建議填寫', '选填 · 多角色建议填写', 'Optional · recommended for multiple roles')}</span></label>
+                  <p className="text-xs text-gray-400 mb-3">{tx('下載範本,每個角色填一列(角色名、性別、聲音年齡、試音台詞為必填),填好上傳;我們會精準帶入每個角色的試音。', '下载范本,每个角色填一列(角色名、性别、声音年龄、试音台词为必填),填好上传;我们会精准带入每个角色的试音。', 'Download the template, one row per character (name, gender, voice age, audition line required), then upload it — we’ll import each role precisely.')}</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <a href="/api/hire/role-template" className="inline-flex items-center gap-1.5 text-sm bg-white/10 border border-white/15 rounded-lg px-3 py-2 hover:bg-white/15 transition">⬇ {tx('下載角色表範本', '下载角色表范本', 'Download template')}</a>
+                    <label className="inline-flex items-center gap-1.5 text-sm bg-amber-500/15 border border-amber-500/40 text-amber-200 rounded-lg px-3 py-2 cursor-pointer hover:bg-amber-500/25 transition">
+                      {rolesUploading ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳填好的角色表', '⬆ 上传填好的角色表', '⬆ Upload filled sheet')}
+                      <input type="file" accept=".xlsx,.xls,.csv" className="hidden" disabled={rolesUploading} onChange={(e) => e.target.files?.[0] && uploadRolesFile(e.target.files[0])} />
+                    </label>
+                    {rolesFileName && <span className="text-xs text-emerald-300">✓ {rolesFileName}</span>}
+                  </div>
+                </div>
+              )}
 
               {/* Timeline — both optional, an estimate that gives buffer */}
               <div className="grid grid-cols-2 gap-4">

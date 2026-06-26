@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
           script_text: (typeof b.script_text === 'string' && b.script_text.trim()) ? b.script_text.trim().slice(0, 20000) : null,
           script_file_url: (typeof b.script_file_url === 'string' && /^https?:\/\//i.test(b.script_file_url)) ? b.script_file_url.slice(0, 1000) : null,
           script_type: (b.script_type === 'audition' || b.script_type === 'final') ? b.script_type : null,
+          roles_file_url: (typeof b.roles_file_url === 'string' && /^https?:\/\//i.test(b.roles_file_url)) ? b.roles_file_url.slice(0, 1000) : null,
           local_studio_region: (typeof b.local_studio_region === 'string' && b.local_studio_region.trim()) ? b.local_studio_region.trim().slice(0, 120) : null,
           budget: b.budget || null,
           deadline: b.deadline || null,

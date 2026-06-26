@@ -15,7 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 
 type RefFile = { name: string; url: string };
-type ParsedRole = { name: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type ParsedRole = { name: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; special?: string; accent?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -136,6 +136,23 @@ function NewCasting() {
       if (bf.audition_deadline) setAuditionDeadline(bf.audition_deadline);
       if (bf.wants_live_session) setMethods((m) => ({ ...m, online: true }));
       if (Array.isArray(bf.recording_methods) && bf.recording_methods.length) setMethods((m) => ({ ...m, ...Object.fromEntries((bf.recording_methods as string[]).map((k) => [k, true])) }));
+      // Auto-import the client's uploaded role sheet (game/drama/animation), so the
+      // admin doesn't re-upload. keep=true preserves the original on the brief.
+      if (typeof bf.roles_file_url === 'string' && bf.roles_file_url.includes('/casting/')) {
+        const path = decodeURIComponent(bf.roles_file_url.split('/casting/')[1] || '');
+        if (path) {
+          setWorking('帶入客戶角色表…');
+          try {
+            const pr = await fetch('/api/admin/casting/parse-xlsx', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path, keep: true }) });
+            const pj = await pr.json().catch(() => ({}));
+            if (pr.ok && Array.isArray(pj.roles) && pj.roles.length) {
+              const rs: ParsedRole[] = pj.roles;
+              setParsedRoles(rs);
+              setRolesText(rs.map((r) => `${r.is_lead ? '★' : ''}${r.name} | ${r.gender || ''} | ${r.age || ''} | ${r.personality || ''} | ${r.sample_line || ''}`).join('\n'));
+            }
+          } catch { /* best-effort — admin can still upload manually */ } finally { setWorking(''); }
+        }
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
@@ -200,8 +217,8 @@ function NewCasting() {
   function mergedRoles(): ParsedRole[] {
     return parseRoles().map((r) => {
       const p = parsedRoles.find((pr) => pr.name === r.name);
-      // image / emotion / speed ride along from the xlsx parse (not in the editable textarea)
-      return p ? { ...r, image: p.image, emotion: p.emotion, speed: p.speed } : r;
+      // fields not in the editable 5-col textarea ride along from the xlsx parse
+      return p ? { ...r, image: p.image, emotion: p.emotion, speed: p.speed, weight: p.weight, timbre: p.timbre, volume: p.volume, special: p.special, accent: p.accent, is_lead: r.is_lead || p.is_lead } : r;
     });
   }
   // assemble the rate note from the structured currency/amount inputs (both optional)
@@ -389,11 +406,15 @@ function NewCasting() {
                             <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{r.name}</span>
                             {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
                           </div>
+                          {r.timbre && <p className="text-sm text-[#C9A86A] leading-snug">聲線 · {r.timbre}</p>}
                           {r.personality && <p className="text-sm text-gray-400 leading-snug">{r.personality}</p>}
-                          {(r.emotion || r.speed) && (
+                          {(r.emotion || r.speed || r.volume || r.special || r.accent) && (
                             <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
-                              {r.emotion && <span><span className="text-gray-500">情緒 </span><span className="text-gray-200">{r.emotion}</span></span>}
+                              {r.emotion && <span><span className="text-gray-500">台詞情緒 </span><span className="text-gray-200">{r.emotion}</span></span>}
                               {r.speed && <span><span className="text-gray-500">語速 </span><span className="text-gray-200">{r.speed}</span></span>}
+                              {r.volume && <span><span className="text-gray-500">台詞量 </span><span className="text-gray-200">{r.volume}</span></span>}
+                              {r.special && <span><span className="text-gray-500">特殊聲音 </span><span className="text-gray-200">{r.special}</span></span>}
+                              {r.accent && <span><span className="text-gray-500">口音 </span><span className="text-gray-200">{r.accent}</span></span>}
                             </div>
                           )}
                           {r.sample_line && (

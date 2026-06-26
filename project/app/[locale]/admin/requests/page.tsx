@@ -44,6 +44,7 @@ type Brief = {
   script_text: string | null;
   script_file_url: string | null;
   script_type: string | null;
+  roles_file_url: string | null;
   local_studio_region: string | null;
   status: string;
   created_at: string;
@@ -155,6 +156,13 @@ export default function AdminRequests() {
                 </p>
                 {b.script_text && <p className="text-sm text-gray-800 whitespace-pre-wrap max-h-40 overflow-y-auto">{b.script_text}</p>}
               </div>
+            )}
+
+            {b.roles_file_url && (
+              <p className="text-sm mb-3 inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-2.5 py-1">
+                <span className="font-semibold">🎭 角色表</span> <a href={b.roles_file_url} target="_blank" rel="noopener noreferrer" className="underline">下載客戶填的角色表 ↓</a>
+                <span className="text-amber-600">(開試音案時會自動帶入)</span>
+              </p>
             )}
 
             <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">

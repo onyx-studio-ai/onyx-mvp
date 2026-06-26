@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 
 const BUCKET = 'casting';
-// Script documents the client attaches to a brief. Documents only — not audio.
-const ALLOWED_EXT = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md'];
+// Documents the client attaches to a brief: the script, or the filled role sheet
+// (xlsx/csv). Documents/spreadsheets only — not audio.
+const ALLOWED_EXT = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md', 'xlsx', 'xls', 'csv'];
 
 /*
   POST /api/hire/script-upload — public: mint a one-time signed UPLOAD url so a
