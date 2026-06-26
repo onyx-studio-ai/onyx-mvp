@@ -22,6 +22,14 @@ const CCYS = ['TWD', 'USD', 'CNY', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
 const CCY_SYM: Record<string, string> = { USD: 'US$', TWD: 'NT$', CNY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', JPY: 'JP¥', SGD: 'S$' };
 const fmtRate = (cur: string, amt: string) => `${CCY_SYM[cur] || cur + ' '}${amt.trim()}`;
 const RATE_UNITS = ['句', '字', '分鐘', '小時', '整案'];
+// dropdowns for case data — '' = 不指定(留白,前台不顯示);有值(含「不限/全媒體/全年齡」)就顯示
+const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
+const TERRITORY_OPTS = ['', '台灣', '大陸', '港澳', '全球', '北美', '東南亞', '其他'];
+const LICENSE_OPTS = ['', '一年', '兩年', '三年', '永久', '買斷', '專案限定'];
+const ACCENT_OPTS = ['', '中文 · 台灣國語', '中文 · 大陸普通話', '粵語', '台語', '英語', '日語', '不限', '其他'];
+const STYLE_OPTS = ['', '對話自然', '旁白沉穩', '權威 / 正式', '溫暖', '活潑 / 年輕', '角色演繹', '不限', '其他'];
+const AGE_OPTS = ['', '兒童', '青少年', '青年', '中年', '熟齡', '全年齡 / 不限', '其他'];
+const optEl = (o: string) => <option key={o || '_'} value={o}>{o || '— 不指定 —'}</option>;
 
 // 19 業界類別 → 對應的回應方式。roles = 分角色試音(遊戲/動畫/戲劇);
 // general = 單一聲音,配音員用平台現有 demo 或上傳 demo + 報價(廣告/旁白等)。
@@ -244,7 +252,7 @@ export default function NewCasting() {
     // sees is what the talent sees. Audition controls are shown read-only.
     return (
       <main className="min-h-screen bg-black text-white px-4 py-12">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-1">
             <h1 className="text-lg font-semibold">發佈前預覽</h1>
             <span className="text-xs text-amber-300/80">↓ 配音員會看到的畫面</span>
@@ -309,7 +317,7 @@ export default function NewCasting() {
                   {[
                     { t: '一角一檔 · 請勿整軌', d: '每個角色個別上傳,系統各自建檔;請勿把多角色錄在同一段音檔。' },
                     { t: '檔名自動帶入', d: '提交後系統自動命名「案號_角色_藝名」,無須自行更名。' },
-                    { t: '音檔規格', d: '建議 WAV / 48kHz / 24-bit,環境安靜無雜訊;手機錄製亦可。' },
+                    { t: '音檔格式', d: '試音檔 MP3 / WAV / M4A 皆可(建議 MP3)。環境安靜、口齒清楚即可。' },
                   ].map((r, i) => (
                     <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
                       <p className="text-sm font-medium text-[#E4CB94] mb-1">{r.t}</p>
@@ -445,14 +453,14 @@ export default function NewCasting() {
           <Field label="交付截止(最終交件)"><input className={input} value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="例:7/15" /></Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="使用範圍"><input className={input} value={mediaScope} onChange={(e) => setMediaScope(e.target.value)} placeholder="例:網路 / 電視 / App 內" /></Field>
-          <Field label="地區"><input className={input} value={territory} onChange={(e) => setTerritory(e.target.value)} placeholder="例:台灣 / 全球" /></Field>
-          <Field label="授權期"><input className={input} value={licenseTerm} onChange={(e) => setLicenseTerm(e.target.value)} placeholder="例:一年 / 永久 / 買斷" /></Field>
+          <Field label="使用範圍"><select className={input} value={mediaScope} onChange={(e) => setMediaScope(e.target.value)}>{USAGE_OPTS.map(optEl)}</select></Field>
+          <Field label="地區"><select className={input} value={territory} onChange={(e) => setTerritory(e.target.value)}>{TERRITORY_OPTS.map(optEl)}</select></Field>
+          <Field label="授權期"><select className={input} value={licenseTerm} onChange={(e) => setLicenseTerm(e.target.value)}>{LICENSE_OPTS.map(optEl)}</select></Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="口音"><input className={input} value={accent} onChange={(e) => setAccent(e.target.value)} placeholder="例:台灣國語 / 大陸普通話 / 粵語" /></Field>
-          <Field label="聲音風格"><input className={input} value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)} placeholder="例:對話自然 / 權威 / 溫暖" /></Field>
-          <Field label="聲音年齡"><input className={input} value={voiceAge} onChange={(e) => setVoiceAge(e.target.value)} placeholder="例:青年 / 中年 / 兒童" /></Field>
+          <Field label="口音"><select className={input} value={accent} onChange={(e) => setAccent(e.target.value)}>{ACCENT_OPTS.map(optEl)}</select></Field>
+          <Field label="聲音風格"><select className={input} value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)}>{STYLE_OPTS.map(optEl)}</select></Field>
+          <Field label="聲音年齡"><select className={input} value={voiceAge} onChange={(e) => setVoiceAge(e.target.value)}>{AGE_OPTS.map(optEl)}</select></Field>
         </div>
 
         {mode === 'roles' && <>

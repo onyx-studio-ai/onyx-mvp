@@ -107,7 +107,7 @@ export default function Opportunities() {
 
   const shell = (inner: React.ReactNode) => (
     <main className="min-h-screen bg-black text-white px-4 py-16">
-      <div className="max-w-2xl mx-auto">{inner}</div>
+      <div className="max-w-4xl mx-auto">{inner}</div>
     </main>
   );
 
@@ -291,7 +291,7 @@ function BriefCard({
                 {[
                   { t: tx('一角一檔 · 請勿整軌', '一角一档 · 请勿整轨', 'One file per role'), d: tx('每個角色個別上傳,系統各自建檔;請勿把多角色錄在同一段音檔。', '每个角色个别上传,系统各自建档;请勿把多角色录在同一段音档。', 'Upload each role separately; do not record multiple roles in one file.') },
                   { t: tx('檔名自動帶入', '档名自动带入', 'Auto-named files'), d: tx('提交後系統自動命名「案號_角色_藝名」,無須自行更名。', '提交后系统自动命名「案号_角色_艺名」,无须自行更名。', 'Files are auto-named "case_role_artist" on submit.') },
-                  { t: tx('音檔規格', '音档规格', 'Audio spec'), d: tx('建議 WAV / 48kHz / 24-bit,環境安靜無雜訊;手機錄製亦可,清晰者較具優勢。', '建议 WAV / 48kHz / 24-bit,环境安静无杂讯;手机录制亦可。', 'WAV / 48kHz / 24-bit preferred, quiet room; phone OK if clean.') },
+                  { t: tx('音檔格式', '音档格式', 'Audio format'), d: tx('試音檔 MP3 / WAV / M4A 皆可(建議 MP3)。環境安靜、口齒清楚即可;正式錄製再要求 48kHz / 24-bit。', '试音档 MP3 / WAV / M4A 皆可(建议 MP3)。环境安静、口齿清楚即可;正式录制再要求 48kHz / 24-bit。', 'MP3 / WAV / M4A accepted (MP3 preferred). Quiet room, clear delivery; full 48k/24-bit only for final record.') },
                 ].map((r, i) => (
                   <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
                     <p className="text-sm font-medium text-[#E4CB94] mb-1">{r.t}</p>
