@@ -69,14 +69,14 @@ export default function GuestCasting() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
         {[
-          brief.rate_note && { l: tx('報酬', 'Rate'), v: brief.rate_note, gold: true },
-          brief.audition_deadline && { l: tx('試音截止', 'Due'), v: brief.audition_deadline },
-          brief.recording_start && { l: tx('預計開錄', 'Records'), v: brief.recording_start },
-          brief.base_revisions != null && { l: tx('含修改', 'Revisions'), v: `${brief.base_revisions} ${tx('次', '×')}` },
-        ].filter(Boolean).map((s, i) => (
+          { l: tx('報酬', 'Rate'), v: brief.rate_note || tx('面議', 'TBD'), gold: true },
+          { l: tx('試音截止', 'Audition due'), v: brief.audition_deadline || tx('待定', 'TBD') },
+          { l: tx('預計開錄', 'Records'), v: brief.recording_start || tx('待定', 'TBD') },
+          { l: tx('含修改', 'Revisions'), v: brief.base_revisions != null ? `${brief.base_revisions} ${tx('次', '×')}` : tx('待定', 'TBD') },
+        ].map((s, i) => (
           <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
-            <p className="text-[11px] text-gray-500">{(s as { l: string }).l}</p>
-            <p className={`text-lg font-semibold mt-0.5 ${(s as { gold?: boolean }).gold ? 'text-[#E4CB94]' : 'text-white'}`} style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{(s as { v: string }).v}</p>
+            <p className="text-[11px] text-gray-500">{s.l}</p>
+            <p className={`text-lg font-semibold mt-0.5 ${s.gold ? 'text-[#E4CB94]' : 'text-white'}`} style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{s.v}</p>
           </div>
         ))}
       </div>
@@ -85,8 +85,24 @@ export default function GuestCasting() {
 
       {(brief.roles || []).length > 0 ? (
         <>
-          <p className="text-xs text-gray-400 mb-2">{tx('挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。', 'Pick a role → read its line aloud and record → upload + quote. Audition several; no platform fee, you keep what you quote.')}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+          <div className="grid sm:grid-cols-3 gap-2.5 mb-4">
+            {[
+              { t: tx('一角一檔 · 請勿整軌', 'One file per role'), d: tx('每個角色個別上傳,系統各自建檔;請勿把多角色錄在同一段音檔。', 'Upload each role separately; do not record multiple roles in one file.') },
+              { t: tx('檔名自動帶入', 'Auto-named files'), d: tx('提交後系統自動命名「案號_角色_藝名」,無須自行更名。', 'Files are auto-named "case_role_artist" on submit.') },
+              { t: tx('音檔規格', 'Audio spec'), d: tx('建議 WAV / 48kHz / 24-bit,環境安靜無雜訊;手機錄製亦可。', 'WAV / 48kHz / 24-bit preferred, quiet room; phone OK.') },
+            ].map((r, i) => (
+              <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
+                <p className="text-sm font-medium text-[#E4CB94] mb-1">{r.t}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{r.d}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-baseline justify-between mb-1">
+            <h2 className="text-lg font-semibold text-white" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{tx('試音角色', 'Roles')}</h2>
+            {(() => { const rs = brief.roles || []; const m = rs.filter((r) => (r.gender || '').includes('男')).length; const f = rs.filter((r) => (r.gender || '').includes('女')).length; return <span className="text-xs text-gray-500">{tx(`共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `${rs.length} roles · ${m}M / ${f}F`)}</span>; })()}
+          </div>
+          <p className="text-xs text-gray-400 mb-3">{tx('挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。', 'Pick a role → read its line aloud and record → upload + quote. Audition several; no platform fee, you keep what you quote.')}</p>
+          <div className="space-y-3">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
@@ -147,44 +163,46 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
     onDone(j.audition);
   }
 
-  const GRAD = 'linear-gradient(180deg,rgba(20,19,26,0) 45%,rgba(20,19,26,.92) 100%)';
   const meta = [role.gender, role.age].filter(Boolean).join(' · ');
-  const Portrait = (
-    <div className="relative aspect-square bg-[#14131a]">
+  const imageLeft = (
+    <div className="w-28 sm:w-36 shrink-0 relative bg-[#14131a]">
       {role.image ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={role.image} alt={role.name} className="w-full h-full object-cover object-top" />
-      ) : <div className="w-full h-full flex items-center justify-center text-3xl text-gray-600">🎭</div>}
-      <div className="absolute inset-0" style={{ background: GRAD }} />
-      <div className="absolute left-4 right-4 bottom-3 flex items-end justify-between gap-2">
-        <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif', textShadow: '0 2px 8px rgba(0,0,0,.6)' }}>{role.name}{role.is_lead && <span className="ml-1.5 text-xs text-[#E4CB94]">★ {tx('主角', 'Lead')}</span>}</span>
-        {meta && <span className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
-      </div>
+        <img src={role.image} alt={role.name} className="absolute inset-0 w-full h-full object-cover object-top" />
+      ) : <div className="absolute inset-0 flex items-center justify-center text-3xl text-gray-600">🎭</div>}
+      {role.is_lead && <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded font-medium z-10" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)' }}>★ {tx('主角', 'Lead')}</span>}
+    </div>
+  );
+  const nameRow = (
+    <div className="flex items-start justify-between gap-2">
+      <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{role.name}</span>
+      {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
     </div>
   );
 
   if (done) return (
-    <div className="rounded-2xl overflow-hidden bg-[#1d1b25] border border-[#6FCF97]/30">
-      {Portrait}
-      <div className="p-4"><p className="text-sm text-[#6FCF97]">{tx('✓ 已試音', '✓ Auditioned')}</p></div>
+    <div className="flex rounded-2xl overflow-hidden bg-[#1d1b25] border border-[#6FCF97]/30">
+      {imageLeft}
+      <div className="flex-1 min-w-0 p-4">{nameRow}<p className="text-sm text-[#6FCF97] mt-1.5">{tx('✓ 已試音', '✓ Auditioned')}</p></div>
     </div>
   );
 
   return (
-    <div className={`rounded-2xl overflow-hidden bg-[#1d1b25] border ${role.is_lead ? 'border-[#C9A86A]/50' : 'border-white/[0.08]'}`}>
-      {Portrait}
-      <div className="p-4 space-y-3">
-        {role.personality && <p className="text-sm text-gray-400">{role.personality}</p>}
+    <div className={`flex rounded-2xl overflow-hidden bg-[#1d1b25] border ${role.is_lead ? 'border-[#C9A86A]/50' : 'border-white/[0.08]'}`}>
+      {imageLeft}
+      <div className="flex-1 min-w-0 p-4 space-y-2.5">
+        {nameRow}
+        {role.personality && <p className="text-sm text-gray-400 leading-snug">{role.personality}</p>}
         {(role.emotion || role.speed) && (
-          <div className="border-y border-white/[0.08] py-3 space-y-1.5">
-            {role.emotion && <div className="flex gap-3 text-sm"><span className="text-gray-500 shrink-0 w-12">{tx('情緒', 'Emotion')}</span><span className="text-gray-200">{role.emotion}</span></div>}
-            {role.speed && <div className="flex gap-3 text-sm"><span className="text-gray-500 shrink-0 w-12">{tx('語速', 'Pace')}</span><span className="text-gray-200">{role.speed}</span></div>}
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+            {role.emotion && <span><span className="text-gray-500">{tx('情緒', 'Emotion')} </span><span className="text-gray-200">{role.emotion}</span></span>}
+            {role.speed && <span><span className="text-gray-500">{tx('語速', 'Pace')} </span><span className="text-gray-200">{role.speed}</span></span>}
           </div>
         )}
         {role.sample_line && (
-          <div className="bg-[#14131a] border border-white/[0.08] rounded-xl p-3.5 select-none" style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
-            <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1.5">{tx('試音樣詞', 'Audition line')}</span>
-            <p className="text-base leading-relaxed text-gray-100 font-medium whitespace-pre-wrap">{role.sample_line}</p>
+          <div className="bg-[#14131a] border border-white/[0.08] rounded-xl px-3.5 py-3 select-none" style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
+            <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1">{tx('試音樣詞', 'Audition line')}</span>
+            <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{role.sample_line}</p>
           </div>
         )}
         <div className="flex items-center justify-between">
