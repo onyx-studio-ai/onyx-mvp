@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
+import { supabase } from '@/lib/supabase';
 
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
@@ -22,8 +23,21 @@ export default function EditCasting() {
   const [msg, setMsg] = useState('');
   const [f, setF] = useState({ title: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5' });
   const [roles, setRoles] = useState<Role[]>([]);
+  const [imgBusy, setImgBusy] = useState<number | null>(null);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const setRole = (i: number, k: keyof Role, v: string | boolean) => setRoles((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+
+  async function uploadRoleImage(i: number, file: File) {
+    setMsg(''); setImgBusy(i);
+    try {
+      const u = await fetch('/api/admin/casting/upload', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json();
+      if (!u.ok) throw new Error(uj.error || '上傳準備失敗');
+      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (error) throw new Error(error.message);
+      setRole(i, 'image', uj.publicUrl);
+    } catch (e) { setMsg(e instanceof Error ? e.message : '換圖失敗'); } finally { setImgBusy(null); }
+  }
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/casting?id=${encodeURIComponent(id)}`, { credentials: 'include' });
@@ -91,6 +105,11 @@ export default function EditCasting() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={r.image} alt={r.name} className="w-16 h-16 rounded object-cover object-top border border-gray-200" />
                   ) : <div className="w-16 h-16 rounded border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xl text-gray-400">🎭</div>}
+                  <label className="block text-center mt-1">
+                    <span className="text-[10px] text-blue-600 hover:underline cursor-pointer">{imgBusy === i ? '上傳中…' : '換圖'}</span>
+                    <input type="file" accept="image/*" className="hidden" disabled={imgBusy === i}
+                      onChange={(e) => { const file = e.target.files?.[0]; e.currentTarget.value = ''; if (file) uploadRoleImage(i, file); }} />
+                  </label>
                 </div>
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="grid grid-cols-4 gap-2">
