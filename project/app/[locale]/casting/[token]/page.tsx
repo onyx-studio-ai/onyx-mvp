@@ -17,7 +17,7 @@ import { toMp3 } from '@/lib/to-mp3';
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; source?: 'platform' | 'client'; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
+type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -129,7 +129,7 @@ export default function GuestCasting() {
           <div className="space-y-3">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
-                source={brief.source} rateNote={brief.rate_note}
+                source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
                 done={mine.find((m) => (m.role_name || '') === (ro.name || ''))} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
             ))}
@@ -137,7 +137,7 @@ export default function GuestCasting() {
         </>
       ) : (
         /* General (single-voice) call — upload a demo + price (no per-role audition). */
-        <GuestGeneral token={token} source={brief.source} rateNote={brief.rate_note} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
+        <GuestGeneral token={token} source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
       )}
 
       <div className="mt-8 border-t border-white/10 pt-4 text-center">
@@ -152,9 +152,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   return <main className="min-h-screen bg-black text-white px-4 pt-24 pb-12"><div className="max-w-4xl mx-auto">{children}</div></main>;
 }
 
-function GuestRole({ token, role, count, popular, done, closed, source, rateNote, tx, onDone }: {
+function GuestRole({ token, role, count, popular, done, closed, source, rateNote, budget, budgetType, tx, onDone }: {
   token: string; role: Role; count: number; popular: boolean; done?: Audition; closed: boolean;
-  source?: 'platform' | 'client'; rateNote?: string;
+  source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string;
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -248,7 +248,12 @@ function GuestRole({ token, role, count, popular, done, closed, source, rateNote
               className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
             {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
-            {rateNote && <p className="text-[11px] text-gray-500">{tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{rateNote}</span></p>}
+            {(() => {
+              const isClient = source === 'client';
+              const bt = budgetType === 'Up to' ? tx('上限 ', 'Up to ') : budgetType === 'Fixed' ? tx('固定 ', 'Fixed ') : '';
+              const val = isClient ? (budget ? `${bt}${budget}` : '') : (rateNote || '');
+              return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', 'Client budget') : tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+            })()}
             <div className="flex gap-2">
               <select className={`${cls} w-20`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>
               <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('您的酬勞', 'Your fee')} />
@@ -271,8 +276,8 @@ function GuestRole({ token, role, count, popular, done, closed, source, rateNote
 }
 
 // General (single-voice) guest response: upload one demo + price. No roles.
-function GuestGeneral({ token, done, closed, source, rateNote, tx, onDone }: {
-  token: string; done?: Audition; closed: boolean; source?: 'platform' | 'client'; rateNote?: string;
+function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetType, tx, onDone }: {
+  token: string; done?: Audition; closed: boolean; source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string;
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [audioUrl, setAudioUrl] = useState('');
@@ -323,7 +328,12 @@ function GuestGeneral({ token, done, closed, source, rateNote, tx, onDone }: {
         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
       {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
       {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
-      {rateNote && <p className="text-[11px] text-gray-500">{tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{rateNote}</span></p>}
+      {(() => {
+        const isClient = source === 'client';
+        const bt = budgetType === 'Up to' ? tx('上限 ', 'Up to ') : budgetType === 'Fixed' ? tx('固定 ', 'Fixed ') : '';
+        const val = isClient ? (budget ? `${bt}${budget}` : '') : (rateNote || '');
+        return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', 'Client budget') : tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+      })()}
       <div className="flex gap-2">
         <select className={`${cls} w-20`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{CURRENCIES.map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>
         <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('您的酬勞', 'Your fee')} />

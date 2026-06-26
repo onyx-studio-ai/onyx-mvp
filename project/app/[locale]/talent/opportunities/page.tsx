@@ -551,7 +551,12 @@ function RoleAudition({
             </label>
             {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
-            {brief.rate_note && <p className="text-[11px] text-gray-500">{tx('本案報酬', '本案报酬', 'Job budget')} <span className="text-[#E4CB94]">{brief.rate_note}</span></p>}
+            {(() => {
+              const isClient = brief.source === 'client';
+              const bt = brief.budget_type === 'Up to' ? tx('上限 ', '上限 ', 'Up to ') : brief.budget_type === 'Fixed' ? tx('固定 ', '固定 ', 'Fixed ') : '';
+              const val = isClient ? (brief.budget ? `${bt}${brief.budget}` : '') : (brief.rate_note || '');
+              return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', '客户预算', 'Client budget') : tx('本案報酬', '本案报酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+            })()}
             <div className="flex gap-2">
               <select className={`${inputCls} w-20 py-1.5`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
                 {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
@@ -675,6 +680,12 @@ function GeneralResponse({
           {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
         </>
       )}
+      {(() => {
+        const isClient = brief.source === 'client';
+        const bt = brief.budget_type === 'Up to' ? tx('上限 ', '上限 ', 'Up to ') : brief.budget_type === 'Fixed' ? tx('固定 ', '固定 ', 'Fixed ') : '';
+        const val = isClient ? (brief.budget ? `${bt}${brief.budget}` : '') : (brief.rate_note || '');
+        return val ? <p className="text-xs text-gray-500">{isClient ? tx('客戶預算', '客户预算', 'Client budget') : tx('本案報酬', '本案报酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+      })()}
       <div className="flex gap-2">
         <select className={`${inputCls} w-20 py-1.5`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
