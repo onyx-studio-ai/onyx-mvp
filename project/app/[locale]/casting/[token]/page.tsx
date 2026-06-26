@@ -17,7 +17,7 @@ import { toMp3 } from '@/lib/to-mp3';
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
+type Brief = { id: string; source?: 'platform' | 'client'; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -48,6 +48,9 @@ export default function GuestCasting() {
     <Shell>
       {brief.title && <h1 className="text-2xl font-semibold mb-2" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{brief.title}</h1>}
       <div className="flex flex-wrap gap-1.5 mb-3">
+        {brief.source === 'client'
+          ? <span className="text-xs px-2.5 py-1 rounded-full bg-[#7fb2e8]/15 text-[#9ec4ee] border border-[#7fb2e8]/30">{tx('客戶委託', 'Client brief')}</span>
+          : <span className="text-xs px-2.5 py-1 rounded-full bg-[#C9A86A]/15 text-[#E4CB94] border border-[#C9A86A]/30">{tx('平台發案', 'Onyx-posted')}</span>}
         <span className="text-xs px-2.5 py-1 rounded-full" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{tx('試音邀請', 'Casting')}</span>
         {brief.language && <span className="text-xs bg-white/[0.06] border border-white/10 text-gray-200 px-2.5 py-1 rounded-full">{brief.language}</span>}
       </div>

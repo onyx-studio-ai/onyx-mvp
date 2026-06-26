@@ -37,7 +37,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const { data } = await db.from('marketplace_quotes').select('id, brief_id, role_name, gross_amount, currency, status, sample_url').eq('brief_id', brief.id).eq('talent_id', invite.talent_id);
     myAuditions = data || [];
   }
-  return NextResponse.json({ brief, roleCounts, myAuditions, invite: { email: invite.email, name: invite.name }, closed: brief.status !== 'open' });
+  // Strip client identity from the guest payload; expose only a source label.
+  const safeBrief = { ...brief, source: brief.client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client' } as Record<string, unknown>;
+  delete safeBrief.client_email; delete safeBrief.client_name; delete safeBrief.company;
+  return NextResponse.json({ brief: safeBrief, roleCounts, myAuditions, invite: { email: invite.email, name: invite.name }, closed: brief.status !== 'open' });
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {

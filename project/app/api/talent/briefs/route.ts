@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: briefsRaw, error: bErr } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, kind, title, roles, audition_script, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, accent, voice_style, voice_age, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, language, length, budget, budget_type, deadline, brief, created_at, status')
+      .select('id, brief_number, kind, title, roles, audition_script, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, accent, voice_style, voice_age, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, language, length, budget, budget_type, deadline, brief, created_at, status, client_email')
       .eq('status', 'open')
       .order('created_at', { ascending: false })
       .limit(50);
@@ -57,7 +57,14 @@ export async function GET(request: NextRequest) {
       .eq('talent_id', (r.talent as { id: string }).id)
       .order('created_at', { ascending: false });
 
-    return NextResponse.json({ briefs, myQuotes: myQuotes || [], roleCounts, myDemos });
+    // Derive a non-identifying source flag (platform-posted vs from a client) and
+    // STRIP client_email — talents see the source label, never the client identity.
+    const safeBriefs = briefs.map((b) => {
+      const o = { ...b, source: (b as { client_email?: string }).client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client' } as Record<string, unknown>;
+      delete o.client_email;
+      return o;
+    });
+    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });
