@@ -210,6 +210,24 @@ export default function AdminMarketplace() {
                     </button>
                   )}
                 </div>
+                {/* inline 報酬 edit */}
+                <div className="flex items-center gap-2 mt-2 text-sm">
+                  <span className="text-gray-500 text-xs">報酬</span>
+                  {editRate?.id === b.id ? (
+                    <>
+                      <input value={editRate.val} onChange={(e) => setEditRate({ id: b.id, val: e.target.value })} autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveRate(b.id, editRate.val); if (e.key === 'Escape') setEditRate(null); }}
+                        placeholder="例:NT$150 / 句" className="bg-white border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 w-44" />
+                      <button onClick={() => saveRate(b.id, editRate.val)} className="text-xs bg-green-600 hover:bg-green-500 text-white rounded px-2.5 py-1">儲存</button>
+                      <button onClick={() => setEditRate(null)} className="text-xs text-gray-500 hover:text-gray-700">取消</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-gray-900 font-medium">{b.rate_note || '—'}</span>
+                      <button onClick={() => setEditRate({ id: b.id, val: b.rate_note || '' })} className="text-xs text-blue-600 hover:underline">編輯</button>
+                    </>
+                  )}
+                </div>
               </div>
             ) : (
               b.company && <p className="text-sm text-gray-700 mb-1">{b.company}</p>
