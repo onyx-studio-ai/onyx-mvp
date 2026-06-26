@@ -52,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     orders: '訂單',
     dashboard: '總覽',
     inquiries: '詢問單',
-    marketplace: '案源 · 發案',
+    marketplace: '案件 · 發案',
     people: '人員',
     applications: '申請資料',
     users: '使用者',

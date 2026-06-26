@@ -8,6 +8,7 @@
 */
 
 import { useState, useEffect, useCallback } from 'react';
+import { caseCode } from '@/lib/casting';
 
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -119,7 +120,7 @@ export default function AdminMarketplace() {
         {briefs.map((b) => (
           <div key={b.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-mono text-xs text-gray-500">{b.brief_number}</span>
+              <span className="font-mono text-xs text-gray-500">{b.kind === 'casting' ? caseCode(b) : b.brief_number}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                 {b.status}
               </span>

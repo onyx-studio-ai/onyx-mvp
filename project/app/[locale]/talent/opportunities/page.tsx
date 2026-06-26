@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { caseCode } from '@/lib/casting';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
@@ -116,7 +117,7 @@ export default function Opportunities() {
   if (phase === 'nologin') {
     return shell(
       <div className="text-center py-16">
-        <h1 className="text-xl font-semibold mb-3">{tx('案源', '案源', 'Opportunities')}</h1>
+        <h1 className="text-xl font-semibold mb-3">{tx('案件', '案件', 'Cases')}</h1>
         <p className="text-gray-400 text-sm mb-6">{tx('請先登入您的配音員後台。', '请先登录您的配音员后台。', 'Please sign in to your talent dashboard first.')}</p>
         <Link href="/talent" className="text-green-400 hover:underline text-sm">{tx('前往登入 →', '前往登录 →', 'Go to sign in →')}</Link>
       </div>
@@ -126,15 +127,15 @@ export default function Opportunities() {
   return shell(
     <>
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-semibold">{tx('案源', '案源', 'Opportunities')}</h1>
+        <h1 className="text-2xl font-semibold">{tx('案件', '案件', 'Cases')}</h1>
         <Link href="/talent" className="text-xs text-gray-400 hover:text-white transition">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
       </div>
       <p className="text-gray-500 text-sm mb-8">
-        {tx('以下是開放中的配音需求。報價時您看到的是「淨收入」(已扣 20% 平台費)。', '以下是开放中的配音需求。报价时您看到的是「净收入」(已扣 20% 平台费)。', 'Open voice-over briefs. When you quote, you see your NET take-home (after the 20% platform fee).')}
+        {tx('以下是 Onyx 開放中的配音需求。報酬是該案配音員實際收入。', '以下是 Onyx 开放中的配音需求。报酬是该案配音员实际收入。', "These are Onyx's open voice-over cases. The rate shown is the talent's actual take-home.")}
       </p>
 
       {briefs.length === 0 && (
-        <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有開放中的案源。之後有新需求會出現在這裡。', '目前没有开放中的案源。之后有新需求会出现在这里。', 'No open briefs right now. New ones will appear here.')}</p>
+        <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
       )}
 
       <div className="space-y-4">
@@ -202,7 +203,7 @@ function BriefCard({
   return (
     <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-5">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-500 font-mono">{brief.brief_number}</span>
+        <span className="text-xs text-gray-500 font-mono">{isCasting ? caseCode(brief) : brief.brief_number}</span>
         {brief.deadline && <span className="text-xs text-amber-300/80">{tx('截止', '截止', 'Due')}: {brief.deadline}</span>}
       </div>
 

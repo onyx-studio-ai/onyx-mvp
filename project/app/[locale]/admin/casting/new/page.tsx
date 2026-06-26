@@ -11,6 +11,7 @@
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
+import { caseCode } from '@/lib/casting';
 
 type RefFile = { name: string; url: string };
 type ParsedRole = { name: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
@@ -88,12 +89,13 @@ export default function NewCasting() {
   const [busy, setBusy] = useState(false);
   const [working, setWorking] = useState('');
   const [err, setErr] = useState('');
-  const [done, setDone] = useState<{ id: string; brief_number: string } | null>(null);
+  const [done, setDone] = useState<{ id: string; brief_number: string; notified?: number } | null>(null);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteMsg, setInviteMsg] = useState('');
   const [inviting, setInviting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [notify, setNotify] = useState(true); // email matching-language talents on publish
 
   function pickCategory(label: string) {
     setCategory(label);
@@ -188,13 +190,13 @@ export default function NewCasting() {
       roles, audition_script: auditionScript,
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
       length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
-      accent, voice_style: voiceStyle, voice_age: voiceAge,
+      accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
     };
     const res = await fetch('/api/admin/casting', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || '發案失敗');
-    setDone({ id: j.id, brief_number: j.brief_number });
+    setDone({ id: j.id, brief_number: j.brief_number, notified: j.notified });
   }
 
   async function invite() {
@@ -214,7 +216,8 @@ export default function NewCasting() {
         <div className="max-w-xl mx-auto text-center">
           <h1 className="text-2xl font-semibold mb-2">✅ 案件已發布</h1>
           <p className="text-gray-600 mb-1">案號:{done.brief_number}</p>
-          <p className="text-gray-500 text-sm mb-6">已註冊的配音員在「案件機會」就看得到了。</p>
+          <p className="text-gray-500 text-sm mb-1">已註冊的配音員在「案件」就看得到了。</p>
+          {done.notified ? <p className="text-green-700 text-sm mb-6">📧 已寄信通知 {done.notified} 位符合語言的配音員來試音。</p> : <p className="text-gray-400 text-sm mb-6">(未寄通知信)</p>}
 
           {/* Shareable open link — paste anywhere (WeChat/LINE). Anyone opens, enters
               their email, auditions without registering, and can upgrade later. */}
@@ -259,7 +262,8 @@ export default function NewCasting() {
           </div>
           <p className="text-xs text-gray-500 mb-5">確認沒問題再發佈。</p>
 
-          {title && <h2 className="text-2xl font-semibold mb-1">{title}</h2>}
+          <p className="text-xs text-gray-500 font-mono mb-1">{caseCode({ content_type: category, created_at: new Date().toISOString(), brief_number: '' })}<span className="text-gray-600"> ·(發佈後配序號)</span></p>
+          {title && <h2 className="text-2xl font-semibold mb-1" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{title}</h2>}
           <div className="flex flex-wrap gap-1.5 mb-3">
             <span className="text-xs bg-purple-500/15 text-purple-200 px-2 py-0.5 rounded-full">試音案</span>
             {language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{language}</span>}
@@ -375,8 +379,12 @@ export default function NewCasting() {
             )}
           </div>
 
+          <label className="flex items-center gap-2 mt-5 text-sm text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+            發佈時寄信通知符合語言的配音員來試音(英語案寄英文信)
+          </label>
           {err && <p className="text-red-400 text-sm mt-4">{err}</p>}
-          <div className="flex gap-3 mt-6">
+          <div className="flex gap-3 mt-4">
             <button onClick={() => setPreviewing(false)} className="bg-white/10 hover:bg-white/15 text-white rounded-lg px-5 py-2.5 text-sm">← 返回修改</button>
             <button onClick={submit} disabled={busy} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2.5 text-sm">{busy ? '發布中…' : '✓ 確認發佈'}</button>
           </div>
