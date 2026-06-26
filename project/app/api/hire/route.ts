@@ -29,6 +29,11 @@ export async function POST(request: NextRequest) {
       const { data: inserted, error: insErr } = await db
         .from('marketplace_briefs')
         .insert({
+          // A client request feeds the SAME casting system, but lands as a review
+          // draft (not live, no auto-notify) — Onyx confirms the roles + the
+          // talent take-home rate, then publishes it from the admin.
+          kind: 'casting',
+          status: 'reviewing',
           client_email: email.toLowerCase(), // normalized for exact-match thread lookup
           client_name: b.name || null,
           company: b.company || null,

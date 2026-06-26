@@ -129,8 +129,12 @@ export default function AdminMarketplace() {
               <div className="mb-2">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">試音案</span>
+                  {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">客戶請求</span>}
                   {b.title && <span className="text-sm font-medium text-gray-900">{b.title}</span>}
                 </div>
+                {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (
+                  <p className="text-xs text-gray-600 mb-1.5">📥 {b.client_name || '—'}{b.company ? ` · ${b.company}` : ''} · {b.client_email}{b.budget ? ` · 客戶預算 ${b.budget_type || ''} ${b.budget}` : ''}{b.status === 'reviewing' ? ' · 待審,確認後改 open 發佈' : ''}</p>
+                )}
                 {/* shareable open link — paste into WeChat/LINE; anyone joins & auditions without registering */}
                 <div className="flex items-center gap-2">
                   <input readOnly value={`${SITE}/casting/join/${b.id}`} onFocus={(e) => e.target.select()}
