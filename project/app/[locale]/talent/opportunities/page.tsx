@@ -19,7 +19,7 @@ import { caseCode } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
-const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
+const CURRENCIES = ['USD', 'TWD'];
 
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = {
@@ -433,7 +433,7 @@ function RoleAudition({
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('CNY');
+  const [currency, setCurrency] = useState('TWD');
   const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -584,7 +584,7 @@ function GeneralResponse({
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('CNY');
+  const [currency, setCurrency] = useState('TWD');
   const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');

@@ -14,7 +14,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { toMp3 } from '@/lib/to-mp3';
 
-const CURRENCIES = ['CNY', 'TWD', 'USD', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
+const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = { id: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
@@ -156,7 +156,7 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('CNY');
+  const [currency, setCurrency] = useState('TWD');
   const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -263,7 +263,7 @@ function GuestGeneral({ token, done, closed, tx, onDone }: {
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('CNY');
+  const [currency, setCurrency] = useState('TWD');
   const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');

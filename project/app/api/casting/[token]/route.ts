@@ -11,7 +11,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
   The token is reusable + valid until the call closes (no expiry) so they can read
   now and upload later.
 */
-const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
+const CURRENCIES = ['USD', 'TWD'];
 
 async function resolveInvite(token: string) {
   const db = getSupabaseServiceClient();
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const sampleUrl = String(body.sample_url || '').slice(0, 1000);
   const intro = String(body.intro || '').slice(0, 3000) || null;
   const gross = Number(body.gross_amount);
-  const currency = CURRENCIES.includes(String(body.currency)) ? String(body.currency) : 'CNY';
+  const currency = CURRENCIES.includes(String(body.currency)) ? String(body.currency) : 'TWD';
   if (!sampleUrl) return NextResponse.json({ error: '請先上傳試音音檔' }, { status: 400 });
   if (!isFinite(gross) || gross <= 0) return NextResponse.json({ error: '請填報價' }, { status: 400 });
 

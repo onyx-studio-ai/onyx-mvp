@@ -72,7 +72,7 @@ const LANGUAGES: Opt[] = [
   { v: 'German', tw: '德語', cn: '德语' },
   { v: 'Other (note in brief)', tw: '其他(請於說明欄註明)', cn: '其他(请于说明栏注明)' },
 ];
-const CURRENCIES = ['USD', 'TWD', 'CNY', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
+const CURRENCIES = ['USD', 'TWD'];
 
 const inputCls =
   'w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:border-amber-500/60 focus:outline-none placeholder:text-gray-600';

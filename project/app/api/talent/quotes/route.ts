@@ -14,7 +14,7 @@ import { quoteReceivedEmail } from '@/lib/mail-templates';
   DELETE — withdraw an active quote.
 */
 
-const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY', 'SGD'];
+const CURRENCIES = ['USD', 'TWD'];
 
 export async function POST(request: NextRequest) {
   const r = await resolveTalentFromRequest(request, 'id, name');
