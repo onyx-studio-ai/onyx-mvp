@@ -144,7 +144,7 @@ export default function GuestCasting() {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <main className="min-h-screen bg-black text-white px-4 py-12"><div className="max-w-4xl mx-auto">{children}</div></main>;
+  return <main className="min-h-screen bg-black text-white px-4 pt-24 pb-12"><div className="max-w-4xl mx-auto">{children}</div></main>;
 }
 
 function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {

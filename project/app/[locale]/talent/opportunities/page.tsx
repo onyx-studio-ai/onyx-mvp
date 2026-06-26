@@ -107,7 +107,7 @@ export default function Opportunities() {
   }, [load]);
 
   const shell = (inner: React.ReactNode) => (
-    <main className="min-h-screen bg-black text-white px-4 py-16">
+    <main className="min-h-screen bg-black text-white px-4 pt-24 pb-16">
       <div className="max-w-4xl mx-auto">{inner}</div>
     </main>
   );

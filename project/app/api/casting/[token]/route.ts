@@ -59,11 +59,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   // ensure a lightweight talent for this guest (their upgrade path)
   let talentId = invite.talent_id as string | null;
   if (!talentId) {
-    const { data: t, error: tErr } = await db.from('talents')
-      .insert({ type: 'voice_actor', name: invite.name || invite.email, email: invite.email, is_active: false })
-      .select('id').single();
-    if (tErr || !t) return NextResponse.json({ error: '建立試音身分失敗' }, { status: 500 });
-    talentId = t.id;
+    // Reuse an existing talent with this email (they may already be a talent, or
+    // auditioned via another link) — a plain insert would hit the unique-email
+    // constraint and fail with "建立試音身分失敗".
+    const email = String(invite.email || '').trim();
+    if (email) {
+      const { data: existing } = await db.from('talents').select('id').ilike('email', email).limit(1);
+      if (existing?.[0]?.id) talentId = existing[0].id as string;
+    }
+    if (!talentId) {
+      const { data: t, error: tErr } = await db.from('talents')
+        .insert({ type: 'voice_actor', name: invite.name || email, email, is_active: false })
+        .select('id').single();
+      if (tErr || !t) {
+        console.error('[casting] talent create failed:', tErr?.code, tErr?.message);
+        return NextResponse.json({ error: '建立試音身分失敗' }, { status: 500 });
+      }
+      talentId = t.id;
+    }
     await db.from('casting_invites').update({ talent_id: talentId }).eq('id', invite.id);
   }
 

@@ -14,6 +14,12 @@ import { useRouter } from '@/i18n/navigation';
 
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 
+// Module-level so it isn't re-created every render — a component defined inside
+// the render remounts its children on each keystroke (mobile keyboard drops focus).
+function Shell({ children }: { children: React.ReactNode }) {
+  return <main className="min-h-screen bg-black text-white px-4 pt-24 pb-16"><div className="max-w-md mx-auto">{children}</div></main>;
+}
+
 export default function CastingJoin() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
