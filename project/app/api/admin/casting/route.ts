@@ -59,6 +59,19 @@ async function notifyMatchingTalents(db: ReturnType<typeof getSupabaseServiceCli
   return matched.length;
 }
 
+// GET /api/admin/casting?id=<briefId> — load one brief to pre-fill the form
+// (used when an admin "completes" a client request into a casting call).
+export async function GET(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+  const id = new URL(request.url).searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 });
+  const db = getSupabaseServiceClient();
+  const { data: brief } = await db.from('marketplace_briefs').select('*').eq('id', id).maybeSingle();
+  if (!brief) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  return NextResponse.json({ brief });
+}
+
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
@@ -99,10 +112,10 @@ export async function POST(request: NextRequest) {
     ? (b.recording_methods as unknown[]).map((m) => String(m)).filter((m) => METHODS.includes(m))
     : [];
 
+  const fromId = String(b.id || '').trim(); // present = publishing a client request in place
+
   const row = {
     kind: 'casting',
-    client_email: 'casting@onyxstudios.ai',     // poster-side placeholder (NOT NULL); talents never see it
-    client_name: 'Onyx Casting',
     title,
     content_type: String(b.content_type || '').slice(0, 80) || null, // 類別(廣告/旁白/遊戲…)
     brief: briefText,
@@ -131,8 +144,14 @@ export async function POST(request: NextRequest) {
   };
 
   const db = getSupabaseServiceClient();
-  const { data, error } = await db.from('marketplace_briefs').insert(row).select('id, brief_number').single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // From a client request: fill in roles/rate/specs and flip to open IN PLACE —
+  // keep the client's identity + budget (no duplicate row). From scratch: insert
+  // with the poster-side placeholder client (talents never see it).
+  const result = fromId
+    ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number').single()
+    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number').single();
+  const { data, error } = result;
+  if (error || !data) return NextResponse.json({ error: error?.message || '發案失敗' }, { status: 500 });
 
   // Notify matching-language talents (default on; client can opt out with notify:false).
   let notified = 0;

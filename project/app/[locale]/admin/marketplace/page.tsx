@@ -152,7 +152,14 @@ export default function AdminMarketplace() {
                   {b.title && <span className="text-sm font-medium text-gray-900">{b.title}</span>}
                 </div>
                 {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (
-                  <p className="text-xs text-gray-600 mb-1.5">📥 {b.client_name || '—'}{b.company ? ` · ${b.company}` : ''} · {b.client_email}{b.budget ? ` · 客戶預算 ${b.budget_type || ''} ${b.budget}` : ''}{b.status === 'reviewing' ? ' · 待審,確認後改 open 發佈' : ''}</p>
+                  <div className="mb-1.5">
+                    <p className="text-xs text-gray-600">📥 {b.client_name || '—'}{b.company ? ` · ${b.company}` : ''} · {b.client_email}{b.budget ? ` · 客戶預算 ${b.budget_type || ''} ${b.budget}` : ''}</p>
+                    {b.status === 'reviewing' && (
+                      <a href={`/admin/casting/new?from=${b.id}`} className="inline-block mt-1.5 text-xs bg-amber-500 hover:bg-amber-400 text-white font-semibold rounded-lg px-3 py-1.5">
+                        ✏️ 補角色 + 定價並發佈 →
+                      </a>
+                    )}
+                  </div>
                 )}
                 {/* shareable open link — paste into WeChat/LINE; anyone joins & auditions without registering */}
                 <div className="flex items-center gap-2">

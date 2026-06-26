@@ -8,7 +8,8 @@
   Light theme to match the admin shell.
 */
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
@@ -56,7 +57,11 @@ const CATEGORIES: { label: string; mode: 'roles' | 'general' }[] = [
   { label: '角色配唱 Character Singing', mode: 'roles' },
 ];
 
-export default function NewCasting() {
+export default function NewCastingPage() {
+  return <Suspense fallback={<main className="min-h-screen px-4 py-16 text-gray-500 text-sm">載入中…</main>}><NewCasting /></Suspense>;
+}
+
+function NewCasting() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('遊戲 Video Game');
@@ -96,12 +101,44 @@ export default function NewCasting() {
   const [copied, setCopied] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [notify, setNotify] = useState(true); // email matching-language talents on publish
+  // When opened as /admin/casting/new?from=<id> we're completing a client request:
+  // pre-fill from their brief, show who asked + their budget, and publish IN PLACE.
+  const search = useSearchParams();
+  const [fromId, setFromId] = useState('');
+  const [fromClient, setFromClient] = useState<{ name?: string; company?: string; email?: string; budget?: string; budget_type?: string; has_singing?: boolean; wants_director?: boolean; wants_live_session?: boolean } | null>(null);
 
   function pickCategory(label: string) {
     setCategory(label);
     const m = CATEGORIES.find((c) => c.label === label)?.mode;
     if (m) setMode(m); // category drives the default flow; toggle can still override
   }
+
+  useEffect(() => {
+    const id = search.get('from');
+    if (!id) return;
+    (async () => {
+      const res = await fetch(`/api/admin/casting?id=${encodeURIComponent(id)}`, { credentials: 'include' });
+      if (!res.ok) return;
+      const bf = (await res.json().catch(() => ({})))?.brief;
+      if (!bf) return;
+      setFromId(id);
+      setFromClient({ name: bf.client_name, company: bf.company, email: bf.client_email, budget: bf.budget, budget_type: bf.budget_type, has_singing: bf.has_singing, wants_director: bf.wants_director, wants_live_session: bf.wants_live_session });
+      if (bf.title) setTitle(bf.title);
+      if (bf.content_type) { const m = CATEGORIES.find((c) => c.label === bf.content_type || c.label.startsWith(bf.content_type)); if (m) pickCategory(m.label); }
+      if (bf.language) setLanguage(bf.language);
+      if (bf.brief) setBrief(bf.brief);
+      // dropdowns: only set when the client's value is one of our options (else leave for admin)
+      if (USAGE_OPTS.includes(bf.media_scope)) setMediaScope(bf.media_scope);
+      if (TERRITORY_OPTS.includes(bf.territory)) setTerritory(bf.territory);
+      if (LICENSE_OPTS.includes(bf.license_term)) setLicenseTerm(bf.license_term);
+      if (bf.length) setScale(bf.length);
+      if (bf.deadline) setDeadline(bf.deadline);
+      if (bf.audition_deadline) setAuditionDeadline(bf.audition_deadline);
+      if (bf.wants_live_session) setMethods((m) => ({ ...m, online: true }));
+      if (Array.isArray(bf.recording_methods) && bf.recording_methods.length) setMethods((m) => ({ ...m, ...Object.fromEntries((bf.recording_methods as string[]).map((k) => [k, true])) }));
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   function parseRoles() {
     return rolesText.split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
@@ -191,6 +228,7 @@ export default function NewCasting() {
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
       length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
       accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
+      id: fromId || undefined, // present = publish the client request in place (no duplicate)
     };
     const res = await fetch('/api/admin/casting', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setBusy(false);
@@ -396,8 +434,24 @@ export default function NewCasting() {
   return (
     <main className="min-h-screen px-4 py-12 text-gray-900">
       <div className="max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-semibold">發案 · 人聲試音案</h1>
+        <h1 className="text-2xl font-semibold">{fromId ? '完成客戶請求 → 發佈試音案' : '發案 · 人聲試音案'}</h1>
         <p className="text-gray-500 text-sm">填好後先預覽,確認沒問題再發佈。</p>
+
+        {fromClient && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
+            <p className="text-amber-900 font-medium mb-1">📥 來自客戶請求 —— 已帶入下方欄位,補上角色 + 配音員報酬即可發佈</p>
+            <p className="text-amber-800/90 text-xs leading-relaxed">
+              {[fromClient.name, fromClient.company, fromClient.email].filter(Boolean).join(' · ')}
+              {fromClient.budget ? ` · 客戶預算 ${fromClient.budget_type || ''} ${fromClient.budget}` : ''}
+            </p>
+            {(fromClient.has_singing || fromClient.wants_director || fromClient.wants_live_session) && (
+              <p className="text-amber-800/90 text-xs mt-1">
+                {[fromClient.has_singing && '含唱歌', fromClient.wants_director && '聲音導演', fromClient.wants_live_session && '線上監錄'].filter(Boolean).join(' · ')}
+              </p>
+            )}
+            <p className="text-amber-700/70 text-[11px] mt-1.5">💡 「報酬」填的是給配音員看的實拿價(可低於客戶預算,差額是你的利潤);發佈後此筆會直接上線,不會新增重複案。</p>
+          </div>
+        )}
 
         <Field label="標題 *"><input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例:遊戲角色配音 · 女王百貨" /></Field>
 
