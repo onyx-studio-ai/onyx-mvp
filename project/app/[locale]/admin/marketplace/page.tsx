@@ -70,6 +70,7 @@ export default function AdminMarketplace() {
   const [unavailable, setUnavailable] = useState(false);
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [notifying, setNotifying] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/marketplace', { credentials: 'include' });
@@ -84,6 +85,24 @@ export default function AdminMarketplace() {
   useEffect(() => {
     load();
   }, [load]);
+
+  async function notifyCasting(b: Brief) {
+    setNotifying(b.id);
+    try {
+      const pre = await fetch('/api/admin/casting', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ id: b.id, send: false }),
+      }).then((r) => r.json());
+      const n = pre.notified || 0;
+      if (!n) { alert('沒有符合語言的配音員可通知(檢查案件語言是否中文/英文)。'); return; }
+      if (!confirm(`「${b.title || caseCode(b)}」符合 ${n} 位配音員。\n確定現在寄出試音通知信?`)) return;
+      const res = await fetch('/api/admin/casting', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ id: b.id, send: true }),
+      }).then((r) => r.json());
+      alert(res.sent ? `已寄出 ${res.notified} 封通知信 ✓` : '寄送失敗,請稍後再試');
+    } catch { alert('寄送失敗,請稍後再試'); } finally { setNotifying(null); }
+  }
 
   async function patch(kind: 'brief' | 'quote', id: string, status: string) {
     await fetch('/api/admin/marketplace', {
@@ -141,6 +160,12 @@ export default function AdminMarketplace() {
                     className="flex-1 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 font-mono" />
                   <button onClick={() => { navigator.clipboard?.writeText(`${SITE}/casting/join/${b.id}`); setCopiedId(b.id); setTimeout(() => setCopiedId(null), 1500); }}
                     className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded px-2.5 py-1 whitespace-nowrap">{copiedId === b.id ? '已複製 ✓' : '🔗 複製試音連結'}</button>
+                  {b.status === 'open' && (
+                    <button onClick={() => notifyCasting(b)} disabled={notifying === b.id}
+                      className="text-xs bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white rounded px-2.5 py-1 whitespace-nowrap" title="寄試音通知信給符合語言的配音員">
+                      {notifying === b.id ? '處理中…' : '📣 通知配音員'}
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (

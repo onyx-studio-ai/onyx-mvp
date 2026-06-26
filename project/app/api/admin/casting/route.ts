@@ -21,21 +21,33 @@ const ZH_RE = /中文|國語|国语|普通话|普通話|台語|台语|粵|粤|ca
 const EN_RE = /english|英語|英语|英文/i;
 
 // Email active talents whose language matches the case, in the case's language.
-async function notifyMatchingTalents(db: ReturnType<typeof getSupabaseServiceClient>, brief: { title: string; language: string }) {
+async function notifyMatchingTalents(db: ReturnType<typeof getSupabaseServiceClient>, brief: { title: string; language: string }, opts: { dryRun?: boolean } = {}) {
   const lang = brief.language || '';
   const isZh = ZH_RE.test(lang);
   const isEn = !isZh && EN_RE.test(lang);
   if (!isZh && !isEn) return 0; // unknown language → skip auto-notify
+  // Scope B: notify ALL recruited talent of the matching language, not only the
+  // published (is_active) ones — recruited-but-not-yet-listed actors are exactly
+  // who wants a real paying casting call. Junk/internal/dup emails filtered below.
   const { data: talents } = await db.from('talents')
     .select('email, languages, native_languages')
-    .eq('type', 'VO').eq('is_active', true)
+    .eq('type', 'VO')
     .not('email', 'is', null)
-    .limit(600);
+    .limit(800);
   const re = isZh ? ZH_RE : EN_RE;
+  const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i; // internal / placeholder
+  const asText = (v: unknown) => (Array.isArray(v) ? v.join(' ') : String(v || ''));
+  const seen = new Set<string>();
   const matched = (talents || []).filter((t) => {
-    const langs = [...((t.languages as string[]) || []), ...((t.native_languages as string[]) || [])].join(' ');
-    return re.test(langs);
+    const email = String(t.email || '').trim().toLowerCase();
+    if (!EMAIL_OK.test(email) || SKIP.test(email) || seen.has(email)) return false;
+    const langs = `${asText(t.languages)} ${asText(t.native_languages)}`;
+    if (!re.test(langs)) return false;
+    seen.add(email);
+    return true;
   }).slice(0, 250);
+  if (opts.dryRun) return matched.length; // preview count only — no emails sent
   const link = `${SITE}/${isZh ? 'zh-TW/' : ''}talent`;
   await Promise.all(matched.map(async (t) => {
     const subject = isZh ? `新試音案 · ${brief.title}` : `New audition · ${brief.title}`;
@@ -128,4 +140,22 @@ export async function POST(request: NextRequest) {
     try { notified = await notifyMatchingTalents(db, { title, language: row.language || '' }); } catch { /* best-effort */ }
   }
   return NextResponse.json({ ok: true, id: data.id, brief_number: data.brief_number, notified });
+}
+
+// Re-notify matching talents for an already-published casting call (the publish-time
+// auto-notify only fires once). { id, send:false } previews the recipient count;
+// { id, send:true } actually emails them.
+export async function PATCH(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+  let b: Record<string, unknown>;
+  try { b = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const id = String(b.id || '').trim();
+  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 });
+  const db = getSupabaseServiceClient();
+  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status').eq('id', id).maybeSingle();
+  if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
+  if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });
+  const notified = await notifyMatchingTalents(db, { title: String(brief.title || ''), language: String(brief.language || '') }, { dryRun: b.send !== true });
+  return NextResponse.json({ ok: true, notified, sent: b.send === true });
 }

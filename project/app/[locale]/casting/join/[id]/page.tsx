@@ -56,10 +56,6 @@ export default function CastingJoin() {
     router.push(`/casting/${j.token}`);
   }
 
-  const Shell = ({ children }: { children: React.ReactNode }) => (
-    <main className="min-h-screen bg-black text-white px-4 py-16"><div className="max-w-md mx-auto">{children}</div></main>
-  );
-
   if (phase === 'loading') return <Shell><p className="text-gray-500 text-sm text-center py-20">{tx('載入中…', 'Loading…')}</p></Shell>;
   if (phase === 'invalid' || !info) return <Shell><p className="text-gray-400 text-sm text-center py-20">{tx('連結無效。', 'This link is invalid.')}</p></Shell>;
 
