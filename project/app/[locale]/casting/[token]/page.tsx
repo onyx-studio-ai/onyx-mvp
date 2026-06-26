@@ -15,8 +15,8 @@ import { supabase } from '@/lib/supabase';
 
 const CURRENCIES = ['CNY', 'TWD', 'USD', 'HKD', 'EUR', 'GBP', 'JPY', 'SGD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
-type Role = { name?: string; gender?: string; age?: string; personality?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number };
+type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type Brief = { id: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -45,11 +45,10 @@ export default function GuestCasting() {
 
   return (
     <Shell>
-      {brief.title && <h1 className="text-2xl font-semibold mb-1">{brief.title}</h1>}
+      {brief.title && <h1 className="text-2xl font-semibold mb-2" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{brief.title}</h1>}
       <div className="flex flex-wrap gap-1.5 mb-3">
-        <span className="text-xs bg-purple-500/15 text-purple-200 px-2 py-0.5 rounded-full">{tx('試音邀請', 'Casting')}</span>
-        {brief.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{brief.language}</span>}
-        {brief.rate_note && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{brief.rate_note}</span>}
+        <span className="text-xs px-2.5 py-1 rounded-full" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{tx('試音邀請', 'Casting')}</span>
+        {brief.language && <span className="text-xs bg-white/[0.06] border border-white/10 text-gray-200 px-2.5 py-1 rounded-full">{brief.language}</span>}
       </div>
       {brief.brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{brief.brief}</p>}
       <p className="text-xs text-gray-500 mb-4">{tx('免註冊。可以先看,之後點同一條連結回來上傳 —— 進度會保留。', 'No sign-up. Read now, return via the same link to upload later — your progress is kept.')}</p>
@@ -68,9 +67,18 @@ export default function GuestCasting() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-x-4 text-xs text-gray-500 mb-3">
-        {brief.audition_deadline && <span>{tx('試音截止', 'Due')}: {brief.audition_deadline}</span>}
-        {brief.recording_start && <span>{tx('預計開錄', 'Recording')}: {brief.recording_start}</span>}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+        {[
+          brief.rate_note && { l: tx('報酬', 'Rate'), v: brief.rate_note, gold: true },
+          brief.audition_deadline && { l: tx('試音截止', 'Due'), v: brief.audition_deadline },
+          brief.recording_start && { l: tx('預計開錄', 'Records'), v: brief.recording_start },
+          brief.base_revisions != null && { l: tx('含修改', 'Revisions'), v: `${brief.base_revisions} ${tx('次', '×')}` },
+        ].filter(Boolean).map((s, i) => (
+          <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
+            <p className="text-[11px] text-gray-500">{(s as { l: string }).l}</p>
+            <p className={`text-lg font-semibold mt-0.5 ${(s as { gold?: boolean }).gold ? 'text-[#E4CB94]' : 'text-white'}`} style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{(s as { v: string }).v}</p>
+          </div>
+        ))}
       </div>
 
       {closed && <p className="text-amber-300 text-sm mb-3">{tx('這個試音案已結束。', 'This casting call has closed.')}</p>}
@@ -78,7 +86,7 @@ export default function GuestCasting() {
       {(brief.roles || []).length > 0 ? (
         <>
           <p className="text-xs text-gray-400 mb-2">{tx('挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。', 'Pick a role → read its line aloud and record → upload + quote. Audition several; no platform fee, you keep what you quote.')}</p>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
@@ -139,53 +147,56 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
     onDone(j.audition);
   }
 
-  if (done) return (
-    <div className="flex items-stretch rounded-xl border border-green-500/30 bg-green-500/[0.06] overflow-hidden">
-      <div className="w-24 sm:w-28 shrink-0 bg-white/5 flex items-center justify-center">
-        {role.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={role.image} alt={role.name} className="w-full h-full object-cover object-top" />
-        ) : <span className="text-green-300 text-2xl">✓</span>}
-      </div>
-      <div className="flex-1 min-w-0 p-3">
-        <p className="text-sm font-medium text-gray-100">{role.name}{role.is_lead && <span className="ml-1 text-amber-300">★</span>} <span className="text-green-300 text-xs">{tx('✓ 已試音', '✓ Auditioned')}</span></p>
-        {([role.gender, role.age].filter(Boolean).join('·') || role.personality) && (
-          <p className="text-xs text-gray-500 mt-0.5 truncate">{[[role.gender, role.age].filter(Boolean).join('·'), role.personality].filter(Boolean).join(' · ')}</p>
-        )}
+  const GRAD = 'linear-gradient(180deg,rgba(20,19,26,0) 45%,rgba(20,19,26,.92) 100%)';
+  const meta = [role.gender, role.age].filter(Boolean).join(' · ');
+  const Portrait = (
+    <div className="relative aspect-square bg-[#14131a]">
+      {role.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={role.image} alt={role.name} className="w-full h-full object-cover object-top" />
+      ) : <div className="w-full h-full flex items-center justify-center text-3xl text-gray-600">🎭</div>}
+      <div className="absolute inset-0" style={{ background: GRAD }} />
+      <div className="absolute left-4 right-4 bottom-3 flex items-end justify-between gap-2">
+        <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif', textShadow: '0 2px 8px rgba(0,0,0,.6)' }}>{role.name}{role.is_lead && <span className="ml-1.5 text-xs text-[#E4CB94]">★ {tx('主角', 'Lead')}</span>}</span>
+        {meta && <span className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
       </div>
     </div>
   );
 
+  if (done) return (
+    <div className="rounded-2xl overflow-hidden bg-[#1d1b25] border border-[#6FCF97]/30">
+      {Portrait}
+      <div className="p-4"><p className="text-sm text-[#6FCF97]">{tx('✓ 已試音', '✓ Auditioned')}</p></div>
+    </div>
+  );
+
   return (
-    <div className={`flex items-stretch rounded-xl border overflow-hidden ${role.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
-      <div className="w-24 sm:w-28 shrink-0 bg-white/[0.04] relative flex items-center justify-center self-stretch">
-        {role.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={role.image} alt={role.name} className="absolute inset-0 w-full h-full object-cover object-top" />
-        ) : <span className="text-gray-600 text-2xl">🎭</span>}
-        {role.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded z-10">★{tx('主角', 'Lead')}</span>}
-      </div>
-      <div className="flex-1 min-w-0 p-3">
-        <p className="text-sm font-medium text-gray-100">{role.name}</p>
-        {([role.gender, role.age].filter(Boolean).join('·') || role.personality) && (
-          <p className="text-xs text-gray-500 mt-0.5 truncate">{[[role.gender, role.age].filter(Boolean).join('·'), role.personality].filter(Boolean).join(' · ')}</p>
-        )}
-        {role.sample_line && (
-          <div className="mt-2 bg-white/[0.05] border border-white/10 rounded-lg p-2.5">
-            <p className="text-[10px] text-amber-300/90 mb-1 tracking-wide">{tx('試音台詞 · 請唸這段錄音', 'Audition line — read this aloud')}</p>
-            <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap select-none"
-              style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>{role.sample_line}</p>
+    <div className={`rounded-2xl overflow-hidden bg-[#1d1b25] border ${role.is_lead ? 'border-[#C9A86A]/50' : 'border-white/[0.08]'}`}>
+      {Portrait}
+      <div className="p-4 space-y-3">
+        {role.personality && <p className="text-sm text-gray-400">{role.personality}</p>}
+        {(role.emotion || role.speed) && (
+          <div className="border-y border-white/[0.08] py-3 space-y-1.5">
+            {role.emotion && <div className="flex gap-3 text-sm"><span className="text-gray-500 shrink-0 w-12">{tx('情緒', 'Emotion')}</span><span className="text-gray-200">{role.emotion}</span></div>}
+            {role.speed && <div className="flex gap-3 text-sm"><span className="text-gray-500 shrink-0 w-12">{tx('語速', 'Pace')}</span><span className="text-gray-200">{role.speed}</span></div>}
           </div>
         )}
-        <div className="flex items-center justify-between mt-3">
-          <span className={`text-xs ${popular ? 'text-amber-300' : 'text-gray-500'}`}>{count} {tx('人已試', 'auditioned')}{popular && tx(' · 熱門', ' · popular')}</span>
+        {role.sample_line && (
+          <div className="bg-[#14131a] border border-white/[0.08] rounded-xl p-3.5 select-none" style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
+            <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1.5">{tx('試音樣詞', 'Audition line')}</span>
+            <p className="text-base leading-relaxed text-gray-100 font-medium whitespace-pre-wrap">{role.sample_line}</p>
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <span className={`text-xs ${popular ? 'text-[#E4CB94]' : 'text-gray-500'}`}>{count} {tx('人已試', 'auditioned')}{popular && tx(' · 熱門', ' · popular')}</span>
           {!closed && (
-            <button onClick={() => setOpen((o) => !o)} className="text-sm bg-green-500 hover:bg-green-400 text-black font-semibold rounded-lg px-4 py-1.5 transition">{open ? tx('收起', 'Close') : tx('上傳我的試音 →', 'Upload my audition →')}</button>
+            <button onClick={() => setOpen((o) => !o)} className="text-sm rounded-xl px-4 py-2"
+              style={open ? { border: '1px solid rgba(201,168,106,.4)', color: '#E4CB94', background: 'transparent' } : { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{open ? tx('收起', 'Close') : tx('試這個角色 →', 'Audition →')}</button>
           )}
         </div>
-        {popular && !open && !closed && <p className="text-[11px] text-amber-300/70 mt-1.5">{tx('很多人試了,試別的中選機會更高', 'Popular — try another for better odds')}</p>}
+        {popular && !open && !closed && <p className="text-[11px] text-[#E4CB94]/70">{tx('很多人試了,試別的中選機會更高', 'Popular — try another for better odds')}</p>}
         {open && !closed && (
-          <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+          <div className="space-y-2 border-t border-white/[0.08] pt-3">
             <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
               className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
             {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
@@ -196,7 +207,7 @@ function GuestRole({ token, role, count, popular, done, closed, tx, onDone }: {
             </div>
             <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
             {err && <p className="text-red-400 text-xs">{err}</p>}
-            <button onClick={submit} disabled={busy || uploading} className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{busy ? tx('送出中…', 'Submitting…') : tx('送出試音', 'Submit')}</button>
+            <button onClick={submit} disabled={busy || uploading} className="w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>{busy ? tx('送出中…', 'Submitting…') : tx('送出試音', 'Submit')}</button>
           </div>
         )}
       </div>

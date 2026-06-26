@@ -38,6 +38,7 @@ const BUCKET = 'casting';
 const COLS: Record<string, string> = {
   name: '角色名|角色名稱|角色', gender: '性别|性別', age: '年龄|年齡|年龄段|年齡段',
   personality: '性格|个性|個性', intro: '角色介绍|角色介紹|角色简介|角色簡介|人物介绍|人物介紹',
+  emotion: '核心情绪|核心情緒|情绪|情緒|情感|語氣|语气', speed: '语速|語速',
   line: '台词内容|台詞內容|台词|台詞',
 };
 const EXACT_ONLY = new Set(['name', 'line']); // these must equal the header, not just be contained in it
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
   }
   if (!ws || !colIdx.name) return NextResponse.json({ error: '找不到「角色名」欄,請確認 xlsx 格式或改用手動輸入' }, { status: 422 });
 
-  type R = { name: string; gender: string; age: string; personality: string; sample_line: string; is_lead: boolean; image?: string };
+  type R = { name: string; gender: string; age: string; personality: string; emotion: string; speed: string; sample_line: string; is_lead: boolean; image?: string };
   const roles: R[] = [];
   const rowOfRole: Record<number, number> = {}; // sheet rowNumber → roles[] index
   const get = (row: ExcelJS.Row, field: string) => (colIdx[field] ? norm(row.getCell(colIdx[field]).value) : '');
@@ -120,7 +121,8 @@ export async function POST(request: NextRequest) {
     const personality = [get(row, 'personality'), intro].filter(Boolean).join(' · ');
     roles.push({
       name: tw(name), gender: get(row, 'gender'), age: get(row, 'age').replace(/[岁歲]/g, ''),
-      personality: tw(personality), sample_line: tw(colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : ''),
+      personality: tw(personality), emotion: tw(get(row, 'emotion')).slice(0, 120), speed: tw(get(row, 'speed')).slice(0, 40),
+      sample_line: tw(colIdx.line ? String(row.getCell(colIdx.line).value ?? '').trim() : ''),
       is_lead: /主角/.test(rawName),
     });
     rowOfRole[rn] = roles.length - 1;

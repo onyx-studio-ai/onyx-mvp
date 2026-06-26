@@ -9,7 +9,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
   posters). Reuses marketplace_briefs so casting calls appear at
   /talent/opportunities alongside client briefs. The AI track is untouched.
 */
-type RoleIn = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type RoleIn = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const METHODS = ['home', 'studio', 'online'];
 
 export async function POST(request: NextRequest) {
@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
         gender: String(r.gender || '').trim().slice(0, 20),
         age: String(r.age || '').trim().slice(0, 20),
         personality: String(r.personality || '').trim().slice(0, 60),
-        emotion: String(r.emotion || '').trim().slice(0, 80),
+        emotion: String(r.emotion || '').trim().slice(0, 120),
+        speed: String(r.speed || '').trim().slice(0, 40),
         sample_line: String(r.sample_line || '').trim().slice(0, 500),
         is_lead: !!r.is_lead,
         image: String(r.image || '').trim().slice(0, 1000) || undefined,

@@ -13,7 +13,7 @@ import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 
 type RefFile = { name: string; url: string };
-type ParsedRole = { name: string; gender?: string; age?: string; personality?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type ParsedRole = { name: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -144,7 +144,8 @@ export default function NewCasting() {
   function mergedRoles(): ParsedRole[] {
     return parseRoles().map((r) => {
       const p = parsedRoles.find((pr) => pr.name === r.name);
-      return p?.image ? { ...r, image: p.image } : r;
+      // image / emotion / speed ride along from the xlsx parse (not in the editable textarea)
+      return p ? { ...r, image: p.image, emotion: p.emotion, speed: p.speed } : r;
     });
   }
   // assemble the rate note from the structured currency/amount inputs (both optional)
@@ -260,46 +261,64 @@ export default function NewCasting() {
               {refLinks.filter((l) => l.trim()).map((l, i) => <div key={i} className="text-xs text-sky-300 truncate">{l}</div>)}
             </div>
           )}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
-            {auditionDeadline && <span>試音截止 {auditionDeadline}</span>}
-            {recordingStart && <span>預計開錄 {recordingStart}</span>}
-            {Number(baseRev) > 0 && <span>含修改 {baseRev} 次</span>}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+            {[
+              rn && { l: '報酬', v: rn, gold: true },
+              auditionDeadline && { l: '試音截止', v: auditionDeadline },
+              recordingStart && { l: '預計開錄', v: recordingStart },
+              Number(baseRev) > 0 && { l: '含修改', v: `${baseRev} 次` },
+            ].filter(Boolean).map((s, i) => (
+              <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
+                <p className="text-[11px] text-gray-500">{(s as { l: string }).l}</p>
+                <p className={`text-lg font-semibold mt-0.5 ${(s as { gold?: boolean }).gold ? 'text-[#E4CB94]' : 'text-white'}`} style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{(s as { v: string }).v}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="border-t border-white/10 pt-3">
+          <div className="border-t border-white/10 pt-4">
             {mode === 'general' ? (
               <p className="text-sm text-gray-300">一般配音案 · 配音員用平台現有 demo 或上傳 demo + 報價回應。平台不抽成。</p>
             ) : roles.length ? (
               <>
-                <p className="text-xs text-gray-400 mb-2">挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。</p>
-                <div className="space-y-3">
-                  {roles.map((r, i) => (
-                    <div key={i} className={`flex items-stretch rounded-xl border overflow-hidden ${r.is_lead ? 'border-amber-400/40 bg-amber-400/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
-                      <div className="w-24 sm:w-28 shrink-0 bg-white/[0.04] relative flex items-center justify-center self-stretch">
-                        {r.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={r.image} alt={r.name} className="absolute inset-0 w-full h-full object-cover object-top" />
-                        ) : <span className="text-gray-600 text-2xl">🎭</span>}
-                        {r.is_lead && <span className="absolute top-1.5 left-1.5 text-[10px] bg-amber-400 text-black font-medium px-1.5 py-0.5 rounded z-10">★主角</span>}
-                      </div>
-                      <div className="flex-1 min-w-0 p-3">
-                        <p className="text-sm font-medium text-gray-100">{r.name}</p>
-                        {([r.gender, r.age].filter(Boolean).join('·') || r.personality) && (
-                          <p className="text-xs text-gray-500 mt-0.5 truncate">{[[r.gender, r.age].filter(Boolean).join('·'), r.personality].filter(Boolean).join(' · ')}</p>
-                        )}
-                        {r.sample_line && (
-                          <div className="mt-2 bg-white/[0.05] border border-white/10 rounded-lg p-2.5">
-                            <p className="text-[10px] text-amber-300/90 mb-1 tracking-wide">試音台詞 · 請唸這段錄音</p>
-                            <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap">{r.sample_line}</p>
+                <p className="text-xs text-gray-400 mb-3">挑角色 → 唸出它的台詞、錄音 → 上傳 + 報價。可試多角,平台不抽成、你報多少拿多少。</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                  {roles.map((r, i) => {
+                    const meta = [r.gender, r.age].filter(Boolean).join(' · ');
+                    return (
+                      <div key={i} className={`rounded-2xl overflow-hidden bg-[#1d1b25] border ${r.is_lead ? 'border-[#C9A86A]/50' : 'border-white/[0.08]'}`}>
+                        <div className="relative aspect-square bg-[#14131a]">
+                          {r.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={r.image} alt={r.name} className="w-full h-full object-cover object-top" />
+                          ) : <div className="w-full h-full flex items-center justify-center text-3xl text-gray-600">🎭</div>}
+                          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,rgba(20,19,26,0) 45%,rgba(20,19,26,.92) 100%)' }} />
+                          <div className="absolute left-4 right-4 bottom-3 flex items-end justify-between gap-2">
+                            <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif', textShadow: '0 2px 8px rgba(0,0,0,.6)' }}>{r.name}{r.is_lead && <span className="ml-1.5 text-xs text-[#E4CB94]">★ 主角</span>}</span>
+                            {meta && <span className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
                           </div>
-                        )}
-                        <div className="flex items-center justify-between mt-3">
-                          <span className="text-xs text-gray-500">0 人已試</span>
-                          <span className="text-sm bg-green-500/30 text-green-100/60 font-semibold rounded-lg px-4 py-1.5">上傳我的試音 →</span>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {r.personality && <p className="text-sm text-gray-400">{r.personality}</p>}
+                          {(r.emotion || r.speed) && (
+                            <div className="border-y border-white/[0.08] py-3 space-y-1.5">
+                              {r.emotion && <div className="flex gap-3 text-sm"><span className="text-gray-500 shrink-0 w-12">情緒</span><span className="text-gray-200">{r.emotion}</span></div>}
+                              {r.speed && <div className="flex gap-3 text-sm"><span className="text-gray-500 shrink-0 w-12">語速</span><span className="text-gray-200">{r.speed}</span></div>}
+                            </div>
+                          )}
+                          {r.sample_line && (
+                            <div className="bg-[#14131a] border border-white/[0.08] rounded-xl p-3.5">
+                              <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1.5">試音樣詞</span>
+                              <p className="text-base leading-relaxed text-gray-100 font-medium whitespace-pre-wrap">{r.sample_line}</p>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">0 人已試</span>
+                            <span className="text-sm rounded-xl px-4 py-2" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>試這個角色 →</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             ) : (
