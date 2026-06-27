@@ -93,6 +93,23 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const id = String(body.id || '');
 
+    // Accept the job agreement (授權書) — required before the talent can start /
+    // upload a delivery. Only their own accepted (won) quote.
+    if (body.accept_agreement) {
+      if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+      const { data, error } = await r.db
+        .from('marketplace_quotes')
+        .update({ agreement_accepted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('talent_id', talent.id)
+        .eq('status', 'accepted')
+        .select('id, agreement_accepted_at')
+        .maybeSingle();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (!data) return NextResponse.json({ error: '找不到可接單的案件' }, { status: 400 });
+      return NextResponse.json({ quote: data });
+    }
+
     // Re-audition: the client asked this talent to re-record. They replace their
     // sample; that clears the request. Only their own quote with a pending request.
     if (body.sample_url && !body.delivery_url) {

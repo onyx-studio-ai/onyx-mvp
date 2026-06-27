@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     const { data: myQuotes } = await r.db
       .from('marketplace_quotes')
-      .select('id, brief_id, role_name, gross_amount, net_amount, commission_rate, currency, message, status, sample_url, delivery_url, delivery_uploaded_at, reaudition_note, reaudition_requested_at, created_at')
+      .select('id, brief_id, role_name, gross_amount, net_amount, commission_rate, currency, message, status, sample_url, delivery_url, delivery_uploaded_at, reaudition_note, reaudition_requested_at, agreement_accepted_at, included_revisions, created_at')
       .eq('talent_id', (r.talent as { id: string }).id)
       .order('created_at', { ascending: false });
 
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     let wonBriefs: unknown[] = [];
     if (wonIds.length) {
       const { data: wb } = await r.db.from('marketplace_briefs')
-        .select('id, brief_number, kind, title, content_type, language, status, rate_note')
+        .select('id, brief_number, kind, title, content_type, language, status, rate_note, media_scope, territory, license_term, deadline')
         .in('id', wonIds);
       wonBriefs = wb || [];
     }

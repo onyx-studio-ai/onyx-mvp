@@ -75,6 +75,8 @@ type Quote = {
   delivery_uploaded_at?: string | null;
   reaudition_note?: string | null;
   reaudition_requested_at?: string | null;
+  agreement_accepted_at?: string | null;
+  included_revisions?: number | null;
 };
 type Demo = { url: string; name?: string; category?: string; language?: string };
 type Tpl = { name: string; body: string };
@@ -211,6 +213,45 @@ function ReauditUpload({ quote, token, tx, onDone }: { quote: Quote; token: stri
   );
 }
 
+// Job agreement (授權書) — shown on a won job. The talent must accept before they
+// can upload a delivery. Terms auto-generated from the brief + the won quote.
+function JobAgreement({ brief, quote, token, tx, onAccepted }: {
+  brief: { title?: string | null; content_type?: string | null; language?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null };
+  quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onAccepted: (at: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const license = [brief.media_scope, brief.territory, brief.license_term].filter(Boolean).join(' · ');
+  async function accept() {
+    setErr(''); setBusy(true);
+    try {
+      const r = await fetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: quote.id, accept_agreement: true }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || tx('接單失敗', '接单失败', 'Failed'));
+      onAccepted(j.quote?.agreement_accepted_at || new Date().toISOString());
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('接單失敗', '接单失败', 'Failed')); } finally { setBusy(false); }
+  }
+  const row = (k: string, v: React.ReactNode) => v ? <p><span className="text-gray-500">{k}: </span><span className="text-gray-200">{v}</span></p> : null;
+  return (
+    <div className="rounded-xl border border-[#C9A86A]/40 bg-[#C9A86A]/[0.06] p-4 space-y-2">
+      <p className="text-sm font-semibold text-[#E4CB94]">📄 {tx('授權書 · 接單確認', '授权书 · 接单确认', 'Job agreement')}</p>
+      <div className="text-xs space-y-1">
+        {row(tx('案件', '案件', 'Project'), `${brief.title || brief.content_type || '—'}${quote.role_name ? ` · ${quote.role_name}` : ''}`)}
+        {row(tx('服務', '服务', 'Service'), `${tx('真人配音', '真人配音', 'Voiceover')}${brief.language ? ` · ${brief.language}` : ''}`)}
+        {row(tx('授權範圍', '授权范围', 'License'), license)}
+        {row(tx('報酬(您實拿)', '报酬(您实拿)', 'Your fee'), `${quote.currency} ${quote.net_amount}`)}
+        {row(tx('交付期限', '交付期限', 'Deadline'), brief.deadline)}
+        {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), `${quote.included_revisions} ${tx('次', '次', '×')}`)}
+      </div>
+      <p className="text-[11px] text-gray-500 leading-relaxed">{tx('按「同意並接單」即表示您同意依約交付,並授予客戶上述使用範圍之授權;完成後在此上傳交付檔,由 Onyx 平台居中結算。未接單前無法上傳。', '按「同意并接单」即表示您同意依约交付,并授予客户上述使用范围之授权;完成后在此上传交付档,由 Onyx 平台居中结算。未接单前无法上传。', 'Accepting means you agree to deliver per these terms and grant the client the license above; upload your delivery here when done. You can\'t upload before accepting.')}</p>
+      {err && <p className="text-[11px] text-red-400">{err}</p>}
+      <button onClick={accept} disabled={busy} className="text-sm rounded-lg px-4 py-1.5 disabled:opacity-50" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
+        {busy ? tx('處理中…', '处理中…', '…') : tx('✓ 同意並接單', '✓ 同意并接单', '✓ Accept & take the job')}
+      </button>
+    </div>
+  );
+}
+
 export default function Opportunities() {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
@@ -223,7 +264,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; rate_note?: string | null; status: string }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
@@ -330,10 +371,14 @@ export default function Opportunities() {
                   {myAccepted.map((q) => (
                     <div key={q.id} className="mb-2">
                       <div className="text-xs text-gray-400 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
-                      <DeliveryUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
+                      {q.agreement_accepted_at ? (
+                        <DeliveryUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
+                      ) : (
+                        <JobAgreement brief={w} quote={q} token={token} tx={tx} onAccepted={(at) => setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, agreement_accepted_at: at } : x)))} />
+                      )}
                     </div>
                   ))}
-                  <p className="text-[11px] text-gray-500 mt-1">{tx('Onyx 會與您聯繫正式錄製的稿件與交付時程;完成後可在此上傳最終音檔。', 'Onyx 会与您联系正式录制的稿件与交付时程;完成后可在此上传最终音档。', 'Onyx will be in touch with the final script and schedule; upload your finished audio here.')}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{tx('接單後即可開始錄製,完成在此上傳交付檔。', '接单后即可开始录制,完成在此上传交付档。', 'Once you accept, record and upload your delivery here.')}</p>
                 </EntityCard>
               );
             })}
