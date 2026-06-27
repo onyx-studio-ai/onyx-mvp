@@ -33,7 +33,8 @@ export default function AdminFinance() {
   const [orders, setOrders] = useState<(Order & { _type: 'voice' | 'music' })[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [search, setSearch] = useState('');
-  const [month, setMonth] = useState('all');
+  const [year, setYear] = useState('all');
+  const [month, setMonth] = useState('all'); // MM, within the selected year
   const [cur, setCur] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -68,13 +69,22 @@ export default function AdminFinance() {
   useEffect(() => { if (!cur && currencies.length) setCur(currencies[0]); }, [cur, currencies]);
   const activeCur = cur || currencies[0] || 'USD';
 
-  const months = useMemo(() => {
+  const dstr = (o: Order) => ym(o.paid_at || o.created_at); // YYYY-MM
+  const years = useMemo(
+    () => Array.from(new Set(live.map((o) => dstr(o).slice(0, 4)).filter(Boolean))).sort().reverse(),
+    [live],
+  );
+  // Months available in the selected year (or across all years).
+  const monthOpts = useMemo(() => {
     const set = new Set<string>();
-    live.forEach((o) => { const k = ym(o.paid_at || o.created_at); if (k) set.add(k); });
-    return Array.from(set).sort().reverse();
-  }, [live]);
+    live.forEach((o) => { const d = dstr(o); if (d && (year === 'all' || d.slice(0, 4) === year)) set.add(d.slice(5, 7)); });
+    return Array.from(set).sort();
+  }, [live, year]);
 
-  const inMonth = (o: Order) => month === 'all' || ym(o.paid_at || o.created_at) === month;
+  const inMonth = (o: Order) => {
+    const d = dstr(o);
+    return (year === 'all' || d.slice(0, 4) === year) && (month === 'all' || d.slice(5, 7) === month);
+  };
   const inCur = (o: Order) => curOf(o) === activeCur;
 
   // Money snapshot — per the selected currency (never mix TWD + USD). Talent
@@ -123,9 +133,13 @@ export default function AdminFinance() {
             {currencies.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         )}
+        <select value={year} onChange={(e) => { setYear(e.target.value); setMonth('all'); }} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none">
+          <option value="all">全部年份</option>
+          {years.map((y) => <option key={y} value={y}>{y} 年</option>)}
+        </select>
         <select value={month} onChange={(e) => setMonth(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none">
           <option value="all">全部月份</option>
-          {months.map((m) => <option key={m} value={m}>{m}</option>)}
+          {monthOpts.map((m) => <option key={m} value={m}>{m} 月</option>)}
         </select>
       </div>
 
