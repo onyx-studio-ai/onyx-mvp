@@ -322,10 +322,15 @@ export default function TalentDashboard() {
   const removeLang = (v: string) => setForm((f) => ({ ...f, languages: f.languages.filter((x) => x !== v) }));
 
   // -------- render --------
+  // wide = the signed-in profile view → left-aligned like the client dashboard
+  // (the talent layout supplies the sidebar offset + top padding). Narrow = the
+  // login / pre-chrome states → stay centered full-screen.
   const shell = (inner: React.ReactNode, wide = false) => (
-    <main className="min-h-screen bg-black text-white px-4 py-8">
-      <div className={`${wide ? 'max-w-3xl' : 'max-w-sm'} mx-auto`}>{inner}</div>
-    </main>
+    wide ? (
+      <div className="text-white p-6 lg:p-10"><div className="max-w-5xl">{inner}</div></div>
+    ) : (
+      <main className="min-h-screen bg-black text-white px-4 py-8"><div className="max-w-sm mx-auto">{inner}</div></main>
+    )
   );
 
   if (phase === 'loading') return shell(<p className="text-gray-500 text-sm text-center py-20">{tx('載入中…', '加载中…', 'Loading…')}</p>);

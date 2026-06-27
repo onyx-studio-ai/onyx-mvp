@@ -10,7 +10,8 @@ import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
-import { DollarSign, Loader2 } from 'lucide-react';
+import { DollarSign, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { StatModule } from '@/components/dashboard/cards';
 
 type Earning = { id: string; order_type: string | null; commission_amount: number | null; status: string | null; created_at: string };
 type Totals = { paid: number; pending: number; total: number };
@@ -62,22 +63,16 @@ export default function TalentEarningsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white px-4 py-12 md:py-16">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2"><DollarSign className="w-6 h-6 text-amber-300" /> {tx('收款', '收款', 'Earnings')}</h1>
-        <p className="text-sm text-gray-400 mb-6">{tx('您透過 Onyx 接案/分潤所得,月結。', '您通过 Onyx 接案/分润所得,月结。', 'Your share from work and royalties through Onyx, settled monthly.')}</p>
+    <div className="text-white p-6 lg:p-10">
+      <div className="max-w-5xl">
+        <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-medium">{tx('配音員入口', '配音员入口', 'Talent portal')}</p>
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2"><DollarSign className="w-7 h-7 text-amber-300" /> {tx('收款', '收款', 'Earnings')}</h1>
+        <p className="text-sm text-gray-500 mt-1 mb-8">{tx('您透過 Onyx 接案/分潤所得,月結。', '您通过 Onyx 接案/分润所得,月结。', 'Your share from work and royalties through Onyx, settled monthly.')}</p>
 
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          {[
-            { label: tx('累計', '累计', 'Total'), v: totals.total, c: 'text-white' },
-            { label: tx('已付款', '已付款', 'Paid'), v: totals.paid, c: 'text-green-400' },
-            { label: tx('待付款', '待付款', 'Pending'), v: totals.pending, c: 'text-amber-300' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[11px] text-gray-500 mb-1">{s.label}</p>
-              <p className={`text-lg font-bold ${s.c}`}>{money(s.v)}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+          <StatModule icon={DollarSign} label={tx('累計', '累计', 'Total')} value={money(totals.total)} />
+          <StatModule icon={CheckCircle2} label={tx('已付款', '已付款', 'Paid')} value={money(totals.paid)} />
+          <StatModule icon={Clock} label={tx('待付款', '待付款', 'Pending')} value={money(totals.pending)} />
         </div>
 
         {earnings.length === 0 ? (
@@ -111,6 +106,6 @@ export default function TalentEarningsPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

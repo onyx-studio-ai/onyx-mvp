@@ -219,10 +219,12 @@ export default function Opportunities() {
     })();
   }, [load]);
 
+  // Left-aligned container matching the client dashboard pages (the talent layout
+  // already provides the sidebar offset + top padding).
   const shell = (inner: React.ReactNode) => (
-    <main className="min-h-screen bg-black text-white px-4 pt-24 pb-16">
-      <div className="max-w-4xl mx-auto">{inner}</div>
-    </main>
+    <div className="text-white p-6 lg:p-10">
+      <div className="max-w-5xl">{inner}</div>
+    </div>
   );
 
   if (phase === 'loading') return shell(<p className="text-gray-500 text-sm text-center py-20">{tx('載入中…', '加载中…', 'Loading…')}</p>);
