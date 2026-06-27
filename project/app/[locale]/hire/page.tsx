@@ -363,6 +363,7 @@ export default function Hire() {
     if (wantsLocalStudio && !studioRegion) return setError(tx('請選擇當地錄音室地區', '请选择当地录音室地区', 'Please choose the local studio region'));
     if (wantsLocalStudio && studioRegion === '__other__' && !studioRegionOther.trim()) return setError(tx('請填寫當地錄音室地區', '请填写当地录音室地区', 'Please specify the local studio region'));
     if (!form.budget.trim()) return setError(tx('請填預算金額', '请填预算金额', 'Please enter a budget amount'));
+    if (!form.auditionDeadline) return setError(tx('請選擇試音截止日', '请选择试音截止日', 'Please choose an audition deadline'));
     if (!refUrlOk) return setError(tx('參考連結格式不正確,請貼完整網址(http(s)://…)或留空', '参考链接格式不正确,请贴完整网址(http(s)://…)或留空', 'Reference link must be a full URL (http(s)://…) or left blank'));
     if (scriptUploading) return setError(tx('稿件仍在上傳中,請稍候', '稿件仍在上传中,请稍候', 'Script is still uploading — please wait'));
     if (!form.brief.trim()) return setError(tx('請簡述您的需求', '请简述您的需求', 'Please describe your project'));
@@ -650,7 +651,7 @@ export default function Hire() {
 
               {/* Timeline — all optional estimates that give buffer */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div><label className="block text-sm font-semibold mb-2">{tx('試音截止日', '试音截止日', 'Audition deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('試音截止日', '试音截止日', 'Audition deadline')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('以您當地日期為準', '以您当地日期为准', 'your local date')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
                 <div><label className="block text-sm font-semibold mb-2">{tx('預計開錄日', '预计开录日', 'Recording start')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.recordingStart} onChange={(e) => set('recordingStart', e.target.value)} /></div>
                 <div><label className="block text-sm font-semibold mb-2">{tx('預計完成日', '预计完成日', 'Estimated delivery date')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.deadline} onChange={(e) => set('deadline', e.target.value)} /></div>
               </div>
