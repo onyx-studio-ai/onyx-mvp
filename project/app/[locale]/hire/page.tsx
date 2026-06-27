@@ -61,12 +61,14 @@ const LICENSE: Opt[] = [
   { v: 'Perpetual / Buyout', tw: '永久 / 買斷', cn: '永久 / 买断' },
   { v: 'Other', tw: '其他(自行填寫)', cn: '其他(自行填写)' },
 ];
-// Base language (accent captured separately, below). The world has too many
-// languages to enumerate — "Other" lets the client type their own.
+// Language suggestions for the searchable combo (free text still allowed — the
+// list is just to help). Accent is captured separately. Search matches tw/cn/en.
 const LANGUAGES: Opt3[] = [
-  { v: 'Chinese (Mandarin)', tw: '中文(國語 / 普通話)', cn: '中文(国语 / 普通话)', en: 'Chinese (Mandarin)' },
-  { v: 'Cantonese', tw: '粵語', cn: '粤语', en: 'Cantonese' },
-  { v: 'Taiwanese Hokkien', tw: '台語(閩南語)', cn: '台语(闽南语)', en: 'Taiwanese Hokkien' },
+  { v: 'Chinese (Mandarin)', tw: '中文 · 國語 / 普通話', cn: '中文 · 国语 / 普通话', en: 'Chinese (Mandarin)' },
+  { v: 'Cantonese', tw: '粵語 · 廣東話', cn: '粤语 · 广东话', en: 'Cantonese' },
+  { v: 'Taiwanese Hokkien', tw: '台語 · 閩南語', cn: '台语 · 闽南语', en: 'Taiwanese Hokkien' },
+  { v: 'Hakka', tw: '客家話', cn: '客家话', en: 'Hakka' },
+  { v: 'Shanghainese', tw: '上海話', cn: '上海话', en: 'Shanghainese' },
   { v: 'English', tw: '英文', cn: '英文', en: 'English' },
   { v: 'Japanese', tw: '日語', cn: '日语', en: 'Japanese' },
   { v: 'Korean', tw: '韓語', cn: '韩语', en: 'Korean' },
@@ -81,11 +83,33 @@ const LANGUAGES: Opt3[] = [
   { v: 'Vietnamese', tw: '越南語', cn: '越南语', en: 'Vietnamese' },
   { v: 'Indonesian', tw: '印尼語', cn: '印尼语', en: 'Indonesian' },
   { v: 'Malay', tw: '馬來語', cn: '马来语', en: 'Malay' },
+  { v: 'Tagalog (Filipino)', tw: '菲律賓語 · 他加祿語', cn: '菲律宾语 · 他加禄语', en: 'Tagalog (Filipino)' },
   { v: 'Hindi', tw: '印地語', cn: '印地语', en: 'Hindi' },
-  { v: '__other__', tw: '其他(自行填寫)', cn: '其他(自行填写)', en: 'Other (type it)' },
+  { v: 'Urdu', tw: '烏爾都語', cn: '乌尔都语', en: 'Urdu' },
+  { v: 'Bengali', tw: '孟加拉語', cn: '孟加拉语', en: 'Bengali' },
+  { v: 'Tamil', tw: '坦米爾語', cn: '泰米尔语', en: 'Tamil' },
+  { v: 'Turkish', tw: '土耳其語', cn: '土耳其语', en: 'Turkish' },
+  { v: 'Dutch', tw: '荷蘭語', cn: '荷兰语', en: 'Dutch' },
+  { v: 'Polish', tw: '波蘭語', cn: '波兰语', en: 'Polish' },
+  { v: 'Swedish', tw: '瑞典語', cn: '瑞典语', en: 'Swedish' },
+  { v: 'Norwegian', tw: '挪威語', cn: '挪威语', en: 'Norwegian' },
+  { v: 'Danish', tw: '丹麥語', cn: '丹麦语', en: 'Danish' },
+  { v: 'Finnish', tw: '芬蘭語', cn: '芬兰语', en: 'Finnish' },
+  { v: 'Greek', tw: '希臘語', cn: '希腊语', en: 'Greek' },
+  { v: 'Czech', tw: '捷克語', cn: '捷克语', en: 'Czech' },
+  { v: 'Hungarian', tw: '匈牙利語', cn: '匈牙利语', en: 'Hungarian' },
+  { v: 'Romanian', tw: '羅馬尼亞語', cn: '罗马尼亚语', en: 'Romanian' },
+  { v: 'Ukrainian', tw: '烏克蘭語', cn: '乌克兰语', en: 'Ukrainian' },
+  { v: 'Hebrew', tw: '希伯來語', cn: '希伯来语', en: 'Hebrew' },
+  { v: 'Persian (Farsi)', tw: '波斯語', cn: '波斯语', en: 'Persian (Farsi)' },
+  { v: 'Burmese', tw: '緬甸語', cn: '缅甸语', en: 'Burmese' },
+  { v: 'Khmer', tw: '高棉語', cn: '高棉语', en: 'Khmer' },
+  { v: 'Lao', tw: '寮語', cn: '老挝语', en: 'Lao' },
+  { v: 'Mongolian', tw: '蒙古語', cn: '蒙古语', en: 'Mongolian' },
+  { v: 'Swahili', tw: '斯瓦希里語', cn: '斯瓦希里语', en: 'Swahili' },
+  { v: 'Afrikaans', tw: '南非荷蘭語', cn: '南非荷兰语', en: 'Afrikaans' },
 ];
-// Accent — optional, but always offered. "None / no preference" and a free-text
-// "Other" cover the long tail (there are far too many accents to list).
+// Accent suggestions (optional; free text allowed — the combo still lets you type).
 const ACCENTS: Opt3[] = [
   { v: 'Taiwan', tw: '台灣腔', cn: '台湾腔', en: 'Taiwan' },
   { v: 'Mainland', tw: '大陸 / 普通話', cn: '大陆 / 普通话', en: 'Mainland' },
@@ -97,7 +121,6 @@ const ACCENTS: Opt3[] = [
   { v: 'Indian', tw: '印度', cn: '印度', en: 'Indian' },
   { v: 'Singapore', tw: '新加坡', cn: '新加坡', en: 'Singaporean' },
   { v: 'Canadian', tw: '加拿大', cn: '加拿大', en: 'Canadian' },
-  { v: '__other__', tw: '其他(自行填寫)', cn: '其他(自行填写)', en: 'Other (type it)' },
 ];
 // Voice headcount by gender — "how many male / how many female". 0 = none of that gender.
 const VOICE_COUNTS: Opt3[] = [
@@ -128,6 +151,31 @@ const ROLE_TYPES = ['Game', 'Animation', 'Film / Drama'];
 const inputCls =
   'w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:border-amber-500/60 focus:outline-none placeholder:text-gray-600';
 
+// Voice123-style searchable combo: type to filter the suggestion list, click to
+// pick, or just keep your own typed text (free text always allowed).
+function Combo({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: { label: string; search: string }[]; placeholder: string }) {
+  const [open, setOpen] = useState(false);
+  const q = value.trim().toLowerCase();
+  const matches = (q ? options.filter((o) => o.search.includes(q)) : options).slice(0, 12);
+  return (
+    <div className="relative">
+      <input className={inputCls} value={value} placeholder={placeholder} autoComplete="off"
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)} />
+      {open && matches.length > 0 && (
+        <div className="absolute z-30 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-white/15 bg-zinc-900 shadow-xl">
+          {matches.map((o) => (
+            <button key={o.label} type="button"
+              onMouseDown={(e) => { e.preventDefault(); onChange(o.label); setOpen(false); }}
+              className="block w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-white/10 transition">{o.label}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Hire() {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
@@ -136,6 +184,10 @@ export default function Hire() {
   const L: 'tw' | 'cn' | 'en' = isZhCN ? 'cn' : isZh ? 'tw' : 'en';
   const lbl = (o: Opt) => (L === 'en' ? o.v : o[L]);
   const lbl3 = (o: Opt3) => (L === 'en' ? o.en : o[L]);
+  // combo suggestion lists (search matches tw/cn/en; display the locale label)
+  const comboOpts = (list: Opt3[]) => list.map((o) => ({ label: lbl3(o), search: `${o.tw} ${o.cn} ${o.en}`.toLowerCase() }));
+  const langOpts = comboOpts(LANGUAGES);
+  const accentOpts = comboOpts(ACCENTS);
   const localePath = (p: string) => (locale === 'en' ? p : `/${locale}${p}`);
 
   const [form, setForm] = useState({ title: '', name: '', company: '', email: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
@@ -153,11 +205,9 @@ export default function Hire() {
   const [territoryOther, setTerritoryOther] = useState('');
   const [license, setLicense] = useState('');
   const [licenseOther, setLicenseOther] = useState('');
-  // language + accent (free-text fallback)
+  // language + accent — searchable free-text combos
   const [language, setLanguage] = useState('');
-  const [languageOther, setLanguageOther] = useState('');
   const [accent, setAccent] = useState('');
-  const [accentOther, setAccentOther] = useState('');
   // length: by time (h/m/s, compound) or by word count
   const [lengthMode, setLengthMode] = useState<'time' | 'words'>('time');
   const [lenH, setLenH] = useState('');
@@ -281,9 +331,7 @@ export default function Hire() {
     if (territory === 'Other' && !territoryOther.trim()) return setError(tx('請填寫播放地區', '请填写播放地区', 'Please specify the territory'));
     if (!license) return setError(tx('請選擇授權期間', '请选择授权期间', 'Please choose the license term'));
     if (license === 'Other' && !licenseOther.trim()) return setError(tx('請填寫授權期間', '请填写授权期间', 'Please specify the license term'));
-    if (!language) return setError(tx('請選擇語言', '请选择语言', 'Please choose the language'));
-    if (language === '__other__' && !languageOther.trim()) return setError(tx('請填寫語言', '请填写语言', 'Please specify the language'));
-    if (accent === '__other__' && !accentOther.trim()) return setError(tx('請填寫口音', '请填写口音', 'Please specify the accent'));
+    if (!language.trim()) return setError(tx('請選擇或輸入語言', '请选择或输入语言', 'Please choose or type a language'));
     if (maleVoices === '0' && femaleVoices === '0') return setError(tx('請選擇需要幾位配音員(至少 1 位)', '请选择需要几位配音员(至少 1 位)', 'Please choose how many voices (at least 1)'));
     const hasTime = lengthMode === 'time' && (Number(lenH) > 0 || Number(lenM) > 0 || Number(lenS) > 0);
     const hasWords = lengthMode === 'words' && !!lenWords.trim();
@@ -295,8 +343,8 @@ export default function Hire() {
     if (scriptUploading) return setError(tx('稿件仍在上傳中,請稍候', '稿件仍在上传中,请稍候', 'Script is still uploading — please wait'));
     if (!form.brief.trim()) return setError(tx('請簡述您的需求', '请简述您的需求', 'Please describe your project'));
 
-    const resolvedLanguage = resolve3(language, languageOther, LANGUAGES);
-    const resolvedAccent = resolve3(accent, accentOther, ACCENTS);
+    const resolvedLanguage = language.trim();
+    const resolvedAccent = accent.trim();
     const resolvedRegion = wantsLocalStudio ? resolve3(studioRegion, studioRegionOther, STUDIO_REGIONS) : '';
     let resolvedLength = '';
     if (lengthMode === 'words') {
@@ -381,12 +429,6 @@ export default function Hire() {
   const pill = (active: boolean) =>
     `inline-flex items-center px-3 py-1.5 rounded-full text-sm border transition mr-2 mb-2 ${active ? 'bg-amber-500 text-black border-amber-500' : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/30'}`;
 
-  const NativeSelect = ({ value, onChange, opts, placeholder }: { value: string; onChange: (v: string) => void; opts: Opt3[]; placeholder: string }) => (
-    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="" className="bg-zinc-900">{placeholder}</option>
-      {opts.map((o) => <option key={o.v} value={o.v} className="bg-zinc-900">{lbl3(o)}</option>)}
-    </select>
-  );
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -464,17 +506,15 @@ export default function Hire() {
                 {license === 'Other' && <input className={`${inputCls} mt-2`} value={licenseOther} onChange={(e) => setLicenseOther(e.target.value)} placeholder={tx('請填寫授權期間,例:兩年、活動期間', '请填写授权期间,例:两年、活动期间', 'Specify the term, e.g. 2 years, campaign period')} />}
               </div>
 
-              {/* Language + accent (accent optional; free-text fallback for both) */}
+              {/* Language + accent — searchable combos (type to filter, or free-text) */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2">{tx('語言', '语言', 'Language')} <span className="text-red-400">＊</span></label>
-                  <NativeSelect value={language} onChange={setLanguage} opts={LANGUAGES} placeholder={tx('請選擇語言', '请选择语言', 'Select a language')} />
-                  {language === '__other__' && <input className={`${inputCls} mt-2`} value={languageOther} onChange={(e) => setLanguageOther(e.target.value)} placeholder={tx('請填寫語言', '请填写语言', 'Type the language')} />}
+                  <Combo value={language} onChange={setLanguage} options={langOpts} placeholder={tx('搜尋或輸入語言…', '搜索或输入语言…', 'Search or type a language…')} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-2">{tx('口音', '口音', 'Accent')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
-                  <NativeSelect value={accent} onChange={setAccent} opts={ACCENTS} placeholder={tx('不指定', '不指定', 'No preference')} />
-                  {accent === '__other__' && <input className={`${inputCls} mt-2`} value={accentOther} onChange={(e) => setAccentOther(e.target.value)} placeholder={tx('請填寫口音', '请填写口音', 'Type the accent')} />}
+                  <Combo value={accent} onChange={setAccent} options={accentOpts} placeholder={tx('搜尋或輸入口音(可留空)', '搜索或输入口音(可留空)', 'Search or type an accent (optional)')} />
                 </div>
               </div>
 
