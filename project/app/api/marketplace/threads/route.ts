@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
       brief_number: string; title: string; brief_status: string; counterpart: string;
     }> = [];
 
-    // Talent side — briefs this talent quoted on.
+    // Talent side — briefs this talent WON (post-award only: 成單後才開對話).
     if (c.talentId) {
-      const { data: quotes } = await c.db.from('marketplace_quotes').select('brief_id').eq('talent_id', c.talentId);
+      const { data: quotes } = await c.db.from('marketplace_quotes').select('brief_id').eq('talent_id', c.talentId).eq('status', 'accepted');
       const ids = [...new Set((quotes || []).map((q) => q.brief_id))];
       if (ids.length) {
         const { data: briefs } = await c.db
@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
       const { data: qs } = await c.db
         .from('marketplace_quotes')
         .select('brief_id, talent_id, talents(name)')
-        .in('brief_id', myIds);
+        .in('brief_id', myIds)
+        .eq('status', 'accepted');
       for (const q of qs || []) {
         const b = (myBriefs || []).find((x) => x.id === q.brief_id);
         if (!b) continue;

@@ -157,7 +157,7 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
   return shell(
     <>
       <h1 className="text-2xl font-semibold mb-6">{tx('訊息', '消息', 'Messages')}</h1>
-      {shownThreads.length === 0 && <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有對話。報價或發案後,對話會出現在這裡。', '目前没有对话。报价或发案后,对话会出现在这里。', 'No threads yet. They appear once you quote on or post a brief.')}</p>}
+      {shownThreads.length === 0 && <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有對話。成單後(客戶選定配音員)雙方就能在這裡直接聯繫。', '目前没有对话。成单后(客户选定配音员)双方就能在这里直接联系。', 'No threads yet. Once a job is awarded, you and the other party can message here.')}</p>}
       <div className="space-y-2">
         {shownThreads.map((t) => (
           <button key={t.key} onClick={() => openThread(t)} className="w-full text-left bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 rounded-xl p-4 transition">

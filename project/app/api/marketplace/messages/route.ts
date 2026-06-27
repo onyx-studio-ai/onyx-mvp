@@ -48,11 +48,16 @@ export async function POST(request: NextRequest) {
     const raw = String(rawBody || '').trim().slice(0, 4000);
     if (!briefId || !talentId) return NextResponse.json({ error: 'brief_id and talent_id are required' }, { status: 400 });
     if (!raw) return NextResponse.json({ error: 'Message cannot be empty' }, { status: 400 });
-    // Redact off-platform contact details (links / emails / phone) before storing.
-    const { clean: body, redacted } = sanitizeMessage(raw);
 
     const role = await threadRole(c, briefId, talentId);
     if (!role) return NextResponse.json({ error: 'Not a participant in this thread' }, { status: 403 });
+
+    // Block off-platform contact details outright (Wing: 即時擋下不送出 — no routing
+    // around Onyx). The client + talent may only message once the job is awarded.
+    if (sanitizeMessage(raw).redacted) {
+      return NextResponse.json({ error: '訊息含聯絡方式(電話 / email / LINE / 微信 / 網址 等),平台不允許交換私下聯絡資料。請移除後再送出。' }, { status: 400 });
+    }
+    const body = raw;
 
     // Sender display name + the counterpart to notify.
     const { data: brief } = await c.db
@@ -78,7 +83,7 @@ export async function POST(request: NextRequest) {
       sendEmail({ category: 'PRODUCTION', to, subject: note.subject, html: note.html }).catch(() => {});
     }
 
-    return NextResponse.json({ message: msg, redacted });
+    return NextResponse.json({ message: msg });
   } catch (err) {
     console.error('[marketplace/messages] POST error:', err);
     return NextResponse.json({ error: 'Could not send message' }, { status: 500 });

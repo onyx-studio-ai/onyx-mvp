@@ -24,12 +24,14 @@ export async function resolveCaller(request: NextRequest): Promise<Caller | null
 
 /** The caller's role on a (brief, talent) thread, or null if they aren't a party. */
 export async function threadRole(c: Caller, briefId: string, talentId: string): Promise<'client' | 'talent' | null> {
-  // The thread only exists if the talent has a quote on the brief.
+  // POST-AWARD ONLY (成單後才能私訊): the thread opens once this talent's quote on
+  // the brief is ACCEPTED — i.e. the client picked them. No DMs before that.
   const { data: q } = await c.db
     .from('marketplace_quotes')
     .select('id')
     .eq('brief_id', briefId)
     .eq('talent_id', talentId)
+    .eq('status', 'accepted')
     .limit(1)
     .maybeSingle();
   if (!q) return null;
