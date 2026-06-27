@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
+import { newMessageEmail } from '@/lib/mail-templates';
 
 /*
   The signed-in client's in-platform thread with Onyx on one of their own requests.
@@ -46,11 +47,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .select('id, sender_type, sender_name, body, created_at').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Nudge Onyx so they pick it up in the admin (best-effort).
-  sendEmail({
-    category: 'PRODUCTION', to: 'produce@onyxstudios.ai',
-    subject: `客戶回覆 · ${r.brief.brief_number || id}`,
-    html: `<p>客戶在請求 <b>${r.brief.brief_number || id}</b> 留了新訊息,請至後台「客戶請求」回覆。</p>`,
-  }).catch(() => {});
+  // Nudge Onyx so they pick it up in the admin — include the message itself.
+  const note = newMessageEmail({ briefNumber: r.brief.brief_number || id, url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai'}/admin/requests`, body, senderName: r.brief.client_name || '客戶', locale: 'zh-TW' });
+  sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: `客戶回覆 · ${r.brief.brief_number || id}`, html: note.html }).catch(() => {});
   return NextResponse.json({ message: msg });
 }

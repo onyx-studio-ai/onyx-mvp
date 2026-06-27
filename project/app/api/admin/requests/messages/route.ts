@@ -48,9 +48,10 @@ export async function POST(request: NextRequest) {
     .select('id, sender_type, sender_name, body, created_at').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Notify the client by email — content stays in-platform, the email is just a nudge.
+  // Notify the client by email — show the message itself so they can just read it
+  // and decide whether to come back to reply.
   if (brief.client_email) {
-    const note = newMessageEmail({ briefNumber: brief.brief_number, locale: brief.locale, url: `${SITE}/dashboard/requests/${briefId}` });
+    const note = newMessageEmail({ briefNumber: brief.brief_number, locale: brief.locale, url: `${SITE}/dashboard/requests/${briefId}`, body, senderName: ONYX_TEAM });
     sendEmail({ category: 'PRODUCTION', to: brief.client_email, subject: note.subject, html: note.html }).catch(() => {});
   }
   return NextResponse.json({ message: msg });

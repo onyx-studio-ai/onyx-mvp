@@ -1039,17 +1039,22 @@ export function castingAwardedClientEmail(p: { clientName?: string; title: strin
 }
 
 /** New-message notification to the counterpart in a marketplace thread. */
-export function newMessageEmail(p: { briefNumber?: string; locale?: string; url: string }): { subject: string; html: string } {
+export function newMessageEmail(p: { briefNumber?: string; locale?: string; url: string; body?: string; senderName?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);
   const n = (p.briefNumber || '').trim();
   const C = {
-    tw: { subject: `Onyx Studios — 您有一則新訊息${n ? `(${n})` : ''}`, headline: '您有一則新訊息', sub: '對方已於平台回覆您的案件。', card: n ? `案件 ${n}` : '案件訊息', l1: '您在 Onyx Studios 平台的案件收到一則新訊息,敬請點選下方按鈕查看並回覆。', cta: '查看訊息', note: '為保障雙方權益並利我們從旁協助,煩請於平台內回覆。' },
-    cn: { subject: `Onyx Studios — 您有一条新消息${n ? `(${n})` : ''}`, headline: '您有一条新消息', sub: '对方已在平台回复您的案件。', card: n ? `案件 ${n}` : '案件消息', l1: '您在 Onyx Studios 平台的案件收到一条新消息,请点击下方按钮查看并回复。', cta: '查看消息', note: '为保障双方权益并便于我们从旁协助,烦请在平台内回复。' },
-    en: { subject: `Onyx Studios — you have a new message${n ? ` (${n})` : ''}`, headline: 'You have a new message', sub: 'The other party has replied on your project.', card: n ? `Project ${n}` : 'Project message', l1: 'There is a new message on your Onyx Studios project. Please click below to view and reply.', cta: 'View message', note: 'To protect both parties and allow us to assist, kindly keep your correspondence on the platform.' },
+    tw: { subject: `Onyx Studios — 您有一則新訊息${n ? `(${n})` : ''}`, headline: '您有一則新訊息', sub: n ? `案件 ${n}` : '案件訊息', from: '來自', cta: '回覆訊息', note: '直接讀訊息即可;需要回覆時,點上方按鈕到平台回覆。' },
+    cn: { subject: `Onyx Studios — 您有一条新消息${n ? `(${n})` : ''}`, headline: '您有一条新消息', sub: n ? `案件 ${n}` : '案件消息', from: '来自', cta: '回复消息', note: '直接读消息即可;需要回复时,点上方按钮到平台回复。' },
+    en: { subject: `Onyx Studios — new message${n ? ` (${n})` : ''}`, headline: 'You have a new message', sub: n ? `Project ${n}` : 'Project message', from: 'From', cta: 'Reply', note: 'Read it right here; click above to reply on the platform when you need to.' },
   }[L];
+  const msg = (p.body || '').trim();
+  // Show the message itself — the client can just read it and decide whether to reply.
+  const msgCard = msg
+    ? bodyCard(p.senderName ? `${C.from} ${mpEsc(p.senderName)}` : '', `<p style="color:#f3f4f6;font-size:15px;line-height:1.7;margin:0;white-space:pre-wrap;">${mpEsc(msg)}</p>`)
+    : bodyCard('', mp(L === 'en' ? 'You have a new message on your project.' : '您的案件收到一則新訊息。'));
   const content = `
     ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
-    ${bodyCard(C.card, mp(C.l1))}
+    ${msgCard}
     ${ctaRow(C.cta, p.url, BRAND_GREEN)}
     ${bodyCard('', `<p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${C.note}</p>`)}`;
   return { subject: C.subject, html: baseLayout(content) };
