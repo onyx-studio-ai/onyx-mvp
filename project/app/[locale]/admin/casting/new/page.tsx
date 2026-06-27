@@ -119,7 +119,14 @@ function NewCasting() {
   const [inviting, setInviting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [previewing, setPreviewing] = useState(false);
-  const [notify, setNotify] = useState(true); // email matching-language talents on publish
+  const [notify] = useState(true); // legacy fallback flag (picker drives invites now)
+  // Publish-time talent picker — invite ONLY online (vetted) talents (the gate).
+  const [roster, setRoster] = useState<{ id: string; name: string; langs: string }[]>([]);
+  const [rosterErr, setRosterErr] = useState('');
+  const [selTalents, setSelTalents] = useState<Set<string>>(new Set());
+  const [userEditedSel, setUserEditedSel] = useState(false);
+  const [langOnly, setLangOnly] = useState(true);
+  const [talentSearch, setTalentSearch] = useState('');
   // When opened as /admin/casting/new?from=<id> we're completing a client request:
   // pre-fill from their brief, show who asked + their budget, and publish IN PLACE.
   const search = useSearchParams();
@@ -181,6 +188,40 @@ function NewCasting() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  // Load the roster of ONLINE (vetted) talents for the publish-time invite picker.
+  useEffect(() => {
+    (async () => {
+      const r = await fetch('/api/admin/talents', { credentials: 'include' }).catch(() => null);
+      if (!r || !r.ok) { setRosterErr('無法載入配音員名單,請重新整理。'); return; }
+      const all = await r.json().catch(() => []);
+      const asText = (v: unknown) => (Array.isArray(v) ? v.join(' ') : String(v || ''));
+      const list = (Array.isArray(all) ? all : [])
+        .filter((t: { is_active?: boolean; type?: string }) => t.is_active && ['voice_actor', 'VO', 'Singer'].includes(t.type || ''))
+        .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim() }))
+        .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
+      setRoster(list);
+    })();
+  }, []);
+
+  // language match for the picker (best-effort default pre-check)
+  const langTokens = (s: string) => (s || '').split(/[^A-Za-z一-鿿]+/).map((x) => x.trim().toLowerCase()).filter((x) => (/[一-鿿]/.test(x) ? x.length >= 2 : x.length >= 3));
+  const caseToks = langTokens(language);
+  const matchesLang = (t: { langs: string }) => caseToks.length > 0 && caseToks.some((k) => t.langs.toLowerCase().includes(k));
+  const reqName = (fromClient?.requested_talent || '').trim().toLowerCase();
+  const isRequested = (t: { name: string }) => !!reqName && (t.name.toLowerCase() === reqName || reqName.includes(t.name.toLowerCase()));
+
+  // Default selection = matching-language + the requested talent, until the admin
+  // manually edits the picker. Re-runs as language/client info arrives (async import).
+  useEffect(() => {
+    if (userEditedSel || roster.length === 0) return;
+    const sel = new Set<string>();
+    for (const t of roster) if (matchesLang(t) || isRequested(t)) sel.add(t.id);
+    setSelTalents(sel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roster, language, fromClient, userEditedSel]);
+
+  const toggleTalent = (id: string) => { setUserEditedSel(true); setSelTalents((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
 
   function parseRoles() {
     return rolesText.split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
@@ -270,6 +311,7 @@ function NewCasting() {
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
       length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
       accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
+      invite_talent_ids: Array.from(selTalents), // publish-time picker (online talents only)
       id: fromId || undefined, // present = publish the client request in place (no duplicate)
     };
     const res = await fetch('/api/admin/casting', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -462,10 +504,45 @@ function NewCasting() {
             )}
           </div>
 
-          <label className="flex items-center gap-2 mt-5 text-sm text-gray-300 cursor-pointer">
-            <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
-            發佈時寄信通知符合語言的配音員來試音(英語案寄英文信)
-          </label>
+          {/* Publish-time invite picker — only ONLINE (vetted) talents appear (the gate) */}
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-sm font-semibold text-gray-200">邀請配音員試音</p>
+              <span className="text-xs text-amber-300">已選 {selTalents.size} 位</span>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">只列已上線(審核過)的配音員 —— 這是平台的把關。指定配音員已自動勾選;可「該語系全選」或自行挑選,發佈時會寄試音邀請給勾選的人。</p>
+            {rosterErr ? <p className="text-xs text-red-400">{rosterErr}</p> : (
+              <>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 max-w-[200px]" />
+                  <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-amber-500" />只顯示符合語系</label>
+                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter(matchesLang).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
+                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
+                </div>
+                {(() => {
+                  const shown = roster
+                    .filter((t) => (langOnly ? matchesLang(t) || isRequested(t) : true))
+                    .filter((t) => { const q = talentSearch.trim().toLowerCase(); return !q || t.name.toLowerCase().includes(q) || t.langs.toLowerCase().includes(q); });
+                  const ordered = [...shown].sort((a, b) => (isRequested(b) ? 1 : 0) - (isRequested(a) ? 1 : 0));
+                  return (
+                    <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
+                      {ordered.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的上線配音員{langOnly ? '(可關閉「只顯示符合語系」看全部)' : ''}。</p>}
+                      {ordered.slice(0, 200).map((t) => (
+                        <label key={t.id} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
+                          <input type="checkbox" checked={selTalents.has(t.id)} onChange={() => toggleTalent(t.id)} className="accent-amber-500" />
+                          <span className="text-gray-100">{t.name}</span>
+                          {isRequested(t) && <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">🎯 指定</span>}
+                          {matchesLang(t) && <span className="text-[10px] text-green-400/80">符合語系</span>}
+                          <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[40%]">{t.langs}</span>
+                        </label>
+                      ))}
+                    </div>
+                  );
+                })()}
+                {reqName && roster.length > 0 && !roster.some(isRequested) && <p className="text-[11px] text-amber-400/80 mt-1.5">⚠ 指定配音員「{fromClient?.requested_talent}」不在上線名單中,無法寄送(僅發給已上線者)。</p>}
+              </>
+            )}
+          </div>
           {err && <p className="text-red-400 text-sm mt-4">{err}</p>}
           <div className="flex gap-3 mt-4">
             <button onClick={() => setPreviewing(false)} className="bg-white/10 hover:bg-white/15 text-white rounded-lg px-5 py-2.5 text-sm">← 返回修改</button>

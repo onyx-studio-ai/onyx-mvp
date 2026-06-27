@@ -64,6 +64,40 @@ async function notifyMatchingTalents(
   return matched.length;
 }
 
+// Email a SPECIFIC, admin-selected set of talents (the publish-time picker). CORE
+// GATE: only ONLINE (is_active) talents are ever invited — Onyx's vetting is the
+// platform's moat, so un-vetted/offline talents are never sent casting invites.
+async function notifySelectedTalents(
+  db: ReturnType<typeof getSupabaseServiceClient>,
+  brief: { title: string; language: string; rate_note?: string | null; code?: string },
+  talentIds: string[],
+) {
+  if (!talentIds.length) return 0;
+  const { data: talents } = await db.from('talents')
+    .select('email')
+    .in('id', talentIds.slice(0, 500))
+    .eq('is_active', true)          // gate: never invite offline / un-vetted talents
+    .not('email', 'is', null)
+    .limit(500);
+  const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i;
+  const seen = new Set<string>();
+  const recips = (talents || []).filter((t) => {
+    const e = String(t.email || '').trim().toLowerCase();
+    if (!EMAIL_OK.test(e) || SKIP.test(e) || seen.has(e)) return false;
+    seen.add(e); return true;
+  });
+  if (!recips.length) return 0;
+  const isZh = ZH_RE.test(brief.language || '');
+  const url = `${SITE}/${isZh ? 'zh-TW/' : ''}talent`;
+  const { subject, html } = castingNotifyEmail({
+    title: brief.title, caseCode: brief.code, language: brief.language,
+    rateNote: brief.rate_note || undefined, url, locale: isZh ? 'zh-TW' : 'en',
+  });
+  await Promise.all(recips.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
+  return recips.length;
+}
+
 // GET /api/admin/casting?id=<briefId> — load one brief to pre-fill the form
 // (used when an admin "completes" a client request into a casting call).
 export async function GET(request: NextRequest) {
@@ -162,16 +196,21 @@ export async function POST(request: NextRequest) {
   const { data, error } = result;
   if (error || !data) return NextResponse.json({ error: error?.message || '發案失敗' }, { status: 500 });
 
-  // Notify matching-language talents (default on; client can opt out with notify:false).
+  // Invite talents. If the publish-time picker sent an explicit selection
+  // (invite_talent_ids — an array, possibly empty), invite exactly those ONLINE
+  // talents. Otherwise fall back to the legacy "notify all matching language".
   let notified = 0;
-  if (b.notify !== false) {
-    try {
-      notified = await notifyMatchingTalents(db, {
-        title, language: row.language || '', rate_note: row.rate_note,
-        code: caseCode({ content_type: row.content_type, created_at: data.created_at, brief_number: data.brief_number }),
-      });
-    } catch { /* best-effort */ }
-  }
+  const briefMeta = {
+    title, language: row.language || '', rate_note: row.rate_note,
+    code: caseCode({ content_type: row.content_type, created_at: data.created_at, brief_number: data.brief_number }),
+  };
+  try {
+    if (Array.isArray(b.invite_talent_ids)) {
+      notified = await notifySelectedTalents(db, briefMeta, (b.invite_talent_ids as unknown[]).map(String).filter(Boolean));
+    } else if (b.notify !== false) {
+      notified = await notifyMatchingTalents(db, briefMeta);
+    }
+  } catch { /* best-effort */ }
   return NextResponse.json({ ok: true, id: data.id, brief_number: data.brief_number, notified });
 }
 
