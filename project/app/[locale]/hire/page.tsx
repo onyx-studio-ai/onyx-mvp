@@ -108,12 +108,6 @@ const VOICE_COUNTS: Opt3[] = [
   { v: '4', tw: '4 位', cn: '4 位', en: '4' },
   { v: '5+', tw: '5 位以上', cn: '5 位以上', en: '5+' },
 ];
-const LENGTH_UNITS: Opt3[] = [
-  { v: 'seconds', tw: '秒', cn: '秒', en: 'sec' },
-  { v: 'minutes', tw: '分鐘', cn: '分钟', en: 'min' },
-  { v: 'hours', tw: '小時', cn: '小时', en: 'hr' },
-  { v: 'words', tw: '字', cn: '字', en: 'words' },
-];
 const SCRIPT_TYPES: Opt3[] = [
   { v: 'audition', tw: '試音稿', cn: '试音稿', en: 'Audition script' },
   { v: 'final', tw: '正式稿', cn: '正式稿', en: 'Final script' },
@@ -144,7 +138,7 @@ export default function Hire() {
   const lbl3 = (o: Opt3) => (L === 'en' ? o.en : o[L]);
   const localePath = (p: string) => (locale === 'en' ? p : `/${locale}${p}`);
 
-  const [form, setForm] = useState({ title: '', name: '', company: '', email: '', length: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
+  const [form, setForm] = useState({ title: '', name: '', company: '', email: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [budgetCurrency, setBudgetCurrency] = useState('USD');
   const [contentType, setContentType] = useState('');
@@ -164,8 +158,13 @@ export default function Hire() {
   const [languageOther, setLanguageOther] = useState('');
   const [accent, setAccent] = useState('');
   const [accentOther, setAccentOther] = useState('');
-  // length unit, voices by gender (how many male / how many female)
-  const [lengthUnit, setLengthUnit] = useState('minutes');
+  // length: by time (h/m/s, compound) or by word count
+  const [lengthMode, setLengthMode] = useState<'time' | 'words'>('time');
+  const [lenH, setLenH] = useState('');
+  const [lenM, setLenM] = useState('');
+  const [lenS, setLenS] = useState('');
+  const [lenWords, setLenWords] = useState('');
+  // voices by gender (how many male / how many female)
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
   // script: type + paste/upload
@@ -286,7 +285,9 @@ export default function Hire() {
     if (language === '__other__' && !languageOther.trim()) return setError(tx('請填寫語言', '请填写语言', 'Please specify the language'));
     if (accent === '__other__' && !accentOther.trim()) return setError(tx('請填寫口音', '请填写口音', 'Please specify the accent'));
     if (maleVoices === '0' && femaleVoices === '0') return setError(tx('請選擇需要幾位配音員(至少 1 位)', '请选择需要几位配音员(至少 1 位)', 'Please choose how many voices (at least 1)'));
-    if (!form.length.trim()) return setError(tx('請填寫長度', '请填写长度', 'Please enter the length'));
+    const hasTime = lengthMode === 'time' && (Number(lenH) > 0 || Number(lenM) > 0 || Number(lenS) > 0);
+    const hasWords = lengthMode === 'words' && !!lenWords.trim();
+    if (!hasTime && !hasWords) return setError(tx('請填寫長度', '请填写长度', 'Please enter the length'));
     if (wantsLocalStudio && !studioRegion) return setError(tx('請選擇當地錄音室地區', '请选择当地录音室地区', 'Please choose the local studio region'));
     if (wantsLocalStudio && studioRegion === '__other__' && !studioRegionOther.trim()) return setError(tx('請填寫當地錄音室地區', '请填写当地录音室地区', 'Please specify the local studio region'));
     if (!form.budget.trim()) return setError(tx('請填預算金額', '请填预算金额', 'Please enter a budget amount'));
@@ -297,8 +298,16 @@ export default function Hire() {
     const resolvedLanguage = resolve3(language, languageOther, LANGUAGES);
     const resolvedAccent = resolve3(accent, accentOther, ACCENTS);
     const resolvedRegion = wantsLocalStudio ? resolve3(studioRegion, studioRegionOther, STUDIO_REGIONS) : '';
-    const unitLabel = lbl3(LENGTH_UNITS.find((u) => u.v === lengthUnit) || LENGTH_UNITS[0]);
-    const resolvedLength = form.length.trim() ? `${form.length.trim()} ${unitLabel}` : '';
+    let resolvedLength = '';
+    if (lengthMode === 'words') {
+      resolvedLength = lenWords.trim() ? `${lenWords.trim()} ${tx('字', '字', 'words')}` : '';
+    } else {
+      const parts: string[] = [];
+      if (Number(lenH) > 0) parts.push(`${parseInt(lenH, 10)} ${tx('小時', '小时', 'h')}`);
+      if (Number(lenM) > 0) parts.push(`${parseInt(lenM, 10)} ${tx('分', '分', 'm')}`);
+      if (Number(lenS) > 0) parts.push(`${parseInt(lenS, 10)} ${tx('秒', '秒', 's')}`);
+      resolvedLength = parts.join(' ');
+    }
     const hasScript = scriptMode === 'paste' ? !!scriptText.trim() : !!scriptFileUrl;
     // voices by gender → a count total + a readable "男聲 N 位、女聲 M 位" string.
     const cntLabel = (v: string) => lbl3(VOICE_COUNTS.find((o) => o.v === v) || VOICE_COUNTS[0]);
@@ -488,17 +497,28 @@ export default function Hire() {
                 </div>
               </div>
 
-              {/* Length by minutes OR words */}
+              {/* Length — by time (h/m/s, supports compound e.g. 1h30m22s) or by word count */}
               <div>
                 <label className="block text-sm font-semibold mb-2">{tx('長度', '长度', 'Length')} <span className="text-red-400">＊</span></label>
-                <div className="flex items-center gap-2">
-                  <input type="number" min="0" className={`${inputCls} flex-1`} value={form.length} onChange={(e) => set('length', e.target.value)} placeholder={tx('數量', '数量', 'Amount')} />
-                  <div className="flex">
-                    {LENGTH_UNITS.map((u) => (
-                      <button key={u.v} type="button" onClick={() => setLengthUnit(u.v)} className={pill(lengthUnit === u.v)}>{lbl3(u)}</button>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <button type="button" onClick={() => setLengthMode('time')} className={pill(lengthMode === 'time')}>{tx('依時間', '依时间', 'By time')}</button>
+                  <button type="button" onClick={() => setLengthMode('words')} className={pill(lengthMode === 'words')}>{tx('依字數', '依字数', 'By words')}</button>
                 </div>
+                {lengthMode === 'time' ? (
+                  <div className="flex items-center gap-1.5">
+                    <input type="number" min="0" className={`${inputCls} w-20`} value={lenH} onChange={(e) => setLenH(e.target.value)} placeholder="0" />
+                    <span className="text-sm text-gray-400">{tx('時', '时', 'h')}</span>
+                    <input type="number" min="0" max="59" className={`${inputCls} w-20`} value={lenM} onChange={(e) => setLenM(e.target.value)} placeholder="0" />
+                    <span className="text-sm text-gray-400">{tx('分', '分', 'm')}</span>
+                    <input type="number" min="0" max="59" className={`${inputCls} w-20`} value={lenS} onChange={(e) => setLenS(e.target.value)} placeholder="0" />
+                    <span className="text-sm text-gray-400">{tx('秒', '秒', 's')}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input type="number" min="0" className={`${inputCls} flex-1`} value={lenWords} onChange={(e) => setLenWords(e.target.value)} placeholder={tx('字數', '字数', 'Word count')} />
+                    <span className="text-sm text-gray-400">{tx('字', '字', 'words')}</span>
+                  </div>
+                )}
               </div>
 
               {/* Script — paste OR upload, audition vs final */}
