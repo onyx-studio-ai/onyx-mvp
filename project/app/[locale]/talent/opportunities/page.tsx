@@ -132,9 +132,13 @@ const builtinIntro = (name: string, tx: (tw: string, cn: string, en: string) => 
   `Hi, I'm ${name || '(your name)'}, a voice actor. Thanks for the invitation — I'm interested in this project and my voice and experience fit it well. I'd love to work with you.`);
 const builtinRev = (tx: (tw: string, cn: string, en: string) => string) => tx('含 2 次修改;超出部分每次另計。', '含 2 次修改;超出部分每次另计。', '2 revisions included; extra revisions billed separately.');
 
-// Won-job delivery: the talent hands in the finished recording against an accepted
-// quote. Final files are NOT transcoded (preserve 48k/24-bit); zip allowed for bundles.
-function DeliveryUpload({ quote, token, tx, onDone }: { quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
+// Won-job delivery: the talent hands in finished recordings against an accepted
+// quote. MULTIPLE files allowed (each upload adds one + future revisions); each
+// becomes a client-reviewable version. Files preserve 48k/24-bit (not transcoded).
+function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
+  quote: Quote; deliveries: { id: string; file_name: string; file_url: string }[]; token: string;
+  tx: (a: string, b: string, c: string) => string; onChanged: () => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   async function upload(file: File) {
@@ -150,34 +154,41 @@ function DeliveryUpload({ quote, token, tx, onDone }: { quote: Quote; token: str
       if (upErr) throw new Error(upErr.message);
       const p = await fetch('/api/talent/quotes', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id: quote.id, delivery_url: uj.publicUrl }),
+        body: JSON.stringify({ id: quote.id, delivery_url: uj.publicUrl, file_name: file.name }),
       });
       const pj = await p.json().catch(() => ({}));
       if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
-      onDone({ ...quote, delivery_url: uj.publicUrl, delivery_uploaded_at: new Date().toISOString() });
+      onChanged();
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
   }
-  const ACCEPT = '.wav,.mp3,.m4a,.aac,.ogg,.flac,.zip';
-  if (quote.delivery_url) {
-    return (
-      <div className="mt-1.5 flex items-center gap-3 text-xs">
-        <span className="text-[#6FCF97]">{tx('✓ 已交付', '✓ 已交付', '✓ Delivered')}</span>
-        <a href={quote.delivery_url} target="_blank" rel="noreferrer" className="text-gray-400 underline hover:text-white">{tx('檢視', '查看', 'View')}</a>
-        <label className="text-gray-500 underline cursor-pointer hover:text-white">
-          {busy ? '…' : tx('重新上傳', '重新上传', 'Replace')}
-          <input type="file" accept={ACCEPT} className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-        </label>
-      </div>
-    );
+  async function remove(id: string) {
+    setErr(''); setBusy(true);
+    try {
+      const p = await fetch('/api/talent/quotes', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: quote.id, delete_version_id: id }),
+      });
+      if (!p.ok) { const j = await p.json().catch(() => ({})); throw new Error(j.error || 'failed'); }
+      onChanged();
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('刪除失敗', '删除失败', 'Delete failed')); } finally { setBusy(false); }
   }
+  const ACCEPT = '.wav,.mp3,.m4a,.aac,.ogg,.flac,.zip';
   return (
-    <div className="mt-1.5">
+    <div className="mt-1.5 space-y-1.5">
+      {deliveries.length > 0 && deliveries.map((d) => (
+        <div key={d.id} className="flex items-center gap-2 text-xs bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-lg px-3 py-1.5">
+          <span className="text-[#6FCF97]">✓</span>
+          <span className="text-gray-200 truncate flex-1">{d.file_name}</span>
+          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-400 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
+          <button onClick={() => remove(d.id)} disabled={busy} title={tx('刪除', '删除', 'Remove')} className="text-gray-500 hover:text-red-300 disabled:opacity-50 shrink-0">✕</button>
+        </div>
+      ))}
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
-        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳完成音檔', '⬆ 上传完成音档', '⬆ Upload final audio')}
+        {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('⬆ 上傳更多檔', '⬆ 上传更多档', '⬆ Upload more') : tx('⬆ 上傳完成音檔', '⬆ 上传完成音档', '⬆ Upload final audio')}
         <input type="file" accept={ACCEPT} className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
-      <p className="text-[10px] text-gray-500 mt-1">{tx('正式錄製檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '正式录制档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Final file (48kHz/24-bit WAV preferred; zip for multiple)')}</p>
-      {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
+      <p className="text-[10px] text-gray-500">{tx('可上傳多個完成檔 / 修改檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '可上传多个完成档 / 修改档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Upload several final / revision files (48kHz/24-bit WAV preferred; zip for bundles)')}</p>
+      {err && <p className="text-[10px] text-red-400">{err}</p>}
     </div>
   );
 }
@@ -231,23 +242,39 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
       onAccepted(j.quote?.agreement_accepted_at || new Date().toISOString());
     } catch (e) { setErr(e instanceof Error ? e.message : tx('接單失敗', '接单失败', 'Failed')); } finally { setBusy(false); }
   }
-  const row = (k: string, v: React.ReactNode) => v ? <p><span className="text-gray-500">{k}: </span><span className="text-gray-200">{v}</span></p> : null;
+  const cell = (k: string, v: React.ReactNode) => v ? (
+    <div className="bg-black/20 rounded-lg px-3 py-2">
+      <p className="text-[11px] text-[#C9A86A]/80 mb-0.5">{k}</p>
+      <p className="text-sm text-gray-100 font-medium">{v}</p>
+    </div>
+  ) : null;
   return (
-    <div className="rounded-xl border border-[#C9A86A]/40 bg-[#C9A86A]/[0.06] p-4 space-y-2">
-      <p className="text-sm font-semibold text-[#E4CB94]">📄 {tx('授權書 · 接單確認', '授权书 · 接单确认', 'Job agreement')}</p>
-      <div className="text-xs space-y-1">
-        {row(tx('案件', '案件', 'Project'), `${brief.title || brief.content_type || '—'}${quote.role_name ? ` · ${quote.role_name}` : ''}`)}
-        {row(tx('服務', '服务', 'Service'), `${tx('真人配音', '真人配音', 'Voiceover')}${brief.language ? ` · ${brief.language}` : ''}`)}
-        {row(tx('授權範圍', '授权范围', 'License'), license)}
-        {row(tx('報酬(您實拿)', '报酬(您实拿)', 'Your fee'), `${quote.currency} ${quote.net_amount}`)}
-        {row(tx('交付期限', '交付期限', 'Deadline'), brief.deadline)}
-        {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), `${quote.included_revisions} ${tx('次', '次', '×')}`)}
+    <div className="rounded-xl border border-[#C9A86A]/40 bg-[#C9A86A]/[0.06] overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#C9A86A]/25 bg-[#C9A86A]/[0.08]">
+        <span className="text-base">📄</span>
+        <div>
+          <p className="text-sm font-semibold text-[#E4CB94]">{tx('授權書 · 接單確認', '授权书 · 接单确认', 'Job Agreement')}</p>
+          <p className="text-[11px] text-gray-400">{tx('接單前請確認以下條款', '接单前请确认以下条款', 'Review the terms before accepting')}</p>
+        </div>
       </div>
-      <p className="text-[11px] text-gray-500 leading-relaxed">{tx('按「同意並接單」即表示您同意依約交付,並授予客戶上述使用範圍之授權;完成後在此上傳交付檔,由 Onyx 平台居中結算。未接單前無法上傳。', '按「同意并接单」即表示您同意依约交付,并授予客户上述使用范围之授权;完成后在此上传交付档,由 Onyx 平台居中结算。未接单前无法上传。', 'Accepting means you agree to deliver per these terms and grant the client the license above; upload your delivery here when done. You can\'t upload before accepting.')}</p>
-      {err && <p className="text-[11px] text-red-400">{err}</p>}
-      <button onClick={accept} disabled={busy} className="text-sm rounded-lg px-4 py-1.5 disabled:opacity-50" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
-        {busy ? tx('處理中…', '处理中…', '…') : tx('✓ 同意並接單', '✓ 同意并接单', '✓ Accept & take the job')}
-      </button>
+      <div className="p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          {cell(tx('案件', '案件', 'Project'), `${brief.title || brief.content_type || '—'}${quote.role_name ? ` · ${quote.role_name}` : ''}`)}
+          {cell(tx('服務', '服务', 'Service'), `${tx('真人配音', '真人配音', 'Voiceover')}${brief.language ? ` · ${brief.language}` : ''}`)}
+          {cell(tx('授權範圍', '授权范围', 'License'), license)}
+          {cell(tx('報酬(您實拿)', '报酬(您实拿)', 'Your fee'), <span className="text-[#6FCF97]">{quote.currency} {quote.net_amount}</span>)}
+          {cell(tx('交付期限', '交付期限', 'Deadline'), brief.deadline)}
+          {quote.included_revisions != null && cell(tx('含修改', '含修改', 'Revisions'), `${quote.included_revisions} ${tx('次', '次', '×')}`)}
+        </div>
+        <div className="rounded-lg bg-black/20 px-3 py-2.5">
+          <p className="text-[11px] text-[#C9A86A]/80 mb-1">{tx('條款', '条款', 'Terms')}</p>
+          <p className="text-xs text-gray-300 leading-relaxed">{tx('按「同意並接單」即表示您同意依約交付,並授予客戶上述使用範圍之授權;完成後在此上傳交付檔,由 Onyx 平台居中結算。未接單前無法上傳。', '按「同意并接单」即表示您同意依约交付,并授予客户上述使用范围之授权;完成后在此上传交付档,由 Onyx 平台居中结算。未接单前无法上传。', 'Accepting means you agree to deliver per these terms and grant the client the license above; upload your delivery here when done. Onyx settles payment. You can\'t upload before accepting.')}</p>
+        </div>
+        {err && <p className="text-[11px] text-red-400">{err}</p>}
+        <button onClick={accept} disabled={busy} className="w-full rounded-lg px-4 py-2.5 text-sm disabled:opacity-50" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
+          {busy ? tx('處理中…', '处理中…', '…') : tx('✓ 同意並接單', '✓ 同意并接单', '✓ Accept & take the job')}
+        </button>
+      </div>
     </div>
   );
 }
@@ -264,7 +291,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; final_script?: string | null; final_script_url?: string | null }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
@@ -386,7 +413,7 @@ export default function Opportunities() {
                     <div key={q.id} className="mb-2">
                       <div className="text-xs text-gray-400 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
                       {q.agreement_accepted_at ? (
-                        <DeliveryUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
+                        <DeliveryUpload quote={q} deliveries={w.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
                       ) : (
                         <JobAgreement brief={w} quote={q} token={token} tx={tx} onAccepted={(at) => setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, agreement_accepted_at: at } : x)))} />
                       )}

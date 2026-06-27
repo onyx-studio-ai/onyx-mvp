@@ -19,7 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard } from 'lucide-react';
+import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES, TURNAROUNDS, turnaroundLabel,
   pickLabel, formatLangEntry, baseLangLabel, accentLabel, accentOptionsFor, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
@@ -427,9 +427,14 @@ export default function TalentDashboard() {
             <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full ${statusBadge.cls}`}>{statusBadge.icon}{statusBadge.text}</span>
             {livenessBadge && <span className={`text-[11px] px-2.5 py-1 rounded-full ${livenessBadge.cls}`}>{livenessBadge.text}</span>}
             {t?.is_active && t?.id && (
-              <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(`${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/talents/${t.id}`); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000); } catch { /* clipboard blocked */ } }}
+              <button type="button" onClick={async () => {
+                const link = `${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/talents/${t.id}`;
+                const nav = navigator as Navigator & { share?: (d: { title?: string; url: string }) => Promise<void> };
+                if (nav.share) { try { await nav.share({ title: `${form.name || 'Onyx'} · Onyx Studios`, url: link }); return; } catch { /* cancelled */ } }
+                try { await navigator.clipboard.writeText(link); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000); } catch { /* blocked */ }
+              }}
                 className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-white/10 text-gray-300 hover:bg-white/15 transition">
-                🔗 {shareCopied ? tx('已複製連結 ✓', '已复制链接 ✓', 'Copied ✓') : tx('分享主頁', '分享主页', 'Share profile')}
+                <Share className="w-3 h-3" /> {shareCopied ? tx('已複製連結 ✓', '已复制链接 ✓', 'Copied ✓') : tx('分享主頁', '分享主页', 'Share profile')}
               </button>
             )}
           </div>

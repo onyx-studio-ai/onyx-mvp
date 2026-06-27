@@ -131,7 +131,19 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ quote: data });
     }
 
+    // Remove one of the talent's own delivered files (only while not completed).
+    if (body.delete_version_id) {
+      const vid = String(body.delete_version_id);
+      const { data: q } = await r.db.from('marketplace_quotes').select('id, talent_id').eq('id', id).eq('talent_id', talent.id).maybeSingle();
+      if (!q) return NextResponse.json({ error: 'not your job' }, { status: 403 });
+      const { data: ord } = await r.db.from('voice_orders').select('id, status').eq('quote_id', id).maybeSingle();
+      if (!ord || ord.status === 'completed') return NextResponse.json({ error: '已完成的交付無法刪除' }, { status: 400 });
+      await r.db.from('voice_order_versions').delete().eq('id', vid).eq('voice_order_id', ord.id);
+      return NextResponse.json({ ok: true });
+    }
+
     const deliveryUrl = String(body.delivery_url || '').slice(0, 1000);
+    const deliveryName = String(body.file_name || '').slice(0, 200) || (deliveryUrl.split('/').pop()?.split('?')[0] || 'delivery');
     if (!id || !deliveryUrl) return NextResponse.json({ error: 'id and delivery_url are required' }, { status: 400 });
     if (!/^https?:\/\//i.test(deliveryUrl)) return NextResponse.json({ error: 'invalid delivery_url' }, { status: 400 });
 
@@ -147,12 +159,20 @@ export async function PATCH(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!data) return NextResponse.json({ error: '請先「同意並接單」才能上傳交付。' }, { status: 400 });
 
-    // Self-serve: push the delivery straight to the client's order (no Onyx middle
-    // step) — set the download + move it to "delivered" for the client to review.
-    const { data: order } = await r.db.from('voice_orders').select('id, email, order_number, language, status').eq('quote_id', id).maybeSingle();
+    // Self-serve: the delivery becomes a client-reviewable version (reuses the
+    // existing 核准 / 要求修改 flow). Each upload adds another file (multi-file +
+    // future revisions); the order moves to "delivered" for the client to review.
+    const { data: order } = await r.db.from('voice_orders').select('id, email, order_number, status').eq('quote_id', id).maybeSingle();
+    let firstDelivery = true;
     if (order && order.status !== 'completed') {
+      const { count } = await r.db.from('voice_order_versions').select('id', { count: 'exact', head: true }).eq('voice_order_id', order.id);
+      firstDelivery = (count || 0) === 0;
+      await r.db.from('voice_order_versions').insert({
+        voice_order_id: order.id, file_url: deliveryUrl, file_name: deliveryName,
+        notes: '配音員交付', version_number: (count || 0) + 1, status: 'pending_review',
+      });
       await r.db.from('voice_orders').update({ download_url: deliveryUrl, status: 'delivered', updated_at: new Date().toISOString() }).eq('id', order.id);
-      if (order.email) {
+      if (order.email && firstDelivery) {
         const cnote = castingDeliveryClientEmail({ title: (order.order_number as string) || '', orderNumber: order.order_number as string, url: `${SITE}/dashboard/orders/${order.id}` });
         sendEmail({ category: 'PRODUCTION', to: order.email as string, subject: cnote.subject, html: cnote.html }).catch(() => {});
       }

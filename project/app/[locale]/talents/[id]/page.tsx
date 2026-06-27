@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { ArrowLeft, MessageSquare, MapPin, Mic2, Link2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, MapPin, Mic2, Share } from 'lucide-react';
 import { traitLabel, useCaseLabel, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, turnaroundLabel, type DemoItem } from '@/lib/talent-taxonomy';
 import { cjkSpace } from '@/lib/cjk-space';
 import { pickLocale } from '@/lib/i18n-pick';
@@ -77,14 +77,18 @@ const SERVICE: Record<string, { tw: string; cn: string; en: string }> = {
   'Proofreading': { tw: '語音校對', cn: '语音校对', en: 'Proofreading' },
 };
 
-// Copy a URL to the clipboard with brief "copied" feedback.
-function ShareButton({ url, tx }: { url?: string; tx: (a: string, b: string, c: string) => string }) {
+// iOS-style share: the native share sheet where available (navigator.share),
+// otherwise copy the link to the clipboard with brief feedback.
+function ShareButton({ url, title, tx }: { url?: string; title?: string; tx: (a: string, b: string, c: string) => string }) {
   const [done, setDone] = useState(false);
   return (
     <button type="button" onClick={async () => {
-      try { await navigator.clipboard.writeText(url || window.location.href); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* clipboard blocked */ }
+      const link = url || window.location.href;
+      const nav = navigator as Navigator & { share?: (d: { title?: string; url: string }) => Promise<void> };
+      if (nav.share) { try { await nav.share({ title: title || 'Onyx Studios', url: link }); return; } catch { /* user cancelled — fall through to copy */ } }
+      try { await navigator.clipboard.writeText(link); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* clipboard blocked */ }
     }} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/15 text-gray-300 hover:bg-white/10 transition-colors whitespace-nowrap">
-      <Link2 className="w-3.5 h-3.5" /> {done ? tx('已複製連結 ✓', '已复制链接 ✓', 'Link copied ✓') : tx('分享', '分享', 'Share')}
+      <Share className="w-3.5 h-3.5" /> {done ? tx('已複製連結 ✓', '已复制链接 ✓', 'Link copied ✓') : tx('分享', '分享', 'Share')}
     </button>
   );
 }
@@ -190,7 +194,7 @@ export default function TalentProfile() {
                 <h1 className="text-2xl font-bold">{displayName}</h1>
                 {metaLine && <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 opacity-60" />{metaLine}</p>}
               </div>
-              <div className="ml-auto self-start"><ShareButton tx={tx} /></div>
+              <div className="ml-auto self-start"><ShareButton title={`${displayName} · Onyx Studios`} tx={tx} /></div>
             </div>
 
             {(t.languages || []).length > 0 && (

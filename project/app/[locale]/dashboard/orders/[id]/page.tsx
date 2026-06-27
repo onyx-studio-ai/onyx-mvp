@@ -493,7 +493,7 @@ export default function OrderDetailPage() {
     { label: t('plan'), value: tierLabel },
     { label: t('rights'), value: order.rights_level === 'global' ? t('rightsGlobalTvGame') : order.rights_level === 'broadcast' ? t('rightsBroadcastBuyout') : order.broadcast_rights ? t('rightsBroadcastBuyout') : t('rightsStandard') },
     { label: t('duration'), value: `${order.duration} ${order.duration !== 1 ? t('mins') : t('min')}` },
-    { label: t('price'), value: `US$${Number(order.price).toFixed(2)}` },
+    { label: t('price'), value: `${(() => { const c = ((order as { currency?: string }).currency || 'USD').toUpperCase(); return c === 'TWD' ? 'NT$' : c === 'USD' ? 'US$' : c === 'CNY' ? '¥' : c === 'GBP' ? '£' : c === 'EUR' ? '€' : `${c} `; })()}${Number(order.price).toFixed(2)}` },
   ];
 
   return (
