@@ -28,7 +28,7 @@ const EN_RE = /english|英語|英语|英文/i;
 // internal Onyx personas. Invites them to audition AND finish their profile.
 async function notifyMatchingTalents(
   db: ReturnType<typeof getSupabaseServiceClient>,
-  brief: { title: string; language: string; rate_note?: string | null; code?: string },
+  brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null },
   opts: { dryRun?: boolean } = {},
 ) {
   const lang = brief.language || '';
@@ -58,7 +58,9 @@ async function notifyMatchingTalents(
   const url = `${SITE}/${isZh ? 'zh-TW/' : ''}talent`;
   const { subject, html } = castingNotifyEmail({
     title: brief.title, caseCode: brief.code, language: brief.language,
-    rateNote: brief.rate_note || undefined, url, locale: isZh ? 'zh-TW' : 'en',
+    rateNote: brief.rate_note || undefined, contentType: brief.content_type || undefined,
+    genderNeeds: brief.gender_needs || undefined, auditionDeadline: brief.audition_deadline || undefined,
+    url, locale: isZh ? 'zh-TW' : 'en',
   });
   await Promise.all(matched.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
   return matched.length;
@@ -69,7 +71,7 @@ async function notifyMatchingTalents(
 // platform's moat, so un-vetted/offline talents are never sent casting invites.
 async function notifySelectedTalents(
   db: ReturnType<typeof getSupabaseServiceClient>,
-  brief: { title: string; language: string; rate_note?: string | null; code?: string },
+  brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null },
   talentIds: string[],
 ) {
   if (!talentIds.length) return 0;
@@ -92,7 +94,9 @@ async function notifySelectedTalents(
   const url = `${SITE}/${isZh ? 'zh-TW/' : ''}talent`;
   const { subject, html } = castingNotifyEmail({
     title: brief.title, caseCode: brief.code, language: brief.language,
-    rateNote: brief.rate_note || undefined, url, locale: isZh ? 'zh-TW' : 'en',
+    rateNote: brief.rate_note || undefined, contentType: brief.content_type || undefined,
+    genderNeeds: brief.gender_needs || undefined, auditionDeadline: brief.audition_deadline || undefined,
+    url, locale: isZh ? 'zh-TW' : 'en',
   });
   await Promise.all(recips.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
   return recips.length;
@@ -191,8 +195,8 @@ export async function POST(request: NextRequest) {
   // keep the client's identity + budget (no duplicate row). From scratch: insert
   // with the poster-side placeholder client (talents never see it).
   const result = fromId
-    ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number, created_at').single()
-    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number, created_at').single();
+    ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number, created_at, gender_needs').single()
+    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number, created_at, gender_needs').single();
   const { data, error } = result;
   if (error || !data) return NextResponse.json({ error: error?.message || '發案失敗' }, { status: 500 });
 
@@ -202,6 +206,7 @@ export async function POST(request: NextRequest) {
   let notified = 0;
   const briefMeta = {
     title, language: row.language || '', rate_note: row.rate_note,
+    content_type: row.content_type, gender_needs: (data as { gender_needs?: string | null }).gender_needs, audition_deadline: row.audition_deadline,
     code: caseCode({ content_type: row.content_type, created_at: data.created_at, brief_number: data.brief_number }),
   };
   try {
@@ -256,12 +261,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note').eq('id', id).maybeSingle();
+  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note, gender_needs, audition_deadline').eq('id', id).maybeSingle();
   if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
   if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });
   const notified = await notifyMatchingTalents(db, {
     title: String(brief.title || ''), language: String(brief.language || ''),
-    rate_note: brief.rate_note, code: caseCode(brief),
+    rate_note: brief.rate_note, content_type: brief.content_type, gender_needs: brief.gender_needs, audition_deadline: brief.audition_deadline, code: caseCode(brief),
   }, { dryRun: b.send !== true });
   return NextResponse.json({ ok: true, notified, sent: b.send === true });
 }

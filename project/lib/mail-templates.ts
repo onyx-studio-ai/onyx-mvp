@@ -84,12 +84,15 @@ function emailT(locale: SupportedLocale, key: string, replacements?: Record<stri
 }
 
 function brandHeader(_brandLabel = 'Studios', _accentColor = BRAND_GREEN): string {
+  // Recognizable colored brand band at the very top (like the best transactional
+  // emails) — deep Onyx green so the white logo stays high-contrast.
   return `
     <tr>
-      <td align="center" style="padding-bottom:32px;">
-        <img src="${SITE_URL}/logo-email.png" alt="Onyx Studios" width="200" style="display:block;width:200px;max-width:62%;height:auto;border:0;" />
+      <td style="background:#0f6e56;border-radius:16px 16px 0 0;padding:26px 24px;text-align:center;">
+        <img src="${SITE_URL}/logo-email.png" alt="Onyx Studios" width="180" style="display:block;width:180px;max-width:60%;height:auto;border:0;margin:0 auto;" />
       </td>
-    </tr>`;
+    </tr>
+    <tr><td style="height:28px;"></td></tr>`;
 }
 
 function brandFooter(locale: SupportedLocale = 'en'): string {
@@ -1071,45 +1074,46 @@ export function quoteReceivedEmail(p: { talentName: string; briefNumber?: string
 
 /** Invite a matching-language talent (an approved applicant) to audition for a
  *  casting call — branded, professional, and consistent with our other emails. */
-export function castingNotifyEmail(p: { title: string; caseCode?: string; language?: string; rateNote?: string; url: string; locale?: string }): { subject: string; html: string } {
+export function castingNotifyEmail(p: { title: string; caseCode?: string; language?: string; rateNote?: string; contentType?: string; genderNeeds?: string; auditionDeadline?: string; url: string; locale?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);
   const title = mpEsc(p.title);
-  const strong = `<strong style="color:#f3f4f6;">${title}</strong>`;
   const C = {
     tw: {
       subject: `Onyx Studios · 新試音案邀請 —— ${title}`,
-      headline: '新試音案邀請', sub: '有一個符合您語言的配音試音案', card: p.caseCode || '試音案',
-      l1: `Onyx Studios 目前有一個新的配音試音案 ——「${strong}」,與您登記的語言相符,誠摯邀請您參與試音。`,
-      l2: '登入配音員後台,即可查看角色設定與試音樣詞、上傳您的試音並提出報價。本案為 Onyx 平台發案,您所提的報價即為實際酬勞,平台不另外收取費用。',
-      l3: '若您的個人資料尚未填寫完整,也歡迎一併補齊,有助於我們為您媒合更多合適的案件。',
-      cta: '前往試音', sign: 'Onyx Studios 配音團隊 敬上', rate: '報酬', lang: '語言', info: '案件資訊',
+      headline: '新試音案邀請', sub: '有一個符合您的配音試音案', info: '案件資訊',
+      type: '類型', rate: '報酬', gender: '聲音', lang: '語言', due: '試音截止', case: '案件',
+      l1: '登入配音員後台即可查看角色與試音樣詞、上傳試音並提出報價。',
+      cta: '前往試音', sign: 'Onyx Studios 配音團隊 敬上',
     },
     cn: {
       subject: `Onyx Studios · 新试音案邀请 —— ${title}`,
-      headline: '新试音案邀请', sub: '有一个符合您语言的配音试音案', card: p.caseCode || '试音案',
-      l1: `Onyx Studios 目前有一个新的配音试音案 ——「${strong}」,与您登记的语言相符,诚挚邀请您参与试音。`,
-      l2: '登录配音员后台,即可查看角色设定与试音样词、上传您的试音并提出报价。本案为 Onyx 平台发案,您所报价格即为实际酬劳,平台不另外收取费用。',
-      l3: '若您的个人资料尚未填写完整,也欢迎一并补齐,有助于我们为您匹配更多合适的案件。',
-      cta: '前往试音', sign: 'Onyx Studios 配音团队 敬上', rate: '报酬', lang: '语言', info: '案件信息',
+      headline: '新试音案邀请', sub: '有一个符合您的配音试音案', info: '案件信息',
+      type: '类型', rate: '报酬', gender: '声音', lang: '语言', due: '试音截止', case: '案件',
+      l1: '登录配音员后台即可查看角色与试音样词、上传试音并提出报价。',
+      cta: '前往试音', sign: 'Onyx Studios 配音团队 敬上',
     },
     en: {
-      subject: `Onyx Studios · New audition invitation — ${title}`,
-      headline: 'New audition invitation', sub: 'A casting call matching your language', card: p.caseCode || 'Casting',
-      l1: `Onyx Studios has a new voiceover casting call — “${strong}” — that matches your registered language, and we would be glad to have you audition.`,
-      l2: 'Sign in to your talent dashboard to view the roles and audition lines, upload your audition and submit your quote. This is an Onyx platform casting — the quote you submit is your actual fee, with no platform commission.',
-      l3: 'If your profile is not yet complete, you are welcome to finish it — it helps us match you to more suitable projects.',
-      cta: 'Go to auditions', sign: 'The Onyx Studios Talent Team', rate: 'Rate', lang: 'Language', info: 'CASTING',
+      subject: `Onyx Studios · New audition — ${title}`,
+      headline: 'New audition invitation', sub: 'A casting call that fits you', info: 'CASTING',
+      type: 'Type', rate: 'Rate', gender: 'Voice', lang: 'Language', due: 'Audition due', case: 'Project',
+      l1: 'Sign in to your dashboard to view the roles and lines, upload your audition and submit your quote.',
+      cta: 'Go to audition', sign: 'The Onyx Studios Talent Team',
     },
   }[L];
+  // Lead with the facts talents care about most — what / how much / who / when.
   const rows = [
+    { label: C.case, value: title },
+    ...(p.contentType ? [{ label: C.type, value: mpEsc(p.contentType) }] : []),
     ...(p.rateNote ? [{ label: C.rate, value: mpEsc(p.rateNote) }] : []),
+    ...(p.genderNeeds ? [{ label: C.gender, value: mpEsc(p.genderNeeds) }] : []),
     ...(p.language ? [{ label: C.lang, value: mpEsc(p.language) }] : []),
+    ...(p.auditionDeadline ? [{ label: C.due, value: mpEsc(p.auditionDeadline) }] : []),
   ];
   const content = `
     ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
-    ${bodyCard(C.card, `${mp(C.l1)}${mp(C.l2)}${mp(C.l3)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}
-    ${rows.length ? infoCard(C.info, rows) : ''}
-    ${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+    ${infoCard(C.info, rows)}
+    ${ctaRow(C.cta, p.url, BRAND_GREEN)}
+    ${bodyCard('', `${mp(C.l1)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}`;
   const layoutLocale: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, layoutLocale) };
 }
