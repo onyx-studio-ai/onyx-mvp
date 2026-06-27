@@ -21,13 +21,16 @@ function buildHtml(params: {
   itemType: string;
   itemDetails: string;
   price: string;
+  currency?: string;
   transactionId: string;
 }): string {
   const {
     orderNum, paidDate, billingName, billingCompany, billingVat,
     billingEmail, billingAddress, billingCountry, displayName,
-    itemType, itemDetails, price, transactionId,
+    itemType, itemDetails, price, currency, transactionId,
   } = params;
+  const cur = (currency || 'USD').toUpperCase();
+  const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -148,7 +151,7 @@ function buildHtml(params: {
           <div class="item-desc">${itemType}</div>
         </td>
         <td style="color:#444;font-size:13px;">${itemDetails}</td>
-        <td>US$${price}</td>
+        <td>${sym}${price}</td>
       </tr>
     </tbody>
   </table>
@@ -156,11 +159,11 @@ function buildHtml(params: {
   <div class="totals">
     <div class="total-row">
       <span>Subtotal</span>
-      <span>US$${price}</span>
+      <span>${sym}${price}</span>
     </div>
     <div class="total-final">
       <span>Total</span>
-      <span>US$${price}</span>
+      <span>${sym}${price}</span>
     </div>
   </div>
 
@@ -229,6 +232,7 @@ export async function GET(
       itemType: `Music Production — ${tierLabel}`,
       itemDetails: [usageLabel, order.string_addon ? `+ String Arrangement` : ''].filter(Boolean).join(' · '),
       price,
+      currency: 'USD',
       transactionId,
     });
 
@@ -282,6 +286,7 @@ export async function GET(
     itemType: `Voice Production — ${tierLabel}`,
     itemDetails: `${order.language} · ${order.voice_selection} · ${rightsLabel} · ${order.duration} min`,
     price,
+    currency: (order as { currency?: string }).currency || 'USD',
     transactionId,
   });
 

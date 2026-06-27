@@ -187,6 +187,40 @@ export const LANG_ACCENTS: Record<string, string[]> = {
 // mainstream regional accents (if any). The UI appends an "other" choice.
 export const accentOptionsFor = (langKey: string): string[] => ['native', ...(LANG_ACCENTS[langKey] || [])];
 
+// Map ANY stored language token (canonical key / localized label / common synonym,
+// with or without an accent suffix) to ONE canonical BASE_LANGUAGES key, so the same
+// language never fragments into separate filter chips ("中文(國語)" / "國語" /
+// "Chinese · Taiwan" all → mandarin). Falls back to the lowercased base when unknown.
+const LANG_INDEX: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const b of BASE_LANGUAGES) for (const s of [b.key, b.tw, b.cn, b.en]) m[s.toLowerCase()] = b.key;
+  const extra: Record<string, string> = {
+    chinese: 'mandarin', '中文': 'mandarin', '國語': 'mandarin', '国语': 'mandarin', '華語': 'mandarin', '华语': 'mandarin',
+    '普通話': 'mandarin', '普通话': 'mandarin', '中文(國語)': 'mandarin', '中文(国语)': 'mandarin', 'taiwanese mandarin': 'mandarin',
+    zh: 'mandarin', 'zh-tw': 'mandarin', 'zh-cn': 'mandarin',
+    '粵語': 'cantonese', '粤语': 'cantonese', '廣東話': 'cantonese', '广东话': 'cantonese', yue: 'cantonese',
+    '台語': 'hokkien', '臺語': 'hokkien', '閩南語': 'hokkien', '闽南语': 'hokkien', '台語(閩南語)': 'hokkien', 'taiwanese hokkien': 'hokkien', taiwanese: 'hokkien', minnan: 'hokkien',
+    '英語': 'english', '英语': 'english', '日語': 'japanese', '日本語': 'japanese', '韓語': 'korean', '韓文': 'korean',
+  };
+  return { ...m, ...extra };
+})();
+
+export const canonicalLangKey = (value: string): string => {
+  const base = (value || '').split('/')[0].split('·')[0].trim();
+  if (!base) return '';
+  const k = base.toLowerCase();
+  if (LANG_INDEX[k]) return LANG_INDEX[k];
+  // targeted CJK-root fallback for stubborn free-typed variants
+  if (/中文|國語|国语|華語|华语|普通/.test(base)) return 'mandarin';
+  if (/粵|粤|廣東|广东/.test(base)) return 'cantonese';
+  if (/台語|臺語|閩南|闽南/.test(base)) return 'hokkien';
+  if (/客家/.test(base)) return 'hakka';
+  if (/英文|英語|英语/.test(base)) return 'english';
+  if (/日文|日語|日本/.test(base)) return 'japanese';
+  if (/韓|韩/.test(base)) return 'korean';
+  return k;
+};
+
 export const baseLangLabel = (key: string, locale: string) => {
   const k = (key || '').trim();
   // Match by taxonomy key first; else by any locale label — legacy demos stored the

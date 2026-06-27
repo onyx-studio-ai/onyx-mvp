@@ -17,7 +17,7 @@ import { useLocale } from 'next-intl';
 import { Search, ArrowRight, Play, Pause } from 'lucide-react';
 import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
 import {
-  formatLangEntry, baseLangLabel, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
+  formatLangEntry, baseLangLabel, canonicalLangKey, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
   VOICE_TRAITS, USE_CASES, VOICE_AGES, TRAIT_KEYS,
 } from '@/lib/talent-taxonomy';
 import { pickLocale } from '@/lib/i18n-pick';
@@ -45,8 +45,9 @@ interface Talent {
 }
 
 const initial = (s: string) => (s || '?').trim().charAt(0).toUpperCase();
-// Base language key of a stored entry ("english/hongkong" -> "english").
-const langBase = (v: string) => (v || '').split('/')[0];
+// Canonical language key — collapses synonyms/variants ("中文(國語)" / "國語" /
+// "Chinese · Taiwan" → mandarin) so the filter chips don't fragment.
+const langBase = (v: string) => canonicalLangKey(v);
 
 // Services a real talent ACCEPTS (distinct from 用途/demo categories). Stored in
 // talents.tags as canonical English on approval (from the application coop_* opt-ins),

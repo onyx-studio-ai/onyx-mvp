@@ -142,6 +142,7 @@ export default function TalentDashboard() {
   const [addCat, setAddCat] = useState('');
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoErr, setPhotoErr] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
   const [uploadingCat, setUploadingCat] = useState('');
   const [uploadErr, setUploadErr] = useState('');
 
@@ -425,6 +426,12 @@ export default function TalentDashboard() {
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full ${statusBadge.cls}`}>{statusBadge.icon}{statusBadge.text}</span>
             {livenessBadge && <span className={`text-[11px] px-2.5 py-1 rounded-full ${livenessBadge.cls}`}>{livenessBadge.text}</span>}
+            {t?.is_active && t?.id && (
+              <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(`${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/talents/${t.id}`); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000); } catch { /* clipboard blocked */ } }}
+                className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-white/10 text-gray-300 hover:bg-white/15 transition">
+                🔗 {shareCopied ? tx('已複製連結 ✓', '已复制链接 ✓', 'Copied ✓') : tx('分享主頁', '分享主页', 'Share profile')}
+              </button>
+            )}
           </div>
           <input className="w-full bg-transparent text-2xl font-bold focus:outline-none focus:border-b focus:border-white/20 pb-0.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tx('顯示名稱', '显示名称', 'Display name')} />
           <input className="w-full bg-transparent text-sm text-gray-300 focus:outline-none focus:border-b focus:border-white/20 pb-0.5 mt-1" value={form.english_name} onChange={(e) => setForm({ ...form, english_name: e.target.value })} placeholder={tx('英文 / 羅馬拼音名(選填,英文頁顯示)', '英文 / 罗马拼音名(选填,英文页显示)', 'English / Romanized name (optional, shown on English site)')} />

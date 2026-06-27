@@ -218,6 +218,7 @@ interface InvoiceParams {
   itemType: string;
   itemDetails: string;
   price: string;
+  currency?: string;
   transactionId: string;
 }
 
@@ -225,8 +226,10 @@ function InvoiceDocument(props: InvoiceParams) {
   const {
     orderNum, paidDate, billingName, billingCompany, billingVat,
     billingEmail, billingAddress, billingCountry, displayName,
-    itemType, itemDetails, price, transactionId,
+    itemType, itemDetails, price, currency, transactionId,
   } = props;
+  const cur = (currency || 'USD').toUpperCase();
+  const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
 
   return (
     <Document>
@@ -279,17 +282,17 @@ function InvoiceDocument(props: InvoiceParams) {
             <Text style={styles.itemDesc}>{itemType}</Text>
           </View>
           <Text style={styles.cellDetails}>{itemDetails}</Text>
-          <Text style={styles.cellAmount}>US${price}</Text>
+          <Text style={styles.cellAmount}>{sym}{price}</Text>
         </View>
 
         <View style={styles.totals}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>US${price}</Text>
+            <Text style={styles.totalValue}>{sym}{price}</Text>
           </View>
           <View style={styles.totalFinal}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>US${price}</Text>
+            <Text style={styles.totalValue}>{sym}{price}</Text>
           </View>
         </View>
 
