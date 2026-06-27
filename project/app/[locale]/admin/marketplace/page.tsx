@@ -66,8 +66,12 @@ const BRIEF_NEXT: Record<string, string[]> = {
   open: ['reviewing', 'closed', 'cancelled'],
   reviewing: ['open', 'closed', 'cancelled'],
   awarded: ['closed'],
-  closed: ['open'],
-  cancelled: ['open'],
+  closed: ['reviewing', 'open'],     // 弄回來:送回待審(客戶案=回客戶請求收件匣)或直接重開徵選
+  cancelled: ['reviewing', 'open'],
+};
+// friendly labels for the status-transition buttons (raw status reads cryptic)
+const STATUS_ACTION: Record<string, string> = {
+  reviewing: '待審', open: '開放徵選', closed: '關閉', cancelled: '取消',
 };
 
 export default function AdminMarketplace() {
@@ -302,7 +306,7 @@ export default function AdminMarketplace() {
             <div className="flex flex-wrap gap-2 mb-3">
               {(BRIEF_NEXT[b.status] || []).map((s) => (
                 <button key={s} onClick={() => patch('brief', b.id, s)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1 transition">
-                  → {s}
+                  → {STATUS_ACTION[s] || s}
                 </button>
               ))}
             </div>
