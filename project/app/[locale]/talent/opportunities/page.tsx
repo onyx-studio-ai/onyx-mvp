@@ -184,13 +184,9 @@ export default function Opportunities() {
 
   return shell(
     <>
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-semibold">{tx('案件', '案件', 'Cases')}</h1>
+      <div className="flex items-center justify-end mb-6">
         <Link href="/talent" className="text-xs text-gray-400 hover:text-white transition">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
       </div>
-      <p className="text-gray-500 text-sm mb-8">
-        {tx('以下是 Onyx 開放中的配音需求。報酬是該案配音員實際收入。', '以下是 Onyx 开放中的配音需求。报酬是该案配音员实际收入。', "These are Onyx's open voice-over cases. The rate shown is the talent's actual take-home.")}
-      </p>
 
       {wonBriefs.length > 0 && (
         <div className="mb-8">
@@ -319,48 +315,28 @@ function BriefCard({
         <>
           {brief.brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{brief.brief}</p>}
 
-          {brief.audition_script && (
-            <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1.5">{tx('試音方向 / 聲音方向(僅供線上閱讀)', '试音方向 / 声音方向(仅供线上阅读)', 'Audition / voice direction (read-only)')}</p>
-              <div
-                className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 select-none"
-                style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                {brief.audition_script}
+          {/* stat-card summary — only show facts that exist (no 待定 clutter). Rate
+              shows the client budget for client cases, the Onyx rate for platform. */}
+          {(() => {
+            const stats = [
+              brief.source === 'client'
+                ? (brief.budget ? { l: tx('客戶預算', '客户预算', 'Budget'), v: `${brief.budget_type ? `${brief.budget_type} ` : ''}${brief.budget}`, gold: true } : null)
+                : (brief.rate_note ? { l: tx('報酬', '报酬', 'Rate'), v: brief.rate_note, gold: true } : null),
+              brief.audition_deadline ? { l: tx('試音截止', '试音截止', 'Audition due'), v: brief.audition_deadline } : null,
+              brief.deadline ? { l: tx('交付截止', '交付截止', 'Delivery'), v: brief.deadline } : null,
+              brief.length ? { l: tx('規模', '规模', 'Scale'), v: brief.length } : null,
+            ].filter(Boolean) as { l: string; v: string; gold?: boolean }[];
+            return stats.length ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
+                {stats.map((s, i) => (
+                  <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
+                    <p className="text-[11px] text-gray-500">{s.l}</p>
+                    <p className={`text-lg font-semibold mt-0.5 ${s.gold ? 'text-[#E4CB94]' : 'text-white'}`} style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{s.v}</p>
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
-
-          {((brief.reference_files || []).length > 0 || (brief.reference_links || []).length > 0) && (
-            <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1.5">{tx('參考素材(樣音 / 方向)', '参考素材(样音 / 方向)', 'Reference (sample voice / direction)')}</p>
-              {(brief.reference_files || []).map((f, i) => (
-                <div key={i} className="mb-1.5">
-                  {f.name && <span className="text-xs text-gray-400 block mb-0.5">{f.name}</span>}
-                  <audio controls src={f.url} className="w-full h-9" />
-                </div>
-              ))}
-              {(brief.reference_links || []).map((l, i) => (
-                <a key={i} href={l} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-300 hover:underline block truncate">{l}</a>
-              ))}
-            </div>
-          )}
-
-          {/* stat-card summary — the four headline facts (待定 if not set yet) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
-            {[
-              { l: tx('報酬', '报酬', 'Rate'), v: brief.rate_note || tx('面議', '面议', 'TBD'), gold: true },
-              { l: tx('試音截止', '试音截止', 'Audition due'), v: brief.audition_deadline || tx('待定', '待定', 'TBD') },
-              { l: tx('交付截止', '交付截止', 'Delivery'), v: brief.deadline || tx('待定', '待定', 'TBD') },
-              { l: tx('規模', '规模', 'Scale'), v: brief.length || tx('待定', '待定', 'TBD') },
-            ].map((s, i) => (
-              <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
-                <p className="text-[11px] text-gray-500">{s.l}</p>
-                <p className={`text-lg font-semibold mt-0.5 ${s.gold ? 'text-[#E4CB94]' : 'text-white'}`} style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{s.v}</p>
-              </div>
-            ))}
-          </div>
+            ) : null;
+          })()}
           {/* detail grid — every other field filled in, in a tidy key:value block */}
           {(() => {
             const methodLabel = (m: string) => (m === 'home' ? tx('在家錄', '在家录', 'Home') : m === 'studio' ? tx('錄音室', '录音室', 'Studio') : m === 'online' ? tx('線上監錄', '线上监录', 'Online') : m);
@@ -381,6 +357,41 @@ function BriefCard({
                 {info.map(([k, v], i) => <div key={i} className="min-w-0"><span className="text-gray-500">{k} </span><span className="text-gray-200">{v}</span></div>)}
               </div>
             ) : null;
+          })()}
+
+          {/* Direction + reference — moved down, just above the audition action.
+              Reference renders by file type (audio player / image / link) so an
+              image is never played as audio. */}
+          {brief.audition_script && (
+            <div className="mb-3">
+              <p className="text-xs text-gray-500 mb-1.5">{tx('試音方向 / 聲音方向(僅供線上閱讀)', '试音方向 / 声音方向(仅供线上阅读)', 'Audition / voice direction (read-only)')}</p>
+              <div className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 select-none"
+                style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
+                {brief.audition_script}
+              </div>
+            </div>
+          )}
+          {(() => {
+            const refs = [
+              ...(brief.reference_files || []).map((f) => ({ url: f.url, name: f.name })),
+              ...(brief.reference_links || []).map((l) => ({ url: l, name: undefined as string | undefined })),
+            ].filter((r) => r.url);
+            if (!refs.length) return null;
+            const ext = (u: string) => (u.split('?')[0].split('.').pop() || '').toLowerCase();
+            const isAudio = (u: string) => ['wav', 'wave', 'mp3', 'm4a', 'aac', 'ogg', 'flac'].includes(ext(u));
+            const isImg = (u: string) => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'bmp'].includes(ext(u));
+            return (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 mb-1.5">{tx('參考素材', '参考素材', 'Reference')}</p>
+                <div className="space-y-2">
+                  {refs.map((r, i) => (
+                    isAudio(r.url) ? <audio key={i} controls src={r.url} className="w-full h-9" />
+                      : isImg(r.url) ? <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"><img src={r.url} alt={r.name || 'reference'} className="max-h-40 rounded-lg border border-white/10" /></a>
+                      : <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline break-all">🔗 {r.name || r.url}</a>
+                  ))}
+                </div>
+              </div>
+            );
           })()}
 
           {hasRoles ? (
@@ -542,6 +553,7 @@ function RoleAudition({
   const [gross, setGross] = useState('');
   const [currency, setCurrency] = useState('TWD');
   const [intro, setIntro] = useState('');
+  const [revPolicy, setRevPolicy] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -570,10 +582,11 @@ function RoleAudition({
     if (!isFinite(earn) || earn <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
     // client cases: platform adds 20% on top → the client pays earn / 0.8
     const grossAmount = brief.source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
+    const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message: intro }),
+      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message, extra_revision_price: revPolicy.trim() || undefined }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -659,26 +672,49 @@ function RoleAudition({
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
             {(() => {
               const isClient = brief.source === 'client';
-              const bt = brief.budget_type === 'Up to' ? tx('上限 ', '上限 ', 'Up to ') : brief.budget_type === 'Fixed' ? tx('固定 ', '固定 ', 'Fixed ') : '';
-              const val = isClient ? (brief.budget ? `${bt}${brief.budget}` : '') : (brief.rate_note || '');
-              return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', '客户预算', 'Client budget') : tx('本案報酬', '本案报酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+              const net = Number(gross) || 0;
+              const clientPays = isClient ? Math.round((net / 0.8) * 100) / 100 : net;
+              const fee = isClient ? Math.round((clientPays - net) * 100) / 100 : 0;
+              const budgetN = Number(String(brief.budget || '').replace(/[^\d.]/g, '')) || 0;
+              const over = isClient && budgetN > 0 && clientPays > budgetN;
+              return (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-300">{tx('你的報價', '你的报价', 'Your quote')}</span>
+                    <select className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                      {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
+                    </select>
+                  </div>
+                  <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+                    <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">
+                      <div className="text-[11px] text-[#E4CB94] mb-0.5">{tx('您的報酬', '您的报酬', 'You receive')}</div>
+                      <div className="flex items-baseline gap-1"><span className="text-xs text-gray-500">{currency}</span>
+                        <input type="number" min="0" value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
+                    </div>
+                    {isClient && (
+                      <div className="bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2">
+                        <div className="text-[11px] text-gray-400 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
+                        <div className="flex items-baseline gap-1"><span className="text-xs text-gray-500">{currency}</span>
+                          <input type="number" min="0" value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
+                      </div>
+                    )}
+                  </div>
+                  {isClient ? (
+                    <p className={`text-[11px] ${over ? 'text-[#f0997b]' : 'text-gray-400'}`}>{tx('客戶支付', '客户支付', 'Client pays')} {currency} {clientPays.toLocaleString()}{budgetN > 0 && (over ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}` : ` · ${tx('在客戶預算內 ✓', '在客户预算内 ✓', 'within budget ✓')}`)}</p>
+                  ) : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 報價即您實得', '平台发案 · 报价即您实得', 'Platform-posted — your quote is what you get')}</p>}
+                </div>
+              );
             })()}
-            <div className="flex gap-2">
-              <select className={`${inputCls} w-20 py-1.5`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
-              </select>
-              <input type="number" min="0" className={`${inputCls} py-1.5`} value={gross} onChange={(e) => setGross(e.target.value)}
-                placeholder={tx('您的酬勞', '您的酬劳', 'Your fee')} />
+            <div>
+              <div className="text-xs text-gray-300 mb-1">{tx('自我介紹', '自我介绍', 'About you')}</div>
+              <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
+                placeholder={tx('簡短介紹您的聲音與經驗、為何適合這個角色。', '简短介绍您的声音与经验、为何适合这个角色。', 'A short intro — your voice, experience, why you fit this role.')} />
             </div>
-            {(() => {
-              const isClient = brief.source === 'client'; const earn = Number(gross) || 0;
-              if (!isClient) return <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 不收取平台費', '平台发案 · 不收取平台费', 'Platform-posted — no platform fee')}</p>;
-              if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動計算)', '客户委托 · 平台另收 20% 费用(自动计算)', 'Client brief — 20% platform fee added (auto)')}</p>;
-              const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
-              return <p className="text-[11px] text-gray-400">{tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', '自动', 'auto')}）</p>;
-            })()}
-            <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
-              placeholder={tx('報價說明 + 自我介紹', '报价说明 + 自我介绍', 'Pricing notes + intro')} />
+            <div>
+              <div className="text-xs text-gray-300 mb-1">{tx('修改政策', '修改政策', 'Revisions')} <span className="text-gray-500">{tx('選填', '选填', 'optional')}</span></div>
+              <input className={inputCls} value={revPolicy} onChange={(e) => setRevPolicy(e.target.value)}
+                placeholder={tx('例:含 2 次修改', '例:含 2 次修改', 'e.g. 2 revisions included')} />
+            </div>
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button onClick={submit} disabled={busy || uploading} className="w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm"
               style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
@@ -711,6 +747,7 @@ function GeneralResponse({
   const [gross, setGross] = useState('');
   const [currency, setCurrency] = useState('TWD');
   const [intro, setIntro] = useState('');
+  const [revPolicy, setRevPolicy] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
@@ -737,10 +774,11 @@ function GeneralResponse({
     if (!sampleUrl) return setErr(tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
     const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
+    const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message: intro }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, extra_revision_price: revPolicy.trim() || undefined }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -786,28 +824,62 @@ function GeneralResponse({
           {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
         </>
       )}
+      {/* 報價 — Voices 式:您的報酬 ↔ 平台費 連動;客戶支付比對客戶預算 */}
       {(() => {
         const isClient = brief.source === 'client';
-        const bt = brief.budget_type === 'Up to' ? tx('上限 ', '上限 ', 'Up to ') : brief.budget_type === 'Fixed' ? tx('固定 ', '固定 ', 'Fixed ') : '';
-        const val = isClient ? (brief.budget ? `${bt}${brief.budget}` : '') : (brief.rate_note || '');
-        return val ? <p className="text-xs text-gray-500">{isClient ? tx('客戶預算', '客户预算', 'Client budget') : tx('本案報酬', '本案报酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+        const net = Number(gross) || 0;
+        const clientPays = isClient ? Math.round((net / 0.8) * 100) / 100 : net;
+        const fee = isClient ? Math.round((clientPays - net) * 100) / 100 : 0;
+        const budgetN = Number(String(brief.budget || '').replace(/[^\d.]/g, '')) || 0;
+        const over = isClient && budgetN > 0 && clientPays > budgetN;
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-300">{tx('你的報價', '你的报价', 'Your quote')}</span>
+              <select className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
+              </select>
+            </div>
+            <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+              <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">
+                <div className="text-[11px] text-[#E4CB94] mb-0.5">{tx('您的報酬', '您的报酬', 'You receive')}</div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xs text-gray-500">{currency}</span>
+                  <input type="number" min="0" value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
+                </div>
+              </div>
+              {isClient && (
+                <div className="bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2">
+                  <div className="text-[11px] text-gray-400 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xs text-gray-500">{currency}</span>
+                    <input type="number" min="0" value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
+                  </div>
+                </div>
+              )}
+            </div>
+            {isClient ? (
+              <p className={`text-xs ${over ? 'text-[#f0997b]' : 'text-gray-400'}`}>
+                {tx('客戶支付', '客户支付', 'Client pays')} {currency} {clientPays.toLocaleString()}
+                {budgetN > 0 && (over
+                  ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}`
+                  : ` · ${tx('在客戶預算內 ✓', '在客户预算内 ✓', 'within budget ✓')}`)}
+              </p>
+            ) : <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 不收取平台費,報價即您實得', '平台发案 · 不收取平台费,报价即您实得', 'Platform-posted — no fee; your quote is what you get')}</p>}
+          </div>
+        );
       })()}
-      <div className="flex gap-2">
-        <select className={`${inputCls} w-20 py-1.5`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-          {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
-        </select>
-        <input type="number" min="0" className={`${inputCls} py-1.5`} value={gross} onChange={(e) => setGross(e.target.value)}
-          placeholder={tx('您的酬勞(整案/每句/每分鐘)', '您的酬劳(整案/每句/每分钟)', 'Your fee (per case / line / minute)')} />
+
+      <div>
+        <div className="text-xs text-gray-300 mb-1">{tx('自我介紹', '自我介绍', 'About you')}</div>
+        <textarea className={`${inputCls} min-h-[56px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
+          placeholder={tx('簡短介紹您的聲音特質與經驗、為什麼適合這個案子。', '简短介绍您的声音特质与经验、为什么适合这个案子。', 'A short intro — your voice, experience, and why you fit this brief.')} />
       </div>
-      {(() => {
-        const isClient = brief.source === 'client'; const earn = Number(gross) || 0;
-        if (!isClient) return <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 不收取平台費', '平台发案 · 不收取平台费', 'Platform-posted — no platform fee')}</p>;
-        if (earn <= 0) return <p className="text-xs text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動計算)', '客户委托 · 平台另收 20% 费用(自动计算)', 'Client brief — 20% platform fee added (auto)')}</p>;
-        const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
-        return <p className="text-xs text-gray-400">{tx('平台費', '平台费', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', '自动', 'auto')}）</p>;
-      })()}
-      <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
-        placeholder={tx('報價說明 + 自我介紹(計價方式、修改政策、為何適合)', '报价说明 + 自我介绍(计价方式、修改政策、为何适合)', 'Pricing notes + intro (how you charge, revisions, why you fit)')} />
+      <div>
+        <div className="text-xs text-gray-300 mb-1">{tx('修改政策', '修改政策', 'Revisions')} <span className="text-gray-500">{tx('選填', '选填', 'optional')}</span></div>
+        <input className={inputCls} value={revPolicy} onChange={(e) => setRevPolicy(e.target.value)}
+          placeholder={tx('例:含 2 次修改,超出每次另計', '例:含 2 次修改,超出每次另计', 'e.g. 2 revisions included; extra billed separately')} />
+      </div>
       {err && <p className="text-red-400 text-xs">{err}</p>}
       <button onClick={submit} disabled={busy || uploading} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm">
         {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出應徵', '送出应征', 'Submit')}
