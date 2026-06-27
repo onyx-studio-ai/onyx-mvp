@@ -686,14 +686,16 @@ export default function Hire() {
               {/* Budget */}
               <div>
                 <label className="block text-sm font-semibold mb-2">{tx('預算', '预算', 'Budget')} <span className="text-red-400">＊</span></label>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-2 mb-2">
                   {([{ v: 'Up to', tw: '預算上限', cn: '预算上限' }, { v: 'Fixed', tw: '固定預算', cn: '固定预算' }] as Opt[]).map((o) => (
                     <button key={o.v} type="button" onClick={() => setBudgetType(o.v)} className={pill(budgetType === o.v)}>{lbl(o)}</button>
                   ))}
-                  <select className={`${inputCls} w-24`} value={budgetCurrency} onChange={(e) => setBudgetCurrency(e.target.value)}>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select className={`${inputCls} w-24 shrink-0`} value={budgetCurrency} onChange={(e) => setBudgetCurrency(e.target.value)}>
                     {CURRENCIES.map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
                   </select>
-                  <input type="number" min="0" className={`${inputCls} flex-1 min-w-[140px] mb-2`} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('金額', '金额', 'Amount')} />
+                  <input type="number" min="0" className={`${inputCls} flex-1`} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('金額', '金额', 'Amount')} />
                 </div>
               </div>
 
