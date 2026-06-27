@@ -84,11 +84,12 @@ function emailT(locale: SupportedLocale, key: string, replacements?: Record<stri
 }
 
 function brandHeader(_brandLabel = 'Studios', _accentColor = BRAND_GREEN): string {
-  // Recognizable colored brand band at the very top (like the best transactional
-  // emails) — deep Onyx green so the white logo stays high-contrast.
+  // Recognizable gradient brand band — blends the 4 studio colors (配音藍 → 音樂紫 →
+  // 全球綠 → 數據琥珀, in service order 1→2→3→4). Solid fallback for Outlook (no
+  // gradient support); tones kept deep enough that the white logo stays readable.
   return `
     <tr>
-      <td style="background:#0f6e56;border-radius:16px 16px 0 0;padding:26px 24px;text-align:center;">
+      <td style="background:#5a5fcf;background:linear-gradient(120deg,#2f6fd0 0%,#6a5fd0 34%,#149e74 68%,#d98a1a 100%);border-radius:16px 16px 0 0;padding:28px 24px;text-align:center;">
         <img src="${SITE_URL}/logo-email.png" alt="Onyx Studios" width="180" style="display:block;width:180px;max-width:60%;height:auto;border:0;margin:0 auto;" />
       </td>
     </tr>
