@@ -620,7 +620,7 @@ export default function Hire() {
                       <input type="file" accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.pages,.md" className="hidden" disabled={scriptUploading} onChange={(e) => e.target.files?.[0] && uploadScript(e.target.files[0])} />
                     </label>
                     {scriptFileName && <span className="ml-3 text-xs text-emerald-300">✓ {scriptFileName}</span>}
-                    <p className="text-xs text-gray-500 mt-1.5">{tx('支援 pdf / doc / docx / txt / rtf,單檔 25MB 內。', '支持 pdf / doc / docx / txt / rtf,单档 25MB 内。', 'pdf / doc / docx / txt / rtf, up to 25MB.')}</p>
+                    <p className="text-xs text-gray-500 mt-1.5">{tx('支援 pdf / doc / docx / txt / rtf,單檔 25MB 內。檔案過大請放雲端,並於上方「參考聲音(連結)」貼連結。', '支持 pdf / doc / docx / txt / rtf,单档 25MB 内。档案过大请放云端,并于上方「参考声音(链接)」贴链接。', 'pdf / doc / docx / txt / rtf, up to 25MB. Larger files? Put them on the cloud and paste the link in “Reference voice (link)” above.')}</p>
                   </div>
                 )}
               </div>

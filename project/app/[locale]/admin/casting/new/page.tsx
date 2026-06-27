@@ -241,7 +241,9 @@ function NewCasting() {
   }
 
   async function uploadFile(file: File) {
-    setErr(''); setWorking('上傳中…');
+    setErr('');
+    if (file.size > 50 * 1024 * 1024) { setErr('檔案請勿超過 50MB,過大請放雲端用下方「貼直連抓進平台」。'); return; }
+    setWorking('上傳中…');
     try {
       const u = await fetch('/api/admin/casting/upload', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json();
@@ -738,7 +740,8 @@ function NewCasting() {
             </div>
           ))}
           <input type="file" disabled={!!working} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }}
-            className="block w-full text-xs text-gray-500 mb-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 file:text-xs" />
+            className="block w-full text-xs text-gray-500 mb-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 file:text-xs" />
+          <p className="text-[11px] text-gray-400 mb-2">單檔 50MB 內;過大請放雲端,貼直連到下方欄位抓進平台。</p>
           <div className="flex gap-2">
             <input className={input} value={fetchUrl} onChange={(e) => setFetchUrl(e.target.value)} placeholder="貼客戶的直接下載連結 → 自動抓進平台" />
             <button onClick={rehostUrl} disabled={!!working} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 rounded-lg whitespace-nowrap">抓進來</button>
