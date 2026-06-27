@@ -140,6 +140,7 @@ export default function Opportunities() {
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; rate_note?: string | null; status: string }[]>([]);
+  const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
 
   const load = useCallback(async (accessToken: string) => {
     setToken(accessToken);
@@ -151,6 +152,7 @@ export default function Opportunities() {
     setRoleCounts(j.roleCounts || {});
     setMyDemos(j.myDemos || []);
     setWonBriefs(j.wonBriefs || []);
+    setEndedBriefs(j.endedBriefs || []);
     setPhase('ready');
   }, []);
 
@@ -216,7 +218,28 @@ export default function Opportunities() {
         </div>
       )}
 
-      {briefs.length === 0 && wonBriefs.length === 0 && (
+      {endedBriefs.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-gray-400 mb-2">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
+          <div className="space-y-2">
+            {endedBriefs.map((e) => {
+              const label = e.status === 'cancelled'
+                ? tx('此案已取消', '此案已取消', 'Cancelled')
+                : e.status === 'awarded'
+                  ? tx('已選定其他配音員', '已选定其他配音员', 'Another talent was chosen')
+                  : tx('此案已結束', '此案已结束', 'Closed');
+              return (
+                <div key={e.id} className="bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-2.5 flex items-center justify-between gap-2">
+                  <span className="text-sm text-gray-400 truncate">{e.title || e.content_type || tx('配音案', '配音案', 'Voice case')}</span>
+                  <span className="text-[11px] text-gray-500 whitespace-nowrap">{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {briefs.length === 0 && wonBriefs.length === 0 && endedBriefs.length === 0 && (
         <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
       )}
 

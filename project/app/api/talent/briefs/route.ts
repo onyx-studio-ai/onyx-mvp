@@ -78,7 +78,20 @@ export async function GET(request: NextRequest) {
         .in('id', wonIds);
       wonBriefs = wb || [];
     }
-    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs });
+
+    // Cases the talent APPLIED to that have ended (closed / cancelled / awarded to
+    // someone else) — so their audition doesn't just silently vanish; they see the
+    // outcome. Excludes the open list (still live) and won cases (shown above).
+    const quotedBriefIds = [...new Set((myQuotes || []).map((q) => q.brief_id as string))];
+    const endedIds = quotedBriefIds.filter((id) => !openIds.has(id) && !wonIds.includes(id));
+    let endedBriefs: unknown[] = [];
+    if (endedIds.length) {
+      const { data: eb } = await r.db.from('marketplace_briefs')
+        .select('id, brief_number, kind, title, content_type, status')
+        .in('id', endedIds);
+      endedBriefs = eb || [];
+    }
+    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });

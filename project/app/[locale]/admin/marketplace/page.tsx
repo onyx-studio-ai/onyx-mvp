@@ -304,11 +304,15 @@ export default function AdminMarketplace() {
 
             {/* brief status controls */}
             <div className="flex flex-wrap gap-2 mb-3">
-              {(BRIEF_NEXT[b.status] || []).map((s) => (
-                <button key={s} onClick={() => patch('brief', b.id, s)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1 transition">
-                  → {STATUS_ACTION[s] || s}
-                </button>
-              ))}
+              {(BRIEF_NEXT[b.status] || [])
+                // 防矛盾:已有試音的案不能「送回待審」(待審=還沒成案,試音會變孤兒)。
+                // 這種案要嘛重新開放(試音都在)、要嘛關閉,或之後「複製成新案」重發。
+                .filter((s) => !(s === 'reviewing' && quotesFor(b.id).length > 0))
+                .map((s) => (
+                  <button key={s} onClick={() => patch('brief', b.id, s)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1 transition">
+                    → {STATUS_ACTION[s] || s}
+                  </button>
+                ))}
             </div>
 
             {/* quotes */}
