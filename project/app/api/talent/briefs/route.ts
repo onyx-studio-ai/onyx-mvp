@@ -76,7 +76,12 @@ export async function GET(request: NextRequest) {
       const { data: wb } = await r.db.from('marketplace_briefs')
         .select('id, brief_number, kind, title, content_type, language, status, rate_note, media_scope, territory, license_term, deadline')
         .in('id', wonIds);
-      wonBriefs = wb || [];
+      // The FINAL script the client locked at selection lives on the production
+      // order — surface it so the won talent records from the right script (self-serve).
+      const { data: ords } = await r.db.from('voice_orders').select('brief_id, script_text, deadline').in('brief_id', wonIds);
+      const orderByBrief: Record<string, { script_text?: string | null; deadline?: string | null }> = {};
+      for (const o of ords || []) { if (o.brief_id) orderByBrief[o.brief_id as string] = { script_text: o.script_text as string | null, deadline: o.deadline as string | null }; }
+      wonBriefs = (wb || []).map((b) => ({ ...b, final_script: orderByBrief[(b as { id: string }).id]?.script_text || null, order_deadline: orderByBrief[(b as { id: string }).id]?.deadline || null }));
     }
 
     // Cases the talent APPLIED to that have ended (closed / cancelled / awarded to

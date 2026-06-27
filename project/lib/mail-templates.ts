@@ -1100,6 +1100,20 @@ export function castingReauditionEmail(p: { talentName?: string; title: string; 
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
 }
 
+/** Client: the talent delivered the recording — ready to review. */
+export function castingDeliveryClientEmail(p: { clientName?: string; title?: string; orderNumber: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const n = mpEsc(p.orderNumber); const name = mpEsc((p.clientName || '').trim());
+  const C = {
+    tw: { subject: `您的配音已交付 · ${n}`, headline: '您的配音已交付', sub: '配音員已上傳成品,請檢視', card: '交付完成', greet: `${name ? name + ' ' : ''}您好,`, l1: `配音員已完成「<strong style="color:#f3f4f6;">${n}</strong>」的錄製並上傳成品。請登入後台試聽 / 下載;如需修改可在訂單頁提出。`, cta: '檢視交付', sign: 'Onyx Studios 業務團隊 敬上' },
+    cn: { subject: `您的配音已交付 · ${n}`, headline: '您的配音已交付', sub: '配音员已上传成品,请查看', card: '交付完成', greet: `${name ? name + ' ' : ''}您好,`, l1: `配音员已完成「<strong style="color:#f3f4f6;">${n}</strong>」的录制并上传成品。请登录后台试听 / 下载;如需修改可在订单页提出。`, cta: '查看交付', sign: 'Onyx Studios 业务团队 敬上' },
+    en: { subject: `Your voiceover has been delivered · ${n}`, headline: 'Your voiceover is ready', sub: 'The talent has uploaded the finished recording', card: 'Delivered', greet: `Dear ${name || 'there'},`, l1: `The talent has finished recording “<strong style="color:#f3f4f6;">${n}</strong>” and uploaded the files. Sign in to listen / download; request changes on the order page if needed.`, cta: 'Review delivery', sign: 'The Onyx Studios Team' },
+  }[L];
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.greet)}${mp(C.l1)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
 /** New-message notification to the counterpart in a marketplace thread. */
 export function newMessageEmail(p: { briefNumber?: string; locale?: string; url: string; body?: string; senderName?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);

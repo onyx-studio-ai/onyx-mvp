@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
-import { quoteReceivedEmail, deliveryUploadedEmail } from '@/lib/mail-templates';
+import { quoteReceivedEmail, deliveryUploadedEmail, castingDeliveryClientEmail } from '@/lib/mail-templates';
+
+const SITE = 'https://www.onyxstudios.ai';
 
 /*
   POST /api/talent/quotes — a talent submits a quote on an open brief.
@@ -139,12 +141,24 @@ export async function PATCH(request: NextRequest) {
       .eq('id', id)
       .eq('talent_id', talent.id)
       .eq('status', 'accepted')
+      .not('agreement_accepted_at', 'is', null) // must have accepted the job agreement first
       .select('id, brief_id, delivery_url, delivery_uploaded_at')
       .maybeSingle();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!data) return NextResponse.json({ error: '只能為已採用的案件上傳交付' }, { status: 400 });
+    if (!data) return NextResponse.json({ error: '請先「同意並接單」才能上傳交付。' }, { status: 400 });
 
-    // Notify Onyx production that a delivery landed (best-effort, branded).
+    // Self-serve: push the delivery straight to the client's order (no Onyx middle
+    // step) — set the download + move it to "delivered" for the client to review.
+    const { data: order } = await r.db.from('voice_orders').select('id, email, order_number, language, status').eq('quote_id', id).maybeSingle();
+    if (order && order.status !== 'completed') {
+      await r.db.from('voice_orders').update({ download_url: deliveryUrl, status: 'delivered', updated_at: new Date().toISOString() }).eq('id', order.id);
+      if (order.email) {
+        const cnote = castingDeliveryClientEmail({ title: (order.order_number as string) || '', orderNumber: order.order_number as string, url: `${SITE}/dashboard/orders/${order.id}` });
+        sendEmail({ category: 'PRODUCTION', to: order.email as string, subject: cnote.subject, html: cnote.html }).catch(() => {});
+      }
+    }
+
+    // Notify Onyx production too (oversight, best-effort).
     const dnote = deliveryUploadedEmail({ talentName: talent.name, quoteId: data.id, url: deliveryUrl });
     sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: dnote.subject, html: dnote.html }).catch(() => {});
 
