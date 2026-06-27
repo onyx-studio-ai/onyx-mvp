@@ -115,6 +115,17 @@ const AVAILABLE_TAGS = [
   "High-range", "Deep", "Smooth", "Powerful", "Raspy", "Breathy",
 ];
 
+// Common "changes requested" reasons — click to drop a polite line into the
+// reject message (composed in the talent's language). Admin can still edit freely.
+const REJECT_REASONS: { key: string; label: string; tw: string; en: string }[] = [
+  { key: 'no_demo', label: '沒有 demo', tw: '請至少上傳一段 demo 試聽,我們才能評估您的聲音。', en: 'Please upload at least one demo so we can assess your voice.' },
+  { key: 'demo_noise', label: 'demo 有雜音', tw: 'demo 有背景雜音,請在安靜環境重新錄製一段乾淨的。', en: 'Your demo has background noise — please re-record a clean take in a quiet space.' },
+  { key: 'demo_lang', label: '缺某語言 demo', tw: '您列的語言缺少對應的 demo,請每個語言補一段該語言的 demo。', en: 'Some of your listed languages have no matching demo — please add one demo per language.' },
+  { key: 'bio_short', label: '簡介太短', tw: '請補充個人簡介(經歷、擅長的風格與類型)。', en: 'Please expand your bio — your experience and the styles you do best.' },
+  { key: 'headshot', label: '大頭照不清/缺', tw: '大頭照缺少或不清楚,請上傳一張清晰的正方形照片。', en: 'Your headshot is missing or unclear — please upload a clear, square photo.' },
+  { key: 'works', label: '補代表作', tw: '請補上代表作,或合作過的品牌/作品。', en: 'Please add some notable works, or brands/projects you have worked with.' },
+];
+
 function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
@@ -1619,6 +1630,22 @@ export default function AdminTalentsPage() {
                     </div>
                     {r.liveness_status === 'verified' && <span className="ml-auto text-xs text-emerald-700 font-medium">真人 ✓</span>}
                   </div>
+                  {/* 完成度檢查 — 一眼看資料齊不齊(紅=缺) */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { k: '大頭照', ok: !!r.headshot_url },
+                      { k: '語言', ok: (r.languages || []).length > 0 },
+                      { k: '聲線', ok: (r.voice_traits || []).length > 0 },
+                      { k: '專長', ok: (r.specialties || []).length > 0 },
+                      { k: 'Demo', ok: demos.length > 0 },
+                      { k: '真人驗證', ok: r.liveness_status === 'verified' },
+                    ].map((c) => (
+                      <span key={c.k} className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border ${c.ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                        {c.ok ? '✓' : '✗'} {c.k}
+                      </span>
+                    ))}
+                  </div>
+                  {(r as { email?: string }).email && <p className="text-xs text-gray-500">聯絡:<a href={`mailto:${(r as { email?: string }).email}`} className="text-blue-600 hover:underline">{(r as { email?: string }).email}</a></p>}
                   {(r.languages || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">語言</p><div className="flex flex-wrap gap-1">{r.languages!.map((l) => <Chip key={l}>{formatLangEntry(l, locale)}</Chip>)}</div></div>}
                   {(r.voice_traits || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">聲線</p><div className="flex flex-wrap gap-1">{r.voice_traits!.map((k) => <Chip key={k}>{traitLabel(k, locale)}</Chip>)}</div></div>}
                   {(r.specialties || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">專長</p><div className="flex flex-wrap gap-1">{r.specialties!.map((k) => <Chip key={k}>{useCaseLabel(k, locale)}</Chip>)}</div></div>}
@@ -1668,7 +1695,34 @@ export default function AdminTalentsPage() {
             <DialogTitle className="text-gray-900 text-lg">退回給配音員 — {rejectTarget?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">寫下需要對方調整的地方,會 email 通知他(不會公開、不會動到他目前的前台版本)。</p>
+            <p className="text-sm text-gray-600">點下面常見原因自動帶入(用對方語言),也可以自己改。會 email 通知他(不會公開、不會動到他目前的前台版本)。</p>
+            {(() => {
+              const langs = (rejectTarget as (Talent & { languages?: string[] }) | null)?.languages || [];
+              const rejLang: 'tw' | 'en' = langs.length === 0 || langs.some((l) => /chinese|中文|mandarin|cantonese|taiwan|粵|普通/i.test(l)) ? 'tw' : 'en';
+              const lineFor = (rr: typeof REJECT_REASONS[number]) => '・' + (rejLang === 'tw' ? rr.tw : rr.en);
+              const toggle = (rr: typeof REJECT_REASONS[number]) => {
+                const line = lineFor(rr);
+                setRejectReason((prev) => {
+                  const lines = prev ? prev.split('\n') : [];
+                  const i = lines.indexOf(line);
+                  if (i >= 0) lines.splice(i, 1); else lines.push(line);
+                  return lines.filter(Boolean).join('\n');
+                });
+              };
+              return (
+                <div className="flex flex-wrap gap-1.5">
+                  {REJECT_REASONS.map((rr) => {
+                    const on = rejectReason.includes(lineFor(rr));
+                    return (
+                      <button key={rr.key} type="button" onClick={() => toggle(rr)}
+                        className={`text-xs rounded-full px-3 py-1 border transition-colors ${on ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-gray-700 border-gray-300 hover:border-amber-400'}`}>
+                        {on ? '✓ ' : '+ '}{rr.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="min-h-[120px]" placeholder="例如:廣告 demo 有背景雜音請重錄;粵語語言請補一段該語言的 demo…" />
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => setRejectTarget(null)} className="border-gray-300 text-gray-700">取消</Button>

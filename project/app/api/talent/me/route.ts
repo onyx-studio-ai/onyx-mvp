@@ -214,6 +214,24 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
+    // Minimum completeness to ENTER the review queue — stop near-empty profiles
+    // (no demo / language / voice trait / specialty) from reaching the admin. A
+    // draft can still be saved incomplete; only an explicit submit is gated.
+    if (submit) {
+      const t = r.talent as Record<string, unknown>;
+      const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+      const finalDemos = cleanDemos ?? (arr(t.demos) as DemoItem[]);
+      const finalLangs = ('languages' in updates ? updates.languages : t.languages) as unknown;
+      const finalTraits = ('voice_traits' in updates ? updates.voice_traits : t.voice_traits) as unknown;
+      const finalSpecs = ('specialties' in updates ? updates.specialties : t.specialties) as unknown;
+      const missing: string[] = [];
+      if (!finalDemos.length) missing.push('demo');
+      if (!arr(finalLangs).length) missing.push('languages');
+      if (!arr(finalTraits).length) missing.push('voice_traits');
+      if (!arr(finalSpecs).length) missing.push('specialties');
+      if (missing.length) return NextResponse.json({ error: 'incomplete_profile', missing }, { status: 400 });
+    }
+
     // Saving a draft does NOT touch review state. Only an explicit submit enters
     // the review queue; admin publish is what clears pending_review back to false.
     if (submit) updates.pending_review = true;

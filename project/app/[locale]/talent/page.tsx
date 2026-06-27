@@ -229,6 +229,15 @@ export default function TalentDashboard() {
         ));
       } else if (j.error === 'demo_without_language') {
         setSaveErr(tx('每段 demo 都要標示語言(紅框那欄)才能送審。', '每段 demo 都要标示语言(红框那栏)才能送审。', 'Every demo must have a language set (the red field) before submitting.'));
+      } else if (j.error === 'incomplete_profile') {
+        const L = (k: string) => ({
+          demo: tx('至少一段 demo', '至少一段 demo', 'at least one demo'),
+          languages: tx('語言', '语言', 'a language'),
+          voice_traits: tx('聲線', '声线', 'voice traits'),
+          specialties: tx('專長', '专长', 'specialties'),
+        }[k] || k);
+        const items = (j.missing || []).map(L).join(tx('、', '、', ', '));
+        setSaveErr(tx(`送審前請先補齊:${items}。可以先「儲存草稿」,補好再送審。`, `送审前请先补齐:${items}。可以先「保存草稿」,补好再送审。`, `Please complete these before submitting: ${items}. You can save a draft and submit once done.`));
       } else {
         setSaveErr(j.error || tx('儲存失敗,請稍後再試。', '保存失败,请稍后再试。', 'Save failed. Please try again.'));
       }
