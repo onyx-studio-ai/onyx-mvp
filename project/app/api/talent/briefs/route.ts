@@ -13,7 +13,7 @@ import { resolveTalentFromRequest } from '@/lib/talent-auth';
   dashboard keeps working.
 */
 export async function GET(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id, languages, demos');
+  const r = await resolveTalentFromRequest(request, 'id, name, languages, demos, quote_templates');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
 
   // The talent's own published demos — offered as "pick an existing demo" when
@@ -91,7 +91,8 @@ export async function GET(request: NextRequest) {
         .in('id', endedIds);
       endedBriefs = eb || [];
     }
-    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs });
+    const tt = (r.talent as { name?: string; quote_templates?: { intro?: unknown[]; revision?: unknown[] } });
+    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs, myName: tt.name || '', templates: tt.quote_templates || {} });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });

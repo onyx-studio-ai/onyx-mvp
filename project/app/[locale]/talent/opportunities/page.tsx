@@ -73,9 +73,58 @@ type Quote = {
   delivery_uploaded_at?: string | null;
 };
 type Demo = { url: string; name?: string; category?: string; language?: string };
+type Tpl = { name: string; body: string };
+type Templates = { intro?: Tpl[]; revision?: Tpl[] };
 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60 transition';
+
+// A text field with quick templates: a built-in starter chip + the talent's saved
+// templates (click to fill, ✕ to delete) + "存成範本" to save the current text.
+function TemplatedField({ kind, label, optional, multiline, value, onChange, builtin, saved, token, onTemplates, tx }: {
+  kind: 'intro' | 'revision'; label: string; optional?: boolean; multiline?: boolean;
+  value: string; onChange: (v: string) => void; builtin: string; saved: Tpl[]; token: string;
+  onTemplates: (t: Templates) => void; tx: (tw: string, cn: string, en: string) => string;
+}) {
+  async function save() {
+    const body = value.trim();
+    if (!body) return;
+    const name = window.prompt(tx('範本名稱(例:廣告 / 遊戲)', '范本名称(例:广告 / 游戏)', 'Template name (e.g. Ad / Game)'));
+    if (!name || !name.trim()) return;
+    const r = await fetch('/api/talent/templates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ kind, name: name.trim(), body }) });
+    const j = await r.json().catch(() => ({})); if (r.ok) onTemplates(j.templates);
+  }
+  async function del(name: string) {
+    const r = await fetch(`/api/talent/templates?kind=${kind}&name=${encodeURIComponent(name)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    const j = await r.json().catch(() => ({})); if (r.ok) onTemplates(j.templates);
+  }
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-xs text-gray-300">{label}{optional && <span className="text-gray-500"> {tx('選填', '选填', 'optional')}</span>}</div>
+        <button type="button" onClick={save} className="text-[11px] text-amber-300 hover:underline">💾 {tx('存成範本', '存成范本', 'Save template')}</button>
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-1.5">
+        <button type="button" onClick={() => onChange(builtin)} className="text-[11px] bg-white/5 border border-white/10 rounded-full px-2.5 py-1 text-gray-300 hover:border-white/30 transition">{tx('內建範本', '内建范本', 'Starter')}</button>
+        {saved.map((t) => (
+          <span key={t.name} className="inline-flex items-center text-[11px] bg-white/5 border border-white/10 rounded-full pl-2.5 pr-1 py-1 text-gray-300">
+            <button type="button" onClick={() => onChange(t.body)} className="hover:text-white">{t.name}</button>
+            <button type="button" onClick={() => del(t.name)} className="text-gray-500 hover:text-red-300 px-1" title={tx('刪除', '删除', 'Delete')}>✕</button>
+          </span>
+        ))}
+      </div>
+      {multiline
+        ? <textarea className={`${inputCls} min-h-[56px] resize-y`} value={value} onChange={(e) => onChange(e.target.value)} />
+        : <input className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} />}
+    </div>
+  );
+}
+
+const builtinIntro = (name: string, tx: (tw: string, cn: string, en: string) => string) => tx(
+  `您好,我是配音員 ${name || '(您的藝名)'}。很高興收到這個邀請,我對這個案子很有興趣;我的聲音與經驗很適合這類型,期待有機會與您合作。`,
+  `您好,我是配音员 ${name || '(您的艺名)'}。很高兴收到这个邀请,我对这个案子很有兴趣;我的声音与经验很适合这类型,期待有机会与您合作。`,
+  `Hi, I'm ${name || '(your name)'}, a voice actor. Thanks for the invitation — I'm interested in this project and my voice and experience fit it well. I'd love to work with you.`);
+const builtinRev = (tx: (tw: string, cn: string, en: string) => string) => tx('含 2 次修改;超出部分每次另計。', '含 2 次修改;超出部分每次另计。', '2 revisions included; extra revisions billed separately.');
 
 // Won-job delivery: the talent hands in the finished recording against an accepted
 // quote. Final files are NOT transcoded (preserve 48k/24-bit); zip allowed for bundles.
@@ -141,6 +190,8 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; rate_note?: string | null; status: string }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
+  const [myName, setMyName] = useState('');
+  const [templates, setTemplates] = useState<Templates>({});
 
   const load = useCallback(async (accessToken: string) => {
     setToken(accessToken);
@@ -153,6 +204,8 @@ export default function Opportunities() {
     setMyDemos(j.myDemos || []);
     setWonBriefs(j.wonBriefs || []);
     setEndedBriefs(j.endedBriefs || []);
+    setMyName(j.myName || '');
+    setTemplates(j.templates || {});
     setPhase('ready');
   }, []);
 
@@ -248,6 +301,9 @@ export default function Opportunities() {
             myQuotes={quotes.filter((q) => q.brief_id === b.id)}
             roleCounts={roleCounts[b.id] || {}}
             myDemos={myDemos}
+            myName={myName}
+            templates={templates}
+            onTemplates={setTemplates}
             token={token}
             tx={tx}
             onQuoted={(q) => setQuotes((prev) => [q, ...prev])}
@@ -264,6 +320,9 @@ function BriefCard({
   myQuotes,
   roleCounts,
   myDemos,
+  myName,
+  templates,
+  onTemplates,
   token,
   tx,
   onQuoted,
@@ -273,6 +332,9 @@ function BriefCard({
   myQuotes: Quote[];
   roleCounts: Record<string, number>;
   myDemos: Demo[];
+  myName: string;
+  templates: Templates;
+  onTemplates: (t: Templates) => void;
   token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
@@ -427,13 +489,16 @@ function BriefCard({
                     token={token}
                     tx={tx}
                     onQuoted={onQuoted}
+                    myName={myName}
+                    templates={templates}
+                    onTemplates={onTemplates}
                   />
                 ))}
               </div>
             </div>
           ) : (
             /* General (single-voice) call — respond with an existing demo OR an upload + price. */
-            <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} token={token} tx={tx} onQuoted={onQuoted} />
+            <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} token={token} tx={tx} onQuoted={onQuoted} myName={myName} templates={templates} onTemplates={onTemplates} />
           )}
         </>
       ) : (
@@ -535,7 +600,7 @@ function CaseHeader({
 // One role's audition: view its line → upload audition → write your price/terms.
 // Full roles are disabled (no count shown); near-full nudges to try another.
 function RoleAudition({
-  brief, role, count, popularThreshold, done, token, tx, onQuoted,
+  brief, role, count, popularThreshold, done, token, tx, onQuoted, myName, templates, onTemplates,
 }: {
   brief: Brief;
   role: Role;
@@ -545,6 +610,9 @@ function RoleAudition({
   token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
+  myName: string;
+  templates: Templates;
+  onTemplates: (t: Templates) => void;
 }) {
   const isPopular = count >= popularThreshold;
   const [open, setOpen] = useState(false);
@@ -705,16 +773,10 @@ function RoleAudition({
                 </div>
               );
             })()}
-            <div>
-              <div className="text-xs text-gray-300 mb-1">{tx('自我介紹', '自我介绍', 'About you')}</div>
-              <textarea className={`${inputCls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
-                placeholder={tx('簡短介紹您的聲音與經驗、為何適合這個角色。', '简短介绍您的声音与经验、为何适合这个角色。', 'A short intro — your voice, experience, why you fit this role.')} />
-            </div>
-            <div>
-              <div className="text-xs text-gray-300 mb-1">{tx('修改政策', '修改政策', 'Revisions')} <span className="text-gray-500">{tx('選填', '选填', 'optional')}</span></div>
-              <input className={inputCls} value={revPolicy} onChange={(e) => setRevPolicy(e.target.value)}
-                placeholder={tx('例:含 2 次修改', '例:含 2 次修改', 'e.g. 2 revisions included')} />
-            </div>
+            <TemplatedField kind="intro" multiline label={tx('自我介紹', '自我介绍', 'About you')} value={intro} onChange={setIntro}
+              builtin={builtinIntro(myName, tx)} saved={templates.intro || []} token={token} onTemplates={onTemplates} tx={tx} />
+            <TemplatedField kind="revision" optional label={tx('修改政策', '修改政策', 'Revisions')} value={revPolicy} onChange={setRevPolicy}
+              builtin={builtinRev(tx)} saved={templates.revision || []} token={token} onTemplates={onTemplates} tx={tx} />
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button onClick={submit} disabled={busy || uploading} className="w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm"
               style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
@@ -731,7 +793,7 @@ function RoleAudition({
 // or upload one, then quote a price. No per-role audition — used for ad/narration/
 // IVR/audiobook etc. One response per call.
 function GeneralResponse({
-  brief, myDemos, done, token, tx, onQuoted,
+  brief, myDemos, done, token, tx, onQuoted, myName, templates, onTemplates,
 }: {
   brief: Brief;
   myDemos: Demo[];
@@ -739,6 +801,9 @@ function GeneralResponse({
   token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
+  myName: string;
+  templates: Templates;
+  onTemplates: (t: Templates) => void;
 }) {
   const [src, setSrc] = useState<'demo' | 'upload'>(myDemos.length ? 'demo' : 'upload');
   const [pickedDemo, setPickedDemo] = useState(myDemos[0]?.url || '');
@@ -870,16 +935,10 @@ function GeneralResponse({
         );
       })()}
 
-      <div>
-        <div className="text-xs text-gray-300 mb-1">{tx('自我介紹', '自我介绍', 'About you')}</div>
-        <textarea className={`${inputCls} min-h-[56px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)}
-          placeholder={tx('簡短介紹您的聲音特質與經驗、為什麼適合這個案子。', '简短介绍您的声音特质与经验、为什么适合这个案子。', 'A short intro — your voice, experience, and why you fit this brief.')} />
-      </div>
-      <div>
-        <div className="text-xs text-gray-300 mb-1">{tx('修改政策', '修改政策', 'Revisions')} <span className="text-gray-500">{tx('選填', '选填', 'optional')}</span></div>
-        <input className={inputCls} value={revPolicy} onChange={(e) => setRevPolicy(e.target.value)}
-          placeholder={tx('例:含 2 次修改,超出每次另計', '例:含 2 次修改,超出每次另计', 'e.g. 2 revisions included; extra billed separately')} />
-      </div>
+      <TemplatedField kind="intro" multiline label={tx('自我介紹', '自我介绍', 'About you')} value={intro} onChange={setIntro}
+        builtin={builtinIntro(myName, tx)} saved={templates.intro || []} token={token} onTemplates={onTemplates} tx={tx} />
+      <TemplatedField kind="revision" optional label={tx('修改政策', '修改政策', 'Revisions')} value={revPolicy} onChange={setRevPolicy}
+        builtin={builtinRev(tx)} saved={templates.revision || []} token={token} onTemplates={onTemplates} tx={tx} />
       {err && <p className="text-red-400 text-xs">{err}</p>}
       <button onClick={submit} disabled={busy || uploading} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm">
         {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出應徵', '送出应征', 'Submit')}
