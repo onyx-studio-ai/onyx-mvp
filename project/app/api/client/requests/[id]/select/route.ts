@@ -41,12 +41,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
   if (r.brief.status !== 'open') return NextResponse.json({ error: '此案目前無法選定(可能尚未開放徵選或已選定)。' }, { status: 400 });
 
-  let b: { quote_id?: string; final_script?: string; delivery_date?: string };
+  let b: { quote_id?: string; final_script?: string; final_script_url?: string; delivery_date?: string };
   try { b = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const quoteId = String(b.quote_id || '').trim();
   if (!quoteId) return NextResponse.json({ error: 'quote_id is required' }, { status: 400 });
   const finalScript = String(b.final_script || '').trim();
-  if (!finalScript) return NextResponse.json({ error: '請提供正式稿件,我們才能開始製作。' }, { status: 400 });
+  const finalScriptUrl = String(b.final_script_url || '').trim();
+  if (finalScriptUrl && !/^https?:\/\//i.test(finalScriptUrl)) return NextResponse.json({ error: 'invalid script file url' }, { status: 400 });
+  if (!finalScript && !finalScriptUrl) return NextResponse.json({ error: '請提供正式稿件(貼上或上傳檔案),我們才能開始製作。' }, { status: 400 });
   const deliveryDate = String(b.delivery_date || '').trim().slice(0, 60) || undefined;
 
   // The quote must belong to this brief.
@@ -64,6 +66,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     talentName: talent?.name as string | undefined,
     orderEmail: String(r.brief.client_email).toLowerCase(),
     scriptText: finalScript,
+    scriptFileUrl: finalScriptUrl || undefined,
     deliveryDate,
   });
   if (!order.ok) return NextResponse.json({ error: order.error }, { status: order.status });

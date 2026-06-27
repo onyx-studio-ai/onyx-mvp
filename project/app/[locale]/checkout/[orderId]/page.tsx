@@ -16,6 +16,7 @@ interface Order {
   email: string;
   tier: string;
   price: number;
+  currency?: string;
   talent_id: string | null;
   talent_price: number;
   status: string;
@@ -106,6 +107,9 @@ export default function CheckoutPage() {
       ? Math.round(order.price * (1 - discountPercent / 100) * 100) / 100
       : order.price
     : 0;
+  // Show the order's actual currency, not a hardcoded US$ (a TWD order bills NT$).
+  const cur = (order?.currency || 'USD').toUpperCase();
+  const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
@@ -692,7 +696,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      {t('payNowAmount', { amount: effectivePrice.toLocaleString() })}
+                      {t('payNowAmount', { amount: `${sym}${effectivePrice.toLocaleString()}` })}
                     </>
                   )}
                 </button>
@@ -756,7 +760,7 @@ export default function CheckoutPage() {
                   {order.talent_id && (
                     <div className="flex justify-between">
                       <span className="text-gray-400">{orderType === 'voice' ? t('voiceTalent') : t('inHouseVocalist')}</span>
-                      <span className="text-pink-400">US${Number(order.talent_price).toFixed(2)}</span>
+                      <span className="text-pink-400">{sym}{Number(order.talent_price).toFixed(2)}</span>
                     </div>
                   )}
                 </div>
@@ -806,7 +810,7 @@ export default function CheckoutPage() {
                     <>
                       <div className="flex justify-between items-center mb-1.5 text-sm">
                         <span className="text-gray-500">{t('originalPrice')}</span>
-                        <span className="text-gray-500 line-through">US${Number(order.price).toLocaleString()}</span>
+                        <span className="text-gray-500 line-through">{sym}{Number(order.price).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center mb-2 text-sm">
                         <span className="text-green-400">{t('promoDiscount', { code: appliedCode })}</span>
@@ -817,7 +821,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-white font-bold">{t('total')}</span>
                     <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                      US${effectivePrice.toLocaleString()}
+                      {sym}{effectivePrice.toLocaleString()}
                     </span>
                   </div>
                   <p className="text-xs text-gray-400">{t('includesAllFees')}</p>

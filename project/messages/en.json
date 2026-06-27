@@ -1157,7 +1157,7 @@
     "expirationDate": "Expiration Date",
     "ccv": "CCV",
     "processingPayment": "Processing Payment...",
-    "payNowAmount": "Pay Now US${amount}",
+    "payNowAmount": "Pay Now {amount}",
     "orderSummary": "Order Summary",
     "total": "Total",
     "includesAllFees": "Includes all fees",

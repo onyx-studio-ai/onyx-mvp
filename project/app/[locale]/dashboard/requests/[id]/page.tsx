@@ -42,6 +42,10 @@ export default function ClientRequestDetail() {
   const [order, setOrder] = useState<Order | null>(null);
   const [selected, setSelected] = useState(''); // quote_id whose confirm form is open
   const [finalScript, setFinalScript] = useState('');
+  const [scriptMode, setScriptMode] = useState<'paste' | 'upload'>('paste');
+  const [scriptFileUrl, setScriptFileUrl] = useState('');
+  const [scriptFileName, setScriptFileName] = useState('');
+  const [scriptUploading, setScriptUploading] = useState(false);
   const [delivery, setDelivery] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [reauditTarget, setReauditTarget] = useState(''); // quote_id whose 二次試音 form is open
@@ -90,11 +94,28 @@ export default function ClientRequestDetail() {
     setDelivery(b?.deadline || '');
     setSelected(quoteId);
   }
+  const SCRIPT_EXT = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md'];
+  async function uploadScript(file: File) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!SCRIPT_EXT.includes(ext)) { setMsg(tx('稿件格式不支援(pdf / doc / docx / txt / rtf …)', '稿件格式不支持(pdf / doc / docx / txt / rtf …)', 'Unsupported file type (pdf / doc / docx / txt / rtf …)')); return; }
+    setMsg(''); setScriptUploading(true);
+    try {
+      const u = await fetch('/api/hire/script-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || 'upload prep failed');
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setScriptFileUrl(uj.publicUrl); setScriptFileName(file.name);
+    } catch { setMsg(tx('稿件上傳失敗,請再試一次。', '稿件上传失败,请再试一次。', 'Script upload failed, try again.')); }
+    finally { setScriptUploading(false); }
+  }
   async function submitPick() {
-    if (!finalScript.trim()) { setMsg(tx('請提供正式稿件', '请提供正式稿件', 'Please provide the final script')); return; }
+    if (scriptUploading) { setMsg(tx('稿件上傳中,請稍候', '稿件上传中,请稍候', 'Script is uploading…')); return; }
+    const hasScript = scriptMode === 'paste' ? !!finalScript.trim() : !!scriptFileUrl;
+    if (!hasScript) { setMsg(tx('請提供正式稿件(貼上或上傳檔案)', '请提供正式稿件(贴上或上传档案)', 'Please paste or upload the final script')); return; }
     setMsg(''); setSubmitting(true);
     try {
-      const res = await fetch(`/api/client/requests/${id}/select`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: selected, final_script: finalScript.trim(), delivery_date: delivery }) });
+      const res = await fetch(`/api/client/requests/${id}/select`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: selected, final_script: scriptMode === 'paste' ? finalScript.trim() : '', final_script_url: scriptMode === 'upload' ? scriptFileUrl : '', delivery_date: delivery }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setMsg(j.error || tx('選定失敗', '选定失败', 'Failed')); return; }
       setSelected(''); load();
@@ -259,9 +280,27 @@ export default function ClientRequestDetail() {
                   ) : b.status === 'open' && selected === a.id ? (
                     <div className="mt-1 space-y-3 border-t border-white/10 pt-3">
                       <p className="text-xs text-gray-400">{tx('選定這位後即建立製作單。請確認正式稿件與希望交付日,我們會與您確認付款後開始錄製。', '选定这位后即建立制作单。请确认正式稿件与希望交付日,我们会与您确认付款后开始录制。', 'Selecting creates a production order. Confirm the final script and your requested delivery date — we’ll confirm payment, then start recording.')}</p>
-                      <label className="block"><span className="text-xs text-gray-400 mb-1 block">{tx('正式稿件', '正式稿件', 'Final script')} *</span>
-                        <textarea className={`${input} min-h-[120px] resize-y`} value={finalScript} onChange={(e) => setFinalScript(e.target.value)} placeholder={tx('貼上正式錄製的稿件', '贴上正式录制的稿件', 'Paste the final script to record')} />
-                      </label>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-400">{tx('正式稿件', '正式稿件', 'Final script')} *</span>
+                          <div className="flex gap-1">
+                            {(['paste', 'upload'] as const).map((m) => (
+                              <button key={m} type="button" onClick={() => setScriptMode(m)} className={`text-[11px] px-2 py-0.5 rounded-full border ${scriptMode === m ? 'bg-amber-500/20 text-amber-200 border-amber-400/40' : 'bg-white/5 text-gray-400 border-white/10'}`}>
+                                {m === 'paste' ? tx('貼上', '贴上', 'Paste') : tx('上傳檔案', '上传档案', 'Upload')}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {scriptMode === 'paste' ? (
+                          <textarea className={`${input} min-h-[120px] resize-y`} value={finalScript} onChange={(e) => setFinalScript(e.target.value)} placeholder={tx('貼上正式錄製的稿件', '贴上正式录制的稿件', 'Paste the final script to record')} />
+                        ) : (
+                          <div>
+                            <input type="file" accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.pages,.md" disabled={scriptUploading} onChange={(e) => e.target.files?.[0] && uploadScript(e.target.files[0])}
+                              className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+                            <p className="text-[11px] text-gray-500 mt-1">{scriptUploading ? tx('上傳中…', '上传中…', 'Uploading…') : scriptFileUrl ? tx(`已上傳:${scriptFileName} ✓`, `已上传:${scriptFileName} ✓`, `Uploaded: ${scriptFileName} ✓`) : tx('PDF / DOC / TXT 等', 'PDF / DOC / TXT 等', 'PDF / DOC / TXT, etc.')}</p>
+                          </div>
+                        )}
+                      </div>
                       <label className="block max-w-[14rem]"><span className="text-xs text-gray-400 mb-1 block">{tx('希望交付日', '希望交付日', 'Requested delivery')}</span>
                         <input type="date" className={input} value={delivery} onChange={(e) => setDelivery(e.target.value)} />
                       </label>

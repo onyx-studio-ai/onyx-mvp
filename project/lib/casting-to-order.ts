@@ -33,7 +33,7 @@ export async function createOrderFromAward(
   db: SupabaseClient,
   brief: AwardBrief,
   quote: AwardQuote,
-  opts: { talentName?: string | null; orderEmail: string; scriptText?: string | null; deliveryDate?: string | null },
+  opts: { talentName?: string | null; orderEmail: string; scriptText?: string | null; scriptFileUrl?: string | null; deliveryDate?: string | null },
 ): Promise<{ ok: true; id: string; order_number: string; currency: string } | { ok: false; error: string; status: number }> {
   // One order per case — don't let a second selection / a second admin click
   // create a duplicate charge.
@@ -73,6 +73,7 @@ export async function createOrderFromAward(
     brief_id: brief.id,
     quote_id: quote.id,
     deadline: opts.deliveryDate || null,
+    script_file_url: opts.scriptFileUrl || null,
   }).select('id, order_number').single();
   if (error) return { ok: false, error: error.message, status: 500 };
 

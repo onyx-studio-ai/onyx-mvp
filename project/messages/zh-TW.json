@@ -1157,7 +1157,7 @@
     "expirationDate": "有效期限",
     "ccv": "CCV",
     "processingPayment": "付款處理中...",
-    "payNowAmount": "立即付款 US${amount}",
+    "payNowAmount": "立即付款 {amount}",
     "orderSummary": "訂單摘要",
     "total": "合計",
     "includesAllFees": "已含所有費用",

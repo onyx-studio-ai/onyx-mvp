@@ -264,7 +264,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; final_script?: string | null }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; final_script?: string | null; final_script_url?: string | null }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
@@ -368,13 +368,18 @@ export default function Opportunities() {
                   title={w.title || w.content_type || tx('配音案', '配音案', 'Voice case')}
                   badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-green-500/15 text-green-200 border-green-500/30 whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>}
                 >
-                  {w.final_script && (
+                  {(w.final_script || w.final_script_url) && (
                     <div className="mb-3">
                       <p className="text-xs text-gray-500 mb-1.5">{tx('正式稿件(客戶提供 · 請依此錄製)', '正式稿件(客户提供 · 请依此录制)', 'Final script (from the client — record this)')}</p>
-                      <div className="text-sm text-gray-100 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 max-h-60 overflow-y-auto select-none"
-                        style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
-                        {w.final_script}
-                      </div>
+                      {w.final_script && (
+                        <div className="text-sm text-gray-100 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 max-h-60 overflow-y-auto select-none"
+                          style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
+                          {w.final_script}
+                        </div>
+                      )}
+                      {w.final_script_url && (
+                        <a href={w.final_script_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline mt-1.5">📄 {tx('下載正式稿件檔', '下载正式稿件档', 'Download script file')}</a>
+                      )}
                     </div>
                   )}
                   {myAccepted.map((q) => (
