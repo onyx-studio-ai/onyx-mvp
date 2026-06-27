@@ -528,15 +528,10 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
               if (!confirm('Mark this order as paid? This will move it to the production queue.')) return;
               setUpdatingStatus(true);
               try {
-                const { error } = await supabase
-                  .from('voice_orders')
-                  .update({
-                    status: 'paid',
-                    payment_status: 'completed',
-                    paid_at: new Date().toISOString(),
-                  })
-                  .eq('id', order.id);
-                if (error) throw new Error(error.message);
+                // Route through the admin API (service role) — a financial change must
+                // not rely on the browser anon client, which RLS silently blocks (the
+                // update affected 0 rows and looked like nothing happened).
+                await updateVoiceOrderStatus(order.id, 'paid', { payment_status: 'completed', paid_at: new Date().toISOString() });
                 toast({ title: 'Payment confirmed', description: 'Order moved to production queue.' });
                 onStatusChange();
               } catch (err: unknown) {

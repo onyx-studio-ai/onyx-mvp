@@ -57,7 +57,8 @@ export default function AdminFinance() {
 
   // Real (non-draft / non-failed) orders only.
   const live = useMemo(() => orders.filter((o) => o.status !== 'draft' && o.status !== 'failed'), [orders]);
-  const isPaid = (o: Order) => o.payment_status === 'paid';
+  // "Collected" = any settled state: Paddle 'paid', manual-confirm 'completed', or a paid_at stamp.
+  const isPaid = (o: Order) => o.payment_status === 'paid' || o.payment_status === 'completed' || !!o.paid_at;
   const curOf = (o: Order) => o.currency || 'USD';
 
   // Currencies present (for the filter); default to the one with the most orders.
