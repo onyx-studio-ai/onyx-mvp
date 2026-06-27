@@ -164,6 +164,7 @@ function NewCasting() {
       if (bf.length) setScale(bf.length);
       if (bf.deadline) setDeadline(bf.deadline);
       if (bf.audition_deadline) setAuditionDeadline(bf.audition_deadline);
+      if (bf.recording_start) setRecordingStart(bf.recording_start);
       // client budget → seed the 報酬 (currency + amount) as a starting point Onyx can adjust.
       if (bf.budget) {
         const cur = /USD|TWD/i.exec(String(bf.budget)); if (cur) setRateCur(cur[0].toUpperCase());

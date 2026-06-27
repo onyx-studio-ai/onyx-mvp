@@ -208,7 +208,7 @@ export default function Hire() {
   const ageOpts = comboOpts(VOICE_AGES);
   const localePath = (p: string) => (locale === 'en' ? p : `/${locale}${p}`);
 
-  const [form, setForm] = useState({ title: '', name: '', company: '', email: '', budget: '', deadline: '', auditionDeadline: '', brief: '' });
+  const [form, setForm] = useState({ title: '', name: '', company: '', email: '', budget: '', deadline: '', auditionDeadline: '', recordingStart: '', brief: '' });
   const [refUrls, setRefUrls] = useState<string[]>(['']); // 參考聲音連結,可多條
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [budgetCurrency, setBudgetCurrency] = useState('USD');
@@ -423,6 +423,7 @@ export default function Hire() {
           reference_links: refUrls.map((u) => u.trim()).filter((u) => isUrl(u)),
           ref_audio_url: refUrls.map((u) => u.trim()).find((u) => isUrl(u)) || '',
           audition_deadline: form.auditionDeadline,
+          recording_start: form.recordingStart,
           wants_director: wantsDirector,
           wants_live_session: wantsLiveSession,
           live_session_tool: wantsLiveSession ? (liveSessionTool === 'Other' ? liveSessionOther : liveSessionTool) : '',
@@ -644,9 +645,10 @@ export default function Hire() {
                 </div>
               )}
 
-              {/* Timeline — both optional, an estimate that gives buffer */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Timeline — all optional estimates that give buffer */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div><label className="block text-sm font-semibold mb-2">{tx('試音截止日', '试音截止日', 'Audition deadline')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('預計開錄日', '预计开录日', 'Recording start')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.recordingStart} onChange={(e) => set('recordingStart', e.target.value)} /></div>
                 <div><label className="block text-sm font-semibold mb-2">{tx('預計完成日', '预计完成日', 'Estimated delivery date')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.deadline} onChange={(e) => set('deadline', e.target.value)} /></div>
               </div>
 

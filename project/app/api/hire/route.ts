@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
           reference_links: Array.isArray(b.reference_links) ? (b.reference_links as unknown[]).map((l) => String(l).trim()).filter((l) => /^https?:\/\//i.test(l)).slice(0, 10) : [],
           has_singing: !!b.has_singing,
           audition_deadline: b.audition_deadline || null,
+          recording_start: (typeof b.recording_start === 'string' && b.recording_start.trim()) ? b.recording_start.trim().slice(0, 60) : null,
           wants_director: !!b.wants_director,
           wants_live_session: !!b.wants_live_session,
           live_session_tool: b.live_session_tool || null,

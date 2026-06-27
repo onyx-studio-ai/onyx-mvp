@@ -36,6 +36,7 @@ type Brief = {
   wants_live_session: boolean | null;
   live_session_tool: string | null;
   audition_deadline: string | null;
+  recording_start: string | null;
   deadline: string | null;
   brief: string;
   requested_talent: string | null;
@@ -150,6 +151,7 @@ export default function AdminRequests() {
               {ROW('長度', b.length)}
               {ROW('當地錄音室', b.local_studio_region)}
               {ROW('試音截止', b.audition_deadline)}
+              {ROW('預計開錄', b.recording_start)}
               {ROW('預計完成', b.deadline)}
               {(() => {
                 const links = (b.reference_links && b.reference_links.length ? b.reference_links : (b.ref_audio_url ? [b.ref_audio_url] : [])).filter(Boolean);
