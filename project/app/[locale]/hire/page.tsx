@@ -208,7 +208,8 @@ export default function Hire() {
   const ageOpts = comboOpts(VOICE_AGES);
   const localePath = (p: string) => (locale === 'en' ? p : `/${locale}${p}`);
 
-  const [form, setForm] = useState({ title: '', name: '', company: '', email: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
+  const [form, setForm] = useState({ title: '', name: '', company: '', email: '', budget: '', deadline: '', auditionDeadline: '', brief: '' });
+  const [refUrls, setRefUrls] = useState<string[]>(['']); // 參考聲音連結,可多條
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const [budgetCurrency, setBudgetCurrency] = useState('USD');
   const [contentType, setContentType] = useState('');
@@ -274,7 +275,8 @@ export default function Hire() {
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   // a real link must start with http(s):// and have a domain — blocks "123" / "fdf"
-  const refUrlOk = !form.refUrl.trim() || /^https?:\/\/[^\s.]+\.[^\s]{2,}/i.test(form.refUrl.trim());
+  const isUrl = (u: string) => /^https?:\/\/[^\s.]+\.[^\s]{2,}/i.test(u.trim());
+  const refUrlOk = refUrls.every((u) => !u.trim() || isUrl(u));
 
   const pickContent = (v: string) => { setRedirect(null); setContentType(v); };
   const pickAi = (a: (typeof AI_TYPES)[number]) => {
@@ -418,7 +420,8 @@ export default function Hire() {
           script_text: scriptMode === 'paste' ? scriptText.trim() : '',
           script_file_url: scriptMode === 'upload' ? scriptFileUrl : '',
           roles_file_url: ROLE_TYPES.includes(contentType) ? rolesFileUrl : '',
-          ref_audio_url: form.refUrl,
+          reference_links: refUrls.map((u) => u.trim()).filter((u) => isUrl(u)),
+          ref_audio_url: refUrls.map((u) => u.trim()).find((u) => isUrl(u)) || '',
           audition_deadline: form.auditionDeadline,
           wants_director: wantsDirector,
           wants_live_session: wantsLiveSession,
@@ -694,7 +697,19 @@ export default function Hire() {
                 </div>
               </div>
 
-              <div><label className="block text-sm font-semibold mb-2">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} ${form.refUrl && !refUrlOk ? 'border-red-500/60' : ''}`} value={form.refUrl} onChange={(e) => set('refUrl', e.target.value)} placeholder={tx('貼完整網址,例:https://…', '贴完整网址,例:https://…', 'Full URL, e.g. https://…')} />{form.refUrl && !refUrlOk && <p className="text-xs text-red-400 mt-1">{tx('請貼完整連結(http(s)://…)', '请贴完整链接(http(s)://…)', 'Enter a full URL (http(s)://…)')}</p>}</div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">{tx('參考聲音(連結)', '参考声音(链接)', 'Reference voice (link)')} <span className="text-xs text-gray-500">{tx('選填 · 可貼多條(雲端 / 樣音 / 方向)', '选填 · 可贴多条(云端 / 样音 / 方向)', 'Optional · add several (cloud / sample / direction)')}</span></label>
+                <div className="space-y-2">
+                  {refUrls.map((u, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input className={`${inputCls} ${u && !isUrl(u) ? 'border-red-500/60' : ''}`} value={u} onChange={(e) => setRefUrls((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder={tx('貼完整網址,例:https://…', '贴完整网址,例:https://…', 'Full URL, e.g. https://…')} />
+                      {refUrls.length > 1 && <button type="button" onClick={() => setRefUrls((arr) => arr.filter((_, j) => j !== i))} className="text-gray-500 hover:text-white px-1 shrink-0">✕</button>}
+                    </div>
+                  ))}
+                </div>
+                {!refUrlOk && <p className="text-xs text-red-400 mt-1">{tx('請貼完整連結(http(s)://…)', '请贴完整链接(http(s)://…)', 'Enter a full URL (http(s)://…)')}</p>}
+                {refUrls.length < 6 && <button type="button" onClick={() => setRefUrls((arr) => [...arr, ''])} className="text-xs text-amber-300 hover:underline mt-2">{tx('+ 再加一條連結', '+ 再加一条链接', '+ Add another link')}</button>}
+              </div>
 
               <div><label className="block text-sm font-semibold mb-2">{tx('需求說明', '需求说明', 'Brief')} <span className="text-red-400">＊</span></label><textarea className={`${inputCls} min-h-[120px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣風格、參考方向、其他想法… 越清楚我們越好媒合。(稿件請填在上方「稿件」欄)', '用途、语气风格、参考方向、其他想法… 越清楚我们越好媒合。(稿件请填在上方「稿件」栏)', 'Use case, tone & style, references, any other thoughts… the clearer, the better we can match. (Put the actual script in the “Script” field above.)')} /></div>
 

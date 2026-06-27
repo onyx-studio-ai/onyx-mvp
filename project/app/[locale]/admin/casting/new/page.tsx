@@ -172,7 +172,8 @@ function NewCasting() {
       // the client's pasted script seeds the shared audition lines; their reference
       // link carries into the 參考連結 field so talents see it.
       if (bf.script_text) setAuditionScript(bf.script_text);
-      if (bf.ref_audio_url) setRefLinks((arr) => (arr.some((x) => x === bf.ref_audio_url) ? arr : [bf.ref_audio_url as string, ...arr.filter((x) => x.trim())]));
+      const clientLinks = (Array.isArray(bf.reference_links) && bf.reference_links.length ? bf.reference_links : (bf.ref_audio_url ? [bf.ref_audio_url] : [])).map((x: unknown) => String(x).trim()).filter(Boolean);
+      if (clientLinks.length) setRefLinks((arr) => { const merged = [...clientLinks, ...arr.filter((x) => x.trim() && !clientLinks.includes(x.trim()))]; return merged.length ? merged : ['']; });
       if (bf.wants_live_session) setMethods((m) => ({ ...m, online: true }));
       if (Array.isArray(bf.recording_methods) && bf.recording_methods.length) setMethods((m) => ({ ...m, ...Object.fromEntries((bf.recording_methods as string[]).map((k) => [k, true])) }));
       // Auto-import the client's uploaded role sheet (game/drama/animation), so the

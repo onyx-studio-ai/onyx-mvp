@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
           territory: b.territory || null,
           license_term: b.license_term || null,
           ref_audio_url: b.ref_audio_url || null,
+          reference_links: Array.isArray(b.reference_links) ? (b.reference_links as unknown[]).map((l) => String(l).trim()).filter((l) => /^https?:\/\//i.test(l)).slice(0, 10) : [],
           has_singing: !!b.has_singing,
           audition_deadline: b.audition_deadline || null,
           wants_director: !!b.wants_director,

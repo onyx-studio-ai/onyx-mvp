@@ -30,6 +30,7 @@ type Brief = {
   length: string | null;
   script_status: string | null;
   ref_audio_url: string | null;
+  reference_links: string[] | null;
   has_singing: boolean | null;
   wants_director: boolean | null;
   wants_live_session: boolean | null;
@@ -150,7 +151,10 @@ export default function AdminRequests() {
               {ROW('當地錄音室', b.local_studio_region)}
               {ROW('試音截止', b.audition_deadline)}
               {ROW('預計完成', b.deadline)}
-              {b.ref_audio_url && ROW('參考', <a href={b.ref_audio_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{b.ref_audio_url}</a>)}
+              {(() => {
+                const links = (b.reference_links && b.reference_links.length ? b.reference_links : (b.ref_audio_url ? [b.ref_audio_url] : [])).filter(Boolean);
+                return links.length ? ROW('參考', <span className="inline-flex flex-col gap-0.5">{links.map((l, i) => <a key={i} href={l} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{l}</a>)}</span>) : null;
+              })()}
             </div>
 
             {(b.script_text || b.script_file_url) && (
