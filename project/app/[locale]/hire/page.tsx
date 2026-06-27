@@ -160,6 +160,7 @@ const STUDIO_REGIONS: Opt3[] = [
   { v: '__other__', tw: '其他(自行填寫)', cn: '其他(自行填写)', en: 'Other (type it)' },
 ];
 const CURRENCIES = ['USD', 'TWD'];
+const BUDGET_UNITS = ['整案', '句', '字', '分鐘', '小時']; // 整案 = whole project (the common default)
 const SCRIPT_EXT = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md'];
 // Role-based content types — these get the per-character casting role sheet.
 const ROLE_TYPES = ['Game', 'Animation', 'Film / Drama'];
@@ -217,6 +218,7 @@ export default function Hire() {
   const [wantsDirector, setWantsDirector] = useState(false);
   const [wantsLiveSession, setWantsLiveSession] = useState(false);
   const [budgetType, setBudgetType] = useState('Up to');
+  const [budgetUnit, setBudgetUnit] = useState('整案'); // 計價單位 — 整案 by default
   const [liveSessionTool, setLiveSessionTool] = useState('');
   const [liveSessionOther, setLiveSessionOther] = useState('');
   const [media, setMedia] = useState('');
@@ -406,6 +408,7 @@ export default function Hire() {
           // budget carries its currency so the admin sees e.g. "Up to USD 500"
           budget: `${budgetCurrency} ${form.budget.trim()}`,
           budget_currency: budgetCurrency,
+          budget_unit: budgetUnit,
           brief: requestedTalent ? `${tx('指定配音員', '指定配音员', 'Requested talent')}: ${requestedTalent}\n\n${form.brief}` : form.brief,
           requested_talent: requestedTalent,
           requested_talent_id: requestedTalentId,
@@ -693,12 +696,16 @@ export default function Hire() {
                     <button key={o.v} type="button" onClick={() => setBudgetType(o.v)} className={pill(budgetType === o.v)}>{lbl(o)}</button>
                   ))}
                 </div>
-                <div className="grid grid-cols-[6rem_1fr] gap-2">
+                <div className="grid grid-cols-[5rem_1fr_7rem] gap-2">
                   <select className={inputCls} value={budgetCurrency} onChange={(e) => setBudgetCurrency(e.target.value)}>
                     {CURRENCIES.map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
                   </select>
                   <input type="number" min="0" className={inputCls} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('金額', '金额', 'Amount')} />
+                  <select className={inputCls} value={budgetUnit} onChange={(e) => setBudgetUnit(e.target.value)}>
+                    {BUDGET_UNITS.map((u) => <option key={u} value={u} className="bg-zinc-900">{u === '整案' ? tx('整案', '整案', 'Whole project') : tx(`每${u}`, `每${u}`, u === '句' ? 'Per line' : u === '字' ? 'Per word' : u === '分鐘' ? 'Per minute' : 'Per hour')}</option>)}
+                  </select>
                 </div>
+                <p className="text-xs text-gray-500 mt-1.5">{tx('整案 = 整個案子的總預算;也可改成每句 / 每字 / 每分鐘等計價。', '整案 = 整个案子的总预算;也可改成每句 / 每字 / 每分钟等计价。', 'Whole project = a total budget; or price per line / word / minute.')}</p>
               </div>
 
               <div>

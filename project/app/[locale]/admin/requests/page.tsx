@@ -26,6 +26,7 @@ type Brief = {
   language: string | null;
   budget: string | null;
   budget_type: string | null;
+  budget_unit: string | null;
   media_scope: string | null;
   territory: string | null;
   license_term: string | null;
@@ -165,7 +166,7 @@ export default function AdminRequests() {
               {ROW('聲音年齡', b.voice_age)}
               {ROW('配音員人數', b.voices_needed ? `${b.voices_needed}${b.voices_needed >= 3 ? '+' : ''} 位` : null)}
               {ROW('聲音性別', b.gender_needs)}
-              {ROW('預算', b.budget ? `${b.budget_type ? `${b.budget_type} ` : ''}${b.budget}` : null)}
+              {ROW('預算', b.budget ? `${b.budget_type ? `${b.budget_type} ` : ''}${b.budget}${b.budget_unit ? ` / ${b.budget_unit}` : ''}` : null)}
               {ROW('使用範圍', b.media_scope)}
               {ROW('地區', b.territory)}
               {ROW('授權', b.license_term)}

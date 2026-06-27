@@ -20,7 +20,7 @@ const input = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 t
 
 type Brief = {
   id: string; brief_number: string; kind?: string | null; title?: string | null; content_type?: string | null;
-  language?: string | null; status: string; budget?: string | null; budget_type?: string | null;
+  language?: string | null; status: string; budget?: string | null; budget_type?: string | null; budget_unit?: string | null;
   media_scope?: string | null; territory?: string | null; license_term?: string | null; length?: string | null;
   audition_deadline?: string | null; deadline?: string | null; has_singing?: boolean | null; script_status?: string | null;
   wants_director?: boolean | null; wants_live_session?: boolean | null; live_session_tool?: string | null; ref_audio_url?: string | null;
@@ -206,7 +206,7 @@ export default function ClientRequestDetail() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-1.5 text-sm">
             {row(tx('類型', '类型', 'Type'), b.content_type)}
             {row(tx('語言', '语言', 'Language'), b.language)}
-            {row(tx('預算', '预算', 'Budget'), b.budget ? `${b.budget_type ? `${b.budget_type} ` : ''}${b.budget}` : null)}
+            {row(tx('預算', '预算', 'Budget'), b.budget ? `${b.budget_type ? `${b.budget_type} ` : ''}${b.budget}${b.budget_unit ? ` / ${b.budget_unit}` : ''}` : null)}
             {row(tx('使用範圍', '使用范围', 'Usage'), b.media_scope)}
             {row(tx('地區', '地区', 'Territory'), b.territory)}
             {row(tx('授權', '授权', 'License'), b.license_term)}

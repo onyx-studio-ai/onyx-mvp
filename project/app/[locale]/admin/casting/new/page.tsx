@@ -23,7 +23,7 @@ const SITE = 'https://www.onyxstudios.ai';
 const CCYS = ['TWD', 'USD'];
 const CCY_SYM: Record<string, string> = { USD: 'US$', TWD: 'NT$', CNY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', JPY: 'JP¥', SGD: 'S$' };
 const fmtRate = (cur: string, amt: string) => `${CCY_SYM[cur] || cur + ' '}${amt.trim()}`;
-const RATE_UNITS = ['句', '字', '分鐘', '小時', '整案'];
+const RATE_UNITS = ['整案', '句', '字', '分鐘', '小時']; // 整案 first — the common default
 // dropdowns for case data — '' = 不指定(留白,前台不顯示);有值(含「不限/全媒體/全年齡」)就顯示
 const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
 const TERRITORY_OPTS = ['', '台灣', '大陸', '港澳', '全球', '北美', '東南亞', '其他'];
@@ -89,7 +89,7 @@ function NewCasting() {
   const [brief, setBrief] = useState('');
   const [rateCur, setRateCur] = useState('TWD');
   const [rateAmt, setRateAmt] = useState('');
-  const [rateUnit, setRateUnit] = useState('句');
+  const [rateUnit, setRateUnit] = useState('整案');
   // Voices-style data fields (most reuse existing brief columns)
   const [scale, setScale] = useState('');        // length: 句數/字數/秒數/時數
   const [deadline, setDeadline] = useState('');  // delivery deadline (vs audition)
@@ -170,6 +170,7 @@ function NewCasting() {
         const cur = /USD|TWD/i.exec(String(bf.budget)); if (cur) setRateCur(cur[0].toUpperCase());
         const amt = String(bf.budget).replace(/[^\d.]/g, ''); if (amt) setRateAmt(amt);
       }
+      if (bf.budget_unit && RATE_UNITS.includes(bf.budget_unit)) setRateUnit(bf.budget_unit);
       // the client's pasted script seeds the shared audition lines; their reference
       // link carries into the 參考連結 field so talents see it.
       if (bf.script_text) setAuditionScript(bf.script_text);
@@ -300,7 +301,7 @@ function NewCasting() {
   }
   // assemble the rate note from the structured currency/amount inputs (both optional)
   function buildRateNote() {
-    return rateAmt.trim() ? `${fmtRate(rateCur, rateAmt)} / ${rateUnit}` : '';
+    return rateAmt.trim() ? (rateUnit === '整案' ? `${fmtRate(rateCur, rateAmt)} · 整案` : `${fmtRate(rateCur, rateAmt)} / ${rateUnit}`) : '';
   }
   function goPreview() {
     setErr('');
@@ -626,7 +627,7 @@ function NewCasting() {
             <input type="number" min="0" className={input} value={rateAmt} onChange={(e) => setRateAmt(e.target.value)} placeholder="金額" />
             <span className="text-gray-500 text-sm">/</span>
             <select className={`${input} w-28`} value={rateUnit} onChange={(e) => setRateUnit(e.target.value)}>
-              {RATE_UNITS.map((u) => <option key={u} value={u}>每{u}</option>)}
+              {RATE_UNITS.map((u) => <option key={u} value={u}>{u === '整案' ? '整案' : `每${u}`}</option>)}
             </select>
           </div>
         </Field>
