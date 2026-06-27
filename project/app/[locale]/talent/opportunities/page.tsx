@@ -14,9 +14,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { Briefcase, CheckCircle2, Archive } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
+import { StatModule, EntityCard, InfoPills } from '@/components/dashboard/cards';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 const CURRENCIES = ['USD', 'TWD'];
@@ -237,30 +239,44 @@ export default function Opportunities() {
 
   return shell(
     <>
-      <div className="flex items-center justify-end mb-6">
-        <Link href="/talent" className="text-xs text-gray-400 hover:text-white transition">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
+      <div className="flex items-start justify-between gap-3 mb-8">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-medium">{tx('配音員入口', '配音员入口', 'Talent portal')}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{tx('案件機會', '案件机会', 'Opportunities')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{tx('開放中的試音案、您接到的案件與應徵紀錄。', '开放中的试音案、您接到的案件与应征记录。', 'Open auditions, jobs you won, and your audition history.')}</p>
+        </div>
+        <Link href="/talent" className="text-xs text-gray-400 hover:text-white transition whitespace-nowrap shrink-0 pt-1">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        <StatModule icon={Briefcase} label={tx('開放中', '开放中', 'Open')} value={briefs.length} />
+        <StatModule icon={CheckCircle2} label={tx('我接到的', '我接到的', 'Won')} value={wonBriefs.length} />
+        <StatModule icon={Archive} label={tx('已結束', '已结束', 'Ended')} value={endedBriefs.length} />
       </div>
 
       {wonBriefs.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-sm font-semibold text-[#6FCF97] mb-2">{tx('✓ 我接到的案件', '✓ 我接到的案件', '✓ Jobs I won')}</h2>
-          <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-[#6FCF97] mb-3">{tx('✓ 我接到的案件', '✓ 我接到的案件', '✓ Jobs I won')}</h2>
+          <div className="grid grid-cols-1 gap-4">
             {wonBriefs.map((w) => {
               const myAccepted = quotes.filter((q) => q.brief_id === w.id && q.status === 'accepted');
               return (
-                <div key={w.id} className="bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-xl px-4 py-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-white truncate">{w.title || w.content_type || tx('配音案', '配音案', 'Voice case')}</span>
-                    <span className="text-[11px] text-[#6FCF97] whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>
-                  </div>
+                <EntityCard
+                  key={w.id}
+                  icon={CheckCircle2}
+                  accent="green"
+                  code={w.brief_number}
+                  title={w.title || w.content_type || tx('配音案', '配音案', 'Voice case')}
+                  badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-green-500/15 text-green-200 border-green-500/30 whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>}
+                >
                   {myAccepted.map((q) => (
-                    <div key={q.id} className="mt-1.5">
-                      <div className="text-xs text-gray-400">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} {q.currency} {q.net_amount}</div>
+                    <div key={q.id} className="mb-2">
+                      <div className="text-xs text-gray-400 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
                       <DeliveryUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
                     </div>
                   ))}
-                  <p className="text-[11px] text-gray-500 mt-2">{tx('Onyx 會與您聯繫正式錄製的稿件與交付時程;完成後可在此上傳最終音檔。', 'Onyx 会与您联系正式录制的稿件与交付时程;完成后可在此上传最终音档。', 'Onyx will be in touch with the final script and schedule; upload your finished audio here.')}</p>
-                </div>
+                  <p className="text-[11px] text-gray-500 mt-1">{tx('Onyx 會與您聯繫正式錄製的稿件與交付時程;完成後可在此上傳最終音檔。', 'Onyx 会与您联系正式录制的稿件与交付时程;完成后可在此上传最终音档。', 'Onyx will be in touch with the final script and schedule; upload your finished audio here.')}</p>
+                </EntityCard>
               );
             })}
           </div>
@@ -269,8 +285,8 @@ export default function Opportunities() {
 
       {endedBriefs.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-400 mb-2">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
-          <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-gray-400 mb-3">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {endedBriefs.map((e) => {
               const label = e.status === 'cancelled'
                 ? tx('此案已取消', '此案已取消', 'Cancelled')
@@ -278,14 +294,22 @@ export default function Opportunities() {
                   ? tx('已選定其他配音員', '已选定其他配音员', 'Another talent was chosen')
                   : tx('此案已結束', '此案已结束', 'Closed');
               return (
-                <div key={e.id} className="bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-2.5 flex items-center justify-between gap-2">
-                  <span className="text-sm text-gray-400 truncate">{e.title || e.content_type || tx('配音案', '配音案', 'Voice case')}</span>
-                  <span className="text-[11px] text-gray-500 whitespace-nowrap">{label}</span>
-                </div>
+                <EntityCard
+                  key={e.id}
+                  icon={Archive}
+                  accent="gray"
+                  code={e.brief_number}
+                  title={<span className="text-gray-300">{e.title || e.content_type || tx('配音案', '配音案', 'Voice case')}</span>}
+                  badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-white/10 text-gray-400 border-white/15 whitespace-nowrap">{label}</span>}
+                />
               );
             })}
           </div>
         </div>
+      )}
+
+      {briefs.length > 0 && (wonBriefs.length > 0 || endedBriefs.length > 0) && (
+        <h2 className="text-sm font-semibold text-white mb-3">{tx('開放中的案件', '开放中的案件', 'Open cases')}</h2>
       )}
 
       {briefs.length === 0 && wonBriefs.length === 0 && endedBriefs.length === 0 && (
@@ -368,7 +392,7 @@ function BriefCard({
   }
 
   return (
-    <div className={`bg-white/[0.02] border rounded-2xl overflow-hidden transition ${open ? 'border-white/15' : 'border-white/10 hover:border-white/20'}`}>
+    <div className={`bg-white/[0.03] backdrop-blur-sm border rounded-xl overflow-hidden transition ${open ? 'border-white/15' : 'border-white/[0.06] hover:border-white/[0.12]'}`}>
       <CaseHeader brief={brief} isCasting={isCasting} roleCount={(brief.roles || []).length} hasMine={myQuotes.length > 0} open={open} onToggle={() => setOpen((o) => !o)} tx={tx} />
 
       {open && (
@@ -563,7 +587,8 @@ function CaseHeader({
   const cat = brief.content_type || (brief.categories || [])[0];
   return (
     <button onClick={onToggle} className="w-full text-left px-5 py-4 hover:bg-white/[0.02] transition">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
+        <div className="p-2.5 rounded-lg border mt-0.5 shrink-0 bg-amber-500/10 border-amber-500/20"><Briefcase className="w-4 h-4 text-amber-400" /></div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
             <span className="text-xs text-gray-500 font-mono">{isCasting ? caseCode(brief) : brief.brief_number}</span>
