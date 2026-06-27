@@ -504,7 +504,7 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ talentId: rejectTarget.id, reason: rejectReason }),
       });
       const data = await res.json();
-      if (res.ok && data.success) { toast.success('已寄出「需調整」通知 ✓'); setRejectTarget(null); setRejectReason(''); }
+      if (res.ok && data.success) { toast.success('已退回並寄出通知 ✓ 已移出待審,等對方重新送出'); setRejectTarget(null); setRejectReason(''); fetchTalents(); }
       else toast.error(data.error || 'Send failed');
     } catch { toast.error('Send failed'); }
     finally { setRejecting(false); }

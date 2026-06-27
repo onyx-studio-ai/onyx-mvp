@@ -5,9 +5,11 @@ import { sendEmail } from '@/lib/mail';
 import { talentReviewEmail } from '@/lib/mail-templates';
 
 /*
-  Admin "changes requested": email the talent what to fix and leave them PENDING
-  (not published). Does NOT touch the public snapshot — their last approved
-  version (if any) stays live; a never-published talent stays off the roster.
+  Admin "changes requested": email the talent what to fix, then clear
+  pending_review so they LEAVE the review queue (they re-enter only when they fix
+  things and submit again). Does NOT touch the public snapshot — a previously
+  approved talent stays live (their pending edit is simply set aside, profile back
+  to Active); a never-published talent drops back to 草稿中 (off the roster).
   Fired by the admin's own click, so the notification is transactional.
 */
 
@@ -37,6 +39,10 @@ export async function POST(request: NextRequest) {
     });
     const r = await sendEmail({ category: 'HELLO', to: t.email, subject, html });
     if (!r?.success) return NextResponse.json({ error: 'Could not send the email' }, { status: 502 });
+
+    // Drop them out of the review queue — they re-enter only by submitting again.
+    // (Email sent first, so a send failure never silently removes them.)
+    await db.from('talents').update({ pending_review: false, updated_at: new Date().toISOString() }).eq('id', talentId);
 
     return NextResponse.json({ success: true });
   } catch (err) {
