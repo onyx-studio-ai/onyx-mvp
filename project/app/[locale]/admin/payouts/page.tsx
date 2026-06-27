@@ -504,7 +504,7 @@ export default function PayoutsPage() {
   );
 
   return (
-    <div className="p-6 md:p-10 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           {view === 'talent' && activeTalent ? (
@@ -512,7 +512,7 @@ export default function PayoutsPage() {
               <button onClick={backToSummary} className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm mb-2 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Back to Summary
               </button>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                 <User className="w-7 h-7 text-emerald-700" />
                 {activeTalent.name}
               </h1>
@@ -520,7 +520,7 @@ export default function PayoutsPage() {
             </div>
           ) : (
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                 <DollarSign className="w-7 h-7 text-emerald-700" />
                 Talent Payouts
               </h1>

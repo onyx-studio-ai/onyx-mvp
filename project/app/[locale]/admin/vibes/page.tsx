@@ -250,10 +250,10 @@ export default function AdminVibesPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 text-gray-900">
+    <div className="p-6 lg:p-8 text-gray-900">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Music className="w-6 h-6 text-cyan-700" />
             Vibes Management
           </h1>

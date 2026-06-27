@@ -135,7 +135,7 @@ export default function AdminCertificatesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Award className="w-6 h-6 text-green-700" />
             {ui.pageTitle}
           </h1>
