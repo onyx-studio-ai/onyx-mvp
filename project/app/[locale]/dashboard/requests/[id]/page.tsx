@@ -35,6 +35,8 @@ export default function ClientRequestDetail() {
 
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [b, setB] = useState<Brief | null>(null);
+  const [auditions, setAuditions] = useState<{ id: string; label: string; role_name: string | null; sample_url: string | null; currency: string; client_pays: number; intro: string | null; status: string }[]>([]);
+  const [picking, setPicking] = useState('');
   const [token, setToken] = useState('');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -66,9 +68,21 @@ export default function ClientRequestDetail() {
     if (!res.ok) { setPhase('notfound'); return; }
     const j = await res.json().catch(() => ({}));
     if (!j.brief) { setPhase('notfound'); return; }
-    setB(j.brief); hydrate(j.brief); setPhase('ready');
+    setB(j.brief); hydrate(j.brief); setAuditions(j.auditions || []); setPhase('ready');
   }, [id]);
   useEffect(() => { load(); }, [load]);
+
+  async function pick(quoteId: string) {
+    setMsg('');
+    if (!confirm(tx('確定選這位配音員?選定後我們會與您確認付款並開始製作。', '确定选这位配音员?选定后我们会与您确认付款并开始制作。', 'Choose this talent? We’ll confirm payment and start production.'))) return;
+    setPicking(quoteId);
+    try {
+      const res = await fetch(`/api/client/requests/${id}/select`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: quoteId }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg(j.error || tx('選定失敗', '选定失败', 'Failed')); return; }
+      load();
+    } finally { setPicking(''); }
+  }
 
   async function save() {
     setMsg(''); setSaving(true);
@@ -158,6 +172,34 @@ export default function ClientRequestDetail() {
           </div>
           {msg && <p className="text-xs text-amber-300 mt-3">{msg}</p>}
           {canEdit && <button onClick={() => setEditing(true)} className="mt-4 bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg px-5 py-2 text-sm">{tx('編輯需求', '编辑需求', 'Edit request')}</button>}
+        </div>
+      )}
+
+      {auditions.length > 0 && (
+        <div className="mt-6 bg-white/[0.02] border border-white/10 rounded-2xl p-5">
+          <h2 className="text-sm font-semibold mb-1">{tx('試音 · 請挑選配音員', '试音 · 请挑选配音员', 'Auditions · pick a voice')}</h2>
+          <p className="text-xs text-gray-500 mb-3">{tx('聽每位的試音,選一位開始製作。選定後我們會與您確認付款。', '听每位的试音,选一位开始制作。选定后我们会与您确认付款。', 'Listen to each audition and pick one to start. We’ll confirm payment after you choose.')}</p>
+          <div className="space-y-3">
+            {auditions.map((a) => {
+              const won = a.status === 'accepted';
+              return (
+                <div key={a.id} className={`rounded-xl px-4 py-3 border ${won ? 'border-[#6FCF97]/40 bg-[#6FCF97]/[0.06]' : 'border-white/10 bg-white/[0.02]'}`}>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-sm font-medium text-white">{tx('配音員', '配音员', 'Voice')} {a.label}{a.role_name ? ` · ${a.role_name}` : ''}</span>
+                    <span className="text-xs text-gray-400">{a.currency} {a.client_pays?.toLocaleString?.() ?? a.client_pays}</span>
+                  </div>
+                  {a.intro && <p className="text-xs text-gray-400 mb-2 whitespace-pre-wrap">{a.intro}</p>}
+                  {a.sample_url && <audio controls src={a.sample_url} className="w-full h-9 mb-2" />}
+                  {won ? (
+                    <span className="text-xs text-[#6FCF97]">✓ {tx('已選定 · 製作中', '已选定 · 制作中', 'Selected · in production')}</span>
+                  ) : b.status === 'open' ? (
+                    <button onClick={() => pick(a.id)} disabled={!!picking} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{picking === a.id ? tx('處理中…', '处理中…', '…') : tx('選這位', '选这位', 'Choose')}</button>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          {msg && <p className="text-xs text-amber-300 mt-2">{msg}</p>}
         </div>
       )}
 

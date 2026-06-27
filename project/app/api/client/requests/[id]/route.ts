@@ -25,7 +25,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const r = await ownerBrief(request, id);
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
-  return NextResponse.json({ brief: r.brief });
+  // The auditions the client reviews + picks from. Talent identity is NOT exposed
+  // (anonymous labels — Onyx mediates); client sees the demo, the price THEY pay,
+  // the self-intro and which one they've picked.
+  const { data: q } = await r.db.from('marketplace_quotes')
+    .select('id, role_name, sample_url, gross_amount, currency, intro, message, status, created_at')
+    .eq('brief_id', id)
+    .in('status', ['submitted', 'shortlisted', 'accepted'])
+    .order('created_at', { ascending: true });
+  const auditions = (q || []).map((x, i) => ({
+    id: x.id as string,
+    label: `${String.fromCharCode(65 + (i % 26))}`,
+    role_name: (x.role_name as string) || null,
+    sample_url: (x.sample_url as string) || null,
+    currency: (x.currency as string) || 'USD',
+    client_pays: x.gross_amount as number,
+    intro: (x.intro as string) || (x.message as string) || null,
+    status: x.status as string,
+  }));
+  return NextResponse.json({ brief: r.brief, auditions });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
