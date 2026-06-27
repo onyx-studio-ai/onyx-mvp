@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
           budget_type: b.budget_type || null,
           language: b.language || null,
           accent: (typeof b.accent === 'string' && b.accent.trim()) ? b.accent.trim().slice(0, 120) : null,
+          voice_style: (typeof b.voice_style === 'string' && b.voice_style.trim()) ? b.voice_style.trim().slice(0, 120) : null,
+          voice_age: (typeof b.voice_age === 'string' && b.voice_age.trim()) ? b.voice_age.trim().slice(0, 120) : null,
           length: b.length || null,
           voices_needed: Number.isFinite(parseInt(String(b.voices_needed), 10)) ? parseInt(String(b.voices_needed), 10) : null,
           gender_needs: (typeof b.gender_needs === 'string' && b.gender_needs.trim()) ? b.gender_needs.trim().slice(0, 120) : null,

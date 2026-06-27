@@ -159,13 +159,20 @@ function NewCasting() {
       if (bf.territory) setTerritory(bf.territory);
       if (bf.license_term) setLicenseTerm(bf.license_term);
       if (bf.accent) setAccent(bf.accent);
+      if (bf.voice_style) setVoiceStyle(bf.voice_style);
+      if (bf.voice_age) setVoiceAge(bf.voice_age);
       if (bf.length) setScale(bf.length);
       if (bf.deadline) setDeadline(bf.deadline);
       if (bf.audition_deadline) setAuditionDeadline(bf.audition_deadline);
+      // client budget → seed the 報酬 (currency + amount) as a starting point Onyx can adjust.
+      if (bf.budget) {
+        const cur = /USD|TWD/i.exec(String(bf.budget)); if (cur) setRateCur(cur[0].toUpperCase());
+        const amt = String(bf.budget).replace(/[^\d.]/g, ''); if (amt) setRateAmt(amt);
+      }
       // the client's pasted script seeds the shared audition lines; their reference
-      // link carries into the case's reference list so talents see it.
+      // link carries into the 參考連結 field so talents see it.
       if (bf.script_text) setAuditionScript(bf.script_text);
-      if (bf.ref_audio_url) setRefFiles((f) => (f.some((x) => x.url === bf.ref_audio_url) ? f : [...f, { name: '客戶參考', url: bf.ref_audio_url }]));
+      if (bf.ref_audio_url) setRefLinks((arr) => (arr.some((x) => x === bf.ref_audio_url) ? arr : [bf.ref_audio_url as string, ...arr.filter((x) => x.trim())]));
       if (bf.wants_live_session) setMethods((m) => ({ ...m, online: true }));
       if (Array.isArray(bf.recording_methods) && bf.recording_methods.length) setMethods((m) => ({ ...m, ...Object.fromEntries((bf.recording_methods as string[]).map((k) => [k, true])) }));
       // Auto-import the client's uploaded role sheet (game/drama/animation), so the
@@ -651,8 +658,8 @@ function NewCasting() {
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Field label="口音"><select className={input} value={accent} onChange={(e) => setAccent(e.target.value)}>{optsWith(ACCENT_OPTS, accent).map(optEl)}</select></Field>
-          <Field label="聲音風格"><select className={input} value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)}>{STYLE_OPTS.map(optEl)}</select></Field>
-          <Field label="聲音年齡"><select className={input} value={voiceAge} onChange={(e) => setVoiceAge(e.target.value)}>{AGE_OPTS.map(optEl)}</select></Field>
+          <Field label="聲音風格"><select className={input} value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)}>{optsWith(STYLE_OPTS, voiceStyle).map(optEl)}</select></Field>
+          <Field label="聲音年齡"><select className={input} value={voiceAge} onChange={(e) => setVoiceAge(e.target.value)}>{optsWith(AGE_OPTS, voiceAge).map(optEl)}</select></Field>
         </div>
 
         {mode === 'roles' && <>

@@ -39,6 +39,8 @@ type Brief = {
   brief: string;
   requested_talent: string | null;
   accent: string | null;
+  voice_style: string | null;
+  voice_age: string | null;
   voices_needed: number | null;
   gender_needs: string | null;
   script_text: string | null;
@@ -136,6 +138,8 @@ export default function AdminRequests() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-1.5 text-sm mb-3">
               {ROW('語言', b.language)}
               {ROW('口音', b.accent)}
+              {ROW('聲音風格', b.voice_style)}
+              {ROW('聲音年齡', b.voice_age)}
               {ROW('配音員人數', b.voices_needed ? `${b.voices_needed}${b.voices_needed >= 3 ? '+' : ''} 位` : null)}
               {ROW('聲音性別', b.gender_needs)}
               {ROW('預算', b.budget ? `${b.budget_type ? `${b.budget_type} ` : ''}${b.budget}` : null)}

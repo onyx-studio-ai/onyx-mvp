@@ -122,6 +122,22 @@ const ACCENTS: Opt3[] = [
   { v: 'Singapore', tw: '新加坡', cn: '新加坡', en: 'Singaporean' },
   { v: 'Canadian', tw: '加拿大', cn: '加拿大', en: 'Canadian' },
 ];
+// Voice style + age — optional on /hire; carry into the casting form for the record.
+const VOICE_STYLES: Opt3[] = [
+  { v: '對話自然', tw: '對話自然', cn: '对话自然', en: 'Natural / conversational' },
+  { v: '旁白沉穩', tw: '旁白沉穩', cn: '旁白沉稳', en: 'Calm narration' },
+  { v: '權威正式', tw: '權威 / 正式', cn: '权威 / 正式', en: 'Authoritative / formal' },
+  { v: '溫暖', tw: '溫暖', cn: '温暖', en: 'Warm' },
+  { v: '活潑年輕', tw: '活潑 / 年輕', cn: '活泼 / 年轻', en: 'Lively / youthful' },
+  { v: '角色演繹', tw: '角色演繹', cn: '角色演绎', en: 'Character acting' },
+];
+const VOICE_AGES: Opt3[] = [
+  { v: '兒童', tw: '兒童', cn: '儿童', en: 'Child' },
+  { v: '青少年', tw: '青少年', cn: '青少年', en: 'Teen' },
+  { v: '青年', tw: '青年', cn: '青年', en: 'Young adult' },
+  { v: '中年', tw: '中年', cn: '中年', en: 'Middle-aged' },
+  { v: '熟齡', tw: '熟齡', cn: '熟龄', en: 'Senior' },
+];
 // Voice headcount by gender — "how many male / how many female". 0 = none of that gender.
 const VOICE_COUNTS: Opt3[] = [
   { v: '0', tw: '0 位', cn: '0 位', en: '0' },
@@ -188,6 +204,8 @@ export default function Hire() {
   const comboOpts = (list: Opt3[]) => list.map((o) => ({ label: lbl3(o), search: `${o.tw} ${o.cn} ${o.en}`.toLowerCase() }));
   const langOpts = comboOpts(LANGUAGES);
   const accentOpts = comboOpts(ACCENTS);
+  const styleOpts = comboOpts(VOICE_STYLES);
+  const ageOpts = comboOpts(VOICE_AGES);
   const localePath = (p: string) => (locale === 'en' ? p : `/${locale}${p}`);
 
   const [form, setForm] = useState({ title: '', name: '', company: '', email: '', budget: '', deadline: '', auditionDeadline: '', refUrl: '', brief: '' });
@@ -208,6 +226,8 @@ export default function Hire() {
   // language + accent — searchable free-text combos
   const [language, setLanguage] = useState('');
   const [accent, setAccent] = useState('');
+  const [voiceStyle, setVoiceStyle] = useState('');
+  const [voiceAge, setVoiceAge] = useState('');
   // length: by time (h/m/s, compound) or by word count
   const [lengthMode, setLengthMode] = useState<'time' | 'words'>('time');
   const [lenH, setLenH] = useState('');
@@ -376,6 +396,8 @@ export default function Hire() {
           title: form.title,
           language: resolvedLanguage,
           accent: resolvedAccent,
+          voice_style: voiceStyle.trim(),
+          voice_age: voiceAge.trim(),
           length: resolvedLength,
           voices_needed: resolvedVoices,
           gender_needs: resolvedGender,
@@ -515,6 +537,18 @@ export default function Hire() {
                 <div>
                   <label className="block text-sm font-semibold mb-2">{tx('口音', '口音', 'Accent')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
                   <Combo value={accent} onChange={setAccent} options={accentOpts} placeholder={tx('搜尋或輸入口音(可留空)', '搜索或输入口音(可留空)', 'Search or type an accent (optional)')} />
+                </div>
+              </div>
+
+              {/* Voice style + age — optional; help us match the right voice */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">{tx('聲音風格', '声音风格', 'Voice style')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
+                  <Combo value={voiceStyle} onChange={setVoiceStyle} options={styleOpts} placeholder={tx('搜尋或輸入風格(可留空)', '搜索或输入风格(可留空)', 'Search or type a style (optional)')} />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">{tx('聲音年齡', '声音年龄', 'Voice age')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
+                  <Combo value={voiceAge} onChange={setVoiceAge} options={ageOpts} placeholder={tx('搜尋或輸入年齡感(可留空)', '搜索或输入年龄感(可留空)', 'Search or type an age (optional)')} />
                 </div>
               </div>
 
