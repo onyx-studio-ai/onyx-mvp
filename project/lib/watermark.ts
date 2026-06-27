@@ -17,9 +17,33 @@ function floatToInt16(f32: Float32Array): Int16Array {
   return i16;
 }
 
+// Minimal ID3v2.3 tag (TIT2 title + TPE1 artist) so the downloaded MP3's embedded
+// title/artist reads as the platform, not the talent's original tag (re-encoding
+// already strips the source's ID3 + the supabase "where-from" URL). UTF-16 so CJK
+// names survive.
+function id3v2(title: string, artist: string): Uint8Array {
+  const utf16 = (s: string) => {
+    const out = [0x01, 0xff, 0xfe]; // encoding=UTF-16, BOM little-endian
+    for (const ch of s) { const c = ch.charCodeAt(0); out.push(c & 0xff, (c >> 8) & 0xff); }
+    out.push(0, 0); // null terminator
+    return out;
+  };
+  const frame = (id: string, body: number[]) => {
+    const size = body.length;
+    return [...id.split('').map((c) => c.charCodeAt(0)),
+      (size >> 24) & 0xff, (size >> 16) & 0xff, (size >> 8) & 0xff, size & 0xff, // v2.3: regular 4-byte size
+      0, 0, ...body];
+  };
+  const frames = [...frame('TIT2', utf16(title)), ...frame('TPE1', utf16(artist))];
+  const sz = frames.length;
+  const synch = [(sz >> 21) & 0x7f, (sz >> 14) & 0x7f, (sz >> 7) & 0x7f, sz & 0x7f];
+  return new Uint8Array([0x49, 0x44, 0x33, 0x03, 0x00, 0x00, ...synch, ...frames]); // "ID3" v2.3
+}
+
 /** Mix the Onyx watermark over `srcUrl` and trigger a download. Throws on failure
- *  so the caller can surface an error (never silently hands over the raw file). */
-export async function downloadWatermarked(srcUrl: string, filename: string): Promise<void> {
+ *  so the caller can surface an error (never silently hands over the raw file).
+ *  `filename` is used as-is (sanitized); `artist` (e.g. the talent) goes in ID3. */
+export async function downloadWatermarked(srcUrl: string, filename: string, artist = ''): Promise<void> {
   const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   if (!AC) throw new Error('Audio not supported in this browser');
   const ctx = new AC();
@@ -63,12 +87,16 @@ export async function downloadWatermarked(srcUrl: string, filename: string): Pro
   const tail = enc.flush();
   if (tail.length) out.push(tail);
 
-  const blob = new Blob(out as BlobPart[], { type: 'audio/mpeg' });
+  // Prepend an ID3 tag so the embedded title reads as the platform (re-encoding
+  // already dropped the talent's original tag).
+  const tag = id3v2('Onyx Studios', artist || 'Onyx Studios');
+  const blob = new Blob([tag, ...out] as BlobPart[], { type: 'audio/mpeg' });
   if (!blob.size) throw new Error('Encoding failed');
+  const safe = (filename || 'onyx').replace(/\.[^./]+$/, '').replace(/[^\w.\-]+/g, '_').replace(/^_+|_+$/g, '') || 'onyx';
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename.replace(/\.[^./]+$/, '') + '_onyx.mp3';
+  a.download = `${safe}.mp3`;
   document.body.appendChild(a);
   a.click();
   a.remove();

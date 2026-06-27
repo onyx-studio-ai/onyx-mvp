@@ -15,6 +15,28 @@ import { ArrowLeft, MessageSquare, MapPin, Mic2 } from 'lucide-react';
 import { traitLabel, useCaseLabel, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, formatLangEntry, countryLabel, availabilityLabel, voiceAgeLabel, turnaroundLabel, type DemoItem } from '@/lib/talent-taxonomy';
 import { cjkSpace } from '@/lib/cjk-space';
 import { pickLocale } from '@/lib/i18n-pick';
+import { downloadWatermarked } from '@/lib/watermark';
+
+// Demo row: stream freely (no watermark) but any DOWNLOAD goes through the
+// watermarker — Onyx-branded filename + ID3 + a periodic spoken tag — and the
+// native download menu is disabled so the raw file can't be grabbed.
+function DemoPlayer({ url, label, talent }: { url: string; label: string; talent: string }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(false);
+  async function dl() {
+    setErr(false); setBusy(true);
+    try { await downloadWatermarked(url, `OnyxStudios_${talent}_${label}`, talent); }
+    catch { setErr(true); } finally { setBusy(false); }
+  }
+  return (
+    <>
+      <audio controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} src={url} className="h-8 flex-1 min-w-0" />
+      <button onClick={dl} disabled={busy} title="下載(含浮水印)" className="text-xs text-gray-500 hover:text-amber-300 disabled:opacity-50 shrink-0 whitespace-nowrap">
+        {busy ? '…' : err ? '✕' : '⬇'}
+      </button>
+    </>
+  );
+}
 
 interface Talent {
   id: string;
@@ -240,7 +262,7 @@ export default function TalentProfile() {
                         <div key={d.url || i} className="flex items-center gap-3 bg-zinc-900/50 rounded-lg px-3 py-2">
                           <span className="text-sm text-gray-200 w-36 sm:w-44 truncate shrink-0">{cjkSpace(pickLocale(d.name, locale)) || `${useCaseLabel(c.key, locale)} ${i + 1}`}</span>
                           {d.language && <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 shrink-0 whitespace-nowrap">{formatLangEntry(d.language, locale)}</span>}
-                          <audio controls src={d.url} className="h-8 flex-1 min-w-0" />
+                          <DemoPlayer url={d.url} label={(pickLocale(d.name, locale) || `${useCaseLabel(c.key, locale)}_${i + 1}`)} talent={displayName} />
                         </div>
                       ))}
                     </div>
@@ -257,7 +279,7 @@ export default function TalentProfile() {
                   {flatDemos.map((d, i) => (
                     <div key={i} className="flex items-center gap-3 bg-zinc-900/50 rounded-lg px-3 py-2">
                       <span className="text-sm text-gray-200 w-36 sm:w-44 truncate shrink-0">{('name' in d && d.name) || ('label' in d && d.label) || `${tx('試聽', '试听', 'Demo')} ${i + 1}`}</span>
-                      <audio controls src={d.url} className="h-8 flex-1 min-w-0" />
+                      <DemoPlayer url={d.url} label={String(('name' in d && d.name) || ('label' in d && d.label) || `demo_${i + 1}`)} talent={displayName} />
                     </div>
                   ))}
                 </div>
