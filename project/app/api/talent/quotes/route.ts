@@ -92,6 +92,26 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
     const id = String(body.id || '');
+
+    // Re-audition: the client asked this talent to re-record. They replace their
+    // sample; that clears the request. Only their own quote with a pending request.
+    if (body.sample_url && !body.delivery_url) {
+      const sampleUrl = String(body.sample_url).slice(0, 1000);
+      if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+      if (!/^https?:\/\//i.test(sampleUrl)) return NextResponse.json({ error: 'invalid sample_url' }, { status: 400 });
+      const { data, error } = await r.db
+        .from('marketplace_quotes')
+        .update({ sample_url: sampleUrl, reaudition_note: null, reaudition_requested_at: null, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('talent_id', talent.id)
+        .not('reaudition_requested_at', 'is', null)
+        .select('id, brief_id, sample_url')
+        .maybeSingle();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (!data) return NextResponse.json({ error: '找不到待重錄的試音' }, { status: 400 });
+      return NextResponse.json({ quote: data });
+    }
+
     const deliveryUrl = String(body.delivery_url || '').slice(0, 1000);
     if (!id || !deliveryUrl) return NextResponse.json({ error: 'id and delivery_url are required' }, { status: 400 });
     if (!/^https?:\/\//i.test(deliveryUrl)) return NextResponse.json({ error: 'invalid delivery_url' }, { status: 400 });

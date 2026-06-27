@@ -12,6 +12,7 @@ import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
+import { downloadWatermarked } from '@/lib/watermark';
 
 const CURRENCIES = ['USD', 'TWD'];
 const LANGS = ['中文 · 台灣國語', '中文 · 大陸普通話', '粵語 · 香港', '台語 · 台灣閩南語', '英文 · 美式', '英文 · 英式', '日語', '韓語', '其他'];
@@ -37,12 +38,16 @@ export default function ClientRequestDetail() {
 
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [b, setB] = useState<Brief | null>(null);
-  const [auditions, setAuditions] = useState<{ id: string; label: string; role_name: string | null; sample_url: string | null; currency: string; client_pays: number; intro: string | null; status: string }[]>([]);
+  const [auditions, setAuditions] = useState<{ id: string; label: string; role_name: string | null; sample_url: string | null; currency: string; client_pays: number; intro: string | null; status: string; reaudition_requested?: boolean }[]>([]);
   const [order, setOrder] = useState<Order | null>(null);
   const [selected, setSelected] = useState(''); // quote_id whose confirm form is open
   const [finalScript, setFinalScript] = useState('');
   const [delivery, setDelivery] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [reauditTarget, setReauditTarget] = useState(''); // quote_id whose 二次試音 form is open
+  const [reauditNote, setReauditNote] = useState('');
+  const [reauditing, setReauditing] = useState(false);
+  const [dl, setDl] = useState(''); // quote_id currently downloading (watermark)
   const [token, setToken] = useState('');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -94,6 +99,27 @@ export default function ClientRequestDetail() {
       if (!res.ok) { setMsg(j.error || tx('選定失敗', '选定失败', 'Failed')); return; }
       setSelected(''); load();
     } finally { setSubmitting(false); }
+  }
+
+  // Download a demo with the spoken "Onyx Studios" watermark mixed in.
+  async function download(a: { id: string; label: string; sample_url: string | null }) {
+    if (!a.sample_url) return;
+    setMsg(''); setDl(a.id);
+    try {
+      await downloadWatermarked(a.sample_url, `audition_${a.label}`);
+    } catch { setMsg(tx('下載失敗,請稍後再試。', '下载失败,请稍后再试。', 'Download failed, please try again.')); }
+    finally { setDl(''); }
+  }
+
+  // Ask a talent for a second take.
+  async function submitReaudit() {
+    setMsg(''); setReauditing(true);
+    try {
+      const res = await fetch(`/api/client/requests/${id}/reaudition`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: reauditTarget, note: reauditNote.trim() }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg(j.error || tx('送出失敗', '送出失败', 'Failed')); return; }
+      setReauditTarget(''); setReauditNote(''); setMsg(tx('已請對方重錄,我們會通知他 ✓', '已请对方重录,我们会通知他 ✓', 'Re-record requested — we’ll notify them ✓')); load();
+    } finally { setReauditing(false); }
   }
 
   async function save() {
@@ -213,9 +239,23 @@ export default function ClientRequestDetail() {
                     <span className="text-xs text-gray-400">{a.currency} {a.client_pays?.toLocaleString?.() ?? a.client_pays}</span>
                   </div>
                   {a.intro && <p className="text-xs text-gray-400 mb-2 whitespace-pre-wrap">{a.intro}</p>}
-                  {a.sample_url && <audio controls src={a.sample_url} className="w-full h-9 mb-2" />}
+                  {a.sample_url && <audio controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} src={a.sample_url} className="w-full h-9 mb-2" />}
+                  {a.sample_url && (
+                    <button onClick={() => download(a)} disabled={dl === a.id} className="text-xs text-gray-400 hover:text-white disabled:opacity-50 mb-2 inline-flex items-center gap-1">
+                      {dl === a.id ? tx('處理中…', '处理中…', 'Processing…') : tx('⬇ 下載試聽(含浮水印)', '⬇ 下载试听(含浮水印)', '⬇ Download (watermarked)')}
+                    </button>
+                  )}
                   {won ? (
                     <span className="text-xs text-[#6FCF97]">✓ {tx('已選定 · 製作中', '已选定 · 制作中', 'Selected · in production')}</span>
+                  ) : b.status === 'open' && reauditTarget === a.id ? (
+                    <div className="mt-1 space-y-2 border-t border-white/10 pt-3">
+                      <p className="text-xs text-gray-400">{tx('想再聽一個版本?寫下方向(可留白),我們會請這位配音員重錄一段。', '想再听一个版本?写下方向(可留白),我们会请这位配音员重录一段。', 'Want another take? Add a note (optional) — we’ll ask this talent to re-record.')}</p>
+                      <textarea className={`${input} min-h-[64px] resize-y`} value={reauditNote} onChange={(e) => setReauditNote(e.target.value)} placeholder={tx('例如:語速再慢一點、情緒更熱情', '例如:语速再慢一点、情绪更热情', 'e.g. a bit slower, warmer tone')} />
+                      <div className="flex gap-2">
+                        <button onClick={submitReaudit} disabled={reauditing} className="text-sm bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{reauditing ? tx('送出中…', '送出中…', 'Sending…') : tx('送出二次試音請求', '送出二次试音请求', 'Request re-record')}</button>
+                        <button onClick={() => { setReauditTarget(''); setReauditNote(''); }} className="text-sm bg-white/10 hover:bg-white/15 text-white rounded-lg px-4 py-1.5">{tx('取消', '取消', 'Cancel')}</button>
+                      </div>
+                    </div>
                   ) : b.status === 'open' && selected === a.id ? (
                     <div className="mt-1 space-y-3 border-t border-white/10 pt-3">
                       <p className="text-xs text-gray-400">{tx('選定這位後即建立製作單。請確認正式稿件與希望交付日,我們會與您確認付款後開始錄製。', '选定这位后即建立制作单。请确认正式稿件与希望交付日,我们会与您确认付款后开始录制。', 'Selecting creates a production order. Confirm the final script and your requested delivery date — we’ll confirm payment, then start recording.')}</p>
@@ -231,7 +271,14 @@ export default function ClientRequestDetail() {
                       </div>
                     </div>
                   ) : b.status === 'open' ? (
-                    <button onClick={() => openPick(a.id)} disabled={!!selected} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{tx('選這位', '选这位', 'Choose')}</button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button onClick={() => openPick(a.id)} disabled={!!selected || !!reauditTarget} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{tx('選這位', '选这位', 'Choose')}</button>
+                      {a.reaudition_requested ? (
+                        <span className="text-xs text-sky-300">🔁 {tx('已請求二次試音 · 等對方重錄', '已请求二次试音 · 等对方重录', 'Re-record requested')}</span>
+                      ) : (
+                        <button onClick={() => { setReauditTarget(a.id); setReauditNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{tx('請他再錄一次', '请他再录一次', 'Ask for another take')}</button>
+                      )}
+                    </div>
                   ) : null}
                 </div>
               );

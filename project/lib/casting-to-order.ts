@@ -61,6 +61,7 @@ export async function createOrderFromAward(
     tier: 'tier-3',
     duration: 0,
     price: Number(quote.gross_amount) || 0,
+    currency,
     project_name: brief.title || '',
     talent_id: quote.talent_id || null,
     talent_price: Number(quote.net_amount) || 0,

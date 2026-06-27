@@ -73,6 +73,8 @@ type Quote = {
   sample_url?: string | null;
   delivery_url?: string | null;
   delivery_uploaded_at?: string | null;
+  reaudition_note?: string | null;
+  reaudition_requested_at?: string | null;
 };
 type Demo = { url: string; name?: string; category?: string; language?: string };
 type Tpl = { name: string; body: string };
@@ -178,6 +180,37 @@ function DeliveryUpload({ quote, token, tx, onDone }: { quote: Quote; token: str
   );
 }
 
+// Re-audition: the client asked for a second take. Upload a new sample, which
+// replaces sample_url and clears the request (same upload pipeline as auditions).
+function ReauditUpload({ quote, token, tx, onDone }: { quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  async function upload(rawFile: File) {
+    setErr(''); setBusy(true);
+    try {
+      const file = await toMp3(rawFile);
+      const u = await fetch('/api/talent/audition-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      const p = await fetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: quote.id, sample_url: uj.publicUrl }) });
+      const pj = await p.json().catch(() => ({}));
+      if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
+      onDone({ ...quote, sample_url: uj.publicUrl, reaudition_requested_at: null, reaudition_note: null });
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-1.5">
+      <label className="inline-flex items-center gap-1.5 text-xs bg-sky-500/15 border border-sky-500/40 text-sky-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-sky-500/25 transition">
+        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳新的試音', '⬆ 上传新的试音', '⬆ Upload new take')}
+        <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+      </label>
+      {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
+    </div>
+  );
+}
+
 export default function Opportunities() {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
@@ -255,6 +288,29 @@ export default function Opportunities() {
         <StatModule icon={CheckCircle2} label={tx('我接到的', '我接到的', 'Won')} value={wonBriefs.length} />
         <StatModule icon={Archive} label={tx('已結束', '已结束', 'Ended')} value={endedBriefs.length} />
       </div>
+
+      {(() => {
+        const reaudits = quotes.filter((q) => q.reaudition_requested_at);
+        if (!reaudits.length) return null;
+        const titleOf = (bid: string) => { const bb = briefs.find((x) => x.id === bid); return bb?.title || bb?.content_type || tx('配音案', '配音案', 'Voice case'); };
+        return (
+          <div className="mb-8">
+            <h2 className="text-sm font-semibold text-sky-300 mb-3">🔁 {tx('客戶請你重錄', '客户请你重录', 'Client asked for a re-record')}</h2>
+            <div className="grid grid-cols-1 gap-4">
+              {reaudits.map((q) => (
+                <EntityCard key={q.id} icon={Briefcase} accent="sky" code={q.role_name || undefined}
+                  title={titleOf(q.brief_id)}
+                  badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('二次試音', '二次试音', 'Second take')}</span>}>
+                  {q.reaudition_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-500">{tx('客戶方向', '客户方向', 'Direction')}:</span> {q.reaudition_note}</p>}
+                  {q.sample_url && <audio controls src={q.sample_url} className="w-full h-9 mb-1" />}
+                  <ReauditUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
+                  <p className="text-[11px] text-gray-500 mt-1">{tx('上傳新版本後,這個請求就會清除。', '上传新版本后,这个请求就会清除。', 'Uploading a new take clears this request.')}</p>
+                </EntityCard>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {wonBriefs.length > 0 && (
         <div className="mb-8">

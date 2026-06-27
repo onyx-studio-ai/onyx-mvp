@@ -18,12 +18,14 @@ import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
 type Order = {
   id: string; order_number?: string | null; project_name?: string | null; email: string;
-  price: number | null; status: string; payment_status: string | null; created_at: string; paid_at?: string | null;
+  price: number | null; currency?: string | null; status: string; payment_status: string | null; created_at: string; paid_at?: string | null;
   voice_selection?: string | null; vibe?: string | null;
 };
 type Earning = { status: string; commission_amount: number | null };
 
-const usd = (n: number) => 'US$' + Math.round(n || 0).toLocaleString('en-US');
+const SYMBOL: Record<string, string> = { USD: 'US$', TWD: 'NT$', CNY: '¥', GBP: '£', EUR: '€', JPY: '¥' };
+const fmt = (n: number, cur = 'USD') => (SYMBOL[cur] || cur + ' ') + Math.round(n || 0).toLocaleString('en-US');
+const usd = (n: number) => fmt(n, 'USD'); // talent_earnings ledger has no currency → USD
 const ym = (iso?: string | null) => (iso || '').slice(0, 7); // YYYY-MM
 
 export default function AdminFinance() {
@@ -32,6 +34,7 @@ export default function AdminFinance() {
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState('all');
+  const [cur, setCur] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -54,6 +57,16 @@ export default function AdminFinance() {
   // Real (non-draft / non-failed) orders only.
   const live = useMemo(() => orders.filter((o) => o.status !== 'draft' && o.status !== 'failed'), [orders]);
   const isPaid = (o: Order) => o.payment_status === 'paid';
+  const curOf = (o: Order) => o.currency || 'USD';
+
+  // Currencies present (for the filter); default to the one with the most orders.
+  const currencies = useMemo(() => {
+    const count: Record<string, number> = {};
+    live.forEach((o) => { count[curOf(o)] = (count[curOf(o)] || 0) + 1; });
+    return Object.keys(count).sort((a, b) => count[b] - count[a]);
+  }, [live]);
+  useEffect(() => { if (!cur && currencies.length) setCur(currencies[0]); }, [cur, currencies]);
+  const activeCur = cur || currencies[0] || 'USD';
 
   const months = useMemo(() => {
     const set = new Set<string>();
@@ -62,17 +75,19 @@ export default function AdminFinance() {
   }, [live]);
 
   const inMonth = (o: Order) => month === 'all' || ym(o.paid_at || o.created_at) === month;
+  const inCur = (o: Order) => curOf(o) === activeCur;
 
-  // Money snapshot (respects the month filter for orders; payables are a live ledger).
-  const collected = live.filter((o) => isPaid(o) && inMonth(o)).reduce((s, o) => s + (o.price || 0), 0);
-  const receivable = live.filter((o) => !isPaid(o) && inMonth(o)).reduce((s, o) => s + (o.price || 0), 0);
+  // Money snapshot — per the selected currency (never mix TWD + USD). Talent
+  // payables are a separate USD ledger (talent_earnings has no currency).
+  const collected = live.filter((o) => isPaid(o) && inCur(o) && inMonth(o)).reduce((s, o) => s + (o.price || 0), 0);
+  const receivable = live.filter((o) => !isPaid(o) && inCur(o) && inMonth(o)).reduce((s, o) => s + (o.price || 0), 0);
   const payable = earnings.filter((e) => e.status === 'pending').reduce((s, e) => s + (e.commission_amount || 0), 0);
   const paidOut = earnings.filter((e) => e.status === 'paid').reduce((s, e) => s + (e.commission_amount || 0), 0);
 
   // The receivables list = unpaid orders (who still owes us), newest first.
   const q = search.trim().toLowerCase();
   const receivables = live
-    .filter((o) => !isPaid(o) && inMonth(o))
+    .filter((o) => !isPaid(o) && inCur(o) && inMonth(o))
     .filter((o) => !q || [o.order_number, o.email, o.project_name, o.voice_selection, o.vibe].some((x) => (x || '').toString().toLowerCase().includes(q)))
     .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
@@ -89,11 +104,11 @@ export default function AdminFinance() {
       />
 
       <AdminStats items={[
-        { label: month === 'all' ? '已收(全部)' : `已收(${month})`, value: usd(collected), color: 'text-green-700' },
-        { label: '待收(未付款)', value: usd(receivable), color: 'text-amber-700' },
-        { label: '配音員待付', value: usd(payable), color: 'text-red-700' },
-        { label: '配音員已付', value: usd(paidOut), color: 'text-gray-500' },
-        { label: '平台結餘(已收−已付)', value: usd(collected - paidOut), color: 'text-blue-700' },
+        { label: `成交額(${activeCur})`, value: fmt(collected + receivable, activeCur), color: 'text-gray-900' },
+        { label: '已收', value: fmt(collected, activeCur), color: 'text-green-700' },
+        { label: '待收(未付款)', value: fmt(receivable, activeCur), color: 'text-amber-700' },
+        { label: '配音員待付(US$)', value: usd(payable), color: 'text-red-700' },
+        { label: '配音員已付(US$)', value: usd(paidOut), color: 'text-gray-500' },
       ]} />
 
       {/* Receivables toolbar */}
@@ -103,13 +118,18 @@ export default function AdminFinance() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜尋訂單編號、客戶 Email、專案…"
             className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
         </div>
+        {currencies.length > 1 && (
+          <select value={activeCur} onChange={(e) => setCur(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none">
+            {currencies.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
         <select value={month} onChange={(e) => setMonth(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none">
           <option value="all">全部月份</option>
           {months.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
 
-      <h2 className="text-sm font-semibold text-gray-700 mb-3">待收款項{receivables.length > 0 ? ` · ${receivables.length} 筆 · ${usd(receivable)}` : ''}</h2>
+      <h2 className="text-sm font-semibold text-gray-700 mb-3">待收款項{receivables.length > 0 ? ` · ${receivables.length} 筆 · ${fmt(receivable, activeCur)}` : ''}</h2>
 
       {phase === 'loading' ? (
         <div className="text-center py-16 text-gray-500 bg-white border border-gray-200 rounded-xl">載入中…</div>
@@ -125,7 +145,7 @@ export default function AdminFinance() {
                 <p className="text-xs text-gray-500 truncate">{o.order_number ? `#${o.order_number} · ` : ''}{o.email}</p>
               </div>
               <span className="text-xs text-gray-400 shrink-0 hidden sm:block">{(o.created_at || '').slice(0, 10)}</span>
-              <span className="text-sm font-semibold text-amber-700 shrink-0 w-24 text-right">{usd(o.price || 0)}</span>
+              <span className="text-sm font-semibold text-amber-700 shrink-0 w-28 text-right">{fmt(o.price || 0, curOf(o))}</span>
             </div>
           ))}
         </div>

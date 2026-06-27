@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const [{ data: voiceOrders }, { data: musicOrders }] = await Promise.all([
-      supabase.from('voice_orders').select('id, order_number, project_name, email, price, status, payment_status, created_at, paid_at, voice_selection, tier'),
+      supabase.from('voice_orders').select('id, order_number, project_name, email, price, currency, status, payment_status, created_at, paid_at, voice_selection, tier'),
       supabase.from('music_orders').select('id, order_number, email, price, status, payment_status, created_at, paid_at, vibe, tier'),
     ]);
 

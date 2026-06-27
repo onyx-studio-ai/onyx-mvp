@@ -1085,6 +1085,21 @@ export function castingOrderInternalEmail(p: { orderNumber: string; briefNumber?
   return { subject: `[新製作單] ${p.orderNumber} · 待收款 — ${formatCurrency(p.amount, p.currency)}`, html: baseLayout(content) };
 }
 
+/** Talent: the client asked for a second take on a specific audition. */
+export function castingReauditionEmail(p: { talentName?: string; title: string; note?: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const t = mpEsc(p.title); const note = (p.note || '').trim();
+  const C = {
+    tw: { subject: `客戶想請您再錄一次 —— ${t}`, headline: '客戶想聽第二個版本', sub: '針對您的試音,客戶想請您再錄一次', card: '二次試音邀請', l1: `好消息 —— 客戶對「<strong style="color:#f3f4f6;">${t}</strong>」的試音有興趣,想請您再錄一個版本再決定。`, noteLabel: '客戶的方向', l2: '請登入後台,在這個案子重新上傳一段試音即可(原報價保留)。', cta: '前往重錄', sign: 'Onyx Studios 配音團隊 敬上' },
+    cn: { subject: `客户想请您再录一次 —— ${t}`, headline: '客户想听第二个版本', sub: '针对您的试音,客户想请您再录一次', card: '二次试音邀请', l1: `好消息 —— 客户对「<strong style="color:#f3f4f6;">${t}</strong>」的试音有兴趣,想请您再录一个版本再决定。`, noteLabel: '客户的方向', l2: '请登录后台,在这个案子重新上传一段试音即可(原报价保留)。', cta: '前往重录', sign: 'Onyx Studios 配音团队 敬上' },
+    en: { subject: `A client would like a second take — ${t}`, headline: 'The client wants a second take', sub: 'They\'d like you to re-record your audition', card: 'Second-take request', l1: `Good news — the client is interested in your audition for “<strong style="color:#f3f4f6;">${t}</strong>” and would like you to record another take before deciding.`, noteLabel: 'Client direction', l2: 'Sign in and upload a new audition on this case (your quote is kept).', cta: 'Re-record', sign: 'The Onyx Studios Talent Team' },
+  }[L];
+  const noteHtml = note ? bodyCard(C.noteLabel, `<p style="color:#f3f4f6;font-size:15px;line-height:1.7;margin:0;white-space:pre-wrap;">${mpEsc(note)}</p>`) : '';
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${noteHtml}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
 /** New-message notification to the counterpart in a marketplace thread. */
 export function newMessageEmail(p: { briefNumber?: string; locale?: string; url: string; body?: string; senderName?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);

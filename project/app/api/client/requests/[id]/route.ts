@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // (anonymous labels — Onyx mediates); client sees the demo, the price THEY pay,
   // the self-intro and which one they've picked.
   const { data: q } = await r.db.from('marketplace_quotes')
-    .select('id, role_name, sample_url, gross_amount, currency, intro, message, status, created_at')
+    .select('id, role_name, sample_url, gross_amount, currency, intro, message, status, created_at, reaudition_requested_at')
     .eq('brief_id', id)
     .in('status', ['submitted', 'shortlisted', 'accepted'])
     .order('created_at', { ascending: true });
@@ -42,6 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     client_pays: x.gross_amount as number,
     intro: (x.intro as string) || (x.message as string) || null,
     status: x.status as string,
+    reaudition_requested: !!x.reaudition_requested_at,
   }));
   // If this case has been closed into a production order, surface it so the client
   // can jump to the order (status / payment / delivery live on the order from here).
