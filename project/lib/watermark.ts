@@ -5,7 +5,7 @@
 import { Mp3Encoder } from '@breezystack/lamejs';
 
 const WATERMARK_URL = '/onyx-watermark.mp3';
-const INTERVAL = 12;   // seconds between watermark tags
+const INTERVAL = 5;    // seconds between watermark tags
 const WM_GAIN = 0.4;   // watermark loudness relative to the demo
 
 function floatToInt16(f32: Float32Array): Int16Array {
