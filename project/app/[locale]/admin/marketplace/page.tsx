@@ -147,6 +147,21 @@ export default function AdminMarketplace() {
     } catch { toast.error('建單失敗,請稍後再試'); }
   }
 
+  // Duplicate a case as a fresh reviewing draft (client re-scope → re-audition).
+  async function cloneCase(b: Brief) {
+    if (!confirm(`複製「${b.title || caseCode(b)}」成一個新案?\n新案會回到「客戶請求」待審(可重新編輯再發);原案與原試音都保留不動。`)) return;
+    try {
+      const res = await fetch('/api/admin/casting/clone', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ briefId: b.id }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(j.error || '複製失敗'); return; }
+      toast.success(j.toInbox ? '已複製 —— 新案在「客戶請求」待審,可重新編輯再發' : '已複製 —— 新案在此頁待審(平台案)');
+      load();
+    } catch { toast.error('複製失敗,請稍後再試'); }
+  }
+
   async function saveRate(id: string, val: string) {
     await fetch('/api/admin/marketplace', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
@@ -313,6 +328,7 @@ export default function AdminMarketplace() {
                     → {STATUS_ACTION[s] || s}
                   </button>
                 ))}
+              <button onClick={() => cloneCase(b)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1 transition" title="複製成新案,回到客戶請求重新編輯再發(原案+試音保留)">⧉ 複製案子</button>
             </div>
 
             {/* quotes */}
