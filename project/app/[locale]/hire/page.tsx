@@ -691,11 +691,11 @@ export default function Hire() {
                     <button key={o.v} type="button" onClick={() => setBudgetType(o.v)} className={pill(budgetType === o.v)}>{lbl(o)}</button>
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <select className={`${inputCls} w-24 shrink-0`} value={budgetCurrency} onChange={(e) => setBudgetCurrency(e.target.value)}>
+                <div className="grid grid-cols-[6rem_1fr] gap-2">
+                  <select className={inputCls} value={budgetCurrency} onChange={(e) => setBudgetCurrency(e.target.value)}>
                     {CURRENCIES.map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
                   </select>
-                  <input type="number" min="0" className={`${inputCls} flex-1`} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('金額', '金额', 'Amount')} />
+                  <input type="number" min="0" className={inputCls} value={form.budget} onChange={(e) => set('budget', e.target.value)} placeholder={tx('金額', '金额', 'Amount')} />
                 </div>
               </div>
 
