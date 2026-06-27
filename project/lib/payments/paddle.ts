@@ -65,6 +65,9 @@ export async function createHostedCheckout(params: {
         price: {
           name: `${orderType.toUpperCase()} Order ${orderNumber}`,
           description: `Order #${orderNumber}`,
+          // tax-EXCLUSIVE: the unit price is the base; Paddle adds each country's
+          // VAT/sales tax on top so the client bears it and our take is consistent.
+          tax_mode: 'external',
           unit_price: {
             amount: normalizedAmount,
             currency_code: cur,
