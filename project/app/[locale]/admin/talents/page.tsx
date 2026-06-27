@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { useLocale } from "next-intl";
 import { formatLangEntry, traitLabel, useCaseLabel, availabilityLabel, countryLabel, voiceAgeLabel, USE_CASES } from "@/lib/talent-taxonomy";
 import { cjkSpace } from "@/lib/cjk-space";
+import { AdminStats } from "@/components/admin/list-ui";
 
 const ALL_LANGUAGES = [
   "Afrikaans", "Albanian", "Amharic", "Arabic", "Arabic (Egyptian)", "Arabic (Gulf)", "Arabic (Levantine)", "Arabic (Maghreb)",
@@ -785,11 +786,11 @@ export default function AdminTalentsPage() {
   }
 
   return (
-    <div className="p-6 md:p-10 text-gray-900">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-6 lg:p-8 text-gray-900">
+      <div className="flex justify-between items-start gap-3 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Talent Management</h1>
-          <p className="text-gray-500 text-sm mt-1">{talents.length} talents registered</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Talent Management</h1>
+          <p className="text-gray-600 text-sm">{talents.length} talents registered</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -1235,23 +1236,16 @@ export default function AdminTalentsPage() {
         </Dialog>
       </div>
 
-      {/* Stats — same module as the Applications page */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
-        {[
-          { label: 'Total', value: counts.total, color: 'text-gray-900' },
-          { label: 'Active', value: counts.active, color: 'text-emerald-700' },
-          { label: '待審核', value: counts.pending, color: 'text-amber-700' },
-          { label: '草稿', value: counts.draft, color: 'text-sky-700' },
-          { label: 'Inactive', value: counts.inactive, color: 'text-gray-500' },
-          { label: '真人驗證', value: counts.liveness, color: 'text-emerald-700' },
-          { label: 'Voice ID', value: counts.voiceId, color: 'text-cyan-700' },
-        ].map((s) => (
-          <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      {/* Stats — shared admin module (matches Orders / Applications) */}
+      <AdminStats items={[
+        { label: 'Total', value: counts.total },
+        { label: 'Active', value: counts.active, color: 'text-emerald-700' },
+        { label: '待審核', value: counts.pending, color: 'text-amber-700' },
+        { label: '草稿', value: counts.draft, color: 'text-sky-700' },
+        { label: 'Inactive', value: counts.inactive, color: 'text-gray-500' },
+        { label: '真人驗證', value: counts.liveness, color: 'text-emerald-700' },
+        { label: 'Voice ID', value: counts.voiceId, color: 'text-cyan-700' },
+      ]} />
 
       {/* Filters — search + type / status / source */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

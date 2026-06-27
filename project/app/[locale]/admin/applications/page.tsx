@@ -8,6 +8,7 @@ import {
   XCircle, User, Globe, Settings, DollarSign, FileAudio,
   Calendar, Phone, Mail
 } from 'lucide-react';
+import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
 interface LinkedTalent {
   id: string;
@@ -582,39 +583,30 @@ export default function AdminApplicationsPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Talent Applications</h1>
-          <p className="text-gray-600 text-sm mt-1">Review and manage incoming talent submissions</p>
-        </div>
-        <button
-          onClick={fetchApplications}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
-      </div>
+    <div className="p-6 lg:p-8">
+      <AdminHeader
+        title="Talent Applications"
+        subtitle="Review and manage incoming talent submissions"
+        action={(
+          <button
+            onClick={fetchApplications}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        )}
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
-        {[
-          { label: 'Total', value: counts.total, color: 'text-gray-900' },
-          { label: 'Pending', value: counts.pending, color: 'text-yellow-700' },
-          { label: 'Reviewing', value: counts.under_review, color: 'text-blue-700' },
-          { label: 'Approved', value: counts.approved, color: 'text-green-700' },
-          { label: 'Rejected', value: counts.rejected, color: 'text-red-700' },
-          { label: 'Singers', value: counts.singers, color: 'text-blue-700' },
-          { label: 'Voice Actors', value: counts.vo, color: 'text-amber-700' },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      <AdminStats items={[
+        { label: 'Total', value: counts.total },
+        { label: 'Pending', value: counts.pending, color: 'text-yellow-700' },
+        { label: 'Reviewing', value: counts.under_review, color: 'text-blue-700' },
+        { label: 'Approved', value: counts.approved, color: 'text-green-700' },
+        { label: 'Rejected', value: counts.rejected, color: 'text-red-700' },
+        { label: 'Singers', value: counts.singers, color: 'text-blue-700' },
+        { label: 'Voice Actors', value: counts.vo, color: 'text-amber-700' },
+      ]} />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

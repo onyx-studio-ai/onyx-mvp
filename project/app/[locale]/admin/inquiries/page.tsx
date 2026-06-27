@@ -7,6 +7,7 @@ import {
   CheckCircle, MessageSquare, ChevronDown, ChevronUp,
   X, User, ArrowRight, Eye, Calendar,
 } from 'lucide-react';
+import { AdminStats } from '@/components/admin/list-ui';
 
 interface Reply {
   message: string;
@@ -249,6 +250,13 @@ export default function InquiriesPage() {
           Refresh
         </button>
       </div>
+
+      <AdminStats items={[
+        { label: 'Total', value: inquiries.length },
+        { label: 'New', value: inquiries.filter((i) => i.status === 'new').length, color: 'text-blue-700' },
+        { label: 'Replied', value: inquiries.filter((i) => i.status === 'replied').length, color: 'text-green-700' },
+        { label: 'Closed', value: inquiries.filter((i) => i.status === 'closed').length, color: 'text-gray-500' },
+      ]} />
 
       {/* Source-group tabs — separates client work-requests from
           partner applications. All 3 partner forms (apply/studio,

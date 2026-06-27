@@ -10,7 +10,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { Search } from 'lucide-react';
 import { caseCode } from '@/lib/casting';
+import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
 type Brief = {
   id: string;
@@ -62,6 +64,7 @@ export default function AdminRequests() {
   const [phase, setPhase] = useState<'loading' | 'unauth' | 'ready'>('loading');
   const [busy, setBusy] = useState<string | null>(null);
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/marketplace', { credentials: 'include' });
@@ -91,15 +94,33 @@ export default function AdminRequests() {
   if (phase === 'loading') return <div className="p-8 text-gray-500 text-sm">載入中…</div>;
   if (phase === 'unauth') return <div className="p-8 text-gray-500 text-sm">請先登入後台。</div>;
 
-  return (
-    <div className="p-6 max-w-4xl mx-auto text-gray-900">
-      <h1 className="text-xl font-semibold mb-1">客戶請求</h1>
-      <p className="text-gray-500 text-sm mb-6">客戶從官網「找配音」送來的真人配音需求。先審核,需要徵選就「開試音案」,或關閉。</p>
+  const q = search.trim().toLowerCase();
+  const filtered = !q ? requests : requests.filter((b) =>
+    [b.title, b.client_name, b.company, b.client_email, b.brief_number, caseCode(b), b.content_type]
+      .some((v) => (v || '').toString().toLowerCase().includes(q)));
 
-      {requests.length === 0 && <p className="text-gray-500 text-sm">目前沒有待處理的客戶請求。</p>}
+  const stats = [
+    { label: '待處理', value: requests.length },
+    { label: '指定配音員', value: requests.filter((b) => b.requested_talent).length, color: 'text-amber-700' },
+    { label: '線上監錄', value: requests.filter((b) => b.wants_live_session).length, color: 'text-sky-700' },
+    { label: '含唱歌', value: requests.filter((b) => b.has_singing).length, color: 'text-pink-700' },
+  ];
+
+  return (
+    <div className="p-6 lg:p-8 text-gray-900">
+      <AdminHeader title="客戶請求" subtitle="客戶從官網「找配音」送來的真人配音需求。先審核,需要徵選就「開試音案」,或關閉。" />
+      <AdminStats items={stats} />
+
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜尋客戶、Email、案號或標題…"
+          className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-green-400 focus:outline-none" />
+      </div>
+
+      {filtered.length === 0 && <p className="text-gray-500 text-sm">{requests.length === 0 ? '目前沒有待處理的客戶請求。' : '沒有符合搜尋的請求。'}</p>}
 
       <div className="space-y-4">
-        {requests.map((b) => (
+        {filtered.map((b) => (
           <div key={b.id} className="bg-white border border-gray-200 shadow-sm rounded-xl p-5">
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="min-w-0">

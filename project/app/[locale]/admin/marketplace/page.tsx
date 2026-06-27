@@ -9,7 +9,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { Search } from 'lucide-react';
 import { caseCode } from '@/lib/casting';
+import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -84,6 +86,7 @@ export default function AdminMarketplace() {
   const [notifying, setNotifying] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<{ id: string; val: string } | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
   const isOpen = (id: string) => openIds.has(id);
   const toggleOpen = (id: string) => setOpenIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
@@ -186,13 +189,32 @@ export default function AdminMarketplace() {
 
   const quotesFor = (briefId: string) => quotes.filter((q) => q.brief_id === briefId);
 
+  const q = search.trim().toLowerCase();
+  const filtered = !q ? briefs : briefs.filter((b) =>
+    [b.title, b.client_name, b.client_email, b.brief_number, caseCode(b), b.language]
+      .some((v) => (v || '').toString().toLowerCase().includes(q)));
+
+  const stats = [
+    { label: '案件總數', value: briefs.length },
+    { label: '徵選中', value: briefs.filter((b) => b.status === 'open').length, color: 'text-green-700' },
+    { label: '已選定', value: briefs.filter((b) => b.status === 'awarded').length, color: 'text-blue-700' },
+    { label: '已結束', value: briefs.filter((b) => b.status === 'closed').length, color: 'text-gray-500' },
+  ];
+
   return (
-    <div className="p-6 max-w-4xl mx-auto text-gray-900">
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-xl font-semibold">案件 · 報價</h1>
-        <a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-1.5">+ 發案(試音案)</a>
+    <div className="p-6 lg:p-8 text-gray-900">
+      <AdminHeader
+        title="案件 · 報價"
+        subtitle="Onyx 發的試音案 + 配音員報價。客戶送來的需求請看「客戶請求」頁。點任一案展開細節。"
+        action={<a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-2">+ 發案(試音案)</a>}
+      />
+      <AdminStats items={stats} />
+
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜尋案件、客戶、案號或語言…"
+          className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-green-400 focus:outline-none" />
       </div>
-      <p className="text-gray-500 text-sm mb-6">Onyx 發的試音案 + 配音員報價。客戶送來的需求請看「客戶請求」頁。點任一案展開細節。</p>
 
       {unavailable && (
         <div className="mb-4 text-amber-800 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -200,10 +222,10 @@ export default function AdminMarketplace() {
         </div>
       )}
 
-      {briefs.length === 0 && !unavailable && <p className="text-gray-500 text-sm">目前沒有案件。</p>}
+      {filtered.length === 0 && !unavailable && <p className="text-gray-500 text-sm">{briefs.length === 0 ? '目前沒有案件。' : '沒有符合搜尋的案件。'}</p>}
 
       <div className="space-y-3">
-        {briefs.map((b) => (
+        {filtered.map((b) => (
           <div key={b.id} className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             {/* compact bar — always visible; click to expand the full case */}
             <button onClick={() => toggleOpen(b.id)} className="w-full text-left px-5 py-3.5 hover:bg-gray-50 transition">
