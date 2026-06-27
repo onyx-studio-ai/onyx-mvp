@@ -307,6 +307,10 @@ export default function AdminTalentsPage() {
   const locale = useLocale();
   const [talents, setTalents] = useState<Talent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<'all' | 'VO' | 'Singer'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'draft' | 'inactive'>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'application' | 'manual'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTalent, setEditingTalent] = useState<Talent | null>(null);
   // Publish (draft → public snapshot). Bio is a single source the admin can
@@ -734,6 +738,42 @@ export default function AdminTalentsPage() {
       ...prev,
       demo_urls: prev.demo_urls.filter((_, i) => i !== index),
     }));
+  };
+
+  // Derived status bucket — mirrors the Status column logic (pending_review wins,
+  // then active, then onboarded-but-inactive = draft, else inactive).
+  const tStatus = (t: Talent): 'active' | 'pending' | 'draft' | 'inactive' => {
+    const tt = t as Talent & { onboarded_at?: string; pending_review?: boolean };
+    if (tt.pending_review) return 'pending';
+    if (t.is_active) return 'active';
+    if (tt.onboarded_at) return 'draft';
+    return 'inactive';
+  };
+  const isSinger = (t: Talent) => t.type === 'Singer' || t.type === 'singer';
+  const hasApp = (t: Talent) => !!(t as Talent & { application_id?: string }).application_id;
+
+  const filtered = talents.filter((t) => {
+    if (typeFilter === 'VO' && isSinger(t)) return false;
+    if (typeFilter === 'Singer' && !isSinger(t)) return false;
+    if (statusFilter !== 'all' && tStatus(t) !== statusFilter) return false;
+    if (sourceFilter === 'application' && !hasApp(t)) return false;
+    if (sourceFilter === 'manual' && hasApp(t)) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const en = ((t as Talent & { english_name?: string }).english_name || '').toLowerCase();
+      return (t.name || '').toLowerCase().includes(q) || en.includes(q) || (t.email || '').toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const counts = {
+    total: talents.length,
+    active: talents.filter((t) => tStatus(t) === 'active').length,
+    pending: talents.filter((t) => tStatus(t) === 'pending').length,
+    draft: talents.filter((t) => tStatus(t) === 'draft').length,
+    inactive: talents.filter((t) => tStatus(t) === 'inactive').length,
+    liveness: talents.filter((t) => (t as Talent & { liveness_status?: string }).liveness_status === 'verified').length,
+    voiceId: talents.filter((t) => (t as Talent & { voice_id_status?: string }).voice_id_status === 'verified').length,
   };
 
   if (loading) {
@@ -1195,6 +1235,57 @@ export default function AdminTalentsPage() {
         </Dialog>
       </div>
 
+      {/* Stats — same module as the Applications page */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+        {[
+          { label: 'Total', value: counts.total, color: 'text-gray-900' },
+          { label: 'Active', value: counts.active, color: 'text-emerald-700' },
+          { label: '待審核', value: counts.pending, color: 'text-amber-700' },
+          { label: '草稿', value: counts.draft, color: 'text-sky-700' },
+          { label: 'Inactive', value: counts.inactive, color: 'text-gray-500' },
+          { label: '真人驗證', value: counts.liveness, color: 'text-emerald-700' },
+          { label: 'Voice ID', value: counts.voiceId, color: 'text-cyan-700' },
+        ].map((s) => (
+          <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center">
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters — search + type / status / source */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email..."
+            className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-400 focus:outline-none"
+          />
+        </div>
+        <div className="flex gap-2">
+          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none">
+            <option value="all">All Types</option>
+            <option value="VO">Voice Actors</option>
+            <option value="Singer">Singers</option>
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="pending">待審核</option>
+            <option value="draft">草稿</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as typeof sourceFilter)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none">
+            <option value="all">所有來源</option>
+            <option value="application">Application</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+      </div>
+
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
@@ -1212,7 +1303,7 @@ export default function AdminTalentsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {talents.map((talent) => (
+            {filtered.map((talent) => (
               <TableRow key={talent.id} className="border-gray-200 hover:bg-gray-100/50">
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -1481,16 +1572,22 @@ export default function AdminTalentsPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {talents.length === 0 && (
+            {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-12 text-gray-500">
-                  No talents registered yet. Click &ldquo;Add Talent&rdquo; to get started.
+                <TableCell colSpan={10} className="text-center py-12 text-gray-500">
+                  {talents.length === 0
+                    ? 'No talents registered yet. Click “Add Talent” to get started.'
+                    : 'No talents match your filters.'}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
+      {filtered.length > 0 && (
+        <p className="text-center text-xs text-gray-500 mt-6">Showing {filtered.length} of {talents.length} talents</p>
+      )}
 
       {/* Publish dialog — promote draft to public snapshot with bio translations */}
       <Dialog open={!!publishTarget} onOpenChange={(o) => !o && setPublishTarget(null)}>
