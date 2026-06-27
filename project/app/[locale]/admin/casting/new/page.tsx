@@ -124,7 +124,7 @@ function NewCasting() {
   // pre-fill from their brief, show who asked + their budget, and publish IN PLACE.
   const search = useSearchParams();
   const [fromId, setFromId] = useState('');
-  const [fromClient, setFromClient] = useState<{ name?: string; company?: string; email?: string; budget?: string; budget_type?: string; has_singing?: boolean; wants_director?: boolean; wants_live_session?: boolean } | null>(null);
+  const [fromClient, setFromClient] = useState<{ name?: string; company?: string; email?: string; budget?: string; budget_type?: string; has_singing?: boolean; wants_director?: boolean; wants_live_session?: boolean; gender_needs?: string; requested_talent?: string; local_studio_region?: string; script_file_url?: string } | null>(null);
 
   function pickCategory(label: string) {
     setCategory(label);
@@ -141,7 +141,7 @@ function NewCasting() {
       const bf = (await res.json().catch(() => ({})))?.brief;
       if (!bf) return;
       setFromId(id);
-      setFromClient({ name: bf.client_name, company: bf.company, email: bf.client_email, budget: bf.budget, budget_type: bf.budget_type, has_singing: bf.has_singing, wants_director: bf.wants_director, wants_live_session: bf.wants_live_session });
+      setFromClient({ name: bf.client_name, company: bf.company, email: bf.client_email, budget: bf.budget, budget_type: bf.budget_type, has_singing: bf.has_singing, wants_director: bf.wants_director, wants_live_session: bf.wants_live_session, gender_needs: bf.gender_needs, requested_talent: bf.requested_talent, local_studio_region: bf.local_studio_region, script_file_url: bf.script_file_url });
       if (bf.title) setTitle(bf.title);
       { const cat = resolveCategory(bf.content_type); if (cat) pickCategory(cat); }
       if (bf.language) setLanguage(bf.language);
@@ -155,6 +155,10 @@ function NewCasting() {
       if (bf.length) setScale(bf.length);
       if (bf.deadline) setDeadline(bf.deadline);
       if (bf.audition_deadline) setAuditionDeadline(bf.audition_deadline);
+      // the client's pasted script seeds the shared audition lines; their reference
+      // link carries into the case's reference list so talents see it.
+      if (bf.script_text) setAuditionScript(bf.script_text);
+      if (bf.ref_audio_url) setRefFiles((f) => (f.some((x) => x.url === bf.ref_audio_url) ? f : [...f, { name: '客戶參考', url: bf.ref_audio_url }]));
       if (bf.wants_live_session) setMethods((m) => ({ ...m, online: true }));
       if (Array.isArray(bf.recording_methods) && bf.recording_methods.length) setMethods((m) => ({ ...m, ...Object.fromEntries((bf.recording_methods as string[]).map((k) => [k, true])) }));
       // Auto-import the client's uploaded role sheet (game/drama/animation), so the
@@ -489,6 +493,14 @@ function NewCasting() {
               <p className="text-amber-800/90 text-xs mt-1">
                 {[fromClient.has_singing && '含唱歌', fromClient.wants_director && '聲音導演', fromClient.wants_live_session && '線上監錄'].filter(Boolean).join(' · ')}
               </p>
+            )}
+            {(fromClient.gender_needs || fromClient.requested_talent || fromClient.local_studio_region || fromClient.script_file_url) && (
+              <div className="text-amber-900/90 text-xs mt-1.5 space-y-0.5 border-t border-amber-200/70 pt-1.5">
+                {fromClient.requested_talent && <p>🎯 指定配音員:{fromClient.requested_talent}</p>}
+                {fromClient.gender_needs && <p>需求人數:{fromClient.gender_needs}</p>}
+                {fromClient.local_studio_region && <p>當地錄音室:{fromClient.local_studio_region}</p>}
+                {fromClient.script_file_url && <p>客戶稿件:<a href={fromClient.script_file_url} target="_blank" rel="noopener noreferrer" className="underline">下載檔案</a></p>}
+              </div>
             )}
             <p className="text-amber-700/70 text-[11px] mt-1.5">💡 「報酬」填的是給配音員看的實拿價(可低於客戶預算,差額是你的利潤);發佈後此筆會直接上線,不會新增重複案。</p>
           </div>
