@@ -23,8 +23,10 @@ type Brief = {
   media_scope?: string | null; territory?: string | null; license_term?: string | null; length?: string | null;
   audition_deadline?: string | null; deadline?: string | null; has_singing?: boolean | null; script_status?: string | null;
   wants_director?: boolean | null; wants_live_session?: boolean | null; live_session_tool?: string | null; ref_audio_url?: string | null;
+  script_text?: string | null;
   brief: string; created_at: string;
 };
+type Order = { id: string; order_number: string; status: string; payment_status: string; price: number; language?: string | null; deadline?: string | null };
 
 export default function ClientRequestDetail() {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +38,11 @@ export default function ClientRequestDetail() {
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [b, setB] = useState<Brief | null>(null);
   const [auditions, setAuditions] = useState<{ id: string; label: string; role_name: string | null; sample_url: string | null; currency: string; client_pays: number; intro: string | null; status: string }[]>([]);
-  const [picking, setPicking] = useState('');
+  const [order, setOrder] = useState<Order | null>(null);
+  const [selected, setSelected] = useState(''); // quote_id whose confirm form is open
+  const [finalScript, setFinalScript] = useState('');
+  const [delivery, setDelivery] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [token, setToken] = useState('');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,20 +74,26 @@ export default function ClientRequestDetail() {
     if (!res.ok) { setPhase('notfound'); return; }
     const j = await res.json().catch(() => ({}));
     if (!j.brief) { setPhase('notfound'); return; }
-    setB(j.brief); hydrate(j.brief); setAuditions(j.auditions || []); setPhase('ready');
+    setB(j.brief); hydrate(j.brief); setAuditions(j.auditions || []); setOrder(j.order || null); setPhase('ready');
   }, [id]);
   useEffect(() => { load(); }, [load]);
 
-  async function pick(quoteId: string) {
+  // Open the confirm form for an audition — prefill the final script from the brief.
+  function openPick(quoteId: string) {
     setMsg('');
-    if (!confirm(tx('確定選這位配音員?選定後我們會與您確認付款並開始製作。', '确定选这位配音员?选定后我们会与您确认付款并开始制作。', 'Choose this talent? We’ll confirm payment and start production.'))) return;
-    setPicking(quoteId);
+    setFinalScript((b?.script_text || b?.brief || '').trim());
+    setDelivery(b?.deadline || '');
+    setSelected(quoteId);
+  }
+  async function submitPick() {
+    if (!finalScript.trim()) { setMsg(tx('請提供正式稿件', '请提供正式稿件', 'Please provide the final script')); return; }
+    setMsg(''); setSubmitting(true);
     try {
-      const res = await fetch(`/api/client/requests/${id}/select`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: quoteId }) });
+      const res = await fetch(`/api/client/requests/${id}/select`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: selected, final_script: finalScript.trim(), delivery_date: delivery }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setMsg(j.error || tx('選定失敗', '选定失败', 'Failed')); return; }
-      load();
-    } finally { setPicking(''); }
+      setSelected(''); load();
+    } finally { setSubmitting(false); }
   }
 
   async function save() {
@@ -112,11 +124,23 @@ export default function ClientRequestDetail() {
           <h1 className="text-2xl font-semibold mt-0.5">{b.title || `${b.content_type || tx('配音', '配音', 'Voiceover')}${tx('需求', '需求', ' request')}`}</h1>
         </div>
         <span className={`text-xs px-2.5 py-1 rounded-full border whitespace-nowrap shrink-0 ${b.status === 'reviewing' ? 'bg-amber-500/15 text-amber-200 border-amber-500/30' : b.status === 'open' ? 'bg-green-500/15 text-green-200 border-green-500/30' : 'bg-white/10 text-gray-300 border-white/15'}`}>
-          {b.status === 'reviewing' ? tx('審核中', '审核中', 'In review') : b.status === 'open' ? tx('徵選中', '征选中', 'Auditioning') : b.status}
+          {b.status === 'reviewing' ? tx('審核中', '审核中', 'In review') : b.status === 'open' ? tx('徵選中', '征选中', 'Auditioning') : (b.status === 'closed' || b.status === 'awarded') ? tx('製作中', '制作中', 'In production') : b.status}
         </span>
       </div>
 
-      {!canEdit && <p className="text-xs text-gray-500 mb-4">{tx('此需求已進入處理,內容已鎖定。如需修改請聯絡 Onyx。', '此需求已进入处理,内容已锁定。如需修改请联系 Onyx。', 'This request is being handled and is locked. Contact Onyx to change it.')}</p>}
+      {!canEdit && !order && <p className="text-xs text-gray-500 mb-4">{tx('此需求已進入處理,內容已鎖定。如需修改請聯絡 Onyx。', '此需求已进入处理,内容已锁定。如需修改请联系 Onyx。', 'This request is being handled and is locked. Contact Onyx to change it.')}</p>}
+
+      {order && (
+        <Link href={`/dashboard/orders/${order.id}`} className="block mb-4 rounded-2xl border border-[#6FCF97]/40 bg-[#6FCF97]/[0.08] px-5 py-4 hover:bg-[#6FCF97]/[0.12] transition-colors">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#9be7b8]">{tx('已成立製作單', '已成立制作单', 'Production order created')}</p>
+              <p className="text-xs text-gray-400 mt-0.5 font-mono">#{order.order_number} · {order.status === 'pending_payment' ? tx('待付款', '待付款', 'Awaiting payment') : order.status}</p>
+            </div>
+            <span className="text-xs text-[#9be7b8] whitespace-nowrap shrink-0">{tx('看訂單', '看订单', 'View order')} →</span>
+          </div>
+        </Link>
+      )}
 
       {editing && canEdit ? (
         <div className="space-y-4 bg-white/[0.02] border border-white/10 rounded-2xl p-5">
@@ -192,8 +216,22 @@ export default function ClientRequestDetail() {
                   {a.sample_url && <audio controls src={a.sample_url} className="w-full h-9 mb-2" />}
                   {won ? (
                     <span className="text-xs text-[#6FCF97]">✓ {tx('已選定 · 製作中', '已选定 · 制作中', 'Selected · in production')}</span>
+                  ) : b.status === 'open' && selected === a.id ? (
+                    <div className="mt-1 space-y-3 border-t border-white/10 pt-3">
+                      <p className="text-xs text-gray-400">{tx('選定這位後即建立製作單。請確認正式稿件與希望交付日,我們會與您確認付款後開始錄製。', '选定这位后即建立制作单。请确认正式稿件与希望交付日,我们会与您确认付款后开始录制。', 'Selecting creates a production order. Confirm the final script and your requested delivery date — we’ll confirm payment, then start recording.')}</p>
+                      <label className="block"><span className="text-xs text-gray-400 mb-1 block">{tx('正式稿件', '正式稿件', 'Final script')} *</span>
+                        <textarea className={`${input} min-h-[120px] resize-y`} value={finalScript} onChange={(e) => setFinalScript(e.target.value)} placeholder={tx('貼上正式錄製的稿件', '贴上正式录制的稿件', 'Paste the final script to record')} />
+                      </label>
+                      <label className="block max-w-[14rem]"><span className="text-xs text-gray-400 mb-1 block">{tx('希望交付日', '希望交付日', 'Requested delivery')}</span>
+                        <input type="date" className={input} value={delivery} onChange={(e) => setDelivery(e.target.value)} />
+                      </label>
+                      <div className="flex gap-2">
+                        <button onClick={submitPick} disabled={submitting} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{submitting ? tx('建立中…', '建立中…', 'Creating…') : tx('確認選定並建立訂單', '确认选定并建立订单', 'Confirm & create order')}</button>
+                        <button onClick={() => { setSelected(''); setMsg(''); }} className="text-sm bg-white/10 hover:bg-white/15 text-white rounded-lg px-4 py-1.5">{tx('取消', '取消', 'Cancel')}</button>
+                      </div>
+                    </div>
                   ) : b.status === 'open' ? (
-                    <button onClick={() => pick(a.id)} disabled={!!picking} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{picking === a.id ? tx('處理中…', '处理中…', '…') : tx('選這位', '选这位', 'Choose')}</button>
+                    <button onClick={() => openPick(a.id)} disabled={!!selected} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{tx('選這位', '选这位', 'Choose')}</button>
                   ) : null}
                 </div>
               );

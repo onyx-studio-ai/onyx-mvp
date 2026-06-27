@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { createOrderFromAward } from '@/lib/casting-to-order';
 
 /*
   POST /api/admin/casting/to-order — turn an AWARDED casting brief into a production
@@ -43,38 +44,14 @@ export async function POST(request: NextRequest) {
     ? await db.from('talents').select('name').eq('id', quote.talent_id).maybeSingle()
     : { data: null };
 
-  // order number: VO-YYMMDD-<seq of the day>
-  const d = new Date();
-  const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-  const { count } = await db.from('voice_orders').select('id', { count: 'exact', head: true }).gte('created_at', dayStart);
-  const orderNumber = `VO-${ymd}-${String((count || 0) + 1).padStart(4, '0')}`;
-
-  const { data: order, error } = await db.from('voice_orders').insert({
-    order_number: orderNumber,
-    email: orderEmail,
-    language: brief.language || '',
-    voice_selection: (talent?.name as string) || '',
-    script_text: brief.brief || '',
-    tone_style: 'Professional',
-    use_case: brief.content_type || '',
-    broadcast_rights: true,
-    tier: 'tier-3',
-    duration: 0,
-    price: Number(quote.gross_amount) || 0,
-    project_name: brief.title || '',
-    talent_id: quote.talent_id || null,
-    talent_price: Number(quote.net_amount) || 0,
-    status: 'pending_payment',
-    payment_status: 'pending',
-    revision_count: 0,
-    max_revisions: 1,
-    rights_level: 'global',
-  }).select('id, order_number').single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const r = await createOrderFromAward(db, brief, quote, {
+    talentName: talent?.name as string | undefined,
+    orderEmail,
+  });
+  if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status });
 
   // Close the casting brief — it's moved to production now.
   await db.from('marketplace_briefs').update({ status: 'closed', updated_at: new Date().toISOString() }).eq('id', briefId);
 
-  return NextResponse.json({ ok: true, order_number: order.order_number, id: order.id });
+  return NextResponse.json({ ok: true, order_number: r.order_number, id: r.id });
 }

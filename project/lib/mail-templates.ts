@@ -1039,6 +1039,52 @@ export function castingAwardedClientEmail(p: { clientName?: string; title: strin
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
 }
 
+/** Client: a production order was created from their selection — awaiting payment. */
+export function castingOrderClientEmail(p: { clientName?: string; title: string; orderNumber: string; amount: number; currency: string; deliveryDate?: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const t = mpEsc(p.title); const name = mpEsc((p.clientName || '').trim());
+  const amt = formatCurrency(p.amount, p.currency);
+  const C = {
+    tw: { subject: `製作單已成立 ${p.orderNumber} —— ${t}`, headline: '製作單已成立', sub: '接下來確認付款即可開始製作', card: '訂單明細',
+      greet: `${name ? name + ' ' : ''}您好,`, l1: `您已選定配音員,我們已為「<strong style="color:#f3f4f6;">${t}</strong>」建立製作單。Onyx 會盡快與您確認付款方式,款項確認後即正式進入錄製。`,
+      rOrder: '訂單編號', rAmount: '金額', rDelivery: '希望交付日', cta: '查看訂單', sign: 'Onyx Studios 業務團隊 敬上' },
+    cn: { subject: `制作单已成立 ${p.orderNumber} —— ${t}`, headline: '制作单已成立', sub: '接下来确认付款即可开始制作', card: '订单明细',
+      greet: `${name ? name + ' ' : ''}您好,`, l1: `您已选定配音员,我们已为「<strong style="color:#f3f4f6;">${t}</strong>」建立制作单。Onyx 会尽快与您确认付款方式,款项确认后即正式进入录制。`,
+      rOrder: '订单编号', rAmount: '金额', rDelivery: '希望交付日', cta: '查看订单', sign: 'Onyx Studios 业务团队 敬上' },
+    en: { subject: `Order created ${p.orderNumber} — ${t}`, headline: 'Your order has been created', sub: 'Confirm payment to start production', card: 'Order details',
+      greet: `Dear ${name || 'there'},`, l1: `You've selected a talent and we've created a production order for “<strong style="color:#f3f4f6;">${t}</strong>”. Onyx will confirm payment with you shortly — recording begins once payment is confirmed.`,
+      rOrder: 'Order', rAmount: 'Amount', rDelivery: 'Requested delivery', cta: 'View order', sign: 'The Onyx Studios Team' },
+  }[L];
+  const rows = [
+    { label: C.rOrder, value: `#${mpEsc(p.orderNumber)}` },
+    { label: C.rAmount, value: amt },
+    ...(p.deliveryDate ? [{ label: C.rDelivery, value: mpEsc(p.deliveryDate) }] : []),
+  ];
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard('', `${mp(C.greet)}${mp(C.l1)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${infoCard(C.card, rows)}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
+/** Internal (produce@): a casting selection just created a production order — awaiting payment. */
+export function castingOrderInternalEmail(p: { orderNumber: string; briefNumber?: string; clientEmail: string; talentName?: string; amount: number; currency: string; deliveryDate?: string; scriptPreview?: string }): { subject: string; html: string } {
+  const rows = [
+    { label: 'Order', value: `#${mpEsc(p.orderNumber)}` },
+    { label: 'Case', value: mpEsc(p.briefNumber || '') || '—' },
+    { label: 'Client', value: mpEsc(p.clientEmail) },
+    { label: 'Talent', value: mpEsc(p.talentName || '') || '—' },
+    { label: 'Amount (client pays)', value: formatCurrency(p.amount, p.currency) },
+    { label: 'Requested delivery', value: mpEsc(p.deliveryDate || '') || '—' },
+    { label: 'Status', value: '待收款 Pending payment' },
+  ];
+  const sp = (p.scriptPreview || '').trim();
+  const content = `
+    ${headlineBlock('新製作單 · 待收款', '客戶已選定配音員並送出正式稿件。請收款後啟動製作。', BRAND_GREEN)}
+    ${infoCard('Order', rows)}
+    ${sp ? bodyCard('正式稿件 Final script', `<p style="color:#d1d5db;font-size:14px;line-height:1.6;margin:0;white-space:pre-wrap;">${mpEsc(sp.slice(0, 1200))}${sp.length > 1200 ? '…' : ''}</p>`) : ''}
+    ${ctaRow('後台訂單 Admin', `${SITE_URL}/admin/dashboard`, BRAND_GREEN)}`;
+  return { subject: `[新製作單] ${p.orderNumber} · 待收款 — ${formatCurrency(p.amount, p.currency)}`, html: baseLayout(content) };
+}
+
 /** New-message notification to the counterpart in a marketplace thread. */
 export function newMessageEmail(p: { briefNumber?: string; locale?: string; url: string; body?: string; senderName?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);

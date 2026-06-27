@@ -43,7 +43,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     intro: (x.intro as string) || (x.message as string) || null,
     status: x.status as string,
   }));
-  return NextResponse.json({ brief: r.brief, auditions });
+  // If this case has been closed into a production order, surface it so the client
+  // can jump to the order (status / payment / delivery live on the order from here).
+  const { data: order } = await r.db.from('voice_orders')
+    .select('id, order_number, status, payment_status, price, language, deadline')
+    .eq('brief_id', id).maybeSingle();
+  return NextResponse.json({ brief: r.brief, auditions, order: order || null });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
