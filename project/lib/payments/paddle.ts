@@ -17,11 +17,15 @@ function getRequiredPaddleConfig() {
   return { apiKey, webhookSecret };
 }
 
+// Currencies Paddle bills in whole units (no ×100). Everything else is minor units.
+const ZERO_DECIMAL_CURRENCIES = new Set(['JPY', 'KRW']);
+
 export async function createHostedCheckout(params: {
   orderId: string;
   orderNumber: string;
   orderType: 'voice' | 'music' | 'orchestra';
   amount: number;
+  currency?: string;
   billingDetails?: Record<string, unknown>;
   licenseeDetails?: Record<string, unknown>;
   checkoutBaseUrl?: string;
@@ -32,18 +36,21 @@ export async function createHostedCheckout(params: {
     orderNumber,
     orderType,
     amount,
+    currency,
     billingDetails,
     licenseeDetails,
     checkoutBaseUrl,
   } = params;
 
-  const normalizedAmount = Math.round(amount * 100).toString();
+  // Charge in the ORDER's currency, not a hardcoded USD (a TWD order must bill TWD).
+  const cur = (currency || 'USD').toUpperCase();
+  const normalizedAmount = (ZERO_DECIMAL_CURRENCIES.has(cur) ? Math.round(amount) : Math.round(amount * 100)).toString();
   if (!Number.isFinite(Number(normalizedAmount)) || Number(normalizedAmount) <= 0) {
     throw new Error('Invalid amount for Paddle transaction');
   }
 
   const payload = {
-    currency_code: 'USD',
+    currency_code: cur,
     collection_mode: 'automatic',
     custom_data: {
       orderId,
@@ -60,7 +67,7 @@ export async function createHostedCheckout(params: {
           description: `Order #${orderNumber}`,
           unit_price: {
             amount: normalizedAmount,
-            currency_code: 'USD',
+            currency_code: cur,
           },
           product: {
             name: `${orderType.toUpperCase()} Production`,

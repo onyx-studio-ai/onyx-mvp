@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
       orderNumber: order.order_number || orderId,
       orderType,
       amount: finalAmount,
+      currency: (order as { currency?: string }).currency || 'USD',
       billingDetails,
       licenseeDetails,
       checkoutBaseUrl: buildCheckoutLandingUrl(request, successUrl),
