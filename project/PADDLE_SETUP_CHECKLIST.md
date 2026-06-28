@@ -5,6 +5,26 @@
 
 ---
 
+## 🟢 現況(2026-06-28 對照你的後台截圖)
+- ✅ **A. 公司審核已過** — Verification passed,帳號名 FINE ENTERTAINMENT CO., LTD.。
+- ✅ **網域已核准** — Website approval:`onyxstudios.ai` = **Approved**(真實刷卡不會被擋了)。
+- ✅ **Default payment link** = `https://www.onyxstudios.ai`(綠勾)。
+- ✅ **Statement descriptor** = `FINEENTERT`(卡單上顯示的名稱,已設)。
+- ✅ **H(部分)實刷已通** — Production 已成功收一筆 US$1.00(Apple Pay,已退款),代表 production API key + client token + 卡片/Apple Pay 流程是通的。
+- 🚨 **D. Payout Settings 還沒填完(現在的卡點)** — Country=Taiwan、方式=Payoneer、門檻 $100 已選,但 **Account Type 是「Please Select」、公司代表姓名/生日空白、Payoneer Email 空白**。沒填完 Paddle 收到的錢撥不出來。個資/生日/銀行欄位**由 Wing 本人填**。
+  - 二選一:**Payoneer**(要有 Payoneer 帳號 → 填 email)或改 **Wire/Bank transfer**(填國泰外幣帳戶:SWIFT `UWCBTWTP`、A/C `020080017287`)。
+- 🟡 **B. 稅金套用方式 = 目前「Automatic based on location」** — 建議改成 **「Price excludes tax(外加稅)」** 再 Save。原因:Automatic 在歐盟會把你的價當「含稅」→ 你會被吃掉 VAT;外加稅才是「客戶外加當地稅、你實拿不變」。程式每筆已鎖 `tax_mode: external`(會覆寫帳號設定,所以即使不改也不會被吃 VAT),但把後台對齊可避免日後手動建價不一致。
+- ⬜ **C. TWD 單還沒測** — 那筆是 USD;先前的 bug(TWD 變 USD)已修,但要實測一張 TWD 才算數。
+- ⬜ **F. Webhook** — 截圖看不到,要確認 destination 已建 + signing secret 已填進 Vercel。
+- 💳 **付款方式**:目前開了 PayPal / Apple Pay / Bancontact。建議**補開 Google Pay**(Android 對應 Apple Pay);中國客戶要的話再開 **WeChat Pay**。卡片預設就是開的(不在這份開關清單裡)。「Saving payment methods」關著、「Display discount field」開著、Marketing consent 開著 —— 都 OK,不用動。
+- 🧾 **稅務類別**:Standard Digital Goods = Default,對配音數位交付正確,不用動;SaaS 也已 Approved(日後做訂閱可用)。
+
+### 🚨 已查證的兩件事(影響金流設計,務必知道)
+1. **TWD 是「presentment-only」** — 客戶結帳可顯示/支付 TWD,但 Paddle 只用 USD/EUR/GBP/AUD/CAD **結算撥款給你**(我們收 USD)。= 客戶看 TWD 沒問題,你拿到的是換匯後的 USD。
+2. **Paddle 不做 marketplace 撥款給第三方(配音員)** — Paddle 只把錢(每月、門檻 US$100、電匯/Payoneer)撥給**你 Onyx 一個收款主體**。**「Onyx → 配音員」這條腿 Paddle 不處理**,要另走人工電匯 / Payoneer / Wise。Paddle 只負責「客戶 → Onyx」這條腿(順便全球代收代繳稅)。
+
+---
+
 ## A. 帳號審核(上線前 Paddle 會審)
 - [ ] **Verify business** — Seller settings → Business verification:公司名 **FINE ENTERTAINMENT CO., LTD.**、地址、統編、負責人證件。
 - [ ] **Add website / domain** — 加 `onyxstudios.ai`,並等 Paddle 核准(未核准前真實刷卡會被擋)。

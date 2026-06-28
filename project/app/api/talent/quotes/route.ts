@@ -16,7 +16,10 @@ const SITE = 'https://www.onyxstudios.ai';
   DELETE — withdraw an active quote.
 */
 
-const CURRENCIES = ['USD', 'TWD'];
+// Accept the deal currencies the brief can be posted in (the talent quotes in the
+// brief's fixed currency — see dealCurrency on the opportunities page). Kept broad
+// so a non-USD/TWD deal currency isn't silently downgraded to USD.
+const CURRENCIES = ['USD', 'TWD', 'CNY', 'GBP', 'EUR', 'JPY', 'KRW', 'HKD'];
 
 export async function POST(request: NextRequest) {
   const r = await resolveTalentFromRequest(request, 'id, name');

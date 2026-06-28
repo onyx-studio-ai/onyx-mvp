@@ -21,7 +21,25 @@ import { toMp3 } from '@/lib/to-mp3';
 import { StatModule, EntityCard, InfoPills } from '@/components/dashboard/cards';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
-const CURRENCIES = ['USD', 'TWD'];
+
+// The deal currency is fixed by what the CLIENT set at posting — the talent quotes
+// in it (no picking a different one), so order + checkout bill that currency.
+// Prefer the structured budget_currency; fall back to parsing the budget/rate text
+// (e.g. "USD 7500", "NT$3,000"); default USD.
+function parseCcy(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const code = s.toUpperCase().match(/\b(USD|TWD|CNY|RMB|GBP|EUR|JPY|KRW|HKD)\b/);
+  if (code) return code[1] === 'RMB' ? 'CNY' : code[1];
+  if (/NT\$/i.test(s)) return 'TWD';
+  if (/US\$/i.test(s)) return 'USD';
+  if (/£/.test(s)) return 'GBP';
+  if (/€/.test(s)) return 'EUR';
+  return null;
+}
+function dealCurrency(brief: { budget_currency?: string | null; budget?: string | null; rate_note?: string | null }): string {
+  return (brief.budget_currency && brief.budget_currency.toUpperCase())
+    || parseCcy(brief.budget) || parseCcy(brief.rate_note) || 'USD';
+}
 
 type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = {
@@ -57,6 +75,7 @@ type Brief = {
   length: string | null;
   budget: string | null;
   budget_type: string | null;
+  budget_currency?: string | null; // currency the client set at posting — locks the quote currency
   deadline: string | null;
   brief: string;
   created_at: string;
@@ -596,7 +615,7 @@ function BriefCard({
   const myQuote = myQuotes[0]; // regular briefs have a single quote per talent
   const [open, setOpen] = useState(!!defaultOpen);
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -772,9 +791,7 @@ function BriefCard({
           ) : (
             <div className="border-t border-white/10 pt-3 space-y-2">
               <div className="flex gap-2">
-                <select className={`${inputCls} w-24`} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                  {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
-                </select>
+                <span className={`${inputCls} w-24 flex items-center justify-center font-medium text-gray-200 bg-white/[0.07]`} title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
                 <input type="number" min="0" className={inputCls} value={gross} onChange={(e) => setGross(e.target.value)}
                   placeholder={tx('客戶支付金額(報價)', '客户支付金额(报价)', 'Amount the client pays (your quote)')} />
               </div>
@@ -871,7 +888,7 @@ function RoleAudition({
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('TWD');
+  const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
   const [intro, setIntro] = useState('');
   const [revPolicy, setRevPolicy] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1001,9 +1018,7 @@ function RoleAudition({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-300">{tx('你的報價', '你的报价', 'Your quote')}</span>
-                    <select className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                      {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
-                    </select>
+                    <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
                   </div>
                   <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
                     <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">
@@ -1062,7 +1077,7 @@ function GeneralResponse({
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const [currency, setCurrency] = useState('TWD');
+  const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
   const [intro, setIntro] = useState('');
   const [revPolicy, setRevPolicy] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1153,9 +1168,7 @@ function GeneralResponse({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-300">{tx('你的報價', '你的报价', 'Your quote')}</span>
-              <select className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                {CURRENCIES.map((c) => (<option key={c} value={c} className="bg-black">{c}</option>))}
-              </select>
+              <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
             </div>
             <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
               <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">

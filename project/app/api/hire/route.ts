@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
           live_session_tool: b.live_session_tool || null,
           budget_type: b.budget_type || null,
           budget_unit: (typeof b.budget_unit === 'string' && b.budget_unit.trim()) ? b.budget_unit.trim().slice(0, 20) : null,
+          // currency the client set at posting — single source of truth for the deal currency
+          budget_currency: (typeof b.budget_currency === 'string' && /^[A-Za-z]{3}$/.test(b.budget_currency.trim())) ? b.budget_currency.trim().toUpperCase() : null,
           language: b.language || null,
           accent: (typeof b.accent === 'string' && b.accent.trim()) ? b.accent.trim().slice(0, 120) : null,
           voice_style: (typeof b.voice_style === 'string' && b.voice_style.trim()) ? b.voice_style.trim().slice(0, 120) : null,
