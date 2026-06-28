@@ -11,11 +11,13 @@
 - ✅ **Default payment link** = `https://www.onyxstudios.ai`(綠勾)。
 - ✅ **Statement descriptor** = `FINEENTERT`(卡單上顯示的名稱,已設)。
 - ✅ **H(部分)實刷已通** — Production 已成功收一筆 US$1.00(Apple Pay,已退款),代表 production API key + client token + 卡片/Apple Pay 流程是通的。
-- 🚨 **D. Payout Settings 還沒填完(現在的卡點)** — Country=Taiwan、方式=Payoneer、門檻 $100 已選,但 **Account Type 是「Please Select」、公司代表姓名/生日空白、Payoneer Email 空白**。沒填完 Paddle 收到的錢撥不出來。個資/生日/銀行欄位**由 Wing 本人填**。
-  - 二選一:**Payoneer**(要有 Payoneer 帳號 → 填 email)或改 **Wire/Bank transfer**(填國泰外幣帳戶:SWIFT `UWCBTWTP`、A/C `020080017287`)。
-- 🟡 **B. 稅金套用方式 = 目前「Automatic based on location」** — 建議改成 **「Price excludes tax(外加稅)」** 再 Save。原因:Automatic 在歐盟會把你的價當「含稅」→ 你會被吃掉 VAT;外加稅才是「客戶外加當地稅、你實拿不變」。程式每筆已鎖 `tax_mode: external`(會覆寫帳號設定,所以即使不改也不會被吃 VAT),但把後台對齊可避免日後手動建價不一致。
+- ✅ **D. Payout Settings 已填完(2026-06-28)** — 走 **Wire/Bank transfer** 進公司戶頭:Cathay United Bank, Daan Branch、SWIFT `UWCBTWTP`、A/C `020080017287`、Legal Name `FINE ENTERTAINMENT CO., LTD.`。Account Type = Company。已 Save。
+  - 💡 Paddle 表單只吃半形英數 + `. , -` 空格;行名/行址要去撇號去括號(`Daan` 非 `Da'an`、拿掉 `(R.O.C.)`)。
+- ✅ **B. 稅金 = Price excludes tax(外加稅)** — 已改 + Save(2026-06-28)。客戶外加當地稅、你實拿不變,跟程式 `tax_mode: external` 對齊。
 - ⬜ **C. TWD 單還沒測** — 那筆是 USD;先前的 bug(TWD 變 USD)已修,但要實測一張 TWD 才算數。
-- ⬜ **F. Webhook** — 截圖看不到,要確認 destination 已建 + signing secret 已填進 Vercel。
+- ✅ **F. Webhook 已接好(2026-06-28)** — destination `…/api/payment/paddle/webhook` = Active、log 全 Delivered(200)。因為簽章錯會回 401→Failed,全 Delivered 證明 **Vercel `PADDLE_WEBHOOK_SECRET` 填對、簽章有過**。handler 收到 `transaction.completed`/`transaction.updated(status=completed)` → `finalizeOrderPayment` 寫 `status=paid, payment_status=completed, paid_at`。其餘狀態回 200 略過(log 那些 transaction.updated 就是被正確略過的)。
+  - 🧹 另有 3 個 Inactive 的 `diffident-jane-…` webhook = 舊的本機/tunnel 測試用,inactive 無害,可刪可不刪。
+  - ⬜ **唯一剩的:跑一筆真的完成付款,確認訂單自動翻「已收款」**(順便當 TWD 實測)。
 - 💳 **付款方式**:目前開了 PayPal / Apple Pay / Bancontact。建議**補開 Google Pay**(Android 對應 Apple Pay);中國客戶要的話再開 **WeChat Pay**。卡片預設就是開的(不在這份開關清單裡)。「Saving payment methods」關著、「Display discount field」開著、Marketing consent 開著 —— 都 OK,不用動。
 - 🧾 **稅務類別**:Standard Digital Goods = Default,對配音數位交付正確,不用動;SaaS 也已 Approved(日後做訂閱可用)。
 

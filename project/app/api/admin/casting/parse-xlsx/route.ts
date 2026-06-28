@@ -49,7 +49,7 @@ const EXACT_ONLY = new Set(['name', 'line']); // these must equal the header, no
 const norm = (s: unknown) => String(s ?? '').replace(/\s+/g, '').trim();
 
 function publicUrl(path: string) {
-  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, ''); // .trim() = guard against a trailing newline on the env var
   return `${base}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 

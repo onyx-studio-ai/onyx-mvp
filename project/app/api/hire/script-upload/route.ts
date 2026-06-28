@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     if (error || !data) {
       return NextResponse.json({ error: error?.message || 'Could not prepare upload' }, { status: 500 });
     }
-    const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+    const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, ''); // .trim() = guard against a trailing newline on the env var
     return NextResponse.json({ path: data.path, token: data.token, publicUrl: `${base}/storage/v1/object/public/${BUCKET}/${data.path}` });
   } catch (err) {
     return supabaseErrorResponse(err, 'hire/script-upload');

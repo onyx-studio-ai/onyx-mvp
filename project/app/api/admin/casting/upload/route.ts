@@ -16,7 +16,7 @@ const BUCKET = 'casting';
 const MAX_FETCH_BYTES = 60 * 1024 * 1024; // 60 MB cap for auto-rehost
 
 function publicUrl(path: string) {
-  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, ''); // .trim() = guard against a trailing newline on the env var
   return `${base}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 

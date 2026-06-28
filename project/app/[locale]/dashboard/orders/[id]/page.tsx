@@ -564,6 +564,7 @@ export default function OrderDetailPage() {
               tier: order.tier,
               revision_count: (order as Record<string, unknown>).revision_count as number ?? 0,
               max_revisions: (order as Record<string, unknown>).max_revisions as number ?? 2,
+              download_url: (order as Record<string, unknown>).download_url as string | null ?? null,
             }}
             onRefresh={fetchOrder}
           />

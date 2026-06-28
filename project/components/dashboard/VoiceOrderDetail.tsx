@@ -39,7 +39,12 @@ interface VoiceOrder {
   tier: string;
   revision_count: number;
   max_revisions: number;
+  download_url?: string | null; // delivered file when no voice_order_versions row exists (legacy/casting deliveries)
 }
+
+// URLs stored from older deliveries can carry stray whitespace/newlines (a trailing
+// newline on the SUPABASE_URL env var) — strip it so the link actually works.
+const cleanUrl = (u?: string | null) => (u || '').replace(/\s/g, '');
 
 interface Props {
   order: VoiceOrder;
@@ -121,12 +126,16 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
 
   const latestVersion = versions[versions.length - 1];
   const currentStep = getStepIndex(order.status);
+  // The file to review: the latest uploaded version, or — for legacy/casting
+  // deliveries that never created a version row — the order's download_url.
+  const reviewUrl = cleanUrl(latestVersion?.file_url) || cleanUrl(order.download_url);
+  const reviewVersionNo = versions.length || 1;
 
   const handleApproveVersion = async () => {
-    if (!latestVersion) return;
+    if (!reviewUrl) return;
     setSubmitting(true);
     try {
-      await supabase.from('voice_order_versions').update({ status: 'approved' }).eq('id', latestVersion.id);
+      if (latestVersion) await supabase.from('voice_order_versions').update({ status: 'approved' }).eq('id', latestVersion.id);
       await supabase.from('voice_orders').update({ status: 'awaiting_final' }).eq('id', order.id);
       try {
         await fetch('/api/mail/send', {
@@ -290,20 +299,20 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
         </div>
       )}
 
-      {/* Delivered — Review */}
-      {order.status === 'delivered' && latestVersion && (
+      {/* Delivered — Review (works even when the delivery has no version row yet) */}
+      {order.status === 'delivered' && reviewUrl && (
         <div className="space-y-4">
           <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-5 space-y-4">
             <div>
               <p className="text-cyan-400 font-semibold text-sm mb-0.5">
-                {t('versionReady', { version: versions.length })}
+                {t('versionReady', { version: reviewVersionNo })}
               </p>
               <p className="text-sm text-gray-400">
                 {t('versionReviewDesc')}
               </p>
             </div>
 
-            {latestVersion.notes && (
+            {latestVersion?.notes && (
               <div className="bg-black/30 rounded-xl px-4 py-3 border border-white/[0.06]">
                 <p className="text-xs text-gray-500 mb-1">{t('noteFromTeam')}</p>
                 <p className="text-sm text-gray-300">{latestVersion.notes}</p>
@@ -311,8 +320,8 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
             )}
 
             <div className="flex items-center gap-3">
-              <AudioPreview url={latestVersion.file_url} label={`${t('preview')} V${versions.length}`} />
-              <a href={latestVersion.file_url} download
+              <AudioPreview url={reviewUrl} label={`${t('preview')} V${reviewVersionNo}`} />
+              <a href={reviewUrl} download
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-sm text-gray-300 hover:text-white transition-all">
                 <Download className="w-3.5 h-3.5" />
                 {t('download')}
@@ -322,7 +331,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Button onClick={handleApproveVersion} disabled={submitting} className="w-full bg-green-600 hover:bg-green-700 text-white gap-2">
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {t('approveVersion', { version: versions.length })}
+                {t('approveVersion', { version: reviewVersionNo })}
               </Button>
 
               {canRequestChanges ? (

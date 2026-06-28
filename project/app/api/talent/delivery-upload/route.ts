@@ -35,6 +35,8 @@ export async function POST(request: NextRequest) {
   if (error || !data) {
     return NextResponse.json({ error: error?.message || 'Could not prepare upload' }, { status: 500 });
   }
-  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+  // .trim() guards against a trailing newline on the env var, which would otherwise
+  // land inside the URL (…supabase.co\n/storage/…) and break the link.
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '');
   return NextResponse.json({ path: data.path, token: data.token, publicUrl: `${base}/storage/v1/object/public/${BUCKET}/${data.path}` });
 }
