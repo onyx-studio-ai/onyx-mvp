@@ -351,7 +351,7 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
       {/* Payment */}
       <Section title={tx('報酬 Payment', '报酬 Payment', 'Payment')}>
         {row(tx('您實拿', '您实拿', 'You receive'), <span>{quote.currency} {quote.net_amount}</span>, { gold: true })}
-        {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), `${quote.included_revisions} ${tx('次', '次', '×')}`)}
+        {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), quote.included_revisions >= 99 ? tx('無限(直到滿意)', '无限(直到满意)', 'Unlimited') : `${quote.included_revisions} ${tx('次', '次', '×')}`)}
         {row(tx('結算', '结算', 'Settlement'), tx('完成驗收後由 Onyx 平台付款', '完成验收后由 Onyx 平台付款', 'Paid by Onyx after approval'))}
       </Section>
 
@@ -515,6 +515,7 @@ export default function Opportunities() {
                     </div>
                   )}
                   {(() => {
+                    if (w.order_status === 'completed') return null; // done — no stale revision banner
                     const rev = (w.deliveries || []).filter((d) => d.status === 'revision_requested').slice(-1)[0];
                     if (!rev) return null;
                     return (
@@ -528,7 +529,7 @@ export default function Opportunities() {
                   {myAccepted.map((q) => (
                     <div key={q.id} className="mb-2">
                       <div className="text-xs text-gray-400 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
-                      {q.agreement_accepted_at ? (
+                      {w.order_status === 'completed' ? null : q.agreement_accepted_at ? (
                         <DeliveryUpload quote={q} deliveries={w.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
                       ) : (
                         <JobAgreement brief={w} quote={q} token={token} tx={tx} onAccepted={(at) => setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, agreement_accepted_at: at } : x)))} />
@@ -911,6 +912,7 @@ function RoleAudition({
   const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
   const [intro, setIntro] = useState('');
   const [revPolicy, setRevPolicy] = useState('');
+  const [includedRev, setIncludedRev] = useState('1'); // revisions included in the quote (999 = unlimited)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -943,7 +945,7 @@ function RoleAudition({
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message, extra_revision_price: revPolicy.trim() || undefined }),
+      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -1062,7 +1064,14 @@ function RoleAudition({
             })()}
             <TemplatedField kind="intro" multiline label={tx('自我介紹', '自我介绍', 'About you')} value={intro} onChange={setIntro}
               builtin={builtinIntro(myName, tx)} saved={templates.intro || []} token={token} onTemplates={onTemplates} tx={tx} />
-            <TemplatedField kind="revision" optional label={tx('修改政策', '修改政策', 'Revisions')} value={revPolicy} onChange={setRevPolicy}
+            <div>
+              <span className="text-xs text-gray-300">{tx('含修改次數', '含修改次数', 'Included revisions')}</span>
+              <select className="mt-1 w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" value={includedRev} onChange={(e) => setIncludedRev(e.target.value)}>
+                {['1', '2', '3', '4', '5'].map((v) => <option key={v} value={v} className="bg-black">{tx(`含 ${v} 次修改`, `含 ${v} 次修改`, `${v} revision${v === '1' ? '' : 's'}`)}</option>)}
+                <option value="unlimited" className="bg-black">{tx('無限修改(直到客戶滿意)', '无限修改(直到客户满意)', 'Unlimited (until approved)')}</option>
+              </select>
+            </div>
+            <TemplatedField kind="revision" optional label={tx('修改政策(補充說明)', '修改政策(补充说明)', 'Revision notes')} value={revPolicy} onChange={setRevPolicy}
               builtin={builtinRev(tx)} saved={templates.revision || []} token={token} onTemplates={onTemplates} tx={tx} />
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button onClick={submit} disabled={busy || uploading} className="w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm"
@@ -1100,6 +1109,7 @@ function GeneralResponse({
   const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
   const [intro, setIntro] = useState('');
   const [revPolicy, setRevPolicy] = useState('');
+  const [includedRev, setIncludedRev] = useState('1'); // revisions included in the quote (999 = unlimited)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
@@ -1130,7 +1140,7 @@ function GeneralResponse({
     setBusy(true);
     const res = await fetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, extra_revision_price: revPolicy.trim() || undefined }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));

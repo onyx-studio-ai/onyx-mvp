@@ -27,6 +27,7 @@ export type AwardQuote = {
   net_amount?: number | null;
   talent_id?: string | null;
   currency?: string | null;
+  included_revisions?: number | null; // revisions the talent offered → order's max_revisions
 };
 
 export async function createOrderFromAward(
@@ -68,7 +69,7 @@ export async function createOrderFromAward(
     status: 'pending_payment',
     payment_status: 'pending',
     revision_count: 0,
-    max_revisions: 1,
+    max_revisions: Math.max(1, Math.trunc(Number(quote.included_revisions)) || 1), // from the talent's quote (999 = unlimited)
     rights_level: 'global',
     brief_id: brief.id,
     quote_id: quote.id,

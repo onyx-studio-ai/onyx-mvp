@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // The quote must belong to this brief.
   const { data: q } = await r.db.from('marketplace_quotes')
-    .select('id, brief_id, talent_id, gross_amount, net_amount, currency')
+    .select('id, brief_id, talent_id, gross_amount, net_amount, currency, included_revisions')
     .eq('id', quoteId).maybeSingle();
   if (!q || q.brief_id !== id) return NextResponse.json({ error: '找不到這個試音' }, { status: 404 });
 

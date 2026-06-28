@@ -9,7 +9,7 @@ import {
   Clock, RotateCcw, Play, Pause, Send, Lock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import ReviewBox from '@/components/marketplace/ReviewBox';
 
 interface Version {
@@ -93,6 +93,7 @@ function AudioPreview({ url, label }: { url: string; label: string }) {
 export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   const { toast } = useToast();
   const t = useTranslations('dashboard.voiceDetail');
+  const locale = useLocale();
   const tc = useTranslations('common');
   const [versions, setVersions] = useState<Version[]>([]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
@@ -104,7 +105,8 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
 
   const maxRev = order.max_revisions ?? 2;
   const usedRev = order.revision_count ?? 0;
-  const canRequestChanges = usedRev < maxRev;
+  const unlimitedRev = maxRev >= 99; // talent offered unlimited revisions (sentinel 999)
+  const canRequestChanges = unlimitedRev || usedRev < maxRev;
   const REVISION_LABEL_KEYS: Record<string, string> = {
     'tier-1': 'aiRetakes',
     'tier-2': 'directorRevisions',
@@ -234,7 +236,9 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
             : 'bg-cyan-500/10 border border-cyan-500/20'
         }`}>
           <span className={`text-xs ${!canRequestChanges ? 'text-red-400' : usedRev > 0 ? 'text-amber-400' : 'text-cyan-400'}`}>
-            {!canRequestChanges ? (
+            {unlimitedRev ? (
+              <span className="font-semibold">♾ {locale === 'en' ? 'Unlimited revisions (until you approve)' : locale === 'zh-CN' ? '无限修改(直到您满意)' : '無限修改(直到您滿意)'}{usedRev > 0 ? `　${locale === 'en' ? `used ${usedRev}` : `已用 ${usedRev}`}` : ''}</span>
+            ) : !canRequestChanges ? (
               <><Lock className="w-3 h-3 inline mr-1" />{t('revisionLimitReached', { label: revisionLabel, max: maxRev })}</>
             ) : (
               <><span className="font-semibold">{t('revisionsRemaining', { remaining: maxRev - usedRev, label: revisionLabel.toLowerCase() })}</span> <span className="text-gray-500 ml-1">{t('revisionsUsed', { used: usedRev, max: maxRev })}</span></>
