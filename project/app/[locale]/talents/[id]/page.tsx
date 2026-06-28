@@ -38,6 +38,38 @@ function DemoPlayer({ url, label, talent }: { url: string; label: string; talent
   );
 }
 
+// Public client-authored ratings on the talent's profile (avg + count + comments).
+function TalentReviews({ talentId }: { talentId: string }) {
+  const locale = useLocale();
+  const isZh = locale.startsWith('zh'); const isZhCN = locale === 'zh-CN';
+  const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
+  const [data, setData] = useState<{ avg: number; count: number; items: { rating: number; comment: string | null; created_at: string }[] } | null>(null);
+  useEffect(() => {
+    fetch(`/api/marketplace/reviews?talent_id=${talentId}`).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => {});
+  }, [talentId]);
+  if (!data || !data.count) return null;
+  const withComment = data.items.filter((r) => r.comment).slice(0, 6);
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-amber-400 text-xl leading-none">★</span>
+        <span className="text-lg font-semibold text-white">{data.avg}</span>
+        <span className="text-sm text-gray-500">({data.count} {tx('則評價', '则评价', data.count === 1 ? 'review' : 'reviews')})</span>
+      </div>
+      {withComment.length > 0 && (
+        <div className="space-y-2">
+          {withComment.map((r, i) => (
+            <div key={i} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5">
+              <div className="text-sm mb-1"><span className="text-amber-400">{'★'.repeat(r.rating)}</span><span className="text-gray-700">{'★'.repeat(5 - r.rating)}</span></div>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">{r.comment}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Talent {
   id: string;
   name: string;
@@ -302,6 +334,8 @@ export default function TalentProfile() {
                 </div>
               </div>
             )}
+
+            <TalentReviews talentId={t.id} />
 
             <Link href={`/${locale}/hire?talent=${encodeURIComponent(t.name)}&talentId=${t.id}`}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-medium hover:from-amber-400 hover:to-orange-400 transition-colors">

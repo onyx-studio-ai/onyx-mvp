@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from 'next-intl';
+import ReviewBox from '@/components/marketplace/ReviewBox';
 
 interface Version {
   id: string;
@@ -459,6 +460,9 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
           </div>
         </div>
       )}
+
+      {/* Rate the talent once the order is complete */}
+      {order.status === 'completed' && <ReviewBox orderId={order.id} myType="client" />}
     </div>
   );
 }

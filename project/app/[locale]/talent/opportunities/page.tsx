@@ -18,6 +18,7 @@ import { Briefcase, CheckCircle2, Archive } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
+import ReviewBox from '@/components/marketplace/ReviewBox';
 import { StatModule, EntityCard, InfoPills } from '@/components/dashboard/cards';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
@@ -393,7 +394,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
@@ -495,7 +496,9 @@ export default function Opportunities() {
                   accent="green"
                   code={w.brief_number}
                   title={w.title || w.content_type || tx('配音案', '配音案', 'Voice case')}
-                  badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-green-500/15 text-green-200 border-green-500/30 whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>}
+                  badge={w.order_status === 'completed'
+                    ? <span className="text-xs px-2.5 py-1 rounded-full border bg-[#6FCF97]/20 text-[#6FCF97] border-[#6FCF97]/40 whitespace-nowrap">{tx('已完成', '已完成', 'Completed')}</span>
+                    : <span className="text-xs px-2.5 py-1 rounded-full border bg-green-500/15 text-green-200 border-green-500/30 whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>}
                 >
                   {(w.final_script || w.final_script_url) && (
                     <div className="mb-3">
@@ -536,6 +539,9 @@ export default function Opportunities() {
                     <p className="text-[11px] text-gray-500">{tx('接單後即可開始錄製,完成在此上傳交付檔。', '接单后即可开始录制,完成在此上传交付档。', 'Once you accept, record and upload your delivery here.')}</p>
                     <Link href={`/talent/messages?brief=${w.id}`} className="inline-flex items-center gap-1 text-[11px] text-sky-300 hover:text-sky-200 hover:underline">💬 {tx('與客戶直接對話', '与客户直接对话', 'Message the client')} →</Link>
                   </div>
+                  {w.order_status === 'completed' && w.order_id && (
+                    <div className="mt-3"><ReviewBox orderId={w.order_id} myType="talent" /></div>
+                  )}
                 </EntityCard>
               );
             })}

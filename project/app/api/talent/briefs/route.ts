@@ -78,10 +78,10 @@ export async function GET(request: NextRequest) {
         .in('id', wonIds);
       // The FINAL script the client locked at selection lives on the production
       // order — surface it so the won talent records from the right script (self-serve).
-      const { data: ords } = await r.db.from('voice_orders').select('id, brief_id, script_text, script_file_url, deadline, created_at').in('brief_id', wonIds);
-      const orderByBrief: Record<string, { id: string; script_text?: string | null; script_file_url?: string | null; deadline?: string | null; created_at?: string | null }> = {};
+      const { data: ords } = await r.db.from('voice_orders').select('id, brief_id, script_text, script_file_url, deadline, created_at, status').in('brief_id', wonIds);
+      const orderByBrief: Record<string, { id: string; script_text?: string | null; script_file_url?: string | null; deadline?: string | null; created_at?: string | null; status?: string | null }> = {};
       const orderIdToBrief: Record<string, string> = {};
-      for (const o of ords || []) { if (o.brief_id) { orderByBrief[o.brief_id as string] = { id: o.id as string, script_text: o.script_text as string | null, script_file_url: o.script_file_url as string | null, deadline: o.deadline as string | null, created_at: o.created_at as string | null }; orderIdToBrief[o.id as string] = o.brief_id as string; } }
+      for (const o of ords || []) { if (o.brief_id) { orderByBrief[o.brief_id as string] = { id: o.id as string, script_text: o.script_text as string | null, script_file_url: o.script_file_url as string | null, deadline: o.deadline as string | null, created_at: o.created_at as string | null, status: o.status as string | null }; orderIdToBrief[o.id as string] = o.brief_id as string; } }
       // The talent's delivered files (voice_order_versions) per won brief.
       const deliveriesByBrief: Record<string, { id: string; file_name: string; file_url: string }[]> = {};
       const orderIds = (ords || []).map((o) => o.id as string);
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, version_number, status, client_feedback').in('voice_order_id', orderIds).order('version_number', { ascending: true });
         for (const v of vers || []) { const bid = orderIdToBrief[v.voice_order_id as string]; if (bid) (deliveriesByBrief[bid] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null, client_feedback: v.client_feedback as string | null }); }
       }
-      wonBriefs = (wb || []).map((b) => ({ ...b, final_script: orderByBrief[(b as { id: string }).id]?.script_text || null, final_script_url: orderByBrief[(b as { id: string }).id]?.script_file_url || null, order_deadline: orderByBrief[(b as { id: string }).id]?.deadline || null, order_created: orderByBrief[(b as { id: string }).id]?.created_at || null, deliveries: deliveriesByBrief[(b as { id: string }).id] || [] }));
+      wonBriefs = (wb || []).map((b) => ({ ...b, order_id: orderByBrief[(b as { id: string }).id]?.id || null, order_status: orderByBrief[(b as { id: string }).id]?.status || null, final_script: orderByBrief[(b as { id: string }).id]?.script_text || null, final_script_url: orderByBrief[(b as { id: string }).id]?.script_file_url || null, order_deadline: orderByBrief[(b as { id: string }).id]?.deadline || null, order_created: orderByBrief[(b as { id: string }).id]?.created_at || null, deliveries: deliveriesByBrief[(b as { id: string }).id] || [] }));
     }
 
     // Cases the talent APPLIED to that have ended (closed / cancelled / awarded to
