@@ -55,7 +55,7 @@ export default function ReviewBox({ orderId, myType, targetLabel }: {
     setBusy(true); setErr('');
     const r = await fetch('/api/marketplace/reviews', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ order_id: orderId, rating, comment }),
+      body: JSON.stringify({ order_id: orderId, rating, comment, reviewer_type: myType }),
     });
     const j = await r.json().catch(() => ({}));
     setBusy(false);

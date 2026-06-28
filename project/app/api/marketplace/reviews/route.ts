@@ -50,9 +50,10 @@ export async function POST(request: NextRequest) {
   const c = await resolve(request);
   if (!c) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  let body: { order_id?: string; rating?: number; comment?: string };
+  let body: { order_id?: string; rating?: number; comment?: string; reviewer_type?: string };
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const orderId = String(body.order_id || '');
+  const wanted = body.reviewer_type === 'client' || body.reviewer_type === 'talent' ? body.reviewer_type : null;
   const rating = Math.trunc(Number(body.rating));
   const comment = String(body.comment || '').slice(0, 1000).trim() || null;
   if (!orderId) return NextResponse.json({ error: 'order_id is required' }, { status: 400 });
@@ -63,10 +64,17 @@ export async function POST(request: NextRequest) {
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   if (order.status !== 'completed') return NextResponse.json({ error: '結案後才能評價。' }, { status: 400 });
 
-  // Who is reviewing — the talent of this order, or its client?
+  // Who is reviewing — the talent of this order, or its client? The UI says which
+  // side it's acting as (wanted); we just verify the caller qualifies for it. This
+  // disambiguates when ONE account is both client and talent (same-email testing).
+  const isTalent = !!(c.talentId && c.talentId === order.talent_id);
+  const isClient = String(order.email || '').toLowerCase() === c.email;
   let reviewerType: 'client' | 'talent' | null = null;
-  if (c.talentId && c.talentId === order.talent_id) reviewerType = 'talent';
-  else if (String(order.email || '').toLowerCase() === c.email) reviewerType = 'client';
+  if (wanted) {
+    if ((wanted === 'talent' && isTalent) || (wanted === 'client' && isClient)) reviewerType = wanted;
+  } else {
+    reviewerType = isClient ? 'client' : isTalent ? 'talent' : null;
+  }
   if (!reviewerType) return NextResponse.json({ error: 'Not your order' }, { status: 403 });
 
   const { error } = await c.db.from('marketplace_reviews')
