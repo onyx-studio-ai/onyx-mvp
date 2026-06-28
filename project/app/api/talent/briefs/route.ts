@@ -86,8 +86,8 @@ export async function GET(request: NextRequest) {
       const deliveriesByBrief: Record<string, { id: string; file_name: string; file_url: string }[]> = {};
       const orderIds = (ords || []).map((o) => o.id as string);
       if (orderIds.length) {
-        const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, version_number').in('voice_order_id', orderIds).order('version_number', { ascending: true });
-        for (const v of vers || []) { const bid = orderIdToBrief[v.voice_order_id as string]; if (bid) (deliveriesByBrief[bid] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string }); }
+        const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, version_number, status, client_feedback').in('voice_order_id', orderIds).order('version_number', { ascending: true });
+        for (const v of vers || []) { const bid = orderIdToBrief[v.voice_order_id as string]; if (bid) (deliveriesByBrief[bid] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null, client_feedback: v.client_feedback as string | null }); }
       }
       wonBriefs = (wb || []).map((b) => ({ ...b, final_script: orderByBrief[(b as { id: string }).id]?.script_text || null, final_script_url: orderByBrief[(b as { id: string }).id]?.script_file_url || null, order_deadline: orderByBrief[(b as { id: string }).id]?.deadline || null, order_created: orderByBrief[(b as { id: string }).id]?.created_at || null, deliveries: deliveriesByBrief[(b as { id: string }).id] || [] }));
     }

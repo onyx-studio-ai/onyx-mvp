@@ -393,7 +393,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string }[] }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
@@ -511,6 +511,17 @@ export default function Opportunities() {
                       )}
                     </div>
                   )}
+                  {(() => {
+                    const rev = (w.deliveries || []).filter((d) => d.status === 'revision_requested').slice(-1)[0];
+                    if (!rev) return null;
+                    return (
+                      <div className="mb-3 rounded-lg border border-sky-500/30 bg-sky-500/[0.08] px-3 py-2.5">
+                        <p className="text-sm font-semibold text-sky-300 mb-1">🔁 {tx('客戶要求修改', '客户要求修改', 'Client requested changes')}</p>
+                        {rev.client_feedback && <p className="text-sm text-gray-200 whitespace-pre-wrap"><span className="text-gray-500">{tx('客戶意見', '客户意见', 'Notes')}:</span> {rev.client_feedback}</p>}
+                        <p className="text-[11px] text-gray-400 mt-1">{tx('請依意見修改後,在下方重新上傳修改版。', '请依意见修改后,在下方重新上传修改版。', 'Revise per the notes and upload the new version below.')}</p>
+                      </div>
+                    );
+                  })()}
                   {myAccepted.map((q) => (
                     <div key={q.id} className="mb-2">
                       <div className="text-xs text-gray-400 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>

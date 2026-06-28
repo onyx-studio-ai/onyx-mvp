@@ -1114,6 +1114,35 @@ export function castingDeliveryClientEmail(p: { clientName?: string; title?: str
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
 }
 
+/** Talent: the client reviewed the delivery and asked for changes. */
+export function castingRevisionTalentEmail(p: { talentName?: string; title: string; feedback?: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const t = mpEsc(p.title); const fb = (p.feedback || '').trim();
+  const C = {
+    tw: { subject: `客戶要求修改 —— ${t}`, headline: '客戶要求修改', sub: '客戶聽過交付後,希望您調整一版', card: '修改請求', l1: `客戶已聽過「<strong style="color:#f3f4f6;">${t}</strong>」的交付,想請您依下方意見修改後重新上傳。`, fbLabel: '客戶意見', l2: '請登入後台,在這個案子重新上傳修改版即可。', cta: '前往修改', sign: 'Onyx Studios 製作團隊 敬上' },
+    cn: { subject: `客户要求修改 —— ${t}`, headline: '客户要求修改', sub: '客户听过交付后,希望您调整一版', card: '修改请求', l1: `客户已听过「<strong style="color:#f3f4f6;">${t}</strong>」的交付,想请您依下方意见修改后重新上传。`, fbLabel: '客户意见', l2: '请登录后台,在这个案子重新上传修改版即可。', cta: '前往修改', sign: 'Onyx Studios 制作团队 敬上' },
+    en: { subject: `The client requested changes — ${t}`, headline: 'The client requested changes', sub: 'After reviewing your delivery, they\'d like a revision', card: 'Revision request', l1: `The client listened to your delivery for “<strong style="color:#f3f4f6;">${t}</strong>” and would like you to revise it per the notes below, then re-upload.`, fbLabel: 'Client notes', l2: 'Sign in and upload the revised file on this case.', cta: 'Make changes', sign: 'The Onyx Studios Production Team' },
+  }[L];
+  const fbHtml = fb ? bodyCard(C.fbLabel, `<p style="color:#f3f4f6;font-size:15px;line-height:1.7;margin:0;white-space:pre-wrap;">${mpEsc(fb)}</p>`) : '';
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${fbHtml}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
+/** Talent: the client approved the delivery. */
+export function castingApprovedTalentEmail(p: { talentName?: string; title: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const t = mpEsc(p.title);
+  const C = {
+    tw: { subject: `客戶已驗收 —— ${t}`, headline: '客戶已驗收您的交付', sub: '這個案子的成品通過了', card: '驗收通過', l1: `好消息 —— 客戶已確認「<strong style="color:#f3f4f6;">${t}</strong>」的交付。Onyx 會接著處理結算,款項依約撥付。`, cta: '查看案件', sign: 'Onyx Studios 製作團隊 敬上' },
+    cn: { subject: `客户已验收 —— ${t}`, headline: '客户已验收您的交付', sub: '这个案子的成品通过了', card: '验收通过', l1: `好消息 —— 客户已确认「<strong style="color:#f3f4f6;">${t}</strong>」的交付。Onyx 会接着处理结算,款项依约拨付。`, cta: '查看案件', sign: 'Onyx Studios 制作团队 敬上' },
+    en: { subject: `The client approved your delivery — ${t}`, headline: 'The client approved your delivery', sub: 'Your work on this job passed review', card: 'Approved', l1: `Good news — the client approved your delivery for “<strong style="color:#f3f4f6;">${t}</strong>”. Onyx will handle settlement and pay out per the agreement.`, cta: 'View job', sign: 'The Onyx Studios Production Team' },
+  }[L];
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.l1)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
 /** New-message notification to the counterpart in a marketplace thread. */
 export function newMessageEmail(p: { briefNumber?: string; locale?: string; url: string; body?: string; senderName?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);

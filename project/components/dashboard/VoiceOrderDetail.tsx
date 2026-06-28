@@ -131,27 +131,25 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   const reviewUrl = cleanUrl(latestVersion?.file_url) || cleanUrl(order.download_url);
   const reviewVersionNo = versions.length || 1;
 
+  // Approve / request-revision run server-side (service role) — browser writes to
+  // voice_orders are RLS-blocked (silent no-op), and a casting revision must reach
+  // the TALENT, not the order email. See /api/client/orders/[id]/review.
+  const review = async (action: 'approve' | 'revise', feedback?: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`/api/client/orders/${order.id}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+      body: JSON.stringify({ action, feedback }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || t('operationFailed'));
+  };
+
   const handleApproveVersion = async () => {
     if (!reviewUrl) return;
     setSubmitting(true);
     try {
-      if (latestVersion) await supabase.from('voice_order_versions').update({ status: 'approved' }).eq('id', latestVersion.id);
-      await supabase.from('voice_orders').update({ status: 'awaiting_final' }).eq('id', order.id);
-      try {
-        await fetch('/api/mail/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workflow: 'voice',
-            type: 'version_approved',
-            email: order.email,
-            orderNumber: order.order_number,
-            orderId: order.id,
-            category: 'PRODUCTION',
-            versionNumber: versions.length,
-          }),
-        });
-      } catch { /* non-critical */ }
+      await review('approve');
       toast({ title: t('versionApproved'), description: t('versionApprovedDesc') });
       fetchData();
       onRefresh();
@@ -169,28 +167,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
     }
     setSubmitting(true);
     try {
-      if (latestVersion) {
-        await supabase.from('voice_order_versions').update({
-          status: 'revision_requested',
-          client_feedback: revisionNotes.trim(),
-        }).eq('id', latestVersion.id);
-      }
-      await supabase.from('voice_orders').update({ status: 'in_production' }).eq('id', order.id);
-      try {
-        await fetch('/api/mail/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            workflow: 'voice',
-            type: 'revision_requested',
-            email: order.email,
-            orderNumber: order.order_number,
-            orderId: order.id,
-            category: 'PRODUCTION',
-            clientFeedback: revisionNotes.trim(),
-          }),
-        });
-      } catch { /* non-critical */ }
+      await review('revise', revisionNotes.trim());
       setRevisionNotes('');
       setShowRevisionForm(false);
       toast({ title: t('revisionRequestSentTitle'), description: t('revisionRequestSentDesc') });
