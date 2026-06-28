@@ -439,6 +439,26 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
           </div>
         </div>
       )}
+
+      {/* Completed (casting/real-person) — no separate deliverables, the talent's
+          approved file IS the final. Show it for download. */}
+      {order.status === 'completed' && deliverables.length === 0 && reviewUrl && (
+        <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-5 space-y-4">
+          <div className="flex items-center gap-2 text-green-400 font-semibold">
+            <CheckCircle2 className="w-5 h-5" />
+            {t('voiceoverReady')}
+          </div>
+          <p className="text-sm text-gray-400">{t('allFinalFiles')}</p>
+          <div className="flex items-center gap-3">
+            <AudioPreview url={reviewUrl} label={t('preview')} />
+            <a href={reviewUrl} download
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-400 text-xs font-medium transition-colors">
+              <Download className="w-3.5 h-3.5" />
+              {t('download')}
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

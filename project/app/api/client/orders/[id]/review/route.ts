@@ -57,7 +57,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (action === 'approve') {
     if (latest) await db.from('voice_order_versions').update({ status: 'approved' }).eq('id', latest.id);
-    const { error } = await db.from('voice_orders').update({ status: 'awaiting_final', updated_at: new Date().toISOString() }).eq('id', id);
+    // For a casting/real-person order the talent's delivered file IS the final file —
+    // approving completes + closes it (the client downloads right away). Onyx-produced
+    // orders (no talent) still go to awaiting_final for the team to prep deliverables.
+    const isCasting = !!order.talent_id;
+    const newStatus = isCasting ? 'completed' : 'awaiting_final';
+    const upd: Record<string, unknown> = { status: newStatus, updated_at: new Date().toISOString() };
+    if (isCasting && order.download_url) upd.download_url = order.download_url; // keep final file downloadable
+    const { error } = await db.from('voice_orders').update(upd).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (order.talent_id) {
       const { data: talent } = await db.from('talents').select('name, email').eq('id', order.talent_id).maybeSingle();
@@ -66,8 +73,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         sendEmail({ category: 'PRODUCTION', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
       }
     }
-    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: `客戶已驗收 · ${order.order_number}`, html: `<p>Order ${order.order_number} approved by client. Now awaiting final.</p>` }).catch(() => {});
-    return NextResponse.json({ ok: true, status: 'awaiting_final' });
+    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: `客戶已驗收 · ${order.order_number}`, html: `<p>Order ${order.order_number} approved by client → ${newStatus}.</p>` }).catch(() => {});
+    return NextResponse.json({ ok: true, status: newStatus });
   }
 
   // revise
