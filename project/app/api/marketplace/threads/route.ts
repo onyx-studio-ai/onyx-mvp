@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       if (ids.length) {
         const { data: briefs } = await c.db
           .from('marketplace_briefs')
-          .select('id, brief_number, brief, status, client_name, company')
+          .select('id, brief_number, title, content_type, brief, status, client_name, company')
           .in('id', ids);
         for (const b of briefs || []) {
           threads.push({
@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
             talent_id: c.talentId,
             role: 'talent',
             brief_number: b.brief_number,
-            title: (b.brief || '').slice(0, 80),
+            // the case NAME (案名), so the thread leads with which case it is
+            title: b.title || b.content_type || (b.brief || '').slice(0, 40),
             brief_status: b.status,
             counterpart: b.client_name || b.company || 'Client',
           });
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     // interpolated (that allowed ilike %/_ wildcards + filter break-out, leaking
     // other clients' briefs). Exact eq; relies on client_email stored lowercased
     // at /hire insert (c.email is already lowercased).
-    const cols = 'id, brief_number, brief, status';
+    const cols = 'id, brief_number, title, content_type, brief, status';
     const byId = c.userId
       ? (await c.db.from('marketplace_briefs').select(cols).eq('client_user_id', c.userId)).data || []
       : [];
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
           talent_id: q.talent_id,
           role: 'client',
           brief_number: b.brief_number,
-          title: (b.brief || '').slice(0, 80),
+          title: (b as { title?: string }).title || (b as { content_type?: string }).content_type || (b.brief || '').slice(0, 40),
           brief_status: b.status,
           counterpart: (q.talents as { name?: string } | null)?.name || 'Talent',
         });

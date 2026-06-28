@@ -142,11 +142,15 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
   if (active) {
     return shell(
       <div className="flex flex-col h-[70vh]">
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={() => setActive(null)} className="text-xs text-gray-400 hover:text-white transition">← {tx('所有對話', '所有对话', 'All threads')}</button>
-          <span className="text-xs text-gray-500 font-mono">{active.brief_number}</span>
+        <button onClick={() => setActive(null)} className="text-xs text-gray-400 hover:text-white transition mb-2 self-start">← {tx('所有對話', '所有对话', 'All threads')}</button>
+        {/* case name + number prominent, then who you're talking to */}
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-white truncate">{active.title || tx('配音案', '配音案', 'Voice case')}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            <span className="font-mono">{active.brief_number}</span> · {tx('與', '与', 'With')} <span className="text-gray-300">{active.counterpart}</span>
+            <span className="text-gray-600"> · {active.role === 'talent' ? tx('我是配音員', '我是配音员', 'as talent') : tx('我是客戶', '我是客户', 'as client')}</span>
+          </p>
         </div>
-        <p className="text-sm text-gray-300 mb-3">{tx('與', '与', 'With')} <b>{active.counterpart}</b> · <span className="text-gray-500">{active.title}</span></p>
         <div className="flex-1 overflow-y-auto space-y-2 bg-white/[0.02] border border-white/10 rounded-xl p-4">
           {messages.length === 0 && <p className="text-gray-600 text-sm text-center py-8">{tx('還沒有訊息,開始對話吧。', '还没有消息,开始对话吧。', 'No messages yet — say hello.')}</p>}
           {messages.map((m) => {
@@ -190,21 +194,23 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
           const unread = isUnread(t);
           return (
           <button key={t.key} onClick={() => openThread(t)} className={`w-full text-left border rounded-xl p-4 transition ${unread ? 'bg-green-500/[0.07] border-green-400/30 hover:bg-green-500/[0.1]' : 'bg-white/[0.02] hover:bg-white/[0.05] border-white/10'}`}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-gray-200 inline-flex items-center gap-2">
-                {unread && <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" aria-label={tx('未讀', '未读', 'unread')} />}
-                {tx('與', '与', 'With')} <b className={unread ? 'text-white' : ''}>{t.counterpart}</b>
-              </span>
-              <span className="text-xs text-gray-500 font-mono shrink-0">{t.brief_number}</span>
+            {/* lead with the CASE (name + number) so it's clear which job this is */}
+            <div className="flex items-start gap-2 mb-1">
+              {unread && <span className="w-2 h-2 rounded-full bg-green-400 shrink-0 mt-1.5" aria-label={tx('未讀', '未读', 'unread')} />}
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm font-semibold truncate ${unread ? 'text-white' : 'text-gray-200'}`}>{t.title || tx('配音案', '配音案', 'Voice case')}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  <span className="font-mono">{t.brief_number}</span> · {tx('與', '与', 'With')} <span className="text-gray-300">{t.counterpart}</span>
+                  <span className="text-gray-600"> · {t.role === 'talent' ? tx('我是配音員', '我是配音员', 'as talent') : tx('我是客戶', '我是客户', 'as client')}</span>
+                </p>
+              </div>
+              {unread && <span className="text-[10px] text-green-300 shrink-0 whitespace-nowrap">{tx('新訊息', '新消息', 'New')}</span>}
             </div>
-            {t.last_preview ? (
-              <p className={`text-xs mt-1 truncate ${unread ? 'text-gray-200' : 'text-gray-500'}`}>
+            {t.last_preview && (
+              <p className={`text-xs truncate ${unread ? 'text-gray-200' : 'text-gray-500'}`}>
                 {t.last_sender_type === t.role ? tx('你:', '你:', 'You: ') : ''}{t.last_preview}
               </p>
-            ) : (
-              <p className="text-xs text-gray-500 mt-1 truncate">{t.title}</p>
             )}
-            <span className="text-[10px] text-gray-600">{t.role === 'talent' ? tx('我是配音員', '我是配音员', 'as talent') : tx('我是客戶', '我是客户', 'as client')} · {t.brief_status}{unread ? ` · ${tx('新訊息', '新消息', 'new')}` : ''}</span>
           </button>
           );
         })}
