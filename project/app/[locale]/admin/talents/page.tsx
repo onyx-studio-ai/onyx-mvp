@@ -1369,16 +1369,9 @@ export default function AdminTalentsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {(talent as Talent & { application_id?: string }).application_id ? (
-                    // Human marketplace talent — priced per project (quote), not a flat fee.
-                    <span className="text-gray-600 text-sm">報價制</span>
-                  ) : (
-                    // AI-voice catalogue entry — flat list price.
-                    <>
-                      <span className="text-gray-900 font-semibold">$499</span>
-                      <span className="text-xs text-gray-500 block">(Cost: ${(talent.internal_cost || 0).toFixed(0)})</span>
-                    </>
-                  )}
+                  {/* 人才管理 = real-person roster → always quote-based (Wing 2026-06-28).
+                      The flat $499 is the AI-voice product price and lives elsewhere. */}
+                  <span className="text-gray-600 text-sm">報價制</span>
                 </TableCell>
                 <TableCell>
                   {(() => {
