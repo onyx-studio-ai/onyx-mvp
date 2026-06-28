@@ -224,15 +224,49 @@ function ReauditUpload({ quote, token, tx, onDone }: { quote: Quote; token: stri
   );
 }
 
-// Job agreement (授權書) — shown on a won job. The talent must accept before they
-// can upload a delivery. Terms auto-generated from the brief + the won quote.
+// Format a Date as YYYY/MM/DD (locale-agnostic, no timezone noise).
+function fmtDay(d: Date | null): string {
+  return d ? `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}` : '—';
+}
+
+// Derive the license window the way Voices' Job Agreement shows it: a Start Date
+// (when the job is awarded — the order's creation date) and an Expiry Date (start +
+// the parsed duration from the license term). Buyout / perpetual terms have no
+// expiry; an unparseable duration falls back to showing the raw term only.
+function licenseWindow(term: string | null | undefined, startISO: string | null | undefined): { start: Date | null; expiry: Date | null; perpetual: boolean; unknown: boolean } {
+  const start = startISO ? new Date(startISO) : null;
+  const t = (term || '').toString();
+  const perpetual = /買斷|永久|無限|不限|perpetual|buyout|forever|in perpetuity|unlimited/i.test(t);
+  if (perpetual) return { start, expiry: null, perpetual: true, unknown: false };
+  if (!start) return { start: null, expiry: null, perpetual: false, unknown: !!term };
+  const y = t.match(/(\d+)\s*(年|year|yr)/i);
+  const mo = t.match(/(\d+)\s*(個?月|month|mo)/i);
+  const w = t.match(/(\d+)\s*(週|周|week|wk)/i);
+  const d = t.match(/(\d+)\s*(天|日|day)/i);
+  const e = new Date(start);
+  if (y) e.setFullYear(e.getFullYear() + parseInt(y[1], 10));
+  else if (mo) e.setMonth(e.getMonth() + parseInt(mo[1], 10));
+  else if (w) e.setDate(e.getDate() + parseInt(w[1], 10) * 7);
+  else if (d) e.setDate(e.getDate() + parseInt(d[1], 10));
+  else return { start, expiry: null, perpetual: false, unknown: true };
+  return { start, expiry: e, perpetual: false, unknown: false };
+}
+
+// Job agreement (授權書) — shown on a won job. Modelled on the Voices.com Job
+// Agreement so the talent sees the full deal before accepting: project, service &
+// skill (incl. the use-case), license scope + period (start / expiry dates),
+// payment, schedule and instructions. Must be accepted before uploading a
+// delivery. Auto-generated from the brief + the won quote.
 function JobAgreement({ brief, quote, token, tx, onAccepted }: {
-  brief: { title?: string | null; content_type?: string | null; language?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null };
+  brief: { brief_number?: string | null; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null };
   quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onAccepted: (at: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const license = [brief.media_scope, brief.territory, brief.license_term].filter(Boolean).join(' · ');
+  const lic = licenseWindow(brief.license_term, brief.order_created);
+  // Service & skill line: 真人配音 (Voice Over) + the use-case (content_type), e.g. 線上廣告.
+  const skill = [tx('真人配音 Voice Over', '真人配音 Voice Over', 'Voice Over'), brief.content_type].filter(Boolean).join(' · ');
+  const voice = [brief.language, brief.accent].filter(Boolean).join(' · ');
   async function accept() {
     setErr(''); setBusy(true);
     try {
@@ -242,34 +276,83 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
       onAccepted(j.quote?.agreement_accepted_at || new Date().toISOString());
     } catch (e) { setErr(e instanceof Error ? e.message : tx('接單失敗', '接单失败', 'Failed')); } finally { setBusy(false); }
   }
-  const cell = (k: string, v: React.ReactNode) => v ? (
-    <div className="bg-black/20 rounded-lg px-3 py-2">
-      <p className="text-[11px] text-[#C9A86A]/80 mb-0.5">{k}</p>
-      <p className="text-sm text-gray-100 font-medium">{v}</p>
+  // One label:value row inside a section. Skips itself when there's no value.
+  const row = (k: string, v: React.ReactNode, opts?: { gold?: boolean }) => v ? (
+    <div className="flex items-baseline justify-between gap-3 py-1.5">
+      <span className="text-[12px] text-gray-400 shrink-0">{k}</span>
+      <span className={`text-sm text-right ${opts?.gold ? 'text-[#6FCF97] font-semibold' : 'text-gray-100'}`}>{v}</span>
     </div>
   ) : null;
+  // A titled section block.
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div className="px-4 py-3 border-b border-white/[0.06] last:border-0">
+      <p className="text-[11px] tracking-[0.14em] text-[#C9A86A] uppercase mb-1">{title}</p>
+      <div className="divide-y divide-white/[0.04]">{children}</div>
+    </div>
+  );
   return (
-    <div className="rounded-xl border border-[#C9A86A]/40 bg-[#C9A86A]/[0.06] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[#C9A86A]/25 bg-[#C9A86A]/[0.08]">
-        <span className="text-base">📄</span>
-        <div>
-          <p className="text-sm font-semibold text-[#E4CB94]">{tx('授權書 · 接單確認', '授权书 · 接单确认', 'Job Agreement')}</p>
-          <p className="text-[11px] text-gray-400">{tx('接單前請確認以下條款', '接单前请确认以下条款', 'Review the terms before accepting')}</p>
+    <div className="rounded-xl border border-[#C9A86A]/40 bg-[#1a1714]/60 overflow-hidden">
+      {/* header — title + 案號, like the License # on a Voices agreement */}
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#C9A86A]/25 bg-[#C9A86A]/[0.08]">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-base">📄</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#E4CB94]">{tx('授權書 · Job Agreement', '授权书 · Job Agreement', 'Job Agreement')}</p>
+            <p className="text-[11px] text-gray-400">{tx('接單前請確認以下條款,雙方依此履約。', '接单前请确认以下条款,双方依此履约。', 'Review the full terms before accepting.')}</p>
+          </div>
         </div>
+        {brief.brief_number && <span className="text-[11px] font-mono text-[#C9A86A]/80 shrink-0">#{brief.brief_number}</span>}
       </div>
-      <div className="p-4 space-y-3">
-        <div className="grid grid-cols-2 gap-2">
-          {cell(tx('案件', '案件', 'Project'), `${brief.title || brief.content_type || '—'}${quote.role_name ? ` · ${quote.role_name}` : ''}`)}
-          {cell(tx('服務', '服务', 'Service'), `${tx('真人配音', '真人配音', 'Voiceover')}${brief.language ? ` · ${brief.language}` : ''}`)}
-          {cell(tx('授權範圍', '授权范围', 'License'), license)}
-          {cell(tx('報酬(您實拿)', '报酬(您实拿)', 'Your fee'), <span className="text-[#6FCF97]">{quote.currency} {quote.net_amount}</span>)}
-          {cell(tx('交付期限', '交付期限', 'Deadline'), brief.deadline)}
-          {quote.included_revisions != null && cell(tx('含修改', '含修改', 'Revisions'), `${quote.included_revisions} ${tx('次', '次', '×')}`)}
-        </div>
-        <div className="rounded-lg bg-black/20 px-3 py-2.5">
-          <p className="text-[11px] text-[#C9A86A]/80 mb-1">{tx('條款', '条款', 'Terms')}</p>
-          <p className="text-xs text-gray-300 leading-relaxed">{tx('按「同意並接單」即表示您同意依約交付,並授予客戶上述使用範圍之授權;完成後在此上傳交付檔,由 Onyx 平台居中結算。未接單前無法上傳。', '按「同意并接单」即表示您同意依约交付,并授予客户上述使用范围之授权;完成后在此上传交付档,由 Onyx 平台居中结算。未接单前无法上传。', 'Accepting means you agree to deliver per these terms and grant the client the license above; upload your delivery here when done. Onyx settles payment. You can\'t upload before accepting.')}</p>
-        </div>
+
+      {/* Project */}
+      <Section title={tx('專案 Project', '专案 Project', 'Project')}>
+        {row(tx('案件', '案件', 'Title'), `${brief.title || brief.content_type || '—'}${quote.role_name ? ` · ${quote.role_name}` : ''}`)}
+        {row(tx('委託', '委托', 'Engaged by'), tx('客戶委託(經 Onyx 平台居中)', '客户委托(经 Onyx 平台居中)', 'Client engagement via Onyx'))}
+      </Section>
+
+      {/* Service & Skill — with the use-case spelled out */}
+      <Section title={tx('服務與技能 Service & Skill', '服务与技能 Service & Skill', 'Service & Skill')}>
+        {row(tx('服務', '服务', 'Service'), skill)}
+        {row(tx('聲音', '声音', 'Voice'), voice)}
+      </Section>
+
+      {/* License — scope + the period (start / expiry), the part that was missing */}
+      <Section title={tx('授權 License', '授权 License', 'License')}>
+        {row(tx('使用範圍', '使用范围', 'Usage'), brief.media_scope)}
+        {row(tx('地區', '地区', 'Territory'), brief.territory)}
+        {row(tx('授權期間', '授权期间', 'Term'), brief.license_term)}
+        {row(tx('授權開始', '授权开始', 'Start date'), lic.start ? fmtDay(lic.start) : tx('接單日起算', '接单日起算', 'On award'))}
+        {row(tx('授權到期', '授权到期', 'Expiry date'),
+          lic.perpetual ? tx('永久(買斷)', '永久(买断)', 'Perpetual (buyout)')
+            : lic.expiry ? fmtDay(lic.expiry)
+              : (brief.license_term ? tx('依授權期間計算', '依授权期间计算', 'Per term above') : '—'))}
+      </Section>
+
+      {/* Payment */}
+      <Section title={tx('報酬 Payment', '报酬 Payment', 'Payment')}>
+        {row(tx('您實拿', '您实拿', 'You receive'), <span>{quote.currency} {quote.net_amount}</span>, { gold: true })}
+        {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), `${quote.included_revisions} ${tx('次', '次', '×')}`)}
+        {row(tx('結算', '结算', 'Settlement'), tx('完成驗收後由 Onyx 平台付款', '完成验收后由 Onyx 平台付款', 'Paid by Onyx after approval'))}
+      </Section>
+
+      {/* Schedule */}
+      <Section title={tx('時程 Schedule', '时程 Schedule', 'Schedule')}>
+        {row(tx('開始', '开始', 'Start'), tx('接單後即可開始錄製', '接单后即可开始录制', 'Begin once accepted'))}
+        {row(tx('交付期限', '交付期限', 'Delivery due'), brief.deadline || tx('與客戶議定', '与客户议定', 'TBD with client'))}
+      </Section>
+
+      {/* Instructions & Files for the talent */}
+      <Section title={tx('給配音員 Instructions & Files', '给配音员 Instructions & Files', 'Instructions & Files')}>
+        {row(tx('正式稿件', '正式稿件', 'Final script'),
+          brief.final_script ? tx('已附(見上方,請依此錄製)', '已附(见上方,请依此录制)', 'Provided above — record from it')
+            : brief.final_script_url ? tx('已附稿件檔(見上方)', '已附稿件档(见上方)', 'File attached above')
+              : tx('將由客戶提供', '将由客户提供', 'Client will provide'))}
+        {row(tx('技術規格', '技术规格', 'Spec'), tx('正式錄製 48kHz / 24-bit、乾淨無雜訊', '正式录制 48kHz / 24-bit、干净无杂讯', '48kHz / 24-bit, clean, noise-free'))}
+      </Section>
+
+      {/* Terms + accept */}
+      <div className="p-4 space-y-3 border-t border-[#C9A86A]/25 bg-black/20">
+        <p className="text-xs text-gray-300 leading-relaxed">{tx('按「同意並接單」即表示您同意依上述條款交付,並授予客戶上述使用範圍、地區與期間之授權;完成後在此上傳交付檔,由 Onyx 平台居中驗收與結算。未接單前無法上傳。', '按「同意并接单」即表示您同意依上述条款交付,并授予客户上述使用范围、地区与期间之授权;完成后在此上传交付档,由 Onyx 平台居中验收与结算。未接单前无法上传。', 'Accepting means you agree to deliver per the terms above and grant the client the usage, territory and term shown; upload your delivery here when done — Onyx handles review and payment. You can\'t upload before accepting.')}</p>
         {err && <p className="text-[11px] text-red-400">{err}</p>}
         <button onClick={accept} disabled={busy} className="w-full rounded-lg px-4 py-2.5 text-sm disabled:opacity-50" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
           {busy ? tx('處理中…', '处理中…', '…') : tx('✓ 同意並接單', '✓ 同意并接单', '✓ Accept & take the job')}
@@ -291,7 +374,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string }[] }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
