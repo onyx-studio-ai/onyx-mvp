@@ -237,7 +237,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
         }`}>
           <span className={`text-xs ${!canRequestChanges ? 'text-red-400' : usedRev > 0 ? 'text-amber-400' : 'text-cyan-400'}`}>
             {unlimitedRev ? (
-              <span className="font-semibold">♾ {locale === 'en' ? 'Unlimited revisions (until you approve)' : locale === 'zh-CN' ? '无限修改(直到您满意)' : '無限修改(直到您滿意)'}{usedRev > 0 ? `　${locale === 'en' ? `used ${usedRev}` : `已用 ${usedRev}`}` : ''}</span>
+              <span className="font-semibold">♾ {locale === 'en' ? 'Unlimited revisions' : locale === 'zh-CN' ? '无限修改' : '無限修改'}{usedRev > 0 ? `　${locale === 'en' ? `used ${usedRev}` : `已用 ${usedRev}`}` : ''}</span>
             ) : !canRequestChanges ? (
               <><Lock className="w-3 h-3 inline mr-1" />{t('revisionLimitReached', { label: revisionLabel, max: maxRev })}</>
             ) : (

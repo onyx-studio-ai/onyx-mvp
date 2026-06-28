@@ -351,7 +351,7 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
       {/* Payment */}
       <Section title={tx('報酬 Payment', '报酬 Payment', 'Payment')}>
         {row(tx('您實拿', '您实拿', 'You receive'), <span>{quote.currency} {quote.net_amount}</span>, { gold: true })}
-        {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), quote.included_revisions >= 99 ? tx('無限(直到滿意)', '无限(直到满意)', 'Unlimited') : `${quote.included_revisions} ${tx('次', '次', '×')}`)}
+        {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), quote.included_revisions >= 99 ? tx('無限', '无限', 'Unlimited') : `${quote.included_revisions} ${tx('次', '次', '×')}`)}
         {row(tx('結算', '结算', 'Settlement'), tx('完成驗收後由 Onyx 平台付款', '完成验收后由 Onyx 平台付款', 'Paid by Onyx after approval'))}
       </Section>
 
@@ -1068,7 +1068,7 @@ function RoleAudition({
               <span className="text-xs text-gray-300">{tx('含修改次數', '含修改次数', 'Included revisions')}</span>
               <select className="mt-1 w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" value={includedRev} onChange={(e) => setIncludedRev(e.target.value)}>
                 {['1', '2', '3', '4', '5'].map((v) => <option key={v} value={v} className="bg-black">{tx(`含 ${v} 次修改`, `含 ${v} 次修改`, `${v} revision${v === '1' ? '' : 's'}`)}</option>)}
-                <option value="unlimited" className="bg-black">{tx('無限修改(直到客戶滿意)', '无限修改(直到客户满意)', 'Unlimited (until approved)')}</option>
+                <option value="unlimited" className="bg-black">{tx('無限修改', '无限修改', 'Unlimited')}</option>
               </select>
             </div>
             <TemplatedField kind="revision" optional label={tx('修改政策(補充說明)', '修改政策(补充说明)', 'Revision notes')} value={revPolicy} onChange={setRevPolicy}
