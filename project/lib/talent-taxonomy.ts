@@ -221,6 +221,27 @@ export const canonicalLangKey = (value: string): string => {
   return k;
 };
 
+// Map ANY accent token (canonical key / localized label / synonym) → canonical
+// ACCENTS key, so legacy "Taiwan" / "台灣" and structured "taiwan" all match.
+const ACCENT_INDEX: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const a of ACCENTS) for (const s of [a.key, a.tw, a.cn, a.en]) m[s.toLowerCase()] = a.key;
+  return m;
+})();
+
+// Extract the canonical accent key from a stored language entry. Handles the
+// structured "mandarin/taiwan" format AND legacy "Chinese · Taiwan". Returns ''
+// when there's no accent (or it's the generic native/standard) — so accent
+// filtering treats Mandarin·Taiwan and Mandarin·Mainland as distinct.
+export const accentKeyOf = (value: string): string => {
+  const v = (value || '').trim();
+  if (!v) return '';
+  const raw = v.includes('/') ? v.split('/')[1] : v.includes('·') ? v.split('·')[1] : '';
+  const k = (raw || '').trim().toLowerCase();
+  if (!k || k === 'native') return '';
+  return ACCENT_INDEX[k] || k;
+};
+
 export const baseLangLabel = (key: string, locale: string) => {
   const k = (key || '').trim();
   // Match by taxonomy key first; else by any locale label — legacy demos stored the

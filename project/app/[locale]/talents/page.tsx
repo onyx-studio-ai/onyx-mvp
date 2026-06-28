@@ -17,7 +17,7 @@ import { useLocale } from 'next-intl';
 import { Search, ArrowRight, Play, Pause } from 'lucide-react';
 import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
 import {
-  formatLangEntry, baseLangLabel, canonicalLangKey, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
+  formatLangEntry, baseLangLabel, canonicalLangKey, accentKeyOf, accentLabel, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
   VOICE_TRAITS, USE_CASES, VOICE_AGES, TRAIT_KEYS,
 } from '@/lib/talent-taxonomy';
 import { pickLocale } from '@/lib/i18n-pick';
@@ -76,6 +76,7 @@ export default function TalentRoster() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [lang, setLang] = useState('');      // base language key, '' = all
+  const [accent, setAccent] = useState('');  // accent key within the chosen language, '' = all accents
   const [gender, setGender] = useState('');
   const [age, setAge] = useState('');
   const [trait, setTrait] = useState('');
@@ -131,6 +132,22 @@ export default function TalentRoster() {
   }, [talents]);
   const topLangs = langCounts.slice(0, 6);
 
+  // Accent options WITHIN the chosen language (台灣 / 大陸 …) with live counts —
+  // so "國語" can be narrowed to 台灣腔 vs 大陸腔 instead of lumping them together.
+  const accentCounts = useMemo(() => {
+    if (!lang) return [] as [string, number][];
+    const m = new Map<string, number>();
+    talents.forEach((t) => {
+      const seen = new Set<string>();
+      (t.languages || []).forEach((l) => {
+        if (langBase(l) !== lang) return;
+        const a = accentKeyOf(l);
+        if (a && !seen.has(a)) { seen.add(a); m.set(a, (m.get(a) || 0) + 1); }
+      });
+    });
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }, [talents, lang]);
+
   // Service types actually present in the roster (preserve canonical order).
   const presentServices = useMemo(() => {
     const set = new Set<string>();
@@ -141,7 +158,7 @@ export default function TalentRoster() {
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return talents.filter((t) => {
-      if (lang && !(t.languages || []).some((l) => langBase(l) === lang)) return false;
+      if (lang && !(t.languages || []).some((l) => langBase(l) === lang && (!accent || accentKeyOf(l) === accent))) return false;
       if (gender && (t.gender || '').toLowerCase() !== gender) return false;
       if (age && !(t.voice_ages || []).includes(age)) return false;
       if (trait && !(t.voice_traits || []).includes(trait)) return false;
@@ -159,7 +176,7 @@ export default function TalentRoster() {
       }
       return true;
     });
-  }, [talents, q, lang, gender, age, trait, useCase, service, locale, isZh, isZhCN]);
+  }, [talents, q, lang, accent, gender, age, trait, useCase, service, locale, isZh, isZhCN]);
 
   const togglePlay = (t: Talent) => {
     const pd = primaryDemo(t);
@@ -204,10 +221,16 @@ export default function TalentRoster() {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx('搜尋名稱、語言、聲線…', '搜寻名称、语言、声线…', 'Search name, language, voice…')}
               className="w-full pl-9 pr-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-blue-500 focus:outline-none placeholder:text-gray-600" />
           </div>
-          <select className={selectCls} value={lang} onChange={(e) => setLang(e.target.value)}>
+          <select className={selectCls} value={lang} onChange={(e) => { setLang(e.target.value); setAccent(''); }}>
             <option value="">{tx('所有語言', '所有语言', 'All languages')}</option>
             {langCounts.map(([k]) => <option key={k} value={k}>{baseLangLabel(k, locale)}</option>)}
           </select>
+          {lang && accentCounts.length > 0 && (
+            <select className={selectCls} value={accent} onChange={(e) => setAccent(e.target.value)}>
+              <option value="">{tx('所有腔調', '所有腔调', 'All accents')}</option>
+              {accentCounts.map(([k, n]) => <option key={k} value={k}>{accentLabel(k, locale)} ({n})</option>)}
+            </select>
+          )}
           <select className={selectCls} value={gender} onChange={(e) => setGender(e.target.value)}>
             <option value="">{tx('不限性別', '不限性别', 'Any gender')}</option>
             <option value="male">{tx('男聲', '男声', 'Male')}</option>
@@ -236,12 +259,12 @@ export default function TalentRoster() {
         {/* language quick-chips with counts — the "genre" row */}
         {topLangs.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-6">
-            <button onClick={() => setLang('')}
+            <button onClick={() => { setLang(''); setAccent(''); }}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${lang === '' ? 'bg-blue-500/20 text-blue-200 border-blue-400/40' : 'bg-zinc-900 text-gray-300 border-zinc-700 hover:border-zinc-500'}`}>
               {tx('全部', '全部', 'All')} <span className="opacity-50">{talents.length}</span>
             </button>
             {topLangs.map(([k, n]) => (
-              <button key={k} onClick={() => setLang(lang === k ? '' : k)}
+              <button key={k} onClick={() => { setLang(lang === k ? '' : k); setAccent(''); }}
                 className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${lang === k ? 'bg-blue-500/20 text-blue-200 border-blue-400/40' : 'bg-zinc-900 text-gray-300 border-zinc-700 hover:border-zinc-500'}`}>
                 {baseLangLabel(k, locale)} <span className="opacity-50">{n}</span>
               </button>
