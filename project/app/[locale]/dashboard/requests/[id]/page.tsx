@@ -267,7 +267,13 @@ export default function ClientRequestDetail() {
                     </button>
                   )}
                   {won ? (
-                    <span className="text-xs text-[#6FCF97]">✓ {tx('已選定 · 製作中', '已选定 · 制作中', 'Selected · in production')}</span>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                      <span className="text-xs text-[#6FCF97]">✓ {tx('已選定 · 製作中', '已选定 · 制作中', 'Selected · in production')}</span>
+                      <Link href={`/dashboard/messages?brief=${b.id}`} className="inline-flex items-center gap-1 text-xs text-sky-300 hover:text-sky-200 hover:underline">
+                        💬 {tx('與配音員直接對話', '与配音员直接对话', 'Message the voice directly')} →
+                      </Link>
+                      <span className="text-[11px] text-gray-500 w-full">{tx('成單後可直接溝通;系統會自動遮蔽聯絡方式(email / 電話 / LINE 等)。', '成单后可直接沟通;系统会自动遮蔽联系方式(email / 电话 / LINE 等)。', 'Coordinate directly now; contact details (email / phone / IM) are auto-redacted.')}</span>
+                    </div>
                   ) : b.status === 'open' && reauditTarget === a.id ? (
                     <div className="mt-1 space-y-2 border-t border-white/10 pt-3">
                       <p className="text-xs text-gray-400">{tx('想再聽一個版本?寫下方向(可留白),我們會請這位配音員重錄一段。', '想再听一个版本?写下方向(可留白),我们会请这位配音员重录一段。', 'Want another take? Add a note (optional) — we’ll ask this talent to re-record.')}</p>

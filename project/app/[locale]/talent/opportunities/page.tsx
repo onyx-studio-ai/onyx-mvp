@@ -521,7 +521,10 @@ export default function Opportunities() {
                       )}
                     </div>
                   ))}
-                  <p className="text-[11px] text-gray-500 mt-1">{tx('接單後即可開始錄製,完成在此上傳交付檔。', '接单后即可开始录制,完成在此上传交付档。', 'Once you accept, record and upload your delivery here.')}</p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                    <p className="text-[11px] text-gray-500">{tx('接單後即可開始錄製,完成在此上傳交付檔。', '接单后即可开始录制,完成在此上传交付档。', 'Once you accept, record and upload your delivery here.')}</p>
+                    <Link href={`/talent/messages?brief=${w.id}`} className="inline-flex items-center gap-1 text-[11px] text-sky-300 hover:text-sky-200 hover:underline">💬 {tx('與客戶直接對話', '与客户直接对话', 'Message the client')} →</Link>
+                  </div>
                 </EntityCard>
               );
             })}

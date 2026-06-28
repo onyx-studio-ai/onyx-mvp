@@ -72,6 +72,17 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
     [token]
   );
 
+  // Deep-link: ?brief=<id> (from an awarded case page) auto-opens that thread, so
+  // the client/talent lands straight in the right conversation. Placed after
+  // openThread so it isn't referenced before initialization.
+  useEffect(() => {
+    if (phase !== 'ready' || active || !threads.length) return;
+    const want = new URLSearchParams(window.location.search).get('brief');
+    if (!want) return;
+    const t = threads.find((x) => x.brief_id === want && (!filterRole || x.role === filterRole));
+    if (t) openThread(t);
+  }, [phase, threads, active, filterRole, openThread]);
+
   async function send() {
     const body = draft.trim();
     if (!body || !active) return;
