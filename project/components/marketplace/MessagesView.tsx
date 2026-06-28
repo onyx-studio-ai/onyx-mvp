@@ -18,6 +18,7 @@ import { supabase } from '@/lib/supabase';
 type Thread = {
   key: string; brief_id: string; talent_id: string; role: 'client' | 'talent';
   brief_number: string; title: string; brief_status: string; counterpart: string;
+  last_at?: string | null; last_sender_type?: string | null; last_preview?: string | null;
 };
 type Msg = { id: string; sender_type: string; sender_name: string | null; body: string; created_at: string };
 
@@ -38,7 +39,21 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [, setReadTick] = useState(0); // bump to re-render after marking a thread read
   const endRef = useRef<HTMLDivElement | null>(null);
+
+  // A thread is unread when its latest message is from the OTHER party and is newer
+  // than the last time this device opened it (stored in localStorage — no schema).
+  // Plain function (recomputed each render; setReadTick forces a render after open).
+  const isUnread = (t: Thread) => {
+    if (!t.last_at || !t.last_sender_type || t.last_sender_type === t.role) return false;
+    const seen = (typeof window !== 'undefined' && window.localStorage.getItem(`mpRead:${t.key}`)) || '';
+    return seen < t.last_at;
+  };
+  const markRead = useCallback((t: Thread) => {
+    if (typeof window !== 'undefined') window.localStorage.setItem(`mpRead:${t.key}`, t.last_at || new Date().toISOString());
+    setReadTick((x) => x + 1);
+  }, []);
 
   const loadThreads = useCallback(async (accessToken: string) => {
     setToken(accessToken);
@@ -62,6 +77,7 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
       setActive(t);
       setMessages([]);
       setErr('');
+      markRead(t);
       const res = await fetch(`/api/marketplace/messages?brief_id=${t.brief_id}&talent_id=${t.talent_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -69,7 +85,7 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
       setMessages(j.messages || []);
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     },
-    [token]
+    [token, markRead]
   );
 
   // Deep-link: ?brief=<id> (from an awarded case page) auto-opens that thread, so
@@ -170,16 +186,28 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
       <h1 className="text-2xl font-semibold mb-6">{tx('訊息', '消息', 'Messages')}</h1>
       {shownThreads.length === 0 && <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有對話。成單後(客戶選定配音員)雙方就能在這裡直接聯繫。', '目前没有对话。成单后(客户选定配音员)双方就能在这里直接联系。', 'No threads yet. Once a job is awarded, you and the other party can message here.')}</p>}
       <div className="space-y-2">
-        {shownThreads.map((t) => (
-          <button key={t.key} onClick={() => openThread(t)} className="w-full text-left bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 rounded-xl p-4 transition">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-200">{tx('與', '与', 'With')} <b>{t.counterpart}</b></span>
-              <span className="text-xs text-gray-500 font-mono">{t.brief_number}</span>
+        {shownThreads.map((t) => {
+          const unread = isUnread(t);
+          return (
+          <button key={t.key} onClick={() => openThread(t)} className={`w-full text-left border rounded-xl p-4 transition ${unread ? 'bg-green-500/[0.07] border-green-400/30 hover:bg-green-500/[0.1]' : 'bg-white/[0.02] hover:bg-white/[0.05] border-white/10'}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm text-gray-200 inline-flex items-center gap-2">
+                {unread && <span className="w-2 h-2 rounded-full bg-green-400 shrink-0" aria-label={tx('未讀', '未读', 'unread')} />}
+                {tx('與', '与', 'With')} <b className={unread ? 'text-white' : ''}>{t.counterpart}</b>
+              </span>
+              <span className="text-xs text-gray-500 font-mono shrink-0">{t.brief_number}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1 truncate">{t.title}</p>
-            <span className="text-[10px] text-gray-600">{t.role === 'talent' ? tx('我是配音員', '我是配音员', 'as talent') : tx('我是客戶', '我是客户', 'as client')} · {t.brief_status}</span>
+            {t.last_preview ? (
+              <p className={`text-xs mt-1 truncate ${unread ? 'text-gray-200' : 'text-gray-500'}`}>
+                {t.last_sender_type === t.role ? tx('你:', '你:', 'You: ') : ''}{t.last_preview}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1 truncate">{t.title}</p>
+            )}
+            <span className="text-[10px] text-gray-600">{t.role === 'talent' ? tx('我是配音員', '我是配音员', 'as talent') : tx('我是客戶', '我是客户', 'as client')} · {t.brief_status}{unread ? ` · ${tx('新訊息', '新消息', 'new')}` : ''}</span>
           </button>
-        ))}
+          );
+        })}
       </div>
     </>
   );

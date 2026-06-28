@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const threads: Array<{
       key: string; brief_id: string; talent_id: string; role: 'client' | 'talent';
       brief_number: string; title: string; brief_status: string; counterpart: string;
+      last_at?: string | null; last_sender_type?: string | null; last_preview?: string | null;
     }> = [];
 
     // Talent side — briefs this talent WON (post-award only: 成單後才開對話).
@@ -76,6 +77,28 @@ export async function GET(request: NextRequest) {
         });
       }
     }
+
+    // Attach each thread's latest message (for unread badges + previews). One query
+    // for all the caller's briefs; first hit per (brief:talent) key is the latest.
+    const briefIds = [...new Set(threads.map((t) => t.brief_id))];
+    if (briefIds.length) {
+      const { data: msgs } = await c.db
+        .from('marketplace_messages')
+        .select('brief_id, talent_id, sender_type, body, created_at')
+        .in('brief_id', briefIds)
+        .order('created_at', { ascending: false });
+      const latest: Record<string, { at: string; sender: string; preview: string }> = {};
+      for (const m of msgs || []) {
+        const k = `${m.brief_id}:${m.talent_id}`;
+        if (!latest[k]) latest[k] = { at: m.created_at as string, sender: (m.sender_type as string) || '', preview: String(m.body || '').slice(0, 60) };
+      }
+      for (const t of threads) {
+        const l = latest[t.key];
+        if (l) { t.last_at = l.at; t.last_sender_type = l.sender; t.last_preview = l.preview; }
+      }
+    }
+    // Most-recently-active threads first (those with no messages sink to the bottom).
+    threads.sort((a, b) => (b.last_at || '').localeCompare(a.last_at || ''));
 
     return NextResponse.json({ threads });
   } catch {
