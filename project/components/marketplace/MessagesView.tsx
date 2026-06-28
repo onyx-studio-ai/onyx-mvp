@@ -148,7 +148,6 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
           <h2 className="text-base font-semibold text-white truncate">{active.title || tx('配音案', '配音案', 'Voice case')}</h2>
           <p className="text-xs text-gray-500 mt-0.5">
             <span className="font-mono">{active.brief_number}</span> · {tx('與', '与', 'With')} <span className="text-gray-300">{active.counterpart}</span>
-            <span className="text-gray-600"> · {active.role === 'talent' ? tx('我是配音員', '我是配音员', 'as talent') : tx('我是客戶', '我是客户', 'as client')}</span>
           </p>
         </div>
         <div className="flex-1 overflow-y-auto space-y-2 bg-white/[0.02] border border-white/10 rounded-xl p-4">
@@ -201,7 +200,6 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
                 <p className={`text-sm font-semibold truncate ${unread ? 'text-white' : 'text-gray-200'}`}>{t.title || tx('配音案', '配音案', 'Voice case')}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   <span className="font-mono">{t.brief_number}</span> · {tx('與', '与', 'With')} <span className="text-gray-300">{t.counterpart}</span>
-                  <span className="text-gray-600"> · {t.role === 'talent' ? tx('我是配音員', '我是配音员', 'as talent') : tx('我是客戶', '我是客户', 'as client')}</span>
                 </p>
               </div>
               {unread && <span className="text-[10px] text-green-300 shrink-0 whitespace-nowrap">{tx('新訊息', '新消息', 'New')}</span>}
