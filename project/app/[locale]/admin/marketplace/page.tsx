@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
 import { caseCode } from '@/lib/casting';
+import JSZip from 'jszip';
 import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
 const SITE = 'https://www.onyxstudios.ai';
@@ -279,7 +280,7 @@ export default function AdminMarketplace() {
                     </button>
                   )}
                   {quotesFor(b.id).some((q) => q.sample_url) && (
-                    <a href={`/api/admin/casting/${b.id}/download`} className="text-xs bg-blue-600 hover:bg-blue-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title="打包下載全部試音音檔(檔名:角色_配音員)">⬇️ 下載全部試音</a>
+                    <DownloadAllAuditions quotes={quotesFor(b.id)} label={b.kind === 'casting' ? caseCode(b) : b.brief_number} />
                   )}
                 </div>
                 {/* inline 報酬 edit + full case edit */}
@@ -408,6 +409,48 @@ export default function AdminMarketplace() {
         ))}
       </div>
     </div>
+  );
+}
+
+// Zip every audition IN THE BROWSER (the files are public URLs), with live X/N
+// progress. Avoids the server-side zip endpoint that 504'd on many files, and —
+// unlike the old plain <a> link — actually shows whether it's working / failed.
+function DownloadAllAuditions({ quotes, label }: { quotes: Quote[]; label: string }) {
+  const [busy, setBusy] = useState(false);
+  const [prog, setProg] = useState({ done: 0, total: 0, fail: 0 });
+  const items = quotes.filter((q) => q.sample_url);
+  const clean = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '').trim();
+  const run = async () => {
+    if (busy || !items.length) return;
+    setBusy(true); setProg({ done: 0, total: items.length, fail: 0 });
+    const zip = new JSZip();
+    let done = 0, fail = 0; const used: Record<string, number> = {};
+    for (const q of items) {
+      try {
+        const res = await fetch(q.sample_url as string);
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        const ext = ((q.sample_url as string).split('?')[0].split('.').pop() || 'mp3').toLowerCase().slice(0, 4);
+        let base = `${clean(q.role_name || '試音')}_${clean(q.talents?.name || '配音員')}`;
+        used[base] = (used[base] || 0) + 1;
+        if (used[base] > 1) base += `_${used[base]}`;
+        zip.file(`${base}.${ext}`, blob);
+      } catch { fail++; }
+      done++; setProg({ done, total: items.length, fail });
+    }
+    try {
+      const out = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(out);
+      const a = document.createElement('a'); a.href = url; a.download = `${clean(label) || 'casting'}_試音.zip`; a.click();
+      URL.revokeObjectURL(url);
+      if (fail) alert(`完成,但有 ${fail} 個檔下載失敗(可能連結失效),其餘已打包。`);
+    } catch { alert('打包失敗,請重試。'); }
+    setBusy(false);
+  };
+  return (
+    <button onClick={run} disabled={busy} className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded px-2.5 py-1 whitespace-nowrap" title="逐檔在瀏覽器打包下載(檔名:角色_配音員)">
+      {busy ? `下載中 ${prog.done}/${prog.total}${prog.fail ? ` · ${prog.fail} 失敗` : ''}…` : '⬇️ 下載全部試音'}
+    </button>
   );
 }
 

@@ -29,7 +29,10 @@ export async function GET(request: NextRequest) {
           .in('id', ids);
         for (const b of briefs || []) {
           threads.push({
-            key: `${b.id}:${c.talentId}`,
+            // role-qualified key so the SAME user being both client and talent on a
+            // brief (e.g. testing with one account) gets a thread on each side, not
+            // one collapsed by dedupe.
+            key: `${b.id}:${c.talentId}:talent`,
             brief_id: b.id,
             talent_id: c.talentId,
             role: 'talent',
@@ -63,8 +66,8 @@ export async function GET(request: NextRequest) {
       for (const q of qs || []) {
         const b = (myBriefs || []).find((x) => x.id === q.brief_id);
         if (!b) continue;
-        const key = `${q.brief_id}:${q.talent_id}`;
-        if (threads.some((t) => t.key === key)) continue; // dedupe (e.g. self-quoting)
+        const key = `${q.brief_id}:${q.talent_id}:client`;
+        if (threads.some((t) => t.key === key)) continue; // dedupe within client side
         threads.push({
           key,
           brief_id: q.brief_id,
@@ -93,7 +96,7 @@ export async function GET(request: NextRequest) {
         if (!latest[k]) latest[k] = { at: m.created_at as string, sender: (m.sender_type as string) || '', preview: String(m.body || '').slice(0, 60) };
       }
       for (const t of threads) {
-        const l = latest[t.key];
+        const l = latest[`${t.brief_id}:${t.talent_id}`];
         if (l) { t.last_at = l.at; t.last_sender_type = l.sender; t.last_preview = l.preview; }
       }
     }

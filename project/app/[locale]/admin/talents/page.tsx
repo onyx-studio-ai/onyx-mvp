@@ -689,6 +689,23 @@ export default function AdminTalentsPage() {
     setDialogOpen(true);
   };
 
+  // Send an already-published talent back to review (e.g. wrong language tags):
+  // marks pending_review + takes them off the public site until re-published.
+  const handleRevertToReview = async (talent: Talent) => {
+    if (!confirm(`將「${talent.name}」退回待審?資料會從公開頁下架,等你重新審核後再發布。`)) return;
+    try {
+      const res = await fetch('/api/admin/talents', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: talent.id, pending_review: true, is_active: false }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast.success('已退回待審 ✓ 已從公開頁下架');
+      fetchTalents();
+    } catch {
+      toast.error('退回失敗');
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this talent?")) return;
     try {
@@ -1553,9 +1570,14 @@ export default function AdminTalentsPage() {
                       // snapshot (e.g. after a translation-logic change or field-visibility change).
                       if (talent.is_active) {
                         return (
-                          <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 border-gray-300 text-gray-600 hover:bg-gray-100">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> 重新發布
-                          </Button>
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 border-gray-300 text-gray-600 hover:bg-gray-100">
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> 重新發布
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleRevertToReview(talent)} className="h-8 px-3 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-700">
+                              <Clock className="w-3.5 h-3.5 mr-1" /> 退回審核
+                            </Button>
+                          </>
                         );
                       }
                       return null;

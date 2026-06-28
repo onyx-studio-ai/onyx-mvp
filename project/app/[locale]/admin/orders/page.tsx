@@ -55,6 +55,7 @@ interface VoiceOrder {
   email: string;
   tier: string;
   price: number;
+  currency?: string | null;
   status: string;
   payment_status: string | null;
   paid_at: string | null;
@@ -558,10 +559,16 @@ export default function AdminOrdersPage() {
                     </span>
                   </div>
 
-                  {/* Price */}
-                  <span className="text-sm font-bold text-gray-900 flex-shrink-0 w-20 text-right">
-                    ${Number(order.price).toLocaleString()}
-                  </span>
+                  {/* Price — show the order's currency so TWD isn't mistaken for USD */}
+                  {(() => {
+                    const cur = ((order as { currency?: string }).currency || 'USD').toUpperCase();
+                    const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
+                    return (
+                      <span className="text-sm font-bold text-gray-900 flex-shrink-0 w-24 text-right">
+                        {sym}{Number(order.price).toLocaleString()}
+                      </span>
+                    );
+                  })()}
 
                   {/* Status badge */}
                   <div className="flex-shrink-0 w-36 flex justify-end">
