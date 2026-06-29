@@ -339,6 +339,9 @@ export default function AdminOrdersPage() {
   const [filterType, setFilterType] = useState<'all' | 'voice' | 'music' | 'strings'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDate, setBulkDate] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const [stringsOrders, setStringsOrders] = useState<StringsOrder[]>([]);
 
@@ -412,6 +415,42 @@ export default function AdminOrdersPage() {
   const queueCount = allOrders.filter(o => o.status === 'paid').length;
   const productionCount = allOrders.filter(o => ['processing', 'in_production', 'demo_ready', 'client_reviewing', 'revising', 'delivered', 'awaiting_final'].includes(o.status)).length;
   const completedCount = allOrders.filter(o => o.status === 'completed').length;
+
+  // ── Bulk operations on the filtered list (checkbox-select) ──
+  const selectedOrders = allOrders.filter(o => selected.has(o.id));
+  const allFilteredSelected = filtered.length > 0 && filtered.every(o => selected.has(o.id));
+  const toggleSelect = (id: string) => setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleSelectAll = () => setSelected(allFilteredSelected ? new Set() : new Set(filtered.map(o => o.id)));
+
+  function exportCsv() {
+    const rows = selectedOrders.length ? selectedOrders : filtered;
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const head = ['order_number', 'type', 'status', 'email', 'price', 'currency', 'project', 'created_at'];
+    const lines = [head.join(',')];
+    for (const o of rows) {
+      const r = o as { project_name?: string; vibe?: string; currency?: string };
+      lines.push([o.order_number, o.type, o.status, o.email, o.price, r.currency || '', r.project_name || r.vibe || '', o.created_at].map(esc).join(','));
+    }
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `onyx-orders-${rows.length}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function applyBulkDate() {
+    if (!bulkDate || !selectedOrders.length) return;
+    setBulkBusy(true);
+    let ok = 0, skipped = 0, failed = 0;
+    for (const o of selectedOrders) {
+      if (o.type === 'strings') { skipped++; continue; } // orchestra_orders has no estimated_delivery_date
+      try { await callUpdateOrder(o.id, o.type, { estimated_delivery_date: bulkDate }); ok++; }
+      catch { failed++; }
+    }
+    await fetchOrders();
+    setBulkBusy(false); setSelected(new Set()); setBulkDate('');
+    toast.success(`已設定 ${ok} 筆預計交期${skipped ? `,跳過 ${skipped} 筆弦樂單` : ''}${failed ? `,失敗 ${failed} 筆` : ''}`);
+  }
 
   return (
     <div className="p-8 min-h-screen text-gray-900">
@@ -517,6 +556,26 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
+      {!loading && filtered.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
+          <label className="flex items-center gap-2 text-gray-600 cursor-pointer select-none">
+            <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} className="w-4 h-4 accent-cyan-600" />
+            全選({filtered.length})
+          </label>
+          {selected.size > 0 && (
+            <>
+              <span className="text-gray-700 font-medium">已選 {selected.size} 筆</span>
+              <button onClick={exportCsv} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"><Download className="w-3.5 h-3.5" /> 匯出 CSV</button>
+              <span className="inline-flex items-center gap-1.5">
+                <input type="date" value={bulkDate} onChange={e => setBulkDate(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-900" />
+                <button onClick={applyBulkDate} disabled={!bulkDate || bulkBusy} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50">{bulkBusy ? '…' : '設預計交期'}</button>
+              </span>
+              <button onClick={() => setSelected(new Set())} className="text-gray-500 hover:text-gray-700">清除</button>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="space-y-3">
         {loading ? (
           <div className="text-center py-16 text-gray-600 bg-white border border-gray-200 rounded-xl">Loading orders...</div>
@@ -538,6 +597,9 @@ export default function AdminOrdersPage() {
                   className="flex items-center gap-3 px-4 py-3.5 cursor-pointer"
                   onClick={() => setExpandedId(isExpanded ? null : order.id)}
                 >
+                  {/* Bulk-select checkbox (doesn't toggle the row) */}
+                  <input type="checkbox" checked={selected.has(order.id)} onClick={e => e.stopPropagation()} onChange={() => toggleSelect(order.id)} className="flex-shrink-0 w-4 h-4 accent-cyan-600" />
+
                   {/* Type pill */}
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${isVoice ? 'bg-cyan-50 text-cyan-700' : isStrings ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
                     {isVoice ? <Mic className="w-3 h-3" /> : isStrings ? <Music2 className="w-3 h-3" /> : <Music className="w-3 h-3" />}

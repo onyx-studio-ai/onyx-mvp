@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Upload, Play, CheckCircle2, Loader2, Trash2,
   Send, FileAudio, RefreshCw, Lock, Plus, X, Mic,
-  UserPlus, User,
+  UserPlus, User, CalendarClock,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,6 +43,7 @@ interface VoiceOrder {
   talent_id?: string | null;
   price?: number;
   voice_selection?: string;
+  estimated_delivery_date?: string | null;
 }
 
 interface Props {
@@ -97,6 +98,20 @@ async function updateVoiceOrderStatus(orderId: string, status: string, extra?: R
   }
 }
 
+// Save the estimated delivery date WITHOUT a status change (so it doesn't fire a
+// client workflow email — that only happens when `status` is in the update).
+async function saveVoiceEstimatedDate(orderId: string, date: string) {
+  const res = await fetch('/api/admin/orders', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId, orderType: 'voice', updates: { estimated_delivery_date: date || null } }),
+  });
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    throw new Error(d.error || 'Failed to save date');
+  }
+}
+
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -117,6 +132,10 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const [versions, setVersions] = useState<Version[]>([]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+
+  const [estDate, setEstDate] = useState(order.estimated_delivery_date || '');
+  const [savingDate, setSavingDate] = useState(false);
+  const [dateSaved, setDateSaved] = useState(false);
 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingNotes, setPendingNotes] = useState('');
@@ -518,6 +537,32 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
             </Badge>
           </div>
         )}
+      </div>
+
+      {/* Estimated delivery date (no email — just shown to the client) */}
+      <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <CalendarClock className="w-4 h-4 text-cyan-400" />
+          <span className="text-sm font-semibold text-gray-300">預計交期 Estimated delivery</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <input type="date" value={estDate ? String(estDate).slice(0, 10) : ''}
+            onChange={(e) => { setEstDate(e.target.value); setDateSaved(false); }}
+            className="bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none" />
+          <button
+            onClick={async () => {
+              setSavingDate(true);
+              try { await saveVoiceEstimatedDate(order.id, estDate); setDateSaved(true); }
+              catch (e) { toast({ title: e instanceof Error ? e.message : 'Failed', variant: 'destructive' }); }
+              finally { setSavingDate(false); }
+            }}
+            disabled={savingDate}
+            className="px-3 py-2 rounded-lg text-sm bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50">
+            {savingDate ? '…' : '儲存'}
+          </button>
+          {dateSaved && <span className="text-xs text-emerald-400">已儲存 ✓</span>}
+        </div>
+        <p className="text-[11px] text-gray-500 mt-2">客戶會在訂單頁看到這個預計交期(不寄通知信)。</p>
       </div>
 
       {/* Pending Payment */}

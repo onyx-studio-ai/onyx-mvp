@@ -127,7 +127,7 @@ type OrchestraOrder = {
   _type: 'orchestra';
 };
 
-type VoiceOrder = Order & { _type: 'voice' };
+type VoiceOrder = Order & { _type: 'voice'; estimated_delivery_date?: string | null };
 type AnyOrder = VoiceOrder | MusicOrder | OrchestraOrder;
 
 type Tab = 'voice' | 'music' | 'orchestra' | 'licenses';
@@ -390,6 +390,14 @@ function VoiceOrderCard({
             </p>
           </div>
         </div>
+
+        {order.estimated_delivery_date && order.status !== 'completed' && (
+          <p className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-gray-500" />
+            {isZhLocale ? '預計交期' : 'Estimated delivery'}:{' '}
+            <span className="text-gray-200">{new Date(order.estimated_delivery_date).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+          </p>
+        )}
 
         {/* Next action hint */}
         {nextAction && (
