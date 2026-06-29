@@ -41,6 +41,14 @@ function dealCurrency(brief: { budget_currency?: string | null; budget?: string 
   return (brief.budget_currency && brief.budget_currency.toUpperCase())
     || parseCcy(brief.budget) || parseCcy(brief.rate_note) || 'USD';
 }
+// Localized label for a quote's status (don't show the raw enum to the talent).
+const quoteStatusLabel = (s: string, tx: (a: string, b: string, c: string) => string): string => (({
+  submitted: tx('審核中', '审核中', 'Submitted'),
+  shortlisted: tx('入圍', '入围', 'Shortlisted'),
+  accepted: tx('已選定', '已选定', 'Accepted'),
+  rejected: tx('未錄取', '未录取', 'Not selected'),
+  withdrawn: tx('已撤回', '已撤回', 'Withdrawn'),
+} as Record<string, string>)[s] || s);
 
 type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
 type Brief = {
@@ -807,7 +815,7 @@ function BriefCard({
           {myQuote ? (
             <div className="border-t border-white/10 pt-3 text-sm">
               <span className="text-green-300">{tx('已報價', '已报价', 'Quoted')}: {myQuote.currency} {myQuote.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}</span>
-              <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {myQuote.status}</span>
+              <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {quoteStatusLabel(myQuote.status, tx)}</span>
             </div>
           ) : (
             <div className="border-t border-white/10 pt-3 space-y-2">
@@ -1152,7 +1160,7 @@ function GeneralResponse({
     return (
       <div className="border-t border-white/10 pt-3 text-sm">
         <span className="text-green-300">{tx('已應徵', '已应征', 'Applied')}: {done.currency} {done.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}</span>
-        <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {done.status}</span>
+        <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {quoteStatusLabel(done.status, tx)}</span>
         {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
       </div>
     );

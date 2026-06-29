@@ -102,12 +102,14 @@ async function sendOrderEmails(params: {
   const { order, orderType, orderId, amount, transactionId, billingDetails } = params;
   const orderNumber = order.order_number || orderId;
   const dashboardLink = await generateDashboardMagicLink(order.email);
+  // Emails must show the order's real currency (TWD/CNY/…), not a hardcoded USD.
+  const orderCurrency = (order as { currency?: string }).currency || 'USD';
 
   const confirmPayload = {
     email: order.email,
     orderNumber,
     amount,
-    currency: 'USD' as const,
+    currency: orderCurrency,
     orderType,
     transactionId,
     dashboardLink,
@@ -147,7 +149,7 @@ async function sendOrderEmails(params: {
     email: order.email,
     orderNumber,
     amount,
-    currency: 'USD',
+    currency: orderCurrency,
     transactionId,
     orderType,
     paidAt: new Date().toISOString(),
@@ -168,7 +170,7 @@ async function sendOrderEmails(params: {
     orderType,
     email: order.email,
     amount,
-    currency: 'USD',
+    currency: orderCurrency,
     transactionId,
     orderDetails:
       orderType === 'voice'

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
 import { quoteReceivedEmail, deliveryUploadedEmail, castingDeliveryClientEmail } from '@/lib/mail-templates';
+import { sanitizeMessage } from '@/lib/message-filter';
 
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -31,11 +32,13 @@ export async function POST(request: NextRequest) {
     const briefId = String(body.brief_id || '');
     const gross = Number(body.gross_amount);
     const currency = CURRENCIES.includes(body.currency) ? body.currency : 'USD';
-    const message = String(body.message || '').slice(0, 2000);
+    // intro/message are shown to the client on the audition list PRE-award — strip
+    // contact info (email/phone/IM/links) so a talent can't route around Onyx.
+    const message = sanitizeMessage(String(body.message || '').slice(0, 2000)).clean;
     // Casting-call audition fields (optional — present when responding to a casting call):
     // the uploaded audition audio, the talent's self-intro, and their own revision policy.
     const sampleUrl = String(body.sample_url || '').slice(0, 1000) || null;
-    const intro = String(body.intro || '').slice(0, 3000) || null;
+    const intro = sanitizeMessage(String(body.intro || '').slice(0, 3000)).clean || null;
     const inclRev = Number.isFinite(Number(body.included_revisions)) ? Math.max(0, Math.trunc(Number(body.included_revisions))) : null;
     const extraRevPrice = String(body.extra_revision_price || '').slice(0, 200) || null;
     const roleName = String(body.role_name || '').slice(0, 80) || null;  // which role this audition is for (casting)

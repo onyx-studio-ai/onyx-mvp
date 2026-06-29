@@ -34,11 +34,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (action === 'revise' && !feedback) return NextResponse.json({ error: '請說明要修改的地方。' }, { status: 400 });
 
   const { data: order } = await db.from('voice_orders')
-    .select('id, order_number, email, status, talent_id, project_name, use_case, download_url, revision_count')
+    .select('id, order_number, email, status, talent_id, project_name, use_case, download_url, revision_count, max_revisions')
     .eq('id', id).maybeSingle();
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   if (String(order.email || '').toLowerCase() !== email.toLowerCase()) return NextResponse.json({ error: 'Not your order' }, { status: 403 });
   if (order.status !== 'delivered') return NextResponse.json({ error: '此訂單目前不在審核階段。' }, { status: 400 });
+
+  // Enforce the agreed revision cap server-side (UI hides the button, but a crafted
+  // POST could bypass it). max_revisions >= 99 = unlimited.
+  if (action === 'revise') {
+    const maxRev = Number(order.max_revisions) || 0;
+    const usedRev = Number(order.revision_count) || 0;
+    if (maxRev > 0 && maxRev < 99 && usedRev >= maxRev) {
+      return NextResponse.json({ error: '已達修改次數上限。' }, { status: 400 });
+    }
+  }
 
   // Ensure a version row exists so approve/revise have something to mark (legacy/
   // casting deliveries only set download_url). Create one from download_url if needed.

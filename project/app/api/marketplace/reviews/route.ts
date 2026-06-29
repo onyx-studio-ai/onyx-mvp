@@ -16,7 +16,7 @@ async function resolve(request: NextRequest) {
   const { data, error } = await db.auth.getUser(token);
   const email = (data?.user?.email || '').toLowerCase();
   if (error || !email) return null;
-  const { data: talent } = await db.from('talents').select('id').eq('email', email).maybeSingle();
+  const { data: talent } = await db.from('talents').select('id').eq('email', email).eq('is_active', true).maybeSingle();
   return { db, email, userId: data.user.id, talentId: (talent as { id: string } | null)?.id || null };
 }
 
@@ -38,6 +38,13 @@ export async function GET(request: NextRequest) {
   }
 
   if (orderId) {
+    // Private: only the order's client or talent may read its two-way feedback.
+    const c = await resolve(request);
+    if (!c) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const { data: order } = await db.from('voice_orders').select('email, talent_id').eq('id', orderId).maybeSingle();
+    if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    const isParty = (c.talentId && c.talentId === order.talent_id) || String(order.email || '').toLowerCase() === c.email;
+    if (!isParty) return NextResponse.json({ error: 'Not your order' }, { status: 403 });
     const { data } = await db.from('marketplace_reviews').select('reviewer_type, rating, comment').eq('order_id', orderId);
     const by = (t: string) => (data || []).find((r) => r.reviewer_type === t) || null;
     return NextResponse.json({ client: by('client'), talent: by('talent') });

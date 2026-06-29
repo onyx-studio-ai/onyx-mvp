@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { finalizeOrderPayment } from '@/lib/payments/order-finalize';
 import { verifyPaddleWebhookSignature } from '@/lib/payments/paddle';
 
+// Currencies Paddle bills in whole units (no minor units) — must NOT ÷100.
+const ZERO_DECIMAL = new Set(['JPY', 'KRW']);
+
 function parseAmountFromEvent(data: any): number {
+  const cur = String(data?.currency_code || data?.details?.totals?.currency_code || 'USD').toUpperCase();
   const candidates = [
     data?.details?.totals?.total,
     data?.details?.totals?.grand_total,
@@ -13,8 +17,8 @@ function parseAmountFromEvent(data: any): number {
   for (const raw of candidates) {
     const value = Number(raw);
     if (Number.isFinite(value) && value > 0) {
-      // Paddle amounts are typically in cents.
-      return value / 100;
+      // Paddle sends minor units (cents) except zero-decimal currencies (JPY/KRW).
+      return ZERO_DECIMAL.has(cur) ? value : value / 100;
     }
   }
   return 0;

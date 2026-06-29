@@ -159,7 +159,7 @@ const STUDIO_REGIONS: Opt3[] = [
   { v: 'UK', tw: '英國', cn: '英国', en: 'UK' },
   { v: '__other__', tw: '其他(自行填寫)', cn: '其他(自行填写)', en: 'Other (type it)' },
 ];
-const CURRENCIES = ['USD', 'TWD'];
+const CURRENCIES = ['USD', 'TWD', 'CNY', 'GBP', 'EUR', 'JPY', 'KRW', 'HKD'];
 const BUDGET_UNITS = ['整案', '句', '字', '分鐘', '小時']; // 整案 = whole project (the common default)
 const SCRIPT_EXT = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md'];
 // Role-based content types — these get the per-character casting role sheet.

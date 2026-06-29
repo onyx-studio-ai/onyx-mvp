@@ -13,10 +13,16 @@ interface Order {
   email: string;
   order_number: string;
   price: number;
+  currency?: string | null;
   status: string;
   payment_status: string;
   user_id: string | null;
 }
+
+const curSym = (c?: string | null) => {
+  const u = (c || 'USD').toUpperCase();
+  return u === 'TWD' ? 'NT$' : u === 'USD' ? 'US$' : u === 'CNY' ? '¥' : u === 'GBP' ? '£' : u === 'EUR' ? '€' : u === 'JPY' ? '¥' : u === 'KRW' ? '₩' : u === 'HKD' ? 'HK$' : `${u} `;
+};
 
 const ORDER_APIS: { path: string; type: 'music' | 'voice' | 'orchestra' }[] = [
   { path: '/api/orders/music', type: 'music' },
@@ -155,7 +161,7 @@ function CheckoutSuccessContent() {
 
               <div className="flex justify-between items-center pb-4 border-b border-white/10">
                 <span className="text-gray-400">{t('amountPaid')}</span>
-                <span className="text-2xl font-bold text-green-400">US${order.price.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-green-400">{curSym(order.currency)}{order.price.toLocaleString()}</span>
               </div>
 
               <div className="flex justify-between items-center">
