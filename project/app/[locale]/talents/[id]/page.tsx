@@ -43,12 +43,17 @@ function TalentReviews({ talentId }: { talentId: string }) {
   const locale = useLocale();
   const isZh = locale.startsWith('zh'); const isZhCN = locale === 'zh-CN';
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
-  const [data, setData] = useState<{ avg: number; count: number; items: { rating: number; comment: string | null; created_at: string }[] } | null>(null);
+  const [data, setData] = useState<{ avg: number; count: number; dims?: { communication: number; quality: number; delivery: number }; items: { rating: number; comment: string | null; created_at: string }[] } | null>(null);
   useEffect(() => {
     fetch(`/api/marketplace/reviews?talent_id=${talentId}`).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => {});
   }, [talentId]);
   if (!data || !data.count) return null;
   const withComment = data.items.filter((r) => r.comment).slice(0, 6);
+  const dimRows: [string, number][] = data.dims ? [
+    [tx('溝通配合', '沟通配合', 'Communication'), data.dims.communication],
+    [tx('配音品質', '配音品质', 'Voice quality'), data.dims.quality],
+    [tx('準時交付', '准时交付', 'On-time delivery'), data.dims.delivery],
+  ].filter(([, v]) => (v as number) > 0) as [string, number][] : [];
   return (
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-3">
@@ -56,6 +61,13 @@ function TalentReviews({ talentId }: { talentId: string }) {
         <span className="text-lg font-semibold text-white">{data.avg}</span>
         <span className="text-sm text-gray-500">({data.count} {tx('則評價', '则评价', data.count === 1 ? 'review' : 'reviews')})</span>
       </div>
+      {dimRows.length > 0 && (
+        <div className="flex flex-wrap gap-x-5 gap-y-1 mb-3 text-sm">
+          {dimRows.map(([label, v]) => (
+            <span key={label} className="text-gray-400">{label} <span className="text-amber-400">★</span> <span className="text-gray-200">{v}</span></span>
+          ))}
+        </div>
+      )}
       {withComment.length > 0 && (
         <div className="space-y-2">
           {withComment.map((r, i) => (
