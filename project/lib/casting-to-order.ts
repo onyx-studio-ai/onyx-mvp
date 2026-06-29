@@ -28,6 +28,7 @@ export type AwardQuote = {
   talent_id?: string | null;
   currency?: string | null;
   included_revisions?: number | null; // revisions the talent offered → order's max_revisions
+  role_name?: string | null;          // multi-role casting: this sub-order's role (null = single-voice)
 };
 
 export async function createOrderFromAward(
@@ -36,10 +37,13 @@ export async function createOrderFromAward(
   quote: AwardQuote,
   opts: { talentName?: string | null; orderEmail: string; scriptText?: string | null; scriptFileUrl?: string | null; deliveryDate?: string | null },
 ): Promise<{ ok: true; id: string; order_number: string; currency: string } | { ok: false; error: string; status: number }> {
-  // One order per case — don't let a second selection / a second admin click
-  // create a duplicate charge.
-  const { data: existing } = await db.from('voice_orders').select('id, order_number').eq('brief_id', brief.id).maybeSingle();
-  if (existing) return { ok: false, error: '此案已建立過製作單', status: 409 };
+  // One sub-order per (case, role) — a multi-role brief gets one order per awarded
+  // role; a single-voice brief (role_name null) still gets exactly one. Don't let a
+  // repeat selection create a duplicate charge for the same role.
+  let dupQ = db.from('voice_orders').select('id, order_number').eq('brief_id', brief.id);
+  dupQ = quote.role_name ? dupQ.eq('role_name', quote.role_name) : dupQ.is('role_name', null);
+  const { data: existing } = await dupQ.maybeSingle();
+  if (existing) return { ok: false, error: quote.role_name ? `此角色(${quote.role_name})已建立過製作單` : '此案已建立過製作單', status: 409 };
 
   const currency = (quote.currency as string) || 'USD';
 
@@ -73,6 +77,7 @@ export async function createOrderFromAward(
     rights_level: 'global',
     brief_id: brief.id,
     quote_id: quote.id,
+    role_name: quote.role_name || null,
     deadline: opts.deliveryDate || null,
     script_file_url: opts.scriptFileUrl || null,
   }).select('id, order_number').single();

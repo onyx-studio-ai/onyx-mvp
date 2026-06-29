@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: quote } = await db.from('marketplace_quotes')
-    .select('id, gross_amount, net_amount, talent_id, currency, included_revisions')
+    .select('id, gross_amount, net_amount, talent_id, currency, included_revisions, role_name')
     .eq('id', brief.awarded_quote_id).maybeSingle();
   if (!quote) return NextResponse.json({ error: '找不到中選報價' }, { status: 400 });
   const { data: talent } = quote.talent_id

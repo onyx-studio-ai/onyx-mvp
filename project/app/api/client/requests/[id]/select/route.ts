@@ -28,7 +28,7 @@ async function owner(request: NextRequest, id: string) {
   const email = userData?.user?.email;
   if (error || !email) return { error: 'Invalid session', status: 401 as const };
   const { data: brief } = await db.from('marketplace_briefs')
-    .select('id, brief_number, status, client_email, client_name, title, content_type, language, brief, locale')
+    .select('id, brief_number, status, client_email, client_name, title, content_type, language, brief, locale, roles')
     .eq('id', id).maybeSingle();
   if (!brief) return { error: 'Not found', status: 404 as const };
   if (String(brief.client_email || '').toLowerCase() !== email.toLowerCase()) return { error: 'Not your request', status: 403 as const };
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // The quote must belong to this brief.
   const { data: q } = await r.db.from('marketplace_quotes')
-    .select('id, brief_id, talent_id, gross_amount, net_amount, currency, included_revisions')
+    .select('id, brief_id, talent_id, gross_amount, net_amount, currency, included_revisions, role_name')
     .eq('id', quoteId).maybeSingle();
   if (!q || q.brief_id !== id) return NextResponse.json({ error: '找不到這個試音' }, { status: 404 });
 
@@ -77,9 +77,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
   if (!order.ok) return NextResponse.json({ error: order.error }, { status: order.status });
 
-  // Award the quote + mark the brief closed (moved into production).
+  // Award this quote.
   await r.db.from('marketplace_quotes').update({ status: 'accepted', updated_at: new Date().toISOString() }).eq('id', quoteId);
-  await r.db.from('marketplace_briefs').update({ status: 'closed', awarded_quote_id: quoteId, updated_at: new Date().toISOString() }).eq('id', id);
+
+  // Multi-role brief: keep it open so the client can still pick the OTHER roles;
+  // only close once every defined role has an awarded sub-order. Single-voice
+  // brief (no role): close immediately as before.
+  const briefRoles = (Array.isArray((r.brief as { roles?: { name?: string }[] }).roles) ? (r.brief as { roles?: { name?: string }[] }).roles! : [])
+    .map((ro) => ro?.name).filter((n): n is string => !!n);
+  if (q.role_name && briefRoles.length > 0) {
+    const { data: acc } = await r.db.from('marketplace_quotes').select('role_name').eq('brief_id', id).eq('status', 'accepted');
+    const awarded = new Set((acc || []).map((x) => x.role_name as string));
+    if (briefRoles.every((rn) => awarded.has(rn))) {
+      await r.db.from('marketplace_briefs').update({ status: 'closed', updated_at: new Date().toISOString() }).eq('id', id);
+    }
+  } else {
+    await r.db.from('marketplace_briefs').update({ status: 'closed', awarded_quote_id: quoteId, updated_at: new Date().toISOString() }).eq('id', id);
+  }
 
   const title = (r.brief.title as string) || (r.brief.content_type as string) || '配音案件';
   // Notify the won talent (best-effort).
