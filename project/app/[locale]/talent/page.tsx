@@ -20,6 +20,7 @@ import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import Turnstile from '@/components/Turnstile';
+import TelegramConnect from '@/components/talent/TelegramConnect';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES, TURNAROUNDS, turnaroundLabel,
@@ -479,6 +480,8 @@ export default function TalentDashboard() {
       <p className="text-xs text-gray-500 mb-5">{tx('隨時可「儲存草稿」,不會送審;填好後再按「送出審核」。我們聽過 demo、確認資料才會公開到前台,通過或需調整都會 email 通知您。', '随时可「保存草稿」,不会送审;填好后再按「提交审核」。我们听过 demo、确认资料才会公开到前台,通过或需调整都会 email 通知您。', 'Save a draft anytime — it isn’t reviewed. When you’re ready, hit Submit for review. We check your demos and details before going public, and email you on approval or if anything needs a tweak.')}</p>
 
       <div className="space-y-8">
+        <TelegramConnect tx={tx} />
+
         {/* Bio */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('個人簡介', '个人简介', 'Bio')}</label>

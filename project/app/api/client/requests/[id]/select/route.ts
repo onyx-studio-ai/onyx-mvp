@@ -3,6 +3,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { createOrderFromAward } from '@/lib/casting-to-order';
 import { castingAwardedTalentEmail, castingOrderClientEmail, castingOrderInternalEmail } from '@/lib/mail-templates';
+import { notifyTalentTelegram } from '@/lib/telegram';
 
 /*
   POST /api/client/requests/[id]/select { quote_id, final_script, delivery_date? }
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const tm = castingAwardedTalentEmail({ talentName: talent.name as string, title, url: `${SITE}/talent/opportunities`, locale: 'zh-TW' });
     sendEmail({ category: 'PRODUCTION', to: talent.email as string, subject: tm.subject, html: tm.html }).catch(() => {});
   }
+  notifyTalentTelegram(r.db, q.talent_id, `🎉 您的試音案得標了:${title}\n請到後台查看並接單。${SITE}/talent/opportunities`);
   // Confirm to the client (order created · awaiting payment).
   const cm = castingOrderClientEmail({
     clientName: r.brief.client_name as string | undefined, title, orderNumber: order.order_number,

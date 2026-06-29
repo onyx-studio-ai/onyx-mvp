@@ -3,6 +3,7 @@ import { resolveCaller, threadRole } from '@/lib/marketplace-auth';
 import { sendEmail } from '@/lib/mail';
 import { newMessageEmail } from '@/lib/mail-templates';
 import { sanitizeMessage } from '@/lib/message-filter';
+import { notifyTalentTelegram } from '@/lib/telegram';
 
 /*
   Thread messages for a (brief, talent) pairing.
@@ -82,6 +83,8 @@ export async function POST(request: NextRequest) {
       const note = newMessageEmail({ briefNumber: brief?.brief_number, url: `${SITE}/messages`, locale: brief?.locale });
       sendEmail({ category: 'PRODUCTION', to, subject: note.subject, html: note.html }).catch(() => {});
     }
+    // The talent gets a Telegram ping too (client→talent messages only).
+    if (role !== 'talent') notifyTalentTelegram(c.db, talentId, `💬 客戶在案件 ${brief?.brief_number || ''} 給您留言。${SITE}/talent/messages`);
 
     return NextResponse.json({ message: msg });
   } catch (err) {

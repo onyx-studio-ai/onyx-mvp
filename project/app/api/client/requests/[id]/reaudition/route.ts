@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { castingReauditionEmail } from '@/lib/mail-templates';
+import { notifyTalentTelegram } from '@/lib/telegram';
 
 /*
   POST /api/client/requests/[id]/reaudition { quote_id, note? } — the CLIENT asks a
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const m = castingReauditionEmail({ talentName: talent.name as string, title: (brief.title as string) || (brief.content_type as string) || '配音案件', note, url: `${SITE}/talent/opportunities`, locale: 'zh-TW' });
       sendEmail({ category: 'PRODUCTION', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
     }
+    notifyTalentTelegram(db, q.talent_id, `🔁 客戶請您重錄一段試音。請到後台查看方向並重新上傳。${SITE}/talent/opportunities`);
   }
   return NextResponse.json({ ok: true });
 }
