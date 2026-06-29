@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { finalizeOrderPayment } from '@/lib/payments/order-finalize';
+import { finalizeOrderPayment, finalizeProjectPayment } from '@/lib/payments/order-finalize';
 import { verifyPaddleWebhookSignature } from '@/lib/payments/paddle';
 
 // Currencies Paddle bills in whole units (no minor units) — must NOT ÷100.
@@ -50,6 +50,17 @@ export async function POST(request: NextRequest) {
     const customData = data?.custom_data ?? {};
     const orderId = customData?.orderId as string | undefined;
     const transactionId = data?.id as string | undefined;
+
+    // Combined multi-role project payment — one charge unlocks every sub-order.
+    if (customData?.kind === 'project' && customData?.briefId && transactionId) {
+      const pr = await finalizeProjectPayment({
+        briefId: customData.briefId as string,
+        transactionId,
+        billingDetails: customData?.billingDetails,
+        licenseeDetails: customData?.licenseeDetails,
+      });
+      return NextResponse.json({ received: true, processed: true, project: true, ...pr });
+    }
 
     if (!orderId || !transactionId) {
       return NextResponse.json(

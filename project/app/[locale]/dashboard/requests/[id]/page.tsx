@@ -13,6 +13,7 @@ import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 import { downloadWatermarked } from '@/lib/watermark';
+import { currencySymbol } from '@/lib/currency';
 
 const CURRENCIES = ['USD', 'TWD', 'CNY', 'GBP', 'EUR', 'JPY', 'KRW', 'HKD'];
 const LANGS = ['中文 · 台灣國語', '中文 · 大陸普通話', '粵語 · 香港', '台語 · 台灣閩南語', '英文 · 美式', '英文 · 英式', '日語', '韓語', '其他'];
@@ -40,6 +41,9 @@ export default function ClientRequestDetail() {
   const [b, setB] = useState<Brief | null>(null);
   const [auditions, setAuditions] = useState<{ id: string; label: string; role_name: string | null; sample_url: string | null; currency: string; client_pays: number; intro: string | null; status: string; reaudition_requested?: boolean }[]>([]);
   const [order, setOrder] = useState<Order | null>(null);
+  const [orders, setOrders] = useState<{ id: string; order_number: string; status: string; payment_status: string | null; price: number; currency?: string | null; role_name?: string | null }[]>([]);
+  const [project, setProject] = useState<{ count: number; paidCount: number; unpaidTotal: number; currency: string } | null>(null);
+  const [payingAll, setPayingAll] = useState(false);
   const [selected, setSelected] = useState(''); // quote_id whose confirm form is open
   const [finalScript, setFinalScript] = useState('');
   const [scriptMode, setScriptMode] = useState<'paste' | 'upload'>('paste');
@@ -83,9 +87,24 @@ export default function ClientRequestDetail() {
     if (!res.ok) { setPhase('notfound'); return; }
     const j = await res.json().catch(() => ({}));
     if (!j.brief) { setPhase('notfound'); return; }
-    setB(j.brief); hydrate(j.brief); setAuditions(j.auditions || []); setOrder(j.order || null); setPhase('ready');
+    setB(j.brief); hydrate(j.brief); setAuditions(j.auditions || []); setOrder(j.order || null); setOrders(j.orders || []); setProject(j.project || null); setPhase('ready');
   }, [id]);
   useEffect(() => { load(); }, [load]);
+
+  // Combined "pay-all" — one checkout for every unpaid sub-order of this project.
+  async function payAll() {
+    setPayingAll(true);
+    try {
+      const successUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+      const res = await fetch('/api/payment/paddle/project-checkout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ briefId: id, successUrl }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.checkoutUrl) { setMsg(j.error || tx('結帳建立失敗', '结账建立失败', 'Could not start checkout')); return; }
+      window.location.href = j.checkoutUrl;
+    } finally { setPayingAll(false); }
+  }
 
   // Open the confirm form for an audition — prefill the final script from the brief.
   function openPick(quoteId: string) {
@@ -177,7 +196,7 @@ export default function ClientRequestDetail() {
 
       {!canEdit && !order && <p className="text-xs text-gray-500 mb-4">{tx('此需求已進入處理,內容已鎖定。如需修改請聯絡 Onyx。', '此需求已进入处理,内容已锁定。如需修改请联系 Onyx。', 'This request is being handled and is locked. Contact Onyx to change it.')}</p>}
 
-      {order && (
+      {order && orders.length <= 1 && (
         <Link href={`/dashboard/orders/${order.id}`} className="block mb-4 rounded-2xl border border-[#6FCF97]/40 bg-[#6FCF97]/[0.08] px-5 py-4 hover:bg-[#6FCF97]/[0.12] transition-colors">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -187,6 +206,35 @@ export default function ClientRequestDetail() {
             <span className="text-xs text-[#9be7b8] whitespace-nowrap shrink-0">{tx('看訂單', '看订单', 'View order')} →</span>
           </div>
         </Link>
+      )}
+
+      {/* Multi-role project: list each role's sub-order + one combined pay-all. */}
+      {orders.length > 1 && project && (
+        <div className="mb-4 rounded-2xl border border-[#6FCF97]/40 bg-[#6FCF97]/[0.08] px-5 py-4">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <p className="text-sm font-semibold text-[#9be7b8]">{tx('已成立製作單 · 多角色專案', '已成立制作单 · 多角色专案', 'Production project · multiple roles')}</p>
+            <span className="text-xs text-gray-400">{project.paidCount}/{project.count} {tx('已付款', '已付款', 'paid')}</span>
+          </div>
+          <div className="space-y-1.5 mb-3">
+            {orders.map((o) => {
+              const paid = ['paid', 'completed'].includes(o.payment_status || '');
+              return (
+                <Link key={o.id} href={`/dashboard/orders/${o.id}`} className="flex items-center justify-between gap-2 text-sm rounded-lg bg-black/20 px-3 py-2 hover:bg-black/30 transition-colors">
+                  <span className="text-gray-200 truncate">{o.role_name || `#${o.order_number}`}</span>
+                  <span className="flex items-center gap-3 shrink-0">
+                    <span className="text-gray-400">{currencySymbol(o.currency)}{Number(o.price).toLocaleString()}</span>
+                    <span className={paid ? 'text-[#6FCF97]' : 'text-amber-300'}>{paid ? tx('已付款', '已付款', 'Paid') : tx('待付款', '待付款', 'Unpaid')}</span>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+          {project.unpaidTotal > 0 && (
+            <button onClick={payAll} disabled={payingAll} className="w-full rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold px-4 py-2 text-sm transition-colors">
+              {payingAll ? tx('前往結帳…', '前往结账…', 'Opening checkout…') : `${tx('整案付款', '整案付款', 'Pay all')} · ${currencySymbol(project.currency)}${project.unpaidTotal.toLocaleString()}`}
+            </button>
+          )}
+        </div>
       )}
 
       {editing && canEdit ? (

@@ -44,12 +44,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     status: x.status as string,
     reaudition_requested: !!x.reaudition_requested_at,
   }));
-  // If this case has been closed into a production order, surface it so the client
-  // can jump to the order (status / payment / delivery live on the order from here).
-  const { data: order } = await r.db.from('voice_orders')
-    .select('id, order_number, status, payment_status, price, language, deadline')
-    .eq('brief_id', id).maybeSingle();
-  return NextResponse.json({ brief: r.brief, auditions, order: order || null });
+  // Sub-orders for this case (a multi-role brief has several — one per awarded
+  // role). Surface them all + a project summary for the combined "pay-all".
+  const { data: orders } = await r.db.from('voice_orders')
+    .select('id, order_number, status, payment_status, price, currency, role_name, language, deadline')
+    .eq('brief_id', id).order('created_at', { ascending: true });
+  const list = orders || [];
+  const unpaid = list.filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'completed');
+  const project = list.length ? {
+    count: list.length,
+    paidCount: list.length - unpaid.length,
+    unpaidTotal: unpaid.reduce((s, o) => s + (Number(o.price) || 0), 0),
+    currency: (list[0].currency as string) || 'USD',
+  } : null;
+  return NextResponse.json({ brief: r.brief, auditions, order: list[0] || null, orders: list, project });
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

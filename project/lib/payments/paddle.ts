@@ -29,6 +29,7 @@ export async function createHostedCheckout(params: {
   billingDetails?: Record<string, unknown>;
   licenseeDetails?: Record<string, unknown>;
   checkoutBaseUrl?: string;
+  extraCustomData?: Record<string, unknown>; // e.g. { briefId, kind:'project' } for a combined multi-role checkout
 }) {
   const { apiKey } = getRequiredPaddleConfig();
   const {
@@ -40,6 +41,7 @@ export async function createHostedCheckout(params: {
     billingDetails,
     licenseeDetails,
     checkoutBaseUrl,
+    extraCustomData,
   } = params;
 
   // Charge in the ORDER's currency, not a hardcoded USD (a TWD order must bill TWD).
@@ -58,6 +60,7 @@ export async function createHostedCheckout(params: {
       orderType,
       billingDetails: billingDetails || null,
       licenseeDetails: licenseeDetails || null,
+      ...(extraCustomData || {}),
     },
     items: [
       {

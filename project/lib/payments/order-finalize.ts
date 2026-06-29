@@ -268,3 +268,44 @@ export async function finalizeOrderPayment(params: {
     orderNumber: order.order_number || orderId,
   };
 }
+
+// Combined "pay-all" for a multi-role casting project: one Paddle payment covers
+// every sub-order under the brief. Marks each PENDING sub-order paid WITHOUT
+// touching its own price (unlike finalizeOrderPayment, which overwrites price with
+// the single charge amount). Sends one client confirmation + an internal notice.
+export async function finalizeProjectPayment(params: {
+  briefId: string; transactionId: string; billingDetails?: any; licenseeDetails?: any;
+}) {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) throw new Error('Supabase payment configuration is incomplete');
+  const { briefId, transactionId, billingDetails, licenseeDetails } = params;
+  const db = createServiceClient();
+  const { data: subs } = await db.from('voice_orders')
+    .select('id, email, order_number, payment_status, currency, price').eq('brief_id', briefId);
+  const pending = (subs || []).filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'completed');
+  if (!pending.length) return { alreadyPaid: true, paid: 0 };
+
+  const email = pending[0].email as string;
+  const userId = await ensureUserByEmail(email);
+  const now = new Date().toISOString();
+  for (const o of pending) {
+    const upd: Record<string, unknown> = {
+      status: 'paid', payment_status: 'completed', paid_at: now, transaction_id: transactionId, updated_at: now,
+    };
+    if (billingDetails) upd.billing_details = billingDetails;
+    if (licenseeDetails) upd.licensee_details = licenseeDetails;
+    if (userId) upd.user_id = userId;
+    await db.from('voice_orders').update(upd).eq('id', o.id); // keep each sub-order's own price
+  }
+
+  try {
+    const link = await generateDashboardMagicLink(email);
+    sendEmail({ category: 'PRODUCTION', to: email,
+      subject: `付款成功 · ${pending.length} 個角色已進入製作`,
+      html: `<p>已收到您的付款,本專案 ${pending.length} 個角色的配音已開始製作。</p><p><a href="${link}">查看製作進度</a></p>` }).catch(() => {});
+    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai',
+      subject: `專案已付款 · ${pending.length} 子單`,
+      html: `<p>Brief ${briefId}: ${pending.length} sub-orders paid (txn ${transactionId}).</p>` }).catch(() => {});
+  } catch { /* email best-effort */ }
+
+  return { alreadyPaid: false, paid: pending.length, orderNumber: pending[0].order_number };
+}
