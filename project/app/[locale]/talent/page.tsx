@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import Turnstile from '@/components/Turnstile';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES, TURNAROUNDS, turnaroundLabel,
@@ -130,6 +131,7 @@ export default function TalentDashboard() {
   const [loginErr, setLoginErr] = useState('');
   const [resetMsg, setResetMsg] = useState('');
   const [resetBusy, setResetBusy] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
   const [saveErr, setSaveErr] = useState('');
@@ -198,11 +200,12 @@ export default function TalentDashboard() {
   async function handleResend() {
     setLoginErr(''); setResetMsg('');
     if (!email.trim()) { setLoginErr(tx('請先輸入您的電子郵件。', '请先输入您的电子邮件。', 'Enter your email first.')); return; }
+    if (!captchaToken) { setLoginErr(tx('請先完成人機驗證。', '请先完成人机验证。', 'Please complete the verification first.')); return; }
     setResetBusy(true);
     try {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), locale }),
+        body: JSON.stringify({ email: email.trim(), locale, turnstileToken: captchaToken }),
       });
       if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || 'failed'); }
       setResetMsg(tx('已重寄設定密碼信,請至信箱點開連結(請盡快,連結有時效)。', '已重寄设置密码邮件,请至邮箱点开链接(请尽快,链接有时效)。', 'A fresh set-password email is on its way — open the link soon (it expires).'));
@@ -385,10 +388,13 @@ export default function TalentDashboard() {
           {busy ? tx('登入中…', '登录中…', 'Signing in…') : tx('登入', '登录', 'Sign in')}
         </button>
       </form>
-      <button type="button" onClick={handleResend} disabled={resetBusy}
-        className="text-xs text-amber-400 hover:underline disabled:opacity-50 mt-3">
-        {resetBusy ? tx('寄送中…', '发送中…', 'Sending…') : tx('忘記密碼 / 連結過期?重寄設定密碼信', '忘记密码 / 链接过期?重寄设置密码邮件', 'Forgot password / link expired? Resend set-password email')}
-      </button>
+      <div className="mt-3 space-y-2">
+        <Turnstile onToken={setCaptchaToken} />
+        <button type="button" onClick={handleResend} disabled={resetBusy}
+          className="block text-xs text-amber-400 hover:underline disabled:opacity-50">
+          {resetBusy ? tx('寄送中…', '发送中…', 'Sending…') : tx('忘記密碼 / 連結過期?重寄設定密碼信', '忘记密码 / 链接过期?重寄设置密码邮件', 'Forgot password / link expired? Resend set-password email')}
+        </button>
+      </div>
       {resetMsg && <p className="text-green-400 text-xs mt-2">{resetMsg}</p>}
       <p className="text-gray-500 text-xs mt-6 leading-relaxed">{tx('第一次登入?請點開我們寄給您的「設定密碼」信件設定密碼。連結若過期,點上方「重寄」即可拿到新的。', '第一次登录?请打开我们发送给您的「设置密码」邮件设置密码。链接若过期,点上方「重寄」即可拿到新的。', 'First time? Open the “Set Password” email we sent you. If the link expired, tap “Resend” above for a fresh one.')}</p>
     </div>
