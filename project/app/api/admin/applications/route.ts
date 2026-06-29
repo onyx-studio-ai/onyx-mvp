@@ -205,6 +205,22 @@ export async function PATCH(request: NextRequest) {
             console.error('Failed to auto-create talent record:', talentError);
           } else if (newTalent) {
             await db.from('talent_applications').update({ talent_id: newTalent.id }).eq('id', id);
+            // Pre-provision a login account (confirmed, no password) right away, so
+            // "forgot password" ALWAYS works for an approved talent — even if their
+            // onboarding link later breaks (e.g. the application gets deleted, which
+            // nulls talents.application_id). Best-effort: /onboard also provisions it
+            // if this fails. The set-password email itself is still sent at /onboard.
+            if (application.email) {
+              try {
+                const created = await db.auth.admin.createUser({ email: application.email, email_confirm: true });
+                let uid = created.data?.user?.id || null;
+                if (!uid) {
+                  const { data: list } = await db.auth.admin.listUsers();
+                  uid = list?.users?.find((u) => (u.email || '').toLowerCase() === application.email.toLowerCase())?.id || null;
+                }
+                if (uid) await db.from('talents').update({ auth_user_id: uid }).eq('id', newTalent.id);
+              } catch (e) { console.error('[applications] pre-provision login account failed (non-fatal):', e); }
+            }
           }
         }
       }
