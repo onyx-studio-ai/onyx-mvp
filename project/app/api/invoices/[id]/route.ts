@@ -233,7 +233,7 @@ export async function GET(
       itemType: `Music Production — ${tierLabel}`,
       itemDetails: [usageLabel, order.string_addon ? `+ String Arrangement` : ''].filter(Boolean).join(' · '),
       price,
-      currency: 'USD',
+      currency: (order as { currency?: string }).currency || 'USD',
       transactionId,
     });
 
