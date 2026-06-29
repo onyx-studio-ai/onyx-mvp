@@ -40,6 +40,7 @@ interface VoiceOrder {
   tier: string;
   revision_count: number;
   max_revisions: number;
+  talent_id?: string | null; // present = real-person casting order (no team "final-prep" step)
   download_url?: string | null; // delivered file when no voice_order_versions row exists (legacy/casting deliveries)
 }
 
@@ -60,10 +61,6 @@ const VOICE_STATUS_STEPS = [
   { key: 'completed', labelKey: 'statusComplete' },
 ];
 
-function getStepIndex(status: string) {
-  const idx = VOICE_STATUS_STEPS.findIndex(s => s.key === status);
-  return idx === -1 ? 0 : idx;
-}
 
 function AudioPreview({ url, label }: { url: string; label: string }) {
   const [playing, setPlaying] = useState(false);
@@ -128,7 +125,10 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const latestVersion = versions[versions.length - 1];
-  const currentStep = getStepIndex(order.status);
+  // Casting (real-person) orders skip the team "final-prep" step — drop it so the
+  // progress bar reads delivered → completed instead of leaving step 4 blank.
+  const steps = order.talent_id ? VOICE_STATUS_STEPS.filter((s) => s.key !== 'awaiting_final') : VOICE_STATUS_STEPS;
+  const currentStep = Math.max(0, steps.findIndex((s) => s.key === order.status));
   // The file to review: the latest uploaded version, or — for legacy/casting
   // deliveries that never created a version row — the order's download_url.
   const reviewUrl = cleanUrl(latestVersion?.file_url) || cleanUrl(order.download_url);
@@ -198,7 +198,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
       <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-6">
         <p className="text-xs text-gray-500 uppercase tracking-wider mb-5 font-medium">{t('productionProgress')}</p>
         <div className="flex items-center gap-0">
-          {VOICE_STATUS_STEPS.map((step, idx) => {
+          {steps.map((step, idx) => {
             const isCompleted = idx < currentStep;
             const isCurrent = idx === currentStep;
             return (
@@ -217,7 +217,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
                     {t(step.labelKey)}
                   </p>
                 </div>
-                {idx < VOICE_STATUS_STEPS.length - 1 && (
+                {idx < steps.length - 1 && (
                   <div className={`h-px flex-1 mx-1 mb-5 ${isCompleted ? 'bg-green-500/50' : 'bg-zinc-800'}`} />
                 )}
               </div>

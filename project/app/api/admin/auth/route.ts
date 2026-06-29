@@ -46,26 +46,15 @@ function createSessionToken(role: AdminRole): string {
 function verifyAndParseSession(token: string): AdminRole | null {
   const parts = token.split('.');
 
-  let role: AdminRole;
-  let timestamp: string;
-  let signature: string;
-  let payload: string;
-
-  if (parts.length === 3) {
-    const parsedRole = parts[0];
-    if (parsedRole !== 'admin' && parsedRole !== 'production') return null;
-    role = parsedRole;
-    timestamp = parts[1];
-    signature = parts[2];
-    payload = `${role}.${timestamp}`;
-  } else if (parts.length === 2) {
-    role = 'admin';
-    timestamp = parts[0];
-    signature = parts[1];
-    payload = timestamp;
-  } else {
-    return null;
-  }
+  // Role-aware tokens only (`<role>.<timestamp>.<signature>`); legacy 2-part
+  // tokens are no longer accepted — stale sessions must re-login.
+  if (parts.length !== 3) return null;
+  const parsedRole = parts[0];
+  if (parsedRole !== 'admin' && parsedRole !== 'production') return null;
+  const role: AdminRole = parsedRole;
+  const timestamp = parts[1];
+  const signature = parts[2];
+  const payload = `${role}.${timestamp}`;
 
   const expected = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('hex');
   if (signature !== expected) return null;

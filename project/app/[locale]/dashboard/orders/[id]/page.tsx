@@ -565,6 +565,7 @@ export default function OrderDetailPage() {
               revision_count: (order as Record<string, unknown>).revision_count as number ?? 0,
               max_revisions: (order as Record<string, unknown>).max_revisions as number ?? 2,
               download_url: (order as Record<string, unknown>).download_url as string | null ?? null,
+              talent_id: (order as Record<string, unknown>).talent_id as string | null ?? null,
             }}
             onRefresh={fetchOrder}
           />

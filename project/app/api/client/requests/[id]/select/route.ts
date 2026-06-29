@@ -61,6 +61,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     ? await r.db.from('talents').select('name, email').eq('id', q.talent_id).maybeSingle()
     : { data: null };
 
+  // Anti self-dealing: a talent can't be awarded their own brief (same email both
+  // sides) — that would let one account run the whole client↔talent loop on itself.
+  if (talent?.email && String(talent.email).toLowerCase() === String(r.brief.client_email || '').toLowerCase()) {
+    return NextResponse.json({ error: '無法選定:此配音員與客戶為同一帳號。' }, { status: 400 });
+  }
+
   // Create the production order (pending_payment) from the awarded quote.
   const order = await createOrderFromAward(r.db, r.brief, q, {
     talentName: talent?.name as string | undefined,

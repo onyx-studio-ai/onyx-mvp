@@ -17,31 +17,20 @@ export type AdminRole = 'admin' | 'production';
 function verifyAndParseSession(token: string, secret: string): AdminRole | null {
   const parts = token.split('.');
 
-  let role: AdminRole;
-  let timestamp: string;
-  let signature: string;
-
-  if (parts.length === 3) {
-    const parsedRole = parts[0];
-    if (parsedRole !== 'admin' && parsedRole !== 'production') return null;
-    role = parsedRole;
-    timestamp = parts[1];
-    signature = parts[2];
-  } else if (parts.length === 2) {
-    // legacy: no role embedded → treat as admin
-    role = 'admin';
-    timestamp = parts[0];
-    signature = parts[1];
-  } else {
-    return null;
-  }
+  // Role-aware tokens only: `<role>.<timestamp>.<signature>`. The pre-role-split
+  // 2-part legacy format is no longer accepted (stale sessions must re-login).
+  if (parts.length !== 3) return null;
+  const parsedRole = parts[0];
+  if (parsedRole !== 'admin' && parsedRole !== 'production') return null;
+  const role: AdminRole = parsedRole;
+  const timestamp = parts[1];
+  const signature = parts[2];
 
   if (!timestamp || !signature) return null;
 
-  // Signature is computed over the role-prefixed payload (or just the
-  // timestamp for legacy tokens) so changing role can't be done by
+  // Signature is over the role-prefixed payload so role can't be changed by
   // editing the cookie.
-  const payload = parts.length === 3 ? `${role}.${timestamp}` : timestamp;
+  const payload = `${role}.${timestamp}`;
   const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
   if (signature.length !== expected.length) return null;
 
