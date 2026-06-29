@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Persist to the talent marketplace (best-effort; non-fatal pre-migration).
     let briefNumber = '';
+    let briefId = '';
     try {
       const db = getSupabaseServiceClient();
       const { data: inserted, error: insErr } = await db
@@ -73,12 +74,20 @@ export async function POST(request: NextRequest) {
           requested_talent: (typeof b.requested_talent === 'string' && b.requested_talent.trim()) ? b.requested_talent.trim().slice(0, 200) : null,
           locale: b.locale || '',
         })
-        .select('brief_number')
+        .select('id, brief_number')
         .single();
       if (insErr) console.error('[hire] brief persist failed (non-fatal):', insErr.message);
-      else briefNumber = inserted?.brief_number || '';
+      else { briefNumber = inserted?.brief_number || ''; briefId = inserted?.id || ''; }
     } catch (e) {
       console.error('[hire] brief persist threw (non-fatal):', e);
+    }
+
+    // Link the requested talent to its record (direct-invite). Separate from the
+    // main insert so it stays resilient if the column isn't migrated yet — the
+    // brief still saves; only the link is skipped. (migration 20260629150000)
+    const reqTalentId = (typeof b.requested_talent_id === 'string' && /^[0-9a-fA-F-]{36}$/.test(b.requested_talent_id.trim())) ? b.requested_talent_id.trim() : '';
+    if (briefId && reqTalentId) {
+      await getSupabaseServiceClient().from('marketplace_briefs').update({ requested_talent_id: reqTalentId }).eq('id', briefId);
     }
 
     const row = (label: string, val: unknown) =>

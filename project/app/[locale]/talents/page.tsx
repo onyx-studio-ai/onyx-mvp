@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { Search, ArrowRight, Play, Pause } from 'lucide-react';
+import FavoriteButton from '@/components/marketplace/FavoriteButton';
 import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
 import {
   formatLangEntry, baseLangLabel, canonicalLangKey, accentKeyOf, accentLabel, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
@@ -312,6 +313,7 @@ export default function TalentRoster() {
                       <Link href={`/${locale}/talents/${t.id}`} className="font-semibold text-white hover:text-blue-300 truncate block">{nameOf(t)}</Link>
                       {meta && <p className="text-[11px] text-gray-500 truncate">{meta}</p>}
                     </div>
+                    <div className="ml-auto self-start flex-none"><FavoriteButton talentId={t.id} size={16} /></div>
                   </div>
 
                   {(t.languages || []).length > 0 && pills(t.languages || [], (k) => formatLangEntry(k, locale), 'bg-zinc-800 text-gray-300')}

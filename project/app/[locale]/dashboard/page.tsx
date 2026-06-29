@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   ExternalLink,
   CreditCard,
+  Heart,
 } from 'lucide-react';
 import AdminUpload from '@/components/admin/AdminUpload';
 import { Link } from '@/i18n/navigation';
@@ -709,8 +710,57 @@ const TAB_CONFIG: { id: Tab; labelKey: string; icon: typeof Mic2; accent: string
   { id: 'licenses', labelKey: 'tabLicenses', icon: Award, accent: 'text-emerald-400 border-emerald-400' },
 ];
 
+// Client shortlist (收藏配音員): a horizontal strip of the talents the client
+// has favorited. Self-contained; renders nothing when the list is empty.
+type FavTalent = { id: string; name: string; english_name?: string | null; headshot_url?: string | null; category?: string | null };
+function FavoritesSection({ tx }: { tx: (a: string, b: string, c: string) => string }) {
+  const [items, setItems] = useState<FavTalent[]>([]);
+  const [token, setToken] = useState('');
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const tk = data.session?.access_token || '';
+      setToken(tk);
+      if (!tk) return;
+      const r = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${tk}` } });
+      const j = await r.json().catch(() => ({}));
+      if (Array.isArray(j.items)) setItems(j.items as FavTalent[]);
+    })();
+  }, []);
+  async function remove(id: string) {
+    setItems((xs) => xs.filter((x) => x.id !== id));
+    if (token) await fetch(`/api/favorites?talent_id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+  }
+  if (!items.length) return null;
+  return (
+    <div className="mb-10">
+      <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2"><Heart className="w-4 h-4 text-rose-400" fill="currentColor" /> {tx('我的收藏', '我的收藏', 'My shortlist')}</h2>
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {items.map((tt) => (
+          <div key={tt.id} className="relative flex-none w-36 rounded-xl border border-white/10 bg-white/[0.03] p-3 hover:border-white/25 transition-colors">
+            <button type="button" onClick={() => remove(tt.id)} title={tx('移除收藏', '移除收藏', 'Remove')}
+              className="absolute top-1.5 right-1.5 text-rose-400 hover:text-rose-300"><Heart className="w-4 h-4" fill="currentColor" /></button>
+            <Link href={`/talents/${tt.id}`} className="block">
+              {tt.headshot_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={tt.headshot_url} alt={tt.name} className="w-12 h-12 rounded-full object-cover mb-2" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/30 to-zinc-700 flex items-center justify-center text-base font-semibold text-amber-200 mb-2">{(tt.name || '?').trim().charAt(0)}</div>
+              )}
+              <p className="text-sm font-medium text-white truncate">{tt.name}</p>
+              {tt.category && <p className="text-[11px] text-gray-500 truncate">{tt.category}</p>}
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
+  const dashLocale = useLocale();
+  const tx = (a: string, b: string, c: string) => (dashLocale === 'zh-CN' ? b : dashLocale.startsWith('zh') ? a : c);
   const user = useDashboardUser();
   const [activeTab, setActiveTab] = useState<Tab>('voice');
   const [voiceOrders, setVoiceOrders] = useState<VoiceOrder[]>([]);
@@ -791,6 +841,8 @@ export default function DashboardPage() {
           <StatsCard icon={Activity} label={t('inProgress')} value={stats.inProgress} />
           <StatsCard icon={CheckCircle2} label={t('completed')} value={stats.completed} />
         </div>
+
+        <FavoritesSection tx={tx} />
 
         {/* Tabs */}
         <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-8 w-fit">

@@ -160,6 +160,24 @@ const builtinIntro = (name: string, tx: (tw: string, cn: string, en: string) => 
   `Hi, I'm ${name || '(your name)'}, a voice actor. Thanks for the invitation — I'm interested in this project and my voice and experience fit it well. I'd love to work with you.`);
 const builtinRev = (tx: (tw: string, cn: string, en: string) => string) => tx('含 2 次修改;超出部分每次另計。', '含 2 次修改;超出部分每次另计。', '2 revisions included; extra revisions billed separately.');
 
+// Auto-fill a quote form from the talent's "defaults": their most-recently-saved
+// intro / revision template + the revision count they last used. Never clobbers
+// text the talent has already typed, so they just adjust the price each time.
+const LAST_REV_KEY = 'onyx_last_included_rev';
+type SetStr = (v: string | ((p: string) => string)) => void;
+function useQuoteDefaults(templates: Templates, setIntro: SetStr, setRevPolicy: SetStr, setIncludedRev: SetStr) {
+  useEffect(() => {
+    const last = typeof window !== 'undefined' ? window.localStorage.getItem(LAST_REV_KEY) : null;
+    if (last) setIncludedRev(last);
+  }, [setIncludedRev]);
+  useEffect(() => {
+    const intro = templates.intro?.[0]?.body;
+    const rev = templates.revision?.[0]?.body;
+    if (intro) setIntro((v) => v || intro);
+    if (rev) setRevPolicy((v) => v || rev);
+  }, [templates, setIntro, setRevPolicy]);
+}
+
 // Won-job delivery: the talent hands in finished recordings against an accepted
 // quote. MULTIPLE files allowed (each upload adds one + future revisions); each
 // becomes a client-reviewable version. Files preserve 48k/24-bit (not transcoded).
@@ -934,6 +952,7 @@ function RoleAudition({
   const [includedRev, setIncludedRev] = useState('1'); // revisions included in the quote (999 = unlimited)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  useQuoteDefaults(templates, setIntro, setRevPolicy, setIncludedRev);
 
   const meta = [role.gender, role.age].filter(Boolean).join('·');
 
@@ -966,6 +985,7 @@ function RoleAudition({
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
     });
+    if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', '送出失败', 'Submit failed'));
@@ -1131,6 +1151,7 @@ function GeneralResponse({
   const [includedRev, setIncludedRev] = useState('1'); // revisions included in the quote (999 = unlimited)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  useQuoteDefaults(templates, setIntro, setRevPolicy, setIncludedRev);
   const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
   const grossN = Number(gross);
 
@@ -1161,6 +1182,7 @@ function GeneralResponse({
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
     });
+    if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', '送出失败', 'Submit failed'));

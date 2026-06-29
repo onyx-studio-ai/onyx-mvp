@@ -16,6 +16,7 @@ import { traitLabel, useCaseLabel, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, formatL
 import { cjkSpace } from '@/lib/cjk-space';
 import { pickLocale } from '@/lib/i18n-pick';
 import { downloadWatermarked } from '@/lib/watermark';
+import FavoriteButton from '@/components/marketplace/FavoriteButton';
 
 // Demo row: stream freely (no watermark) but any DOWNLOAD goes through the
 // watermarker — Onyx-branded filename + ID3 + a periodic spoken tag — and the
@@ -238,7 +239,10 @@ export default function TalentProfile() {
                 <h1 className="text-2xl font-bold">{displayName}</h1>
                 {metaLine && <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 opacity-60" />{metaLine}</p>}
               </div>
-              <div className="ml-auto self-start"><ShareButton title={`${displayName} · Onyx Studios`} tx={tx} /></div>
+              <div className="ml-auto self-start flex items-center gap-1">
+                <FavoriteButton talentId={t.id} />
+                <ShareButton title={`${displayName} · Onyx Studios`} tx={tx} />
+              </div>
             </div>
 
             {(t.languages || []).length > 0 && (
@@ -351,9 +355,9 @@ export default function TalentProfile() {
 
             <Link href={`/${locale}/hire?talent=${encodeURIComponent(t.name)}&talentId=${t.id}`}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-medium hover:from-amber-400 hover:to-orange-400 transition-colors">
-              <MessageSquare className="w-4 h-4" /> {tx('洽詢配音', '洽询配音', 'Enquire about this talent')}
+              <MessageSquare className="w-4 h-4" /> {tx('指定這位配音員錄製', '指定这位配音员录制', 'Request this talent')}
             </Link>
-            <p className="text-xs text-gray-500 mt-3">{tx('告訴我們您的需求,我們會協助安排與報價。', '告诉我们您的需求,我们会协助安排与报价。', 'Tell us about your project and we’ll help arrange and quote it.')}</p>
+            <p className="text-xs text-gray-500 mt-3">{tx('您的需求會以這位配音員為指定人選安排試音與報價;我們也會視情況提供備援人選。', '您的需求会以这位配音员为指定人选安排试音与报价;我们也会视情况提供备援人选。', 'Your brief will be arranged with this talent as the requested pick; we may also suggest backups.')}</p>
           </>
         )}
       </div>
