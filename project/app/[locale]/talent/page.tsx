@@ -469,6 +469,7 @@ export default function TalentDashboard() {
                 <Share className="w-3 h-3" /> {shareCopied ? tx('已複製連結 ✓', '已复制链接 ✓', 'Copied ✓') : tx('分享主頁', '分享主页', 'Share profile')}
               </button>
             )}
+            <TelegramConnect tx={tx} />
           </div>
           <input className="w-full bg-transparent text-2xl font-bold focus:outline-none focus:border-b focus:border-white/20 pb-0.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tx('顯示名稱', '显示名称', 'Display name')} />
           <input className="w-full bg-transparent text-sm text-gray-300 focus:outline-none focus:border-b focus:border-white/20 pb-0.5 mt-1" value={form.english_name} onChange={(e) => setForm({ ...form, english_name: e.target.value })} placeholder={tx('英文 / 羅馬拼音名(選填,英文頁顯示)', '英文 / 罗马拼音名(选填,英文页显示)', 'English / Romanized name (optional, shown on English site)')} />
@@ -480,8 +481,6 @@ export default function TalentDashboard() {
       <p className="text-xs text-gray-500 mb-5">{tx('隨時可「儲存草稿」,不會送審;填好後再按「送出審核」。我們聽過 demo、確認資料才會公開到前台,通過或需調整都會 email 通知您。', '随时可「保存草稿」,不会送审;填好后再按「提交审核」。我们听过 demo、确认资料才会公开到前台,通过或需调整都会 email 通知您。', 'Save a draft anytime — it isn’t reviewed. When you’re ready, hit Submit for review. We check your demos and details before going public, and email you on approval or if anything needs a tweak.')}</p>
 
       <div className="space-y-8">
-        <TelegramConnect tx={tx} />
-
         {/* Bio */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('個人簡介', '个人简介', 'Bio')}</label>
