@@ -402,7 +402,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
@@ -537,11 +537,22 @@ export default function Opportunities() {
                   {myAccepted.map((q) => (
                     <div key={q.id} className="mb-2">
                       <div className="text-xs text-gray-400 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
-                      {w.order_status === 'completed' ? null : q.agreement_accepted_at ? (
-                        <DeliveryUpload quote={q} deliveries={w.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
-                      ) : (
-                        <JobAgreement brief={w} quote={q} token={token} tx={tx} onAccepted={(at) => setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, agreement_accepted_at: at } : x)))} />
-                      )}
+                      {(() => {
+                        if (w.order_status === 'completed') return null;
+                        // Real-person case: nothing happens until the client pays.
+                        const paid = ['paid', 'completed'].includes(w.order_payment_status || '');
+                        if (!paid) return (
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5">
+                            <p className="text-sm font-medium text-amber-200">⏳ {tx('等待客戶付款', '等待客户付款', 'Awaiting client payment')}</p>
+                            <p className="text-[11px] text-gray-400 mt-0.5">{tx('客戶完成付款後即可開始製作並上傳交付。', '客户完成付款后即可开始制作并上传交付。', 'You can start once the client has paid.')}</p>
+                          </div>
+                        );
+                        return q.agreement_accepted_at ? (
+                          <DeliveryUpload quote={q} deliveries={w.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
+                        ) : (
+                          <JobAgreement brief={w} quote={q} token={token} tx={tx} onAccepted={(at) => setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, agreement_accepted_at: at } : x)))} />
+                        );
+                      })()}
                     </div>
                   ))}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">

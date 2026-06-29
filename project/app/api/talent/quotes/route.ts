@@ -153,6 +153,13 @@ export async function PATCH(request: NextRequest) {
     if (!id || !deliveryUrl) return NextResponse.json({ error: 'id and delivery_url are required' }, { status: 400 });
     if (!/^https?:\/\//i.test(deliveryUrl)) return NextResponse.json({ error: 'invalid delivery_url' }, { status: 400 });
 
+    // Real-person casting orders only execute AFTER payment — block delivery on an
+    // unpaid order (Wing: 真人案都要付款才會執行).
+    const { data: payChk } = await r.db.from('voice_orders').select('payment_status').eq('quote_id', id).maybeSingle();
+    if (payChk && !['paid', 'completed'].includes(String(payChk.payment_status))) {
+      return NextResponse.json({ error: '客戶尚未付款,付款後才能開始製作 / 上傳交付。' }, { status: 400 });
+    }
+
     const { data, error } = await r.db
       .from('marketplace_quotes')
       .update({ delivery_url: deliveryUrl, delivery_uploaded_at: new Date().toISOString(), updated_at: new Date().toISOString() })
