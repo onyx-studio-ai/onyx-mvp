@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, renderToBuffer } from '@react-pdf/renderer';
+import { currencySymbol } from '@/lib/currency';
 
 const styles = StyleSheet.create({
   page: {
@@ -229,7 +230,7 @@ function InvoiceDocument(props: InvoiceParams) {
     itemType, itemDetails, price, currency, transactionId,
   } = props;
   const cur = (currency || 'USD').toUpperCase();
-  const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
+  const sym = currencySymbol(cur);
 
   return (
     <Document>

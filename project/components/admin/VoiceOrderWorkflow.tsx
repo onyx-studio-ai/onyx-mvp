@@ -102,6 +102,16 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// Assign a talent to an order via the service-role admin API (browser/anon writes
+// to voice_orders are RLS-blocked → would silently no-op).
+async function assignOrderTalent(orderId: string, talentId: string) {
+  const res = await fetch('/api/admin/orders', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+    body: JSON.stringify({ orderId, orderType: 'voice', updates: { talent_id: talentId } }),
+  });
+  if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || 'Failed to assign talent'); }
+}
+
 export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const { toast } = useToast();
   const [versions, setVersions] = useState<Version[]>([]);
@@ -174,11 +184,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
     if (!talentId) return;
     setAssigningTalent(true);
     try {
-      const { error } = await supabase
-        .from('voice_orders')
-        .update({ talent_id: talentId })
-        .eq('id', order.id);
-      if (error) throw new Error(error.message);
+      await assignOrderTalent(order.id, talentId);
       setAssignedTalent(talentId);
       toast({ title: 'Talent assigned', description: `Talent has been assigned to this order.` });
       onStatusChange();
@@ -410,7 +416,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
             .single();
           if (matched?.id) {
             resolvedTalentId = matched.id;
-            await supabase.from('voice_orders').update({ talent_id: matched.id }).eq('id', order.id);
+            await assignOrderTalent(order.id, matched.id);
           }
         }
         if (resolvedTalentId) {
@@ -856,7 +862,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                     .single();
                   if (matched?.id) {
                     tid = matched.id;
-                    await supabase.from('voice_orders').update({ talent_id: matched.id }).eq('id', order.id);
+                    await assignOrderTalent(order.id, matched.id);
                   }
                 }
                 if (!tid) {

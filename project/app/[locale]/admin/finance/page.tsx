@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Search, RefreshCw, Wallet, DollarSign } from 'lucide-react';
 import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
+import { currencySymbol } from '@/lib/currency';
 
 type Order = {
   id: string; order_number?: string | null; project_name?: string | null; email: string;
@@ -23,8 +24,7 @@ type Order = {
 };
 type Earning = { status: string; commission_amount: number | null };
 
-const SYMBOL: Record<string, string> = { USD: 'US$', TWD: 'NT$', CNY: '¥', GBP: '£', EUR: '€', JPY: '¥' };
-const fmt = (n: number, cur = 'USD') => (SYMBOL[cur] || cur + ' ') + Math.round(n || 0).toLocaleString('en-US');
+const fmt = (n: number, cur = 'USD') => currencySymbol(cur) + Math.round(n || 0).toLocaleString('en-US');
 const usd = (n: number) => fmt(n, 'USD'); // talent_earnings ledger has no currency → USD
 const ym = (iso?: string | null) => (iso || '').slice(0, 7); // YYYY-MM
 

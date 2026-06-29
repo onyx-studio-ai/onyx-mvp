@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { currencySymbol } from '@/lib/currency';
 import MusicOrderWorkflow from '@/components/admin/MusicOrderWorkflow';
 import VoiceOrderWorkflow from '@/components/admin/VoiceOrderWorkflow';
 import OrchestraOrderWorkflow from '@/components/admin/OrchestraOrderWorkflow';
@@ -561,8 +562,7 @@ export default function AdminOrdersPage() {
 
                   {/* Price — show the order's currency so TWD isn't mistaken for USD */}
                   {(() => {
-                    const cur = ((order as { currency?: string }).currency || 'USD').toUpperCase();
-                    const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
+                    const sym = currencySymbol((order as { currency?: string }).currency);
                     return (
                       <span className="text-sm font-bold text-gray-900 flex-shrink-0 w-24 text-right">
                         {sym}{Number(order.price).toLocaleString()}

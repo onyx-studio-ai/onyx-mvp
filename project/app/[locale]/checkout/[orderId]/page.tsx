@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import { Loader2, AlertCircle, CheckCircle, Lock, Building, User, Shield, Tag, X } from 'lucide-react';
 import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.config';
+import { currencySymbol } from '@/lib/currency';
 import { COUNTRIES, getDialCode } from '@/lib/countries';
 
 type OrderType = 'music' | 'voice' | 'orchestra';
@@ -109,7 +110,7 @@ export default function CheckoutPage() {
     : 0;
   // Show the order's actual currency, not a hardcoded US$ (a TWD order bills NT$).
   const cur = (order?.currency || 'USD').toUpperCase();
-  const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
+  const sym = currencySymbol(cur);
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();

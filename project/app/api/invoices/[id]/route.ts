@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.config';
 import { generateInvoicePdf } from '@/lib/invoice-pdf';
+import { currencySymbol } from '@/lib/currency';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +31,7 @@ function buildHtml(params: {
     itemType, itemDetails, price, currency, transactionId,
   } = params;
   const cur = (currency || 'USD').toUpperCase();
-  const sym = cur === 'TWD' ? 'NT$' : cur === 'USD' ? 'US$' : cur === 'CNY' ? '¥' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : `${cur} `;
+  const sym = currencySymbol(cur);
 
   return `<!DOCTYPE html>
 <html lang="en">
