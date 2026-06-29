@@ -38,6 +38,7 @@ export default function TelegramConnect({ tx }: { tx: (a: string, b: string, c: 
   const chip = 'inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full transition';
 
   if (state.linked) {
+    // Done → muted grey, just confirms the state (click to unlink).
     return (
       <button type="button"
         onClick={async () => {
@@ -46,15 +47,16 @@ export default function TelegramConnect({ tx }: { tx: (a: string, b: string, c: 
           load();
         }}
         title={tx('Telegram 已綁定 — 點擊取消', 'Telegram 已绑定 — 点击取消', 'Telegram linked — click to unlink')}
-        className={`${chip} bg-sky-500/15 text-sky-300 hover:bg-sky-500/25`}>
-        <Send className="w-3 h-3" /> Telegram ✓
+        className={`${chip} bg-white/10 text-gray-400 hover:bg-white/15`}>
+        <Send className="w-3 h-3" /> {tx('Telegram 已綁定', 'Telegram 已绑定', 'Telegram linked')}
       </button>
     );
   }
+  // Not linked → prominent Telegram-blue to encourage binding.
   return (
     <a href={state.link} target="_blank" rel="noopener noreferrer"
       title={tx('綁定後案件通知會推送到 Telegram(比 Email 更即時)', '绑定后案件通知会推送到 Telegram(比邮件更即时)', 'Get instant job alerts on Telegram')}
-      className={`${chip} bg-white/10 text-gray-300 hover:bg-white/15`}>
+      className={`${chip} bg-sky-500 text-white hover:bg-sky-400 font-medium`}>
       <Send className="w-3 h-3" /> {tx('綁定 Telegram', '绑定 Telegram', 'Connect Telegram')}
     </a>
   );
