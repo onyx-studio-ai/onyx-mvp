@@ -280,7 +280,7 @@ export default function AdminMarketplace() {
                     </button>
                   )}
                   {quotesFor(b.id).some((q) => q.sample_url) && (
-                    <DownloadAllAuditions quotes={quotesFor(b.id)} label={b.kind === 'casting' ? caseCode(b) : b.brief_number} />
+                    <DownloadAllAuditions briefId={b.id} quotes={quotesFor(b.id)} label={b.kind === 'casting' ? caseCode(b) : b.brief_number} />
                   )}
                 </div>
                 {/* inline 報酬 edit + full case edit */}
@@ -415,17 +415,26 @@ export default function AdminMarketplace() {
 // Zip every audition IN THE BROWSER (the files are public URLs), with live X/N
 // progress. Avoids the server-side zip endpoint that 504'd on many files, and —
 // unlike the old plain <a> link — actually shows whether it's working / failed.
-function DownloadAllAuditions({ quotes, label }: { quotes: Quote[]; label: string }) {
+function DownloadAllAuditions({ briefId, quotes, label }: { briefId: string; quotes: Quote[]; label: string }) {
   const [busy, setBusy] = useState(false);
   const [prog, setProg] = useState({ done: 0, total: 0, fail: 0 });
+  const storeKey = `onyx_dl_auditions_${briefId}`;
+  // Remember (per case, in this browser) which audition files were already packed,
+  // so Wing can grab ONLY new uploads next time instead of re-zipping all 200+.
+  const [downloaded, setDownloaded] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try { return new Set(JSON.parse(window.localStorage.getItem(storeKey) || '[]') as string[]); } catch { return new Set(); }
+  });
   const items = quotes.filter((q) => q.sample_url);
+  const newItems = items.filter((q) => !downloaded.has(q.sample_url as string));
   const clean = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '').trim();
-  const run = async () => {
-    if (busy || !items.length) return;
-    setBusy(true); setProg({ done: 0, total: items.length, fail: 0 });
+
+  const run = async (list: Quote[], suffix: string) => {
+    if (busy || !list.length) return;
+    setBusy(true); setProg({ done: 0, total: list.length, fail: 0 });
     const zip = new JSZip();
-    let done = 0, fail = 0; const used: Record<string, number> = {};
-    for (const q of items) {
+    let done = 0, fail = 0; const used: Record<string, number> = {}; const got: string[] = [];
+    for (const q of list) {
       try {
         const res = await fetch(q.sample_url as string);
         if (!res.ok) throw new Error('fetch failed');
@@ -435,22 +444,37 @@ function DownloadAllAuditions({ quotes, label }: { quotes: Quote[]; label: strin
         used[base] = (used[base] || 0) + 1;
         if (used[base] > 1) base += `_${used[base]}`;
         zip.file(`${base}.${ext}`, blob);
+        got.push(q.sample_url as string);
       } catch { fail++; }
-      done++; setProg({ done, total: items.length, fail });
+      done++; setProg({ done, total: list.length, fail });
     }
     try {
       const out = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(out);
-      const a = document.createElement('a'); a.href = url; a.download = `${clean(label) || 'casting'}_試音.zip`; a.click();
+      const a = document.createElement('a'); a.href = url; a.download = `${clean(label) || 'casting'}_試音${suffix}.zip`; a.click();
       URL.revokeObjectURL(url);
+      const next = new Set(downloaded); got.forEach((u) => next.add(u)); setDownloaded(next);
+      try { window.localStorage.setItem(storeKey, JSON.stringify([...next])); } catch { /* quota / private mode */ }
       if (fail) alert(`完成,但有 ${fail} 個檔下載失敗(可能連結失效),其餘已打包。`);
     } catch { alert('打包失敗,請重試。'); }
     setBusy(false);
   };
+
+  if (busy) {
+    return <button disabled className="text-xs bg-blue-600 disabled:opacity-60 text-white rounded px-2.5 py-1 whitespace-nowrap">{`下載中 ${prog.done}/${prog.total}${prog.fail ? ` · ${prog.fail} 失敗` : ''}…`}</button>;
+  }
+  const hasNew = newItems.length > 0 && newItems.length < items.length; // some already downloaded
   return (
-    <button onClick={run} disabled={busy} className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded px-2.5 py-1 whitespace-nowrap" title="逐檔在瀏覽器打包下載(檔名:角色_配音員)">
-      {busy ? `下載中 ${prog.done}/${prog.total}${prog.fail ? ` · ${prog.fail} 失敗` : ''}…` : '⬇️ 下載全部試音'}
-    </button>
+    <span className="inline-flex items-center gap-1.5">
+      {hasNew && (
+        <button onClick={() => run(newItems, '_新')} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title="只下載你還沒下載過的試音(本機記錄)">
+          ⬇️ 下載新的 ({newItems.length})
+        </button>
+      )}
+      <button onClick={() => run(items, '')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title="逐檔在瀏覽器打包下載(檔名:角色_配音員)">
+        {hasNew ? `全部 (${items.length})` : newItems.length === 0 && items.length > 0 ? `⬇️ 重新下載全部 (${items.length})` : `⬇️ 下載全部試音 (${items.length})`}
+      </button>
+    </span>
   );
 }
 
