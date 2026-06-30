@@ -51,6 +51,11 @@ export async function createHostedCheckout(params: {
     throw new Error('Invalid amount for Paddle transaction');
   }
 
+  // Professional, branded line item — this is what shows on the customer's
+  // Paddle receipt + card statement, so keep it clean and official.
+  const PRODUCT_LABEL = { voice: 'Voiceover Production', music: 'Music Production', orchestra: 'Live Strings Recording' } as const;
+  const label = PRODUCT_LABEL[orderType] || 'Production';
+
   const payload = {
     currency_code: cur,
     collection_mode: 'automatic',
@@ -66,8 +71,8 @@ export async function createHostedCheckout(params: {
       {
         quantity: 1,
         price: {
-          name: `${orderType.toUpperCase()} Order ${orderNumber}`,
-          description: `Order #${orderNumber}`,
+          name: `${label} — Order ${orderNumber}`,
+          description: `Onyx Studios ${label.toLowerCase()} service · Order ${orderNumber}`,
           // tax-EXCLUSIVE: the unit price is the base; Paddle adds each country's
           // VAT/sales tax on top so the client bears it and our take is consistent.
           tax_mode: 'external',
@@ -76,7 +81,7 @@ export async function createHostedCheckout(params: {
             currency_code: cur,
           },
           product: {
-            name: `${orderType.toUpperCase()} Production`,
+            name: `Onyx Studios — ${label}`,
             tax_category: 'standard',
           },
         },

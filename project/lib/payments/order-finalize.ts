@@ -225,11 +225,13 @@ export async function finalizeOrderPayment(params: {
   const db = createServiceClient();
   const userId = await ensureUserByEmail(order.email);
 
+  // Keep the agreed BASE price intact (do not overwrite with the tax-inclusive
+  // total). External tax = Paddle collects + remits it, so it isn't Onyx revenue;
+  // the gross paid + tax are recorded separately below.
   const updateData: Record<string, unknown> = {
     status: 'paid',
     payment_status: orderType === 'orchestra' ? 'paid' : 'completed',
     updated_at: new Date().toISOString(),
-    price: amount,
   };
 
   if (orderType === 'orchestra') {
@@ -255,6 +257,16 @@ export async function finalizeOrderPayment(params: {
   if (error) {
     throw new Error(`Order update failed: ${error.message}`);
   }
+
+  // Record what was actually charged + the tax Paddle added on top, separately
+  // from the base price. Best-effort: if these columns aren't migrated yet, the
+  // base price is already preserved above, so finalize must NOT fail here.
+  try {
+    const basePrice = Number(order.price) || 0;
+    const grossPaid = Number(amount) || 0;
+    const taxAmount = Math.max(0, Math.round((grossPaid - basePrice) * 100) / 100);
+    await db.from(orderTable).update({ amount_paid: grossPaid, tax_amount: taxAmount }).eq('id', orderId);
+  } catch { /* columns not migrated — base price already kept, gross is on Paddle */ }
 
   try {
     await sendOrderEmails({ order, orderType, orderId, amount, transactionId, billingDetails });
