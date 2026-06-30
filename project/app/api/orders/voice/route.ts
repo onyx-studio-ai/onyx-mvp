@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       billing_details,
       status,
       payment_status,
+      locale,
     } = body;
 
     if (!email || !script_text) {
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
 
     // Try with rights_level first; if column doesn't exist yet, retry without it
     orderData.rights_level = resolvedRightsLevel;
+    if (typeof locale === 'string' && locale) orderData.locale = locale; // client UI language → localized emails
 
     let result = await db
       .from('voice_orders')
@@ -156,13 +158,15 @@ export async function POST(request: NextRequest) {
       .select('id, order_number')
       .maybeSingle();
 
-    if (result.error?.code === 'PGRST204' && result.error?.message?.includes('rights_level')) {
-      delete orderData.rights_level;
-      result = await db
-        .from('voice_orders')
-        .insert(orderData)
-        .select('id, order_number')
-        .maybeSingle();
+    // Retry, dropping any column the schema hasn't been migrated for yet (rights_level / locale).
+    let guard = 0;
+    while (result.error?.code === 'PGRST204' && guard < 3) {
+      const m = result.error?.message || '';
+      if (m.includes('rights_level')) delete orderData.rights_level;
+      else if (m.includes('locale')) delete orderData.locale;
+      else break;
+      guard++;
+      result = await db.from('voice_orders').insert(orderData).select('id, order_number').maybeSingle();
     }
 
     const { data, error } = result;

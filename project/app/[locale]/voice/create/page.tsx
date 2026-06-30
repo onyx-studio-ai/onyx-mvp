@@ -324,6 +324,7 @@ export default function VoiceConfiguratorPage() {
           rights_level: rightsLevel,
           status: 'pending_payment',
           payment_status: 'pending',
+          locale,
         }),
       });
 

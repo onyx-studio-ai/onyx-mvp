@@ -225,9 +225,20 @@ function formatCurrency(amount: number, currency = 'TWD'): string {
   return `${currency} ${amount.toLocaleString()}`;
 }
 
+// Voice production "mode" by tier, so AI orders don't read like a human recording:
+// tier-1 = pure AI · tier-2 = AI + human director · tier-3 = 100% live human.
+// (self-serve voice is AI-first, so an unknown tier defaults to 'ai'.)
+type VoiceMode = 'ai' | 'hybrid' | 'live';
+function voiceMode(tier?: string): VoiceMode {
+  if (tier === 'tier-3') return 'live';
+  if (tier === 'tier-2') return 'hybrid';
+  return 'ai';
+}
+
 function tierLabel(tier?: string): string {
+  // Keep these in sync with pricing.config VOICE_TIERS / MUSIC_TIERS names.
   const map: Record<string, string> = {
-    'tier-1': 'AI Instant Voice',
+    'tier-1': 'AI Fast Lane',
     'tier-2': "Director's Cut",
     'tier-3': '100% Live Studio',
     'ai-curator': 'AI Curator',
@@ -255,50 +266,64 @@ export interface OrderConfirmationPayload {
 
 export function orderConfirmationEmail(p: OrderConfirmationPayload): { subject: string; html: string } {
   const locale = p.locale || 'en';
-  const t = (key: string, replacements?: Record<string, string>) => emailT(locale, key, replacements);
-  const typeLabel = p.orderType === 'music' ? 'Music Production' : p.orderType === 'orchestra' ? 'Live Strings' : 'Voiceover';
+  const L = mpLocale(locale);
+  const tx = (tw: string, cn: string, en: string) => (L === 'cn' ? cn : L === 'tw' ? tw : en);
+  const typeLabel = p.orderType === 'music' ? tx('音樂製作', '音乐制作', 'Music Production') : p.orderType === 'orchestra' ? tx('實錄弦樂', '实录弦乐', 'Live Strings') : tx('配音', '配音', 'Voiceover');
   const currency = p.currency || 'TWD';
 
   const rows: { label: string; value: string }[] = [
-    { label: 'Order Number', value: `#${p.orderNumber}` },
+    { label: tx('訂單編號', '订单编号', 'Order Number'), value: `#${p.orderNumber}` },
     { label: 'Email', value: p.email },
   ];
 
   const d = p.orderDetails || {};
-  if (d.projectName) rows.push({ label: 'Project', value: String(d.projectName) });
-  if (d.tier) rows.push({ label: 'Service Tier', value: tierLabel(String(d.tier)) });
-  if (d.language) rows.push({ label: 'Language', value: String(d.language) });
-  if (d.voiceSelection) rows.push({ label: 'Voice', value: String(d.voiceSelection) });
-  if (d.toneStyle) rows.push({ label: 'Tone Style', value: String(d.toneStyle) });
-  if (d.useCase) rows.push({ label: 'Use Case', value: String(d.useCase) });
-  if (d.genre) rows.push({ label: 'Genre', value: String(d.genre) });
-  if (d.vibe) rows.push({ label: 'Vibe', value: String(d.vibe) });
-  if (d.mood) rows.push({ label: 'Mood', value: String(d.mood) });
-  if (d.tempo) rows.push({ label: 'Tempo', value: String(d.tempo) });
-  if (d.instruments) rows.push({ label: 'Instruments', value: String(d.instruments) });
-  if (d.tierName) rows.push({ label: 'Package', value: String(d.tierName) });
-  if (d.duration) rows.push({ label: 'Duration', value: `~${d.duration} min` });
-  if (d.duration_minutes) rows.push({ label: 'Duration', value: `${d.duration_minutes} min` });
-  if (d.usageType) rows.push({ label: 'Usage', value: String(d.usageType) });
-  if (d.broadcastRights) rows.push({ label: 'Broadcast Rights', value: 'Included' });
+  if (d.projectName) rows.push({ label: tx('專案', '项目', 'Project'), value: String(d.projectName) });
+  if (d.tier) rows.push({ label: tx('服務方案', '服务方案', 'Service Tier'), value: tierLabel(String(d.tier)) });
+  if (d.language) rows.push({ label: tx('語言', '语言', 'Language'), value: String(d.language) });
+  if (d.voiceSelection) rows.push({ label: tx('聲音', '声音', 'Voice'), value: String(d.voiceSelection) });
+  if (d.toneStyle) rows.push({ label: tx('語氣風格', '语气风格', 'Tone Style'), value: String(d.toneStyle) });
+  if (d.useCase) rows.push({ label: tx('用途', '用途', 'Use Case'), value: String(d.useCase) });
+  if (d.genre) rows.push({ label: tx('曲風', '曲风', 'Genre'), value: String(d.genre) });
+  if (d.vibe) rows.push({ label: tx('氛圍', '氛围', 'Vibe'), value: String(d.vibe) });
+  if (d.mood) rows.push({ label: tx('情緒', '情绪', 'Mood'), value: String(d.mood) });
+  if (d.tempo) rows.push({ label: tx('節奏', '节奏', 'Tempo'), value: String(d.tempo) });
+  if (d.instruments) rows.push({ label: tx('樂器', '乐器', 'Instruments'), value: String(d.instruments) });
+  if (d.tierName) rows.push({ label: tx('方案', '方案', 'Package'), value: String(d.tierName) });
+  if (d.duration) rows.push({ label: tx('長度', '长度', 'Duration'), value: `~${d.duration} ${tx('分鐘', '分钟', 'min')}` });
+  if (d.duration_minutes) rows.push({ label: tx('長度', '长度', 'Duration'), value: `${d.duration_minutes} ${tx('分鐘', '分钟', 'min')}` });
+  if (d.usageType) rows.push({ label: tx('使用範圍', '使用范围', 'Usage'), value: String(d.usageType) });
+  if (d.broadcastRights) rows.push({ label: tx('播放授權', '播放授权', 'Broadcast Rights'), value: tx('已含', '已含', 'Included') });
 
-  rows.push({ label: 'Amount Paid', value: formatCurrency(p.amount, currency) });
-  rows.push({ label: 'Transaction ID', value: p.transactionId });
+  rows.push({ label: tx('付款金額', '付款金额', 'Amount Paid'), value: formatCurrency(p.amount, currency) });
+  rows.push({ label: tx('交易編號', '交易编号', 'Transaction ID'), value: p.transactionId });
 
-  const stepsVoice = [
-    'Our team reviews your script and voice specifications',
-    'Voiceover is produced and quality-checked by our engineers',
-    'Download link delivered to your personal dashboard',
+  // Tier-aware "what happens next" — a pure-AI order must not read like a human recording.
+  const mode = voiceMode(d.tier ? String(d.tier) : undefined);
+  const stepsVoiceAI = [
+    tx('我們確認您的腳本與設定', '我们确认您的脚本与设置', 'We confirm your script and settings'),
+    tx('AI 生成您的配音並自動品質檢查', 'AI 生成您的配音并自动质量检查', 'Your AI voiceover is generated and quality-checked'),
+    tx('24 小時內將下載連結送到您的後台', '24 小时内将下载链接发送到您的后台', 'Download link delivered to your dashboard within 24h'),
   ];
+  const stepsVoiceHybrid = [
+    tx('我們確認您的腳本與設定', '我们确认您的脚本与设置', 'We confirm your script and settings'),
+    tx('AI 生成初版,再由真人總監微調情緒與咬字', 'AI 生成初版,再由真人总监微调情绪与咬字', 'AI produces a first pass, then our human director fine-tunes tone & pronunciation'),
+    tx('完成後將下載連結送到您的後台', '完成后将下载链接发送到您的后台', 'Download link delivered to your dashboard'),
+  ];
+  const stepsVoiceLive = [
+    tx('我們確認您的腳本與規格', '我们确认您的脚本与规格', 'We confirm your script and specs'),
+    tx('專業配音員於錄音室錄製,工程師品質把關', '专业配音员于录音室录制,工程师品质把关', 'A professional voice actor records in studio; our engineers QC'),
+    tx('完成後將下載連結送到您的後台', '完成后将下载链接发送到您的后台', 'Download link delivered to your dashboard'),
+  ];
+  const stepsVoice = mode === 'live' ? stepsVoiceLive : mode === 'hybrid' ? stepsVoiceHybrid : stepsVoiceAI;
   const stepsMusic = [
-    'Music production begins immediately with our in-house team',
-    'Estimated delivery within 7–14 business days',
-    'High-quality audio files ready for download in your dashboard',
+    tx('我們的內部團隊立即開始製作', '我们的内部团队立即开始制作', 'Music production begins immediately with our in-house team'),
+    tx('預計 7–14 個工作天交付', '预计 7–14 个工作日交付', 'Estimated delivery within 7–14 business days'),
+    tx('高品質音檔可在後台下載', '高品质音档可在后台下载', 'High-quality audio files ready for download in your dashboard'),
   ];
   const stepsOrchestra = [
-    'Upload your MIDI mockup or score file to get started',
-    'Our conservatory musicians record your piece',
-    'Final stems and masters delivered to your dashboard',
+    tx('上傳您的 MIDI 草稿或樂譜以開始', '上传您的 MIDI 草稿或乐谱以开始', 'Upload your MIDI mockup or score file to get started'),
+    tx('我們的音樂院演奏家為您錄製', '我们的音乐院演奏家为您录制', 'Our conservatory musicians record your piece'),
+    tx('最終分軌與母帶送到您的後台', '最终分轨与母带发送到您的后台', 'Final stems and masters delivered to your dashboard'),
   ];
   const steps = p.orderType === 'voice' ? stepsVoice : p.orderType === 'orchestra' ? stepsOrchestra : stepsMusic;
 
@@ -313,22 +338,22 @@ export function orderConfirmationEmail(p: OrderConfirmationPayload): { subject: 
     </tr>`).join('');
 
   const content = `
-    ${headlineBlock('Payment Successful', `Your ${typeLabel} order has been confirmed.`, BRAND_GREEN)}
-    ${infoCard('Order Details', rows)}
+    ${headlineBlock(tx('付款成功', '付款成功', 'Payment Successful'), tx(`您的${typeLabel}訂單已確認。`, `您的${typeLabel}订单已确认。`, `Your ${typeLabel} order has been confirmed.`), BRAND_GREEN)}
+    ${infoCard(tx('訂單明細', '订单明细', 'Order Details'), rows)}
     <tr>
       <td style="background:linear-gradient(135deg,rgba(74,222,128,0.05) 0%,rgba(34,197,94,0.1) 100%);border:1px solid rgba(74,222,128,0.2);border-radius:16px;padding:28px 32px;">
-        <p style="margin:0 0 4px;color:${BRAND_GREEN};font-size:16px;font-weight:700;">Access Your Dashboard</p>
+        <p style="margin:0 0 4px;color:${BRAND_GREEN};font-size:16px;font-weight:700;">${tx('進入您的後台', '进入您的后台', 'Access Your Dashboard')}</p>
         <p style="margin:0 0 20px;color:#9ca3af;font-size:14px;line-height:1.6;">
-          Click the button below to access your personal dashboard. Track your order progress, download deliverables, and manage your account — all in one place.
+          ${tx('點下方按鈕進入您的專屬後台,隨時追蹤訂單進度、下載成品、管理帳號。', '点下方按钮进入您的专属后台,随时追踪订单进度、下载成品、管理账号。', 'Click below to access your personal dashboard — track progress, download deliverables, and manage your account in one place.')}
         </p>
-        ${ctaButton('Go to My Dashboard', p.dashboardLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}
-        <p style="margin:16px 0 0;color:#6b7280;font-size:12px;">This link is valid for 24 hours. You can set your own password from your dashboard settings.</p>
+        ${ctaButton(tx('前往我的後台', '前往我的后台', 'Go to My Dashboard'), p.dashboardLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}
+        <p style="margin:16px 0 0;color:#6b7280;font-size:12px;">${tx('此連結 24 小時內有效;您可在後台設定自己的密碼。', '此链接 24 小时内有效;您可在后台设置自己的密码。', 'This link is valid for 24 hours. You can set your own password in your dashboard settings.')}</p>
       </td>
     </tr>
     <tr><td style="height:24px;"></td></tr>
     <tr>
       <td style="background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px 32px;">
-        <p style="margin:0 0 20px;color:#6b7280;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;">What Happens Next</p>
+        <p style="margin:0 0 20px;color:#6b7280;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;">${tx('接下來', '接下来', 'What Happens Next')}</p>
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation">${stepsHtml}</table>
       </td>
     </tr>`;
@@ -337,7 +362,7 @@ export function orderConfirmationEmail(p: OrderConfirmationPayload): { subject: 
   const accent = p.orderType === 'orchestra' ? BRAND_AMBER : BRAND_GREEN;
 
   return {
-    subject: `Your Onyx Studios ${typeLabel} Order Is Confirmed — #${p.orderNumber}`,
+    subject: tx(`您的 Onyx Studios ${typeLabel}訂單已確認 — #${p.orderNumber}`, `您的 Onyx Studios ${typeLabel}订单已确认 — #${p.orderNumber}`, `Your Onyx Studios ${typeLabel} Order Is Confirmed — #${p.orderNumber}`),
     html: baseLayout(content, brandName, accent, locale),
   };
 }
@@ -354,6 +379,7 @@ export interface PaymentReceiptPayload {
   transactionId: string;
   orderType: 'voice' | 'music' | 'orchestra';
   paidAt: string;
+  locale?: string;
   billingDetails?: {
     name?: string;
     company?: string;
@@ -364,35 +390,39 @@ export interface PaymentReceiptPayload {
 
 export function paymentReceiptEmail(p: PaymentReceiptPayload): { subject: string; html: string } {
   const currency = p.currency || 'TWD';
-  const typeLabel = p.orderType === 'music' ? 'Music Production' : p.orderType === 'orchestra' ? 'Live Strings' : 'Voiceover';
+  const L = mpLocale(p.locale);
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  const tx = (tw: string, cn: string, en: string) => (L === 'cn' ? cn : L === 'tw' ? tw : en);
+  const typeLabel = p.orderType === 'music' ? tx('音樂製作', '音乐制作', 'Music Production') : p.orderType === 'orchestra' ? tx('實錄弦樂', '实录弦乐', 'Live Strings') : tx('配音', '配音', 'Voiceover');
 
   const rows: { label: string; value: string }[] = [
-    { label: 'Receipt Number', value: `#${p.orderNumber}` },
-    { label: 'Service', value: typeLabel },
-    { label: 'Amount', value: formatCurrency(p.amount, currency) },
-    { label: 'Payment Method', value: 'Credit Card (Paddle)' },
-    { label: 'Transaction ID', value: p.transactionId },
-    { label: 'Date', value: new Date(p.paidAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) },
+    { label: tx('收據編號', '收据编号', 'Receipt Number'), value: `#${p.orderNumber}` },
+    { label: tx('服務', '服务', 'Service'), value: typeLabel },
+    { label: tx('金額', '金额', 'Amount'), value: formatCurrency(p.amount, currency) },
+    { label: tx('付款方式', '付款方式', 'Payment Method'), value: tx('信用卡(Paddle)', '信用卡(Paddle)', 'Credit Card (Paddle)') },
+    { label: tx('交易編號', '交易编号', 'Transaction ID'), value: p.transactionId },
+    { label: tx('日期', '日期', 'Date'), value: new Date(p.paidAt).toLocaleDateString(ll, { year: 'numeric', month: 'long', day: 'numeric' }) },
   ];
 
-  if (p.billingDetails?.name) rows.push({ label: 'Billed To', value: p.billingDetails.name });
-  if (p.billingDetails?.company) rows.push({ label: 'Company', value: p.billingDetails.company });
-  if (p.billingDetails?.taxId) rows.push({ label: 'Tax ID', value: p.billingDetails.taxId });
+  if (p.billingDetails?.name) rows.push({ label: tx('開立對象', '开立对象', 'Billed To'), value: p.billingDetails.name });
+  if (p.billingDetails?.company) rows.push({ label: tx('公司', '公司', 'Company'), value: p.billingDetails.company });
+  if (p.billingDetails?.taxId) rows.push({ label: tx('統一編號 / 稅號', '统一编号 / 税号', 'Tax ID'), value: p.billingDetails.taxId });
 
   const content = `
-    ${headlineBlock('Payment Receipt', `Thank you for your purchase.`, '#22c55e')}
-    ${infoCard('Transaction Details', rows)}
-    ${bodyCard('Important', `
+    ${headlineBlock(tx('付款收據', '付款收据', 'Payment Receipt'), tx('感謝您的購買。', '感谢您的购买。', 'Thank you for your purchase.'), '#22c55e')}
+    ${infoCard(tx('交易明細', '交易明细', 'Transaction Details'), rows)}
+    ${bodyCard(tx('重要說明', '重要说明', 'Important'), `
       <p style="color:#d1d5db;font-size:14px;line-height:1.7;margin:0;">
-        This receipt serves as confirmation of your payment. A formal invoice can be downloaded from your
-        <a href="${SITE_URL}/dashboard/invoices" style="color:${BRAND_GREEN};text-decoration:none;font-weight:600;">dashboard</a>
-        at any time. If you require a modified invoice for accounting purposes, please contact our billing department.
+        ${tx(
+          `此收據為您的付款證明。正式發票可隨時於您的<a href="${SITE_URL}/dashboard/invoices" style="color:${BRAND_GREEN};text-decoration:none;font-weight:600;">後台</a>下載。如需調整發票抬頭或內容供記帳使用,請聯絡我們的帳務部門。`,
+          `此收据为您的付款证明。正式发票可随时于您的<a href="${SITE_URL}/dashboard/invoices" style="color:${BRAND_GREEN};text-decoration:none;font-weight:600;">后台</a>下载。如需调整发票抬头或内容供记账使用,请联系我们的账务部门。`,
+          `This receipt confirms your payment. A formal invoice can be downloaded from your <a href="${SITE_URL}/dashboard/invoices" style="color:${BRAND_GREEN};text-decoration:none;font-weight:600;">dashboard</a> any time. If you need a modified invoice for accounting, please contact our billing department.`)}
       </p>
     `)}`;
 
   return {
-    subject: `Onyx Studios — Payment Receipt #${p.orderNumber}`,
-    html: baseLayout(content),
+    subject: tx(`Onyx Studios — 付款收據 #${p.orderNumber}`, `Onyx Studios — 付款收据 #${p.orderNumber}`, `Onyx Studios — Payment Receipt #${p.orderNumber}`),
+    html: baseLayout(content, 'Studios', BRAND_GREEN, ll),
   };
 }
 
@@ -653,22 +683,65 @@ export interface VoiceWorkflowPayload {
   revisionsUsed?: number;
   maxRevisions?: number;
   clientFeedback?: string;
+  locale?: string;
+  tier?: string;
 }
 
 export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; html: string } {
   const { type, orderNumber, versionNumber = 1, clientFeedback } = p;
+  const L = mpLocale(p.locale);
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  const tx = (tw: string, cn: string, en: string) => (L === 'cn' ? cn : L === 'tw' ? tw : en);
+  const mode = voiceMode(p.tier);
+  const ord = tx(`訂單 #${orderNumber}`, `订单 #${orderNumber}`, `Order #${orderNumber}`);
+  // Tier-aware wording so an AI order never reads like a human recording.
+  const noun = mode === 'ai' ? tx('AI 配音', 'AI 配音', 'AI voiceover') : tx('配音', '配音', 'voiceover');
+  const readyVerb = mode === 'ai'
+    ? tx('已生成', '已生成', 'has been generated')
+    : mode === 'hybrid'
+      ? tx('已由 AI 初版 + 真人總監微調完成', '已由 AI 初版 + 真人总监微调完成', 'has been produced (AI draft + human director polish)')
+      : tx('已由配音員錄製完成', '已由配音员录制完成', 'has been recorded by your voice actor');
+  const redoVerb = mode === 'ai' ? tx('重新生成', '重新生成', 'regenerate accordingly') : tx('調整處理', '调整处理', 'address them');
 
-  const configs: Record<VoiceNotificationType, { subject: string; headline: string; sub: string; accent: string; body: string; cta: string }> = {
-    version_delivered: {
-      subject: `Your Voiceover Is Ready for Review — #${orderNumber}`,
-      headline: `Version ${versionNumber} Ready`,
-      sub: 'Your voiceover has been delivered for your review.',
-      accent: '#06b6d4',
-      body: `
-        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">Version ${versionNumber} of your voiceover for order #${orderNumber} is ready. Head to your dashboard to listen, then either approve or request changes.</p>
-        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">If the recording meets your expectations, click Approve to proceed to final delivery. Otherwise, you can submit detailed revision notes and our team will incorporate your feedback.</p>`,
-      cta: 'Review Voiceover',
-    },
+  // ── Client-facing (trilingual + tier-aware) ──
+  if (type === 'version_delivered') {
+    const content = `
+      ${headlineBlock(tx(`第 ${versionNumber} 版已就緒`, `第 ${versionNumber} 版已就绪`, `Version ${versionNumber} Ready`), tx('您的配音已交付,請檢視', '您的配音已交付,请查看', 'Your voiceover has been delivered for review'), '#06b6d4')}
+      ${bodyCard(ord, `
+        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${tx(
+          `${ord} 的${noun}第 ${versionNumber} 版${readyVerb}。請登入後台試聽,再選擇核准或要求調整。`,
+          `${ord} 的${noun}第 ${versionNumber} 版${readyVerb}。请登录后台试听,再选择核准或要求调整。`,
+          `Version ${versionNumber} of your ${noun} for ${ord} ${readyVerb}. Sign in to listen, then approve or request changes.`)}</p>
+        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${tx(
+          `若這版符合您的需求,點「核准」即進入最終交付;否則請留下調整意見,我們會據此${redoVerb}。`,
+          `若这版符合您的需求,点「核准」即进入最终交付;否则请留下调整意见,我们会据此${redoVerb}。`,
+          `If this version meets your needs, click Approve to proceed to final delivery. Otherwise leave revision notes and we'll ${redoVerb}.`)}</p>`)}
+      ${ctaRow(tx('檢視配音', '查看配音', 'Review voiceover'), p.dashboardLink, '#06b6d4')}`;
+    return { subject: tx(`您的配音已就緒,請檢視 — #${orderNumber}`, `您的配音已就绪,请查看 — #${orderNumber}`, `Your voiceover is ready for review — #${orderNumber}`), html: baseLayout(content, 'Studios', '#06b6d4', ll) };
+  }
+  if (type === 'final_ready') {
+    const content = `
+      ${headlineBlock(tx('您的配音已完成', '您的配音已完成', 'Your Voiceover Is Complete'), tx('下載您的高品質成品檔', '下载您的高品质成品档', 'Download your final high-quality files'), BRAND_GREEN)}
+      ${bodyCard(ord, `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${tx(
+        `${ord} 的配音已完成,所有交付檔案皆可在後台下載。感謝您選擇 Onyx Studios。`,
+        `${ord} 的配音已完成,所有交付档案皆可在后台下载。感谢您选择 Onyx Studios。`,
+        `Your voiceover for ${ord} is finalized. All deliverable files are ready to download in your dashboard. Thank you for choosing Onyx Studios.`)}</p>`)}
+      ${ctaRow(tx('下載檔案', '下载档案', 'Download files'), p.dashboardLink, BRAND_GREEN)}`;
+    return { subject: tx(`您的配音成品已就緒 — #${orderNumber}`, `您的配音成品已就绪 — #${orderNumber}`, `Your final voiceover is ready — #${orderNumber}`), html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+  }
+  if (type === 'order_complete') {
+    const content = `
+      ${headlineBlock(tx('訂單已完成', '订单已完成', 'Order Complete'), tx('感謝您選擇 Onyx Studios', '感谢您选择 Onyx Studios', 'Thank you for choosing Onyx Studios'), BRAND_GREEN)}
+      ${bodyCard(ord, `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${tx(
+        `您的配音訂單 #${orderNumber} 已標記為完成。感謝您的信任,期待再次合作。`,
+        `您的配音订单 #${orderNumber} 已标记为完成。感谢您的信任,期待再次合作。`,
+        `Your voice order #${orderNumber} has been marked complete. We appreciate your trust and look forward to working with you again.`)}</p>`)}
+      ${ctaRow(tx('前往後台', '前往后台', 'View dashboard'), p.dashboardLink, BRAND_GREEN)}`;
+    return { subject: tx(`訂單已完成 — #${orderNumber}`, `订单已完成 — #${orderNumber}`, `Order complete — #${orderNumber}`), html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+  }
+
+  // ── Internal/admin-facing (English; these go to the team, not the client) ──
+  const admin: Record<'version_approved' | 'revision_requested', { subject: string; headline: string; sub: string; accent: string; body: string; cta: string }> = {
     version_approved: {
       subject: `Client Approved Version — Voice Order #${orderNumber}`,
       headline: 'Client Approved',
@@ -691,30 +764,12 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">Please review the feedback and upload a revised version at your earliest convenience.</p>`,
       cta: 'View in Admin Panel',
     },
-    final_ready: {
-      subject: `Your Final Voiceover Is Ready — #${orderNumber}`,
-      headline: 'Your Voiceover Is Complete',
-      sub: 'Download your final high-quality audio files.',
-      accent: BRAND_GREEN,
-      body: `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">Your voiceover for order #${orderNumber} is finalized. All deliverable files are ready for download in your dashboard. Thank you for choosing Onyx Studios.</p>`,
-      cta: 'Download Files',
-    },
-    order_complete: {
-      subject: `Order Complete — #${orderNumber}`,
-      headline: 'Order Complete',
-      sub: 'Thank you for choosing Onyx Studios.',
-      accent: BRAND_GREEN,
-      body: `<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">Your voice order #${orderNumber} has been marked as complete. We appreciate your trust in Onyx Studios and look forward to working with you again.</p>`,
-      cta: 'View Dashboard',
-    },
   };
-
-  const c = configs[type];
+  const c = admin[type as 'version_approved' | 'revision_requested'] || admin.revision_requested;
   const content = `
     ${headlineBlock(c.headline, c.sub, c.accent)}
     ${bodyCard(`Order #${orderNumber}`, c.body)}
     ${ctaRow(c.cta, p.dashboardLink, c.accent)}`;
-
   return { subject: c.subject, html: baseLayout(content) };
 }
 

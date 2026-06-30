@@ -98,7 +98,11 @@ export async function PATCH(request: NextRequest) {
             } else if (orderType === 'strings') {
               emailResult = stringsWorkflowEmail({ type: notifType as StringsNotificationType, email: orderData.email, orderNumber: orderData.order_number, orderId, dashboardLink });
             } else {
-              emailResult = voiceWorkflowEmail({ type: notifType as VoiceNotificationType, email: orderData.email, orderNumber: orderData.order_number, orderId, dashboardLink });
+              // Voice emails are tier-aware (AI vs human) + localized — fetch both,
+              // resiliently (the locale column may not be migrated yet).
+              const vq = await db.from('voice_orders').select('tier, locale').eq('id', orderId).maybeSingle();
+              const vrow = (vq.data || (await db.from('voice_orders').select('tier').eq('id', orderId).maybeSingle()).data) as { tier?: string; locale?: string } | null;
+              emailResult = voiceWorkflowEmail({ type: notifType as VoiceNotificationType, email: orderData.email, orderNumber: orderData.order_number, orderId, dashboardLink, tier: vrow?.tier, locale: vrow?.locale });
             }
             await sendEmail({ category: 'PRODUCTION', to: orderData.email, subject: emailResult.subject, html: emailResult.html });
           }

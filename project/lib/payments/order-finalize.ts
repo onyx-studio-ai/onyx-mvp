@@ -113,6 +113,7 @@ async function sendOrderEmails(params: {
     orderType,
     transactionId,
     dashboardLink,
+    locale: (order as { locale?: string }).locale,
     orderDetails:
       orderType === 'voice'
         ? {
@@ -153,6 +154,7 @@ async function sendOrderEmails(params: {
     transactionId,
     orderType,
     paidAt: new Date().toISOString(),
+    locale: (order as { locale?: string }).locale,
     billingDetails: billingDetails
       ? {
           name: billingDetails.fullName || billingDetails.name,
