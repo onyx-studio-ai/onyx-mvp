@@ -181,6 +181,18 @@ export const VOICE_DURATION_PRICING: Record<VoiceTierId, { ranges: { maxMinutes:
   },
 };
 
+// Tier-2 (Director's Cut) multi-voice pricing: the client picks N voices/characters,
+// each capped at 0-30s of script. First voice at the full package price; each extra
+// voice is a cheaper add-on (the AI+director workflow is already warmed up after the
+// first). Overage beyond 30s on any single voice's script bills at tier-2's existing
+// per-minute rate. (2026-06-30 Wing: real multi-character game-line jobs were being
+// quoted per-character too low relative to the ~1hr of director time they take.)
+export const TIER2_MULTI_VOICE = {
+  firstVoicePrice: 89,
+  additionalVoicePrice: 39,
+  maxMinutesPerVoice: 0.5, // 30 seconds
+};
+
 export const VOICE_TIERS = [
   {
     id: 'tier-1',
@@ -217,7 +229,7 @@ export const VOICE_TIERS = [
       'Priority delivery queue',
       'WAV + MP3 high-quality delivery',
     ],
-    priceLabel: 'US$89 / 0-60s package',
+    priceLabel: 'US$89 / voice (0-30s, add more voices as needed)',
     gradient: 'from-blue-600 to-cyan-600',
     popular: true,
     isCustom: false,

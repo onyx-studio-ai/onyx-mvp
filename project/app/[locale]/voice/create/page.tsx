@@ -8,8 +8,8 @@ import { useRouter, Link } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import Footer from '@/components/landing/Footer';
 import { supabase } from '@/lib/supabase';
-import { VOICE_TIERS, VOICE_RIGHTS_LABELS, type VoiceRightsLevel, getVoiceRightsAddonPrice } from '@/lib/config/pricing.config';
-import { estimateAudioMinutes, calculatePrice } from '@/lib/estimateAudio';
+import { VOICE_TIERS, VOICE_RIGHTS_LABELS, TIER2_MULTI_VOICE, type VoiceRightsLevel, getVoiceRightsAddonPrice } from '@/lib/config/pricing.config';
+import { estimateAudioMinutes, estimateAudioMinutesRaw, calculatePrice, calculateTier2MultiVoicePrice } from '@/lib/estimateAudio';
 import { languages, aiLanguages } from '@/lib/voices';
 import ContactModal from '@/components/ContactModal';
 
@@ -110,6 +110,13 @@ export default function VoiceConfiguratorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rightsLevel, setRightsLevel] = useState<VoiceRightsLevel>('standard');
 
+  // Tier-2 (Director's Cut) multi-voice: the main voice/script fields above ARE
+  // voice #1; this holds voices #2+ (each its own voice + 0-30s script). Only
+  // shown/used for tier-2 — reset when the client picks a different tier.
+  const [extraVoices, setExtraVoices] = useState<{ voice: string; script: string }[]>([]);
+  const isTier2 = config.baseTier === 'tier-2';
+  useEffect(() => { if (!isTier2 && extraVoices.length) setExtraVoices([]); }, [isTier2]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── AI 付款前試聽(Tier-1 instant)──────────────────────────────
   // previewVoiceId = the selected voice's fal embedding id (VOICE_ID_MAP, module scope).
   // Only voices with an embedding can preview; preview is truncated server-side (first
@@ -208,8 +215,9 @@ export default function VoiceConfiguratorPage() {
   }, [preTier, config.baseTier, router]);
 
   const estimatedMinutes = estimateAudioMinutes(config.scriptText);
+  const voiceMinutesRaw = [estimateAudioMinutesRaw(config.scriptText), ...extraVoices.map(v => estimateAudioMinutesRaw(v.script))];
   const basePrice = config.baseTier && !isCustomTier
-    ? calculatePrice(estimatedMinutes, config.baseTier as 'tier-1' | 'tier-2' | 'tier-3')
+    ? (isTier2 ? calculateTier2MultiVoicePrice(voiceMinutesRaw) : calculatePrice(estimatedMinutes, config.baseTier as 'tier-1' | 'tier-2' | 'tier-3'))
     : 0;
   const rightsAddon = config.baseTier ? getVoiceRightsAddonPrice(config.baseTier, rightsLevel) : 0;
   const totalPrice = basePrice + rightsAddon;
@@ -288,6 +296,10 @@ export default function VoiceConfiguratorPage() {
       newErrors.scriptText = t('errorScriptRequired');
     }
 
+    if (isTier2 && extraVoices.some(v => !v.voice || !v.script.trim())) {
+      newErrors.extraVoices = isZhLocale ? '每個額外聲音都要選聲音並填台詞。' : 'Every additional voice needs both a voice and a script.';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -303,22 +315,37 @@ export default function VoiceConfiguratorPage() {
     try {
       const langObj = languages.find(l => l.code === config.language);
 
+      // Tier-2 with extra voices: fold all voices/scripts into the single
+      // voice_selection / script_text columns (no schema change) with clear
+      // per-voice markers, so admin/production can read who says what.
+      const allVoices = [config.voiceSelection || '', ...extraVoices.map(v => v.voice)];
+      const allScripts = [config.scriptText.trim(), ...extraVoices.map(v => v.script.trim())];
+      const multi = isTier2 && extraVoices.length > 0;
+      const finalVoiceSelection = multi
+        ? allVoices.map((v, i) => `${i + 1}. ${v || (isZhLocale ? '未選' : 'unselected')}`).join(' / ')
+        : (config.voiceSelection || '');
+      const finalScriptText = multi
+        ? allScripts.map((s, i) => `【${isZhLocale ? '聲音' : 'Voice'} ${i + 1}: ${allVoices[i] || '—'}】\n${s}`).join('\n\n')
+        : config.scriptText.trim();
+      const finalDuration = isTier2 ? Math.max(1, Math.ceil(voiceMinutesRaw.reduce((a, b) => a + b, 0))) : estimatedMinutes;
+
       const response = await fetch('/api/orders/voice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: config.email.trim().toLowerCase(),
           language: langObj?.name || config.language,
-          voice_selection: config.voiceSelection || '',
+          voice_selection: finalVoiceSelection,
           project_name: config.projectName || '',
-          script_text: config.scriptText.trim(),
+          script_text: finalScriptText,
           tone_style: config.tone || 'Professional',
           use_case: config.useCase || '',
           tier: config.baseTier,
           talent_id: null,
           talent_price: 0,
-          duration: estimatedMinutes,
+          duration: finalDuration,
           price: totalPrice,
+          voice_count: allVoices.length,
           source_link: config.sourceLink || '',
           broadcast_rights: rightsLevel !== 'standard',
           rights_level: rightsLevel,
@@ -757,10 +784,17 @@ export default function VoiceConfiguratorPage() {
                 )}
                 {config.scriptText.trim().length >= 10 && !isCustomTier && config.baseTier && (
                   <div className="mt-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">{t('estimatedAudioLength')}</span>
-                      <span className="text-white font-semibold">{estimatedMinutes} {estimatedMinutes !== 1 ? t('minutes') : t('minute')}</span>
-                    </div>
+                    {isTier2 ? (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">{isZhLocale ? '聲音數(各 0–30 秒)' : 'Voices (each 0–30s)'}</span>
+                        <span className="text-white font-semibold">{extraVoices.length + 1}</span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">{t('estimatedAudioLength')}</span>
+                        <span className="text-white font-semibold">{estimatedMinutes} {estimatedMinutes !== 1 ? t('minutes') : t('minute')}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">{t('basePrice')}</span>
                       <span className="text-white font-mono font-bold text-lg">US${basePrice.toFixed(0)}</span>
@@ -786,6 +820,59 @@ export default function VoiceConfiguratorPage() {
                   </p>
                 )}
               </div>
+
+              {isTier2 && (
+                <div>
+                  <label className="block text-lg font-bold text-white mb-3">
+                    {isZhLocale ? '額外聲音(角色)' : 'Additional voices (characters)'}
+                    <span className="text-gray-500 text-sm font-normal ml-2">
+                      {isZhLocale ? `每個聲音 0–30 秒,每加一個 +US$${TIER2_MULTI_VOICE.additionalVoicePrice}` : `each 0–30s, +US$${TIER2_MULTI_VOICE.additionalVoicePrice} per voice`}
+                    </span>
+                  </label>
+                  <div className="space-y-4">
+                    {extraVoices.map((v, i) => (
+                      <div key={i} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-300">{isZhLocale ? `聲音 ${i + 2}` : `Voice ${i + 2}`}</span>
+                          <button type="button" onClick={() => setExtraVoices(extraVoices.filter((_, j) => j !== i))}
+                            className="text-xs text-gray-500 hover:text-red-400">{isZhLocale ? '移除' : 'Remove'}</button>
+                        </div>
+                        <select
+                          value={v.voice}
+                          onChange={(e) => setExtraVoices(extraVoices.map((x, j) => j === i ? { ...x, voice: e.target.value } : x))}
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+                          disabled={voicesForLang.length === 0}
+                        >
+                          <option value="" className="bg-black">{t('selectVoice')}</option>
+                          {voicesForLang.map((vf) => (
+                            <option key={vf.id} value={vf.name} className="bg-black">{vf.name}{vf.gender === 'female' ? ' ♀' : ' ♂'}</option>
+                          ))}
+                        </select>
+                        <textarea
+                          value={v.script}
+                          onChange={(e) => setExtraVoices(extraVoices.map((x, j) => j === i ? { ...x, script: e.target.value } : x))}
+                          rows={3}
+                          placeholder={t('placeholderScript')}
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 resize-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExtraVoices([...extraVoices, { voice: '', script: '' }])}
+                    className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-medium transition-colors"
+                  >
+                    + {isZhLocale ? `新增聲音(+US$${TIER2_MULTI_VOICE.additionalVoicePrice})` : `Add voice (+US$${TIER2_MULTI_VOICE.additionalVoicePrice})`}
+                  </button>
+                  {errors.extraVoices && (
+                    <p className="mt-2 text-sm text-red-400 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.extraVoices}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

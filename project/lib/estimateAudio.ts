@@ -1,4 +1,4 @@
-import { VOICE_DURATION_PRICING, type VoiceTierId } from '@/lib/config/pricing.config';
+import { VOICE_DURATION_PRICING, TIER2_MULTI_VOICE, type VoiceTierId } from '@/lib/config/pricing.config';
 
 const CJK_REGEX = /[\u4e00-\u9fff\u3400-\u4dbf\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\u31f0-\u31ff\u3200-\u32ff]/g;
 
@@ -26,6 +26,32 @@ export function estimateAudioMinutes(text: string): number {
   const total = minutesA + minutesB + minutesC;
 
   return Math.max(1, Math.ceil(total));
+}
+
+// Non-rounded estimate — estimateAudioMinutes() floors to a whole minute (min 1),
+// too coarse for the tier-2 per-voice 30-second cap.
+export function estimateAudioMinutesRaw(text: string): number {
+  if (!text || text.trim().length === 0) return 0;
+
+  const bucketA = (text.match(CJK_REGEX) || []).length;
+  const textWithoutA = text.replace(CJK_REGEX, '');
+  const bucketB = (textWithoutA.match(MID_DENSITY_REGEX) || []).length;
+  const textWithoutAB = textWithoutA.replace(MID_DENSITY_REGEX, '');
+  const bucketC = textWithoutAB.replace(/\s+/g, ' ').trim().length;
+
+  return bucketA / CHARS_PER_MIN_A + bucketB / CHARS_PER_MIN_B + bucketC / CHARS_PER_MIN_C;
+}
+
+// Tier-2 multi-voice: first voice at full price, additional voices at the cheaper
+// add-on, each with its own 30s allowance before overage kicks in.
+export function calculateTier2MultiVoicePrice(voiceMinutes: number[]): number {
+  const { firstVoicePrice, additionalVoicePrice, maxMinutesPerVoice } = TIER2_MULTI_VOICE;
+  const overagePerMinute = VOICE_DURATION_PRICING['tier-2'].overagePerMinute;
+  return voiceMinutes.reduce((total, minutes, i) => {
+    const base = i === 0 ? firstVoicePrice : additionalVoicePrice;
+    const overage = Math.max(0, minutes - maxMinutesPerVoice) * overagePerMinute;
+    return total + base + overage;
+  }, 0);
 }
 
 export function calculatePrice(minutes: number, tier: VoiceTierId): number {

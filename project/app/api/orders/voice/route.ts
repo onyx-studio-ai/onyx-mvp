@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { estimateAudioMinutes, calculatePrice } from '@/lib/estimateAudio';
-import { getVoiceRightsAddonPrice, type VoiceRightsLevel } from '@/lib/config/pricing.config';
+import { estimateAudioMinutes, estimateAudioMinutesRaw, calculatePrice } from '@/lib/estimateAudio';
+import { getVoiceRightsAddonPrice, TIER2_MULTI_VOICE, VOICE_DURATION_PRICING, type VoiceRightsLevel } from '@/lib/config/pricing.config';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 
 const getSupabaseClient = () => getSupabaseServiceClient();
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
       status,
       payment_status,
       locale,
+      voice_count,
     } = body;
 
     if (!email || !script_text) {
@@ -120,7 +121,19 @@ export async function POST(request: NextRequest) {
     const resolvedRightsLevel = (rights_level || (resolvedBroadcast ? 'broadcast' : 'standard')) as VoiceRightsLevel;
     const resolvedScriptText = (script_text || '').trim();
     const recomputedDuration = estimateAudioMinutes(resolvedScriptText);
-    const recomputedBasePrice = calculatePrice(recomputedDuration, resolvedTier as 'tier-1' | 'tier-2' | 'tier-3');
+    // Tier-2 multi-voice: N voices, each with a 30s allowance — priced as first-voice
+    // + cheaper add-ons, not the plain single-script duration curve. voice_count is
+    // client-reported but anti-tampering here still holds: overage is derived from
+    // the actual combined script length, not trusted from the client.
+    const voiceCount = Math.max(1, Math.min(20, parseInt(String(voice_count), 10) || 1));
+    const recomputedBasePrice = (resolvedTier === 'tier-2' && voiceCount > 1)
+      ? (() => {
+          const allowedMinutes = voiceCount * TIER2_MULTI_VOICE.maxMinutesPerVoice;
+          const rawMinutes = estimateAudioMinutesRaw(resolvedScriptText);
+          const overage = Math.max(0, rawMinutes - allowedMinutes) * VOICE_DURATION_PRICING['tier-2'].overagePerMinute;
+          return TIER2_MULTI_VOICE.firstVoicePrice + TIER2_MULTI_VOICE.additionalVoicePrice * (voiceCount - 1) + overage;
+        })()
+      : calculatePrice(recomputedDuration, resolvedTier as 'tier-1' | 'tier-2' | 'tier-3');
     const recomputedRightsAddon = getVoiceRightsAddonPrice(resolvedTier, resolvedRightsLevel);
     const recomputedTotal = recomputedBasePrice + recomputedRightsAddon;
     const clientPrice = Number(price) || 0;
