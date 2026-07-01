@@ -109,6 +109,13 @@ export async function PATCH(request: NextRequest) {
 
         if (existing) {
           await db.from('talent_applications').update({ talent_id: existing.id }).eq('id', id);
+          // Also set the REVERSE link (talent → this application). Without it,
+          // /api/talents/onboard's token lookup (.eq('application_id', appId))
+          // never matches, so the approval email's "設定密碼" link always shows
+          // "連結無效或已過期" for anyone who already had a talents row (e.g. a
+          // re-submitted application) — a real, reproducible bug (2026-07-01,
+          // 徐小飛 case), not link expiry.
+          await db.from('talents').update({ application_id: id }).eq('id', existing.id);
         } else {
           const roleMap: Record<string, string> = { VO: 'VO', Singer: 'Singer', voice_actor: 'VO', singer: 'Singer' };
           const talentType = roleMap[application.role_type] || 'VO';
