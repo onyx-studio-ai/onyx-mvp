@@ -65,9 +65,14 @@ type Talent = {
   clients: string | null; awards: string | null; notable_works: string | null; special_skills: string | null;
   equipment: string | null; studio_partner: string | null;
   turnaround: string | null; years_experience: number | null; native_languages: string[] | null;
+  coop_accept_jobs?: boolean; coop_open_buyout?: boolean; coop_ai_clone?: boolean; coop_ai_training?: boolean;
+  coop_proofread?: boolean; coop_voice_director?: boolean; low_price_data_optin?: boolean;
+  expected_rates?: Record<string, unknown> | null;
   type: string; email: string | null; is_active: boolean; pending_review: boolean;
   liveness_status: string | null;
 };
+const COOP_KEYS = ['coop_accept_jobs', 'coop_open_buyout', 'coop_ai_clone', 'coop_ai_training', 'coop_proofread', 'coop_voice_director', 'low_price_data_optin'] as const;
+type CoopKey = typeof COOP_KEYS[number];
 type ListField = 'voice_traits' | 'specialties' | 'availability' | 'voice_ages';
 type Form = {
   name: string; english_name: string; bio: string; gender: string; location: string; studio_partner: string;
@@ -75,7 +80,38 @@ type Form = {
   turnaround: string; years_experience: string; native_languages: string[];
   availability: string[]; languages: string[]; voice_traits: string[]; specialties: string[]; voice_ages: string[];
   headshot_url: string; demos: DemoItem[];
+  coop: Record<CoopKey, boolean>;
+  rates: { currency: string; tts_hourly: string; narration_min: string; ad_spot: string; game_role: string; min_charge: string; note: string };
 };
+const EMPTY_COOP: Record<CoopKey, boolean> = { coop_accept_jobs: true, coop_open_buyout: false, coop_ai_clone: false, coop_ai_training: false, coop_proofread: false, coop_voice_director: false, low_price_data_optin: false };
+const EMPTY_RATES = { currency: 'TWD', tts_hourly: '', narration_min: '', ad_spot: '', game_role: '', min_charge: '', note: '' };
+// Build the expected_rates JSON to store: numbers where parseable, currency/note as
+// strings; drop empties so a blank form saves null (not a bag of empty keys).
+function buildRates(r: Form['rates']): Record<string, string | number> | null {
+  const out: Record<string, string | number> = {};
+  for (const k of ['tts_hourly', 'narration_min', 'ad_spot', 'game_role', 'min_charge'] as const) {
+    const n = Number(r[k]); if (r[k].trim() && Number.isFinite(n) && n >= 0) out[k] = n;
+  }
+  if (r.note.trim()) out.note = r.note.trim();
+  if (Object.keys(out).length) out.currency = r.currency || 'TWD';
+  return Object.keys(out).length ? out : null;
+}
+const COOP_OPTIONS: { key: CoopKey; zh: string; cn: string; en: string; zhd: string; cnd: string; end: string }[] = [
+  { key: 'coop_accept_jobs', zh: '接案配音', cn: '接案配音', en: 'Take voice jobs', zhd: '願意接一般配音案', cnd: '愿意接一般配音案', end: 'Open to regular VO work' },
+  { key: 'coop_open_buyout', zh: '開放聲音買斷', cn: '开放声音买断', en: 'Open to buyout', zhd: '接受一次性買斷授權', cnd: '接受一次性买断授权', end: 'Accept full buyout licensing' },
+  { key: 'coop_ai_clone', zh: '製作為 AI 聲音', cn: '制作为 AI 声音', en: 'AI voice clone', zhd: '同意將你的聲音做成 AI(會用到你的聲音)', cnd: '同意将你的声音做成 AI(会用到你的声音)', end: 'Allow an AI clone made from your voice' },
+  { key: 'coop_ai_training', zh: '錄製 AI 訓練素材', cn: '录制 AI 训练素材', en: 'Record AI training data', zhd: '只錄訓練資料,不會拿你的聲音上線', cnd: '只录训练资料,不会拿你的声音上线', end: 'Record training material only — your voice isn’t published' },
+  { key: 'coop_proofread', zh: '校稿 / 潤稿', cn: '校稿 / 润稿', en: 'Proofreading', zhd: '願意接文字校對 / 潤稿', cnd: '愿意接文字校对 / 润稿', end: 'Open to script proofreading / polishing' },
+  { key: 'coop_voice_director', zh: '配音指導', cn: '配音指导', en: 'Voice directing', zhd: '能帶其他配音員(表演 / 情緒 / 交付)', cnd: '能带其他配音员(表演 / 情绪 / 交付)', end: 'Can direct other talents (performance/emotion/delivery)' },
+  { key: 'low_price_data_optin', zh: '低價資料採集案', cn: '低价资料采集案', en: 'Low-price data gigs', zhd: '願意收到低價數據採集案資訊', cnd: '愿意收到低价数据采集案信息', end: 'OK to receive low-price data-collection offers' },
+];
+const RATE_FIELDS: { key: 'tts_hourly' | 'narration_min' | 'ad_spot' | 'game_role' | 'min_charge'; zh: string; cn: string; en: string }[] = [
+  { key: 'tts_hourly', zh: 'TTS(每完成小時)', cn: 'TTS(每完成小时)', en: 'TTS (per finished hr)' },
+  { key: 'narration_min', zh: '旁白(每完成分鐘)', cn: '旁白(每完成分钟)', en: 'Narration (per finished min)' },
+  { key: 'ad_spot', zh: '廣告(每支)', cn: '广告(每支)', en: 'Ad (per spot)' },
+  { key: 'game_role', zh: '遊戲角色(每角色)', cn: '游戏角色(每角色)', en: 'Game character (per role)' },
+  { key: 'min_charge', zh: '單案最低', cn: '单案最低', en: 'Minimum per job' },
+];
 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 transition';
@@ -125,6 +161,7 @@ export default function TalentDashboard() {
     name: '', english_name: '', bio: '', gender: '', location: '', studio_partner: '', equipment: '',
     clients: '', awards: '', notable_works: '', special_skills: '', turnaround: '', years_experience: '', native_languages: [],
     availability: [], languages: [], voice_traits: [], specialties: [], voice_ages: [], headshot_url: '', demos: [],
+    coop: { ...EMPTY_COOP }, rates: { ...EMPTY_RATES },
   });
 
   const [email, setEmail] = useState('');
@@ -172,6 +209,24 @@ export default function TalentDashboard() {
       voice_ages: Array.isArray(talent.voice_ages) ? talent.voice_ages : [],
       headshot_url: talent.headshot_url || '',
       demos: Array.isArray(talent.demos) ? talent.demos : [],
+      coop: {
+        coop_accept_jobs: talent.coop_accept_jobs !== false,
+        coop_open_buyout: !!talent.coop_open_buyout,
+        coop_ai_clone: !!talent.coop_ai_clone,
+        coop_ai_training: !!talent.coop_ai_training,
+        coop_proofread: !!talent.coop_proofread,
+        coop_voice_director: !!talent.coop_voice_director,
+        low_price_data_optin: !!talent.low_price_data_optin,
+      },
+      rates: {
+        currency: (talent.expected_rates?.currency as string) || 'TWD',
+        tts_hourly: talent.expected_rates?.tts_hourly != null ? String(talent.expected_rates.tts_hourly) : '',
+        narration_min: talent.expected_rates?.narration_min != null ? String(talent.expected_rates.narration_min) : '',
+        ad_spot: talent.expected_rates?.ad_spot != null ? String(talent.expected_rates.ad_spot) : '',
+        game_role: talent.expected_rates?.game_role != null ? String(talent.expected_rates.game_role) : '',
+        min_charge: talent.expected_rates?.min_charge != null ? String(talent.expected_rates.min_charge) : '',
+        note: (talent.expected_rates?.note as string) || '',
+      },
     });
     setPhase('dashboard');
   }, []);
@@ -241,6 +296,7 @@ export default function TalentDashboard() {
         native_languages: form.native_languages,
         languages: form.languages, voice_traits: form.voice_traits, specialties: form.specialties, voice_ages: form.voice_ages,
         headshot_url: form.headshot_url, demos: form.demos,
+        ...form.coop, expected_rates: buildRates(form.rates),
       }),
     });
     setBusy(false);
@@ -736,6 +792,50 @@ export default function TalentDashboard() {
           <div>
             <label className={labelCls}>{tx('錄音器材', '录音器材', 'Recording equipment')} <span className="font-normal text-gray-600">· {tx('選填', '选填', 'optional')}</span></label>
             <input className={inputCls} value={form.equipment} onChange={(e) => setForm({ ...form, equipment: e.target.value })} placeholder={tx('例如:Neumann TLM103 + Apollo Twin', '例如:Neumann TLM103 + Apollo Twin', 'e.g. Neumann TLM103 + Apollo Twin')} />
+          </div>
+        </div>
+
+        {/* Cooperation opt-ins — internal only, never shown to clients */}
+        <div className={sectionCls}>
+          <label className={labelCls}>{tx('合作意願', '合作意愿', 'What work you’re open to')} <span className="font-normal text-gray-500">· {tx('只給 Onyx 內部參考,不會公開', '只给 Onyx 内部参考,不会公开', 'internal only — never shown to clients')}</span></label>
+          <p className="text-xs text-gray-500 mb-3">{tx('勾選你願意承接的類型,我們才會把對的案子發給你。隨時可改。', '勾选你愿意承接的类型,我们才会把对的案子发给你。随时可改。', 'Tick what you’ll take on, so we only send you the right jobs. Change anytime.')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {COOP_OPTIONS.map((o) => {
+              const on = form.coop[o.key];
+              return (
+                <button key={o.key} type="button" onClick={() => setForm((f) => ({ ...f, coop: { ...f.coop, [o.key]: !f.coop[o.key] } }))}
+                  className={`flex items-start gap-2.5 text-left rounded-lg border px-3 py-2.5 transition ${on ? 'bg-emerald-500/15 border-emerald-400/40' : 'bg-white/5 border-white/10 hover:border-white/25'}`}>
+                  <span className={`mt-0.5 w-4 h-4 shrink-0 rounded border flex items-center justify-center text-[10px] font-bold ${on ? 'bg-emerald-400 border-emerald-400 text-black' : 'border-white/30 text-transparent'}`}>✓</span>
+                  <span>
+                    <span className={`block text-sm font-medium ${on ? 'text-emerald-100' : 'text-gray-200'}`}>{tx(o.zh, o.cn, o.en)}</span>
+                    <span className="block text-xs text-gray-500">{tx(o.zhd, o.cnd, o.end)}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Expected rates — internal reference, optional, negotiated per project */}
+        <div className={sectionCls}>
+          <label className={labelCls}>{tx('期望報價', '期望报价', 'Your rate expectations')} <span className="font-normal text-gray-500">· {tx('選填 · 內部參考,不公開,逐案仍會談', '选填 · 内部参考,不公开,逐案仍会谈', 'optional · internal reference, negotiated per project')}</span></label>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-gray-400">{tx('幣別', '币别', 'Currency')}</span>
+            <select className="bg-zinc-900 text-sm text-gray-200 rounded-lg px-2.5 py-1.5 border border-white/10" value={form.rates.currency} onChange={(e) => setForm((f) => ({ ...f, rates: { ...f.rates, currency: e.target.value } }))}>
+              {['TWD', 'USD', 'CNY', 'EUR', 'GBP', 'JPY'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {RATE_FIELDS.map((rf) => (
+              <div key={rf.key}>
+                <label className="block text-xs text-gray-400 mb-1">{tx(rf.zh, rf.cn, rf.en)}</label>
+                <input type="number" min="0" className={inputCls} value={form.rates[rf.key]} onChange={(e) => setForm((f) => ({ ...f, rates: { ...f.rates, [rf.key]: e.target.value } }))} placeholder={form.rates.currency} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-3">
+            <label className="block text-xs text-gray-400 mb-1">{tx('補充說明', '补充说明', 'Notes')}</label>
+            <input className={inputCls} value={form.rates.note} onChange={(e) => setForm((f) => ({ ...f, rates: { ...f.rates, note: e.target.value } }))} placeholder={tx('例如:買斷 ×2、急件 +30%…', '例如:买断 ×2、急件 +30%…', 'e.g. buyout ×2, rush +30%…')} />
           </div>
         </div>
 

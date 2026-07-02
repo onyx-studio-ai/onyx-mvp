@@ -24,7 +24,13 @@ const TEXT_FIELDS = ['name', 'english_name', 'bio', 'gender', 'location', 'avail
 const COLS =
   'id, name, english_name, bio, languages, accent, gender, tags, voice_traits, specialties, voice_ages, demos, demo_urls, headshot_url, ' +
   'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, turnaround, years_experience, native_languages, type, email, is_active, ' +
+  'coop_accept_jobs, coop_open_buyout, coop_ai_clone, coop_ai_training, coop_proofread, coop_voice_director, low_price_data_optin, expected_rates, ' +
   'pending_review, published_snapshot, liveness_status';
+
+// Cooperation opt-ins the talent may toggle themselves (booleans). These change
+// what work Onyx may offer them (buyout / AI / proofreading / directing / low-price
+// data gigs) — never shown to clients, used for casting/eligibility only.
+const COOP_FIELDS = ['coop_accept_jobs', 'coop_open_buyout', 'coop_ai_clone', 'coop_ai_training', 'coop_proofread', 'coop_voice_director', 'low_price_data_optin'] as const;
 
 // traits/specialties accept preset keys AND free-text custom values ("其他").
 const cleanTags = (arr: unknown): string[] =>
@@ -155,6 +161,31 @@ export async function PATCH(request: NextRequest) {
     if ('native_languages' in body) {
       if (!Array.isArray(body.native_languages)) return NextResponse.json({ error: 'native_languages must be an array' }, { status: 400 });
       updates.native_languages = cleanTags(body.native_languages);
+    }
+
+    // Cooperation opt-ins: plain booleans (coerced). Internal-only — they gate what
+    // work Onyx may offer the talent, never shown to clients.
+    for (const k of COOP_FIELDS) {
+      if (k in body) updates[k] = body[k] === true || body[k] === 'true';
+    }
+    // expected_rates: a small free-form object of the talent's own rate expectations
+    // (e.g. { tts_hourly, micro_gig, per_project, note }). Internal reference for
+    // quoting, not public. Values clamped to numbers/short strings.
+    if ('expected_rates' in body) {
+      const er = body.expected_rates;
+      if (er === null || er === undefined || er === '') {
+        updates.expected_rates = null;
+      } else if (typeof er === 'object' && !Array.isArray(er)) {
+        const clean: Record<string, string | number> = {};
+        for (const [k, v] of Object.entries(er as Record<string, unknown>).slice(0, 20)) {
+          const key = k.slice(0, 40);
+          if (typeof v === 'number' && Number.isFinite(v)) clean[key] = v;
+          else if (typeof v === 'string' && v.trim()) clean[key] = stripContactsAndLinks(v).slice(0, 200);
+        }
+        updates.expected_rates = Object.keys(clean).length ? clean : null;
+      } else {
+        return NextResponse.json({ error: 'expected_rates must be an object' }, { status: 400 });
+      }
     }
 
     // demos: categorized [{category,name,url,language,seconds}]. Validate bucket,
