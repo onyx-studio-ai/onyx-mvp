@@ -39,7 +39,7 @@ export default function ClientRequestDetail() {
 
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [b, setB] = useState<Brief | null>(null);
-  const [auditions, setAuditions] = useState<{ id: string; label: string; role_name: string | null; sample_url: string | null; currency: string; client_pays: number; intro: string | null; status: string; reaudition_requested?: boolean }[]>([]);
+  const [auditions, setAuditions] = useState<{ id: string; label: string; role_name: string | null; sample_url: string | null; currency: string; client_pays: number; intro: string | null; status: string; reaudition_requested?: boolean; more_demos_requested?: boolean; extra_samples?: { url: string; label?: string | null }[] }[]>([]);
   const [order, setOrder] = useState<Order | null>(null);
   const [orders, setOrders] = useState<{ id: string; order_number: string; status: string; payment_status: string | null; price: number; currency?: string | null; role_name?: string | null }[]>([]);
   const [project, setProject] = useState<{ count: number; paidCount: number; unpaidTotal: number; currency: string } | null>(null);
@@ -55,6 +55,9 @@ export default function ClientRequestDetail() {
   const [reauditTarget, setReauditTarget] = useState(''); // quote_id whose 二次試音 form is open
   const [reauditNote, setReauditNote] = useState('');
   const [reauditing, setReauditing] = useState(false);
+  const [moreTarget, setMoreTarget] = useState(''); // quote_id whose 追加 demo form is open
+  const [moreNote, setMoreNote] = useState('');
+  const [moreSending, setMoreSending] = useState(false);
   const [dl, setDl] = useState(''); // quote_id currently downloading (watermark)
   const [token, setToken] = useState('');
   const [editing, setEditing] = useState(false);
@@ -160,6 +163,25 @@ export default function ClientRequestDetail() {
       if (!res.ok) { setMsg(j.error || tx('送出失敗', '送出失败', 'Failed')); return; }
       setReauditTarget(''); setReauditNote(''); setMsg(tx('已請對方重錄,我們會通知他 ✓', '已请对方重录,我们会通知他 ✓', 'Re-record requested — we’ll notify them ✓')); load();
     } finally { setReauditing(false); }
+  }
+
+  // Ask a talent for MORE demos (other tones / characters).
+  async function submitMoreDemos() {
+    setMsg(''); setMoreSending(true);
+    try {
+      const res = await fetch(`/api/client/requests/${id}/request-demos`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: moreTarget, note: moreNote.trim() }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg(j.error || tx('送出失敗', '送出失败', 'Failed')); return; }
+      setMoreTarget(''); setMoreNote(''); setMsg(tx('已請對方多提供 demo,我們會通知他 ✓', '已请对方多提供 demo,我们会通知他 ✓', 'Requested more demos — we’ll notify them ✓')); load();
+    } finally { setMoreSending(false); }
+  }
+
+  // Download an EXTRA demo (watermarked, same as auditions).
+  async function downloadExtra(url: string, key: string) {
+    setMsg(''); setDl(key);
+    try { await downloadWatermarked(url, `demo_${key}`); }
+    catch { setMsg(tx('下載失敗,請稍後再試。', '下载失败,请稍后再试。', 'Download failed, please try again.')); }
+    finally { setDl(''); }
   }
 
   async function save() {
@@ -314,6 +336,20 @@ export default function ClientRequestDetail() {
                       {dl === a.id ? tx('處理中…', '处理中…', 'Processing…') : tx('⬇ 下載試聽(含浮水印)', '⬇ 下载试听(含浮水印)', '⬇ Download (watermarked)')}
                     </button>
                   )}
+                  {(a.extra_samples || []).length > 0 && (
+                    <div className="mb-2 rounded-lg bg-violet-500/[0.06] border border-violet-500/20 px-2.5 py-2 space-y-1.5">
+                      <p className="text-[11px] font-medium text-violet-300">{tx('追加 demo', '追加 demo', 'More demos')}({(a.extra_samples || []).length})</p>
+                      {(a.extra_samples || []).map((s, i) => {
+                        const key = `${a.label}_${i + 1}`;
+                        return (
+                          <div key={i} className="flex items-center gap-2">
+                            <audio controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} src={s.url} className="h-8 flex-1 min-w-0" />
+                            <button onClick={() => downloadExtra(s.url, key)} disabled={dl === key} className="text-[11px] text-violet-300 hover:text-violet-200 disabled:opacity-50 whitespace-nowrap">{dl === key ? '…' : tx('⬇ 下載', '⬇ 下载', '⬇')}</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {won ? (
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
                       <span className="text-xs text-[#6FCF97]">✓ {tx('已選定 · 製作中', '已选定 · 制作中', 'Selected · in production')}</span>
@@ -329,6 +365,15 @@ export default function ClientRequestDetail() {
                       <div className="flex gap-2">
                         <button onClick={submitReaudit} disabled={reauditing} className="text-sm bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{reauditing ? tx('送出中…', '送出中…', 'Sending…') : tx('送出二次試音請求', '送出二次试音请求', 'Request re-record')}</button>
                         <button onClick={() => { setReauditTarget(''); setReauditNote(''); }} className="text-sm bg-white/10 hover:bg-white/15 text-white rounded-lg px-4 py-1.5">{tx('取消', '取消', 'Cancel')}</button>
+                      </div>
+                    </div>
+                  ) : b.status === 'open' && moreTarget === a.id ? (
+                    <div className="mt-1 space-y-2 border-t border-white/10 pt-3">
+                      <p className="text-xs text-gray-400">{tx('想聽他更多語氣 / 角色?寫下方向(可留白),我們會請他多提供幾段 demo。', '想听他更多语气 / 角色?写下方向(可留白),我们会请他多提供几段 demo。', 'Want to hear more of their tones / characters? Add a note (optional) — we’ll ask them for a few more demos.')}</p>
+                      <textarea className={`${input} min-h-[64px] resize-y`} value={moreNote} onChange={(e) => setMoreNote(e.target.value)} placeholder={tx('例如:其他遊戲角色、更兇 / 更可愛的語氣', '例如:其他游戏角色、更凶 / 更可爱的语气', 'e.g. other game characters, a fiercer / cuter tone')} />
+                      <div className="flex gap-2">
+                        <button onClick={submitMoreDemos} disabled={moreSending} className="text-sm bg-violet-500 hover:bg-violet-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{moreSending ? tx('送出中…', '送出中…', 'Sending…') : tx('送出請求', '送出请求', 'Send request')}</button>
+                        <button onClick={() => { setMoreTarget(''); setMoreNote(''); }} className="text-sm bg-white/10 hover:bg-white/15 text-white rounded-lg px-4 py-1.5">{tx('取消', '取消', 'Cancel')}</button>
                       </div>
                     </div>
                   ) : b.status === 'open' && selected === a.id ? (
@@ -365,11 +410,16 @@ export default function ClientRequestDetail() {
                     </div>
                   ) : b.status === 'open' ? (
                     <div className="flex flex-wrap items-center gap-2">
-                      <button onClick={() => openPick(a.id)} disabled={!!selected || !!reauditTarget} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{tx('選這位', '选这位', 'Choose')}</button>
+                      <button onClick={() => openPick(a.id)} disabled={!!selected || !!reauditTarget || !!moreTarget} className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5">{tx('選這位', '选这位', 'Choose')}</button>
                       {a.reaudition_requested ? (
                         <span className="text-xs text-sky-300">🔁 {tx('已請求二次試音 · 等對方重錄', '已请求二次试音 · 等对方重录', 'Re-record requested')}</span>
                       ) : (
-                        <button onClick={() => { setReauditTarget(a.id); setReauditNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{tx('請他再錄一次', '请他再录一次', 'Ask for another take')}</button>
+                        <button onClick={() => { setReauditTarget(a.id); setReauditNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget || !!moreTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{tx('請他再錄一次', '请他再录一次', 'Ask for another take')}</button>
+                      )}
+                      {a.more_demos_requested ? (
+                        <span className="text-xs text-violet-300">🎬 {tx('已請多給 demo · 等對方上傳', '已请多给 demo · 等对方上传', 'More demos requested')}</span>
+                      ) : (
+                        <button onClick={() => { setMoreTarget(a.id); setMoreNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget || !!moreTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{tx('請他多給 demo', '请他多给 demo', 'Ask for more demos')}</button>
                       )}
                     </div>
                   ) : null}

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   // (anonymous labels — Onyx mediates); client sees the demo, the price THEY pay,
   // the self-intro and which one they've picked.
   const { data: q } = await r.db.from('marketplace_quotes')
-    .select('id, role_name, sample_url, gross_amount, currency, intro, message, status, created_at, reaudition_requested_at')
+    .select('id, role_name, sample_url, gross_amount, currency, intro, message, status, created_at, reaudition_requested_at, more_demos_requested_at, extra_samples')
     .eq('brief_id', id)
     .in('status', ['submitted', 'shortlisted', 'accepted'])
     .order('created_at', { ascending: true });
@@ -43,6 +43,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     intro: (x.intro as string) || (x.message as string) || null,
     status: x.status as string,
     reaudition_requested: !!x.reaudition_requested_at,
+    more_demos_requested: !!x.more_demos_requested_at,
+    extra_samples: (Array.isArray(x.extra_samples) ? x.extra_samples : []) as { url: string; label?: string | null }[],
   }));
   // Sub-orders for this case (a multi-role brief has several — one per awarded
   // role). Surface them all + a project summary for the combined "pay-all".
