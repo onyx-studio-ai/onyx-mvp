@@ -11,13 +11,14 @@
 import { Link } from '@/i18n/navigation';
 import type { LucideIcon } from 'lucide-react';
 
-type Accent = 'blue' | 'green' | 'amber' | 'sky' | 'gray';
+type Accent = 'blue' | 'green' | 'amber' | 'sky' | 'gray' | 'violet';
 const ACCENT: Record<Accent, { sq: string; ic: string; hover: string }> = {
   blue: { sq: 'bg-blue-500/10 border-blue-500/20', ic: 'text-blue-400', hover: 'hover:border-white/[0.12]' },
   green: { sq: 'bg-green-500/10 border-green-500/20', ic: 'text-green-400', hover: 'hover:border-green-500/25' },
   amber: { sq: 'bg-amber-500/10 border-amber-500/20', ic: 'text-amber-400', hover: 'hover:border-amber-500/25' },
   sky: { sq: 'bg-sky-500/10 border-sky-500/20', ic: 'text-sky-400', hover: 'hover:border-sky-500/25' },
   gray: { sq: 'bg-white/[0.05] border-white/10', ic: 'text-gray-400', hover: 'hover:border-white/[0.12]' },
+  violet: { sq: 'bg-violet-500/10 border-violet-500/20', ic: 'text-violet-400', hover: 'hover:border-violet-500/25' },
 };
 
 /** A headline stat tile (專案總數 / 進行中 / 已完成 style). */

@@ -103,6 +103,9 @@ type Quote = {
   delivery_uploaded_at?: string | null;
   reaudition_note?: string | null;
   reaudition_requested_at?: string | null;
+  more_demos_note?: string | null;
+  more_demos_requested_at?: string | null;
+  extra_samples?: { url: string; label?: string | null; created_at?: string }[] | null;
   agreement_accepted_at?: string | null;
   included_revisions?: number | null;
 };
@@ -265,6 +268,49 @@ function ReauditUpload({ quote, token, tx, onDone }: { quote: Quote; token: stri
         {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳新的試音', '⬆ 上传新的试音', '⬆ Upload new take')}
         <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
+      {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
+    </div>
+  );
+}
+
+// Add EXTRA demos (other tones / characters) the client asked for. APPENDS — each
+// upload adds one, doesn't replace the audition. Same upload pipeline as auditions.
+function AddExtraDemos({ quote, token, tx, onDone }: { quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const samples = quote.extra_samples || [];
+  async function upload(rawFile: File) {
+    setErr(''); setBusy(true);
+    try {
+      const file = await toMp3(rawFile);
+      const u = await fetch('/api/talent/audition-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      const p = await fetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: quote.id, add_extra_sample: uj.publicUrl }) });
+      const pj = await p.json().catch(() => ({}));
+      if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
+      onDone({ ...quote, extra_samples: (pj.quote?.extra_samples as Quote['extra_samples']) || [...samples, { url: uj.publicUrl }], more_demos_requested_at: null });
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-1.5">
+      {samples.length > 0 && (
+        <div className="space-y-1 mb-2">
+          {samples.map((s, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-500 w-5">{i + 1}.</span>
+              <audio controls src={s.url} className="h-8 flex-1 min-w-0" />
+            </div>
+          ))}
+        </div>
+      )}
+      <label className="inline-flex items-center gap-1.5 text-xs bg-violet-500/15 border border-violet-500/40 text-violet-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-violet-500/25 transition">
+        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳一段 demo', '⬆ 上传一段 demo', '⬆ Add a demo')}
+        <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+      </label>
+      <p className="text-[11px] text-gray-500 mt-1">{tx('可上傳多段(不同語氣 / 角色);不會取代原試音。', '可上传多段(不同语气 / 角色);不会取代原试音。', 'Add several (different tones / characters); won’t replace your audition.')}</p>
       {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
     </div>
   );
@@ -502,6 +548,27 @@ export default function Opportunities() {
                   {q.sample_url && <audio controls src={q.sample_url} className="w-full h-9 mb-1" />}
                   <ReauditUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
                   <p className="text-[11px] text-gray-500 mt-1">{tx('上傳新版本後,這個請求就會清除。', '上传新版本后,这个请求就会清除。', 'Uploading a new take clears this request.')}</p>
+                </EntityCard>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {(() => {
+        const moreDemos = quotes.filter((q) => q.more_demos_requested_at);
+        if (!moreDemos.length) return null;
+        const titleOf = (bid: string) => { const bb = briefs.find((x) => x.id === bid); return bb?.title || bb?.content_type || tx('配音案', '配音案', 'Voice case'); };
+        return (
+          <div className="mb-8">
+            <h2 className="text-sm font-semibold text-violet-300 mb-3">🎬 {tx('客戶想聽更多 demo', '客户想听更多 demo', 'Client wants more demos')}</h2>
+            <div className="grid grid-cols-1 gap-4">
+              {moreDemos.map((q) => (
+                <EntityCard key={q.id} icon={Briefcase} accent="violet" code={q.role_name || undefined}
+                  title={titleOf(q.brief_id)}
+                  badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('追加 demo', '追加 demo', 'More demos')}</span>}>
+                  {q.more_demos_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-500">{tx('想聽的方向', '想听的方向', 'What they’d like')}:</span> {q.more_demos_note}</p>}
+                  <AddExtraDemos quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
                 </EntityCard>
               ))}
             </div>

@@ -1155,6 +1155,21 @@ export function castingReauditionEmail(p: { talentName?: string; title: string; 
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
 }
 
+/** Talent: the client / Onyx wants MORE demos (other tones / characters) on this audition. */
+export function castingMoreDemosEmail(p: { talentName?: string; title: string; note?: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const t = mpEsc(p.title); const note = (p.note || '').trim();
+  const C = {
+    tw: { subject: `想聽您更多 demo —— ${t}`, headline: '想聽您更多 demo', sub: '客戶想聽您其他語氣 / 角色的 demo', card: '追加 demo 邀請', l1: `好消息 —— 對方對您在「<strong style="color:#f3f4f6;">${t}</strong>」的試音有興趣,想聽您更多不同語氣 / 角色的 demo 再決定。`, noteLabel: '想聽的方向', l2: '請登入後台,在這個案子「追加 demo」處上傳幾段即可(可上傳多個,不會取代原試音,原報價保留)。', cta: '前往上傳', sign: 'Onyx Studios 配音團隊 敬上' },
+    cn: { subject: `想听您更多 demo —— ${t}`, headline: '想听您更多 demo', sub: '客户想听您其他语气 / 角色的 demo', card: '追加 demo 邀请', l1: `好消息 —— 对方对您在「<strong style="color:#f3f4f6;">${t}</strong>」的试音有兴趣,想听您更多不同语气 / 角色的 demo 再决定。`, noteLabel: '想听的方向', l2: '请登录后台,在这个案子「追加 demo」处上传几段即可(可上传多个,不会取代原试音,原报价保留)。', cta: '前往上传', sign: 'Onyx Studios 配音团队 敬上' },
+    en: { subject: `Requesting more demos — ${t}`, headline: 'A request for more demos', sub: 'They\'d like to hear more of your tones / characters', card: 'More-demos request', l1: `Good news — they're interested in your audition for “<strong style="color:#f3f4f6;">${t}</strong>” and would like to hear more of your demos (other tones / characters) before deciding.`, noteLabel: 'What they\'d like to hear', l2: 'Sign in and upload a few clips under "Add demos" on this case (you can add several; it won\'t replace your audition and your quote is kept).', cta: 'Upload demos', sign: 'The Onyx Studios Talent Team' },
+  }[L];
+  const noteHtml = note ? bodyCard(C.noteLabel, `<p style="color:#f3f4f6;font-size:15px;line-height:1.7;margin:0;white-space:pre-wrap;">${mpEsc(note)}</p>`) : '';
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${noteHtml}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
 /** Client: the talent delivered the recording — ready to review. */
 export function castingDeliveryClientEmail(p: { clientName?: string; title?: string; orderNumber: string; url: string; locale?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);

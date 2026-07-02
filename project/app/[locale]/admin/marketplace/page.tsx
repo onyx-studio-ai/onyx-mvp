@@ -62,6 +62,9 @@ type Quote = {
   sample_url?: string | null;
   delivery_url?: string | null;
   delivery_uploaded_at?: string | null;
+  more_demos_requested_at?: string | null;
+  more_demos_note?: string | null;
+  extra_samples?: { url: string; label?: string | null; created_at?: string }[] | null;
   talents?: { name: string; email: string } | null;
 };
 
@@ -183,6 +186,19 @@ export default function AdminMarketplace() {
       body: JSON.stringify({ kind, id, status }),
     });
     load();
+  }
+
+  // Ask this auditioner to upload MORE demos (other tones / characters) — notifies
+  // the talent; they upload under 「追加 demo」 in their opportunities page.
+  async function requestMoreDemos(quoteId: string) {
+    const note = window.prompt('想聽的方向?(例:不同語氣、其他遊戲角色 —— 會轉達給配音員)', '');
+    if (note === null) return;
+    const res = await fetch('/api/admin/marketplace/request-demos', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ quote_id: quoteId, note }),
+    });
+    if (res.ok) { alert('已通知配音員上傳更多 demo。'); load(); }
+    else { const j = await res.json().catch(() => ({})); alert(j.error || '失敗'); }
   }
 
   if (phase === 'loading') return <div className="p-8 text-gray-500 text-sm">載入中…</div>;
@@ -390,6 +406,25 @@ export default function AdminMarketplace() {
                     {q.sample_url
                       ? <audio controls src={q.sample_url} className="w-full h-9 mt-2" />
                       : <p className="text-xs text-gray-400 mt-1">(無試音音檔)</p>}
+
+                    {/* 追加 demo:請這位再多提供 demo(其他語氣/角色)+ 已上傳的追加 demo(後台下載乾淨檔) */}
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <button onClick={() => requestMoreDemos(q.id)} className="text-xs bg-violet-100 hover:bg-violet-200 text-violet-700 rounded px-2 py-0.5" title="通知配音員上傳更多 demo(其他語氣/角色)">🎬 請多給 demo</button>
+                      {q.more_demos_requested_at && !((q.extra_samples || []).length) && (
+                        <span className="text-xs text-amber-600" title={q.more_demos_note || ''}>⏳ 已請求,待上傳</span>
+                      )}
+                    </div>
+                    {(q.extra_samples || []).length > 0 && (
+                      <div className="mt-2 space-y-1.5 rounded-lg bg-violet-50 border border-violet-200 px-2.5 py-2">
+                        <p className="text-xs font-medium text-violet-700">追加 demo({(q.extra_samples || []).length})</p>
+                        {(q.extra_samples || []).map((s, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <audio controls src={s.url} className="h-8 flex-1 min-w-0" />
+                            <a href={s.url} target="_blank" rel="noreferrer" download className="text-xs text-violet-700 underline whitespace-nowrap">下載</a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {q.delivery_url && (
                       <div className="mt-2 flex items-center gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1.5">
                         <span className="text-blue-700 font-medium">✓ 完成交付</span>

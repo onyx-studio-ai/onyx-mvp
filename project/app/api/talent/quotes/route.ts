@@ -118,6 +118,28 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ quote: data });
     }
 
+    // Add an EXTRA demo (other tones / characters) the client/Onyx asked for.
+    // APPENDS to extra_samples (does NOT replace the audition) + clears the request
+    // flag. Only their own quote.
+    if (body.add_extra_sample) {
+      if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+      const url = String(body.add_extra_sample).slice(0, 1000);
+      if (!/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'invalid url' }, { status: 400 });
+      const label = String(body.label || '').slice(0, 80).trim();
+      const { data: cur } = await r.db.from('marketplace_quotes').select('extra_samples').eq('id', id).eq('talent_id', talent.id).maybeSingle();
+      if (!cur) return NextResponse.json({ error: '找不到這個試音' }, { status: 400 });
+      const arr = Array.isArray((cur as { extra_samples?: unknown[] }).extra_samples) ? (cur as { extra_samples: unknown[] }).extra_samples : [];
+      arr.push({ url, label: label || null, created_at: new Date().toISOString() });
+      const { data, error } = await r.db
+        .from('marketplace_quotes')
+        .update({ extra_samples: arr.slice(0, 12), more_demos_requested_at: null, updated_at: new Date().toISOString() })
+        .eq('id', id).eq('talent_id', talent.id)
+        .select('id, extra_samples')
+        .maybeSingle();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ quote: data });
+    }
+
     // Re-audition: the client asked this talent to re-record. They replace their
     // sample; that clears the request. Only their own quote with a pending request.
     if (body.sample_url && !body.delivery_url) {
