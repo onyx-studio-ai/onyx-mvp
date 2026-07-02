@@ -104,8 +104,24 @@ export async function GET(request: NextRequest) {
         .in('id', endedIds);
       endedBriefs = eb || [];
     }
+    // Directly-ASSIGNED production roles (managed casting — no audition/quote): one
+    // voice_order per role, talent_id = me, quote_id null. Surface each as its own
+    // work item (a talent can have many roles on one project).
+    const talentId = (r.talent as { id: string }).id;
+    const { data: ao } = await r.db.from('voice_orders')
+      .select('id, brief_id, role_name, project_name, script_text, script_file_url, deadline, status, download_url, talent_price, currency, created_at')
+      .eq('talent_id', talentId).is('quote_id', null).neq('status', 'completed')
+      .order('created_at', { ascending: true });
+    const aoIds = (ao || []).map((o) => o.id as string);
+    const aoVers: Record<string, { id: string; file_name: string; file_url: string; status?: string | null }[]> = {};
+    if (aoIds.length) {
+      const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, status').in('voice_order_id', aoIds);
+      for (const v of vers || []) (aoVers[v.voice_order_id as string] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null });
+    }
+    const assignedOrders = (ao || []).map((o) => ({ ...o, deliveries: aoVers[o.id as string] || [] }));
+
     const tt = (r.talent as { name?: string; quote_templates?: { intro?: unknown[]; revision?: unknown[] } });
-    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs, myName: tt.name || '', templates: tt.quote_templates || {} });
+    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs, assignedOrders, myName: tt.name || '', templates: tt.quote_templates || {} });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });

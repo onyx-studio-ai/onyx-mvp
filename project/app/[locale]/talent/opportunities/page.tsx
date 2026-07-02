@@ -184,6 +184,45 @@ function useQuoteDefaults(templates: Templates, setIntro: SetStr, setRevPolicy: 
 // Won-job delivery: the talent hands in finished recordings against an accepted
 // quote. MULTIPLE files allowed (each upload adds one + future revisions); each
 // becomes a client-reviewable version. Files preserve 48k/24-bit (not transcoded).
+// Deliver against a DIRECTLY-ASSIGNED role (managed production). Same upload
+// pipeline as won jobs, but attaches to the order by id (no quote).
+function AssignedDelivery({ orderId, deliveries, token, tx, onChanged }: {
+  orderId: string; deliveries: { id: string; file_name: string; file_url: string; status?: string | null }[]; token: string;
+  tx: (a: string, b: string, c: string) => string; onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  async function upload(file: File) {
+    setErr(''); setBusy(true);
+    try {
+      const u = await fetch('/api/talent/delivery-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      const p = await fetch('/api/talent/assigned-deliver', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: orderId, delivery_url: uj.publicUrl, file_name: file.name }) });
+      const pj = await p.json().catch(() => ({}));
+      if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
+      onChanged();
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-1.5 space-y-1.5">
+      {deliveries.length > 0 && deliveries.map((d) => (
+        <div key={d.id} className="flex items-center gap-2 text-xs bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-lg px-3 py-1.5">
+          <span className="text-[#6FCF97]">✓</span><span className="text-gray-200 truncate flex-1">{d.file_name}</span>
+          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-400 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
+        </div>
+      ))}
+      <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
+        {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('⬆ 上傳更多檔', '⬆ 上传更多档', '⬆ Upload more') : tx('⬆ 上傳完成音檔', '⬆ 上传完成音档', '⬆ Upload final audio')}
+        <input type="file" accept=".wav,.mp3,.m4a,.aac,.ogg,.flac,.zip" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+      </label>
+      {err && <p className="text-[10px] text-red-400">{err}</p>}
+    </div>
+  );
+}
+
 function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
   quote: Quote; deliveries: { id: string; file_name: string; file_url: string }[]; token: string;
   tx: (a: string, b: string, c: string) => string; onChanged: () => void;
@@ -468,6 +507,7 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; deadline?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
 
@@ -482,6 +522,7 @@ export default function Opportunities() {
     setMyDemos(j.myDemos || []);
     setWonBriefs(j.wonBriefs || []);
     setEndedBriefs(j.endedBriefs || []);
+    setAssignedOrders(j.assignedOrders || []);
     setMyName(j.myName || '');
     setTemplates(j.templates || {});
     setPhase('ready');
@@ -575,6 +616,26 @@ export default function Opportunities() {
           </div>
         );
       })()}
+
+      {assignedOrders.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-violet-300 mb-3">🎯 {tx('我被指派的角色', '我被指派的角色', 'My assigned roles')}</h2>
+          <div className="grid grid-cols-1 gap-4">
+            {assignedOrders.map((o) => (
+              <EntityCard key={o.id} icon={Briefcase} accent="violet" code={o.role_name || undefined}
+                title={o.project_name || o.role_name || tx('指派角色', '指派角色', 'Assigned role')}
+                badge={o.status === 'delivered'
+                  ? <span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('已交付 · 待驗收', '已交付 · 待验收', 'Delivered · in review')}</span>
+                  : <span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('待錄製', '待录制', 'To record')}</span>}>
+                {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-500 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
+                {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('📄 下載稿件檔', '📄 下载稿件档', '📄 Download script')}</a>}
+                {o.deadline && <p className="text-[11px] text-gray-500 mt-1">{tx('希望交付', '希望交付', 'Due')}: {o.deadline}</p>}
+                <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
+              </EntityCard>
+            ))}
+          </div>
+        </div>
+      )}
 
       {wonBriefs.length > 0 && (
         <div className="mb-8">

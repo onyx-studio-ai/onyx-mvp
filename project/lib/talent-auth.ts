@@ -20,29 +20,32 @@ export async function resolveTalentFromRequest(
   const user = userData?.user;
   if (userErr || !user) return { error: 'Invalid or expired session', status: 401 };
 
-  // Only ACTIVE talents may use the marketplace APIs. A deactivated talent
-  // keeps a valid session + row, so without this gate they could keep quoting.
+  // Resolve the talent that owns this session — NOT gated on is_active. Auditioners
+  // and invited talents are is_active=false by default (they audition via the casting
+  // magic-link before being published), yet still need the portal to manage their own
+  // auditions: upload extra demos when asked, deliver directly-assigned roles, edit
+  // their profile. Every endpoint here is own-data-scoped, so an unpublished talent
+  // only ever sees their own rows. (A real ban would need a distinct suspended flag,
+  // not this default-false column.) Mirrors the /api/talent/me resolver.
   const sel = columns.includes('id') ? columns : `id, ${columns}`;
   let { data: talent } = await db
     .from('talents')
     .select(sel)
     .eq('auth_user_id', user.id)
-    .eq('is_active', true)
     .maybeSingle();
-  // Fall back to the user's verified email + lazy-link auth_user_id (active only).
+  // Fall back to the user's verified email + lazy-link auth_user_id.
   if (!talent && user.email) {
     const { data: byEmail } = await db
       .from('talents')
       .select(sel)
       .eq('email', user.email)
-      .eq('is_active', true)
       .maybeSingle();
     if (byEmail) {
       await db.from('talents').update({ auth_user_id: user.id }).eq('id', (byEmail as unknown as { id: string }).id);
       talent = byEmail;
     }
   }
-  if (!talent) return { error: 'No active talent profile is linked to this account', status: 404 };
+  if (!talent) return { error: 'No talent profile is linked to this account', status: 404 };
 
   return { db, talent: talent as unknown as Record<string, unknown> };
 }
