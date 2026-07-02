@@ -1,0 +1,140 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
+import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { sendEmail, emailLocaleForTalent } from '@/lib/mail';
+import { talentAccountSetupEmail } from '@/lib/mail-templates';
+import { notifyTalentTelegram } from '@/lib/telegram';
+
+/*
+  POST /api/admin/casting/assign — Onyx DIRECTLY assigns a batch of roles to one
+  talent (managed production; no audition, no client, no payment gate). One
+  ready-to-record voice_order per role (status in_production, payment_status
+  completed) with talent_price = the fixed pay Onyx agreed. If the talent isn't on
+  the platform yet, invite them: create a lightweight account + assigned work +
+  a set-password link (they can later finish their profile → become a full talent).
+
+  body: { brief_id, role_names: string[], pay_per_role: number,
+          talent_id? | invite?: { name, email } }
+*/
+const SITE = 'https://www.onyxstudios.ai';
+
+export async function POST(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+
+  let body: { brief_id?: string; role_names?: string[]; pay_per_role?: number; talent_id?: string; invite?: { name?: string; email?: string } };
+  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+  const briefId = String(body.brief_id || '');
+  const roleNames = Array.isArray(body.role_names) ? body.role_names.map((r) => String(r).trim()).filter(Boolean) : [];
+  const pay = Math.max(0, Number(body.pay_per_role) || 0);
+  if (!briefId || !roleNames.length) return NextResponse.json({ error: 'brief_id 與 role_names 必填' }, { status: 400 });
+
+  const db = getSupabaseServiceClient();
+  const { data: brief } = await db.from('marketplace_briefs')
+    .select('id, title, content_type, language, budget_currency, client_email, roles')
+    .eq('id', briefId).maybeSingle();
+  if (!brief) return NextResponse.json({ error: 'Case not found' }, { status: 404 });
+
+  // ── Resolve the talent (existing) or invite a new one (lightweight account) ──
+  let talentId = String(body.talent_id || '');
+  let setupUrl: string | undefined;
+  let talentName = '';
+  let talentEmail = '';
+  if (!talentId) {
+    const name = String(body.invite?.name || '').trim();
+    const email = String(body.invite?.email || '').trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: '請提供配音員 talent_id,或邀請用的 name + email' }, { status: 400 });
+    talentName = name; talentEmail = email;
+
+    // Reuse an existing talent row for this email if any; else create a lightweight one.
+    const { data: existing } = await db.from('talents').select('id, name, auth_user_id').eq('email', email).maybeSingle();
+    let authUserId = (existing as { auth_user_id?: string } | null)?.auth_user_id || null;
+    if (existing) {
+      talentId = (existing as { id: string }).id;
+      talentName = talentName || (existing as { name?: string }).name || '';
+    } else {
+      const { data: t, error: tErr } = await db.from('talents')
+        .insert({ name: name || email.split('@')[0], email, type: 'VO', category: 'in_house', is_active: false, sort_order: 0 })
+        .select('id').single();
+      if (tErr || !t) return NextResponse.json({ error: tErr?.message || '建立配音員記錄失敗' }, { status: 500 });
+      talentId = t.id as string;
+    }
+    // Provision a login account (idempotent) + set-password link, so they can log in
+    // and see their assigned work — same robust path as approval/onboarding.
+    if (!authUserId) {
+      const created = await db.auth.admin.createUser({ email, email_confirm: true });
+      authUserId = created.data?.user?.id || null;
+      if (!authUserId) {
+        const { data: list } = await db.auth.admin.listUsers();
+        authUserId = list?.users?.find((u) => (u.email || '').toLowerCase() === email)?.id || null;
+      }
+      if (authUserId) await db.from('talents').update({ auth_user_id: authUserId }).eq('id', talentId);
+    }
+    const locale = emailLocaleForTalent('zh-TW', undefined);
+    const lp = locale && locale !== 'en' ? `/${locale}` : '';
+    const { data: link } = await db.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: `${SITE}${lp}/auth/reset-password` } });
+    setupUrl = link?.properties?.action_link || `${SITE}${lp}/auth/reset-password`;
+    const mail = talentAccountSetupEmail({ name: talentName, setupUrl, dashboardUrl: `${SITE}/talent`, locale });
+    sendEmail({ category: 'HELLO', to: email, subject: mail.subject, html: mail.html }).catch(() => {});
+  } else {
+    const { data: t } = await db.from('talents').select('name, email').eq('id', talentId).maybeSingle();
+    talentName = (t?.name as string) || '';
+    talentEmail = (t?.email as string) || '';
+  }
+
+  // ── Create one ready-to-record order per role (dup-guarded per (brief, role)) ──
+  const roles = Array.isArray(brief.roles) ? (brief.roles as Array<{ name?: string; sample_line?: string }>) : [];
+  const roleScript = (rn: string) => (roles.find((r) => (r.name || '').trim() === rn)?.sample_line || '').trim();
+  const currency = (brief.budget_currency as string) || 'TWD';
+  const orderEmail = (brief.client_email as string) || 'casting@onyxstudios.ai';
+  const d = new Date();
+  const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+  const { count } = await db.from('voice_orders').select('id', { count: 'exact', head: true }).gte('created_at', dayStart);
+  let seq = (count || 0);
+
+  let assigned = 0; const skipped: string[] = [];
+  for (const rn of roleNames) {
+    const { data: dup } = await db.from('voice_orders').select('id').eq('brief_id', briefId).eq('role_name', rn).maybeSingle();
+    if (dup) { skipped.push(rn); continue; }
+    seq += 1;
+    const { error } = await db.from('voice_orders').insert({
+      order_number: `VO-${ymd}-${String(seq).padStart(4, '0')}`,
+      email: orderEmail,
+      language: brief.language || '',
+      voice_selection: talentName,
+      script_text: roleScript(rn),
+      tone_style: 'Professional',
+      use_case: (brief.content_type as string) || 'Video Game',
+      broadcast_rights: true,
+      tier: 'tier-3',
+      duration: 0,
+      price: 0,                     // Onyx invoices the client separately (managed)
+      currency,
+      project_name: `${(brief.title as string) || '配音案'} · ${rn}`,
+      talent_id: talentId,
+      talent_price: pay,            // fixed pay Onyx agreed with the talent
+      status: 'in_production',      // ready to record now
+      payment_status: 'completed',  // internal — bypasses the client-payment gate
+      revision_count: 0,
+      max_revisions: 2,
+      rights_level: 'global',
+      brief_id: briefId,
+      role_name: rn,
+    });
+    if (error) { skipped.push(`${rn}(${error.message})`); seq -= 1; continue; }
+    assigned += 1;
+  }
+
+  if (assigned > 0 && talentId) {
+    const title = (brief.title as string) || (brief.content_type as string) || '配音案件';
+    if (talentEmail && !setupUrl) {
+      // Existing talent → a plain "you've been assigned" note (invited ones already got the setup mail).
+      sendEmail({ category: 'PRODUCTION', to: talentEmail, subject: `您被指派了 ${assigned} 個角色 — ${title}`,
+        html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>Onyx 已為「<strong>${title}</strong>」指派 <strong>${assigned}</strong> 個角色給您。請登入後台在「製作中」查看角色與稿件並上傳成品。</p><p><a href="${SITE}/talent/opportunities">前往後台 →</a></p></div>` }).catch(() => {});
+    }
+    notifyTalentTelegram(db, talentId, `🎯 您被指派了 ${assigned} 個角色(${title})。請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
+  }
+
+  return NextResponse.json({ ok: true, assigned, skipped, talent_id: talentId, setup_url: setupUrl || null });
+}

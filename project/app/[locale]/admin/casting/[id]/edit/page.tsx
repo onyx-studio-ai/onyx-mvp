@@ -27,6 +27,39 @@ export default function EditCasting() {
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const setRole = (i: number, k: keyof Role, v: string | boolean) => setRoles((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
 
+  // ── Direct assignment (managed production): pick roles → assign to a talent
+  // (existing or invite by email) with a fixed pay-per-role. Admin-only. ──
+  const [talents, setTalents] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [pickRoles, setPickRoles] = useState<Set<string>>(new Set());
+  const [assignMode, setAssignMode] = useState<'existing' | 'invite'>('existing');
+  const [assignTalent, setAssignTalent] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [pay, setPay] = useState('');
+  const [assigning, setAssigning] = useState(false);
+  const togglePick = (name: string) => setPickRoles((s) => { const n = new Set(s); if (n.has(name)) n.delete(name); else n.add(name); return n; });
+
+  useEffect(() => { fetch('/api/talents?type=VO').then((r) => (r.ok ? r.json() : { talents: [] })).then((d) => setTalents((Array.isArray(d?.talents) ? d.talents : Array.isArray(d) ? d : []).map((t: { id: string; name: string; email?: string }) => ({ id: t.id, name: t.name, email: t.email || '' })))).catch(() => {}); }, []);
+
+  async function assign() {
+    const names = [...pickRoles];
+    if (!names.length) { setMsg('請先勾選要指派的角色'); return; }
+    const payload: { brief_id: string; role_names: string[]; pay_per_role: number; talent_id?: string; invite?: { name: string; email: string } } = { brief_id: id, role_names: names, pay_per_role: Number(pay) || 0 };
+    if (assignMode === 'existing') { if (!assignTalent) { setMsg('請選配音員'); return; } payload.talent_id = assignTalent; }
+    else { if (!inviteEmail.trim()) { setMsg('請填邀請 email'); return; } payload.invite = { name: inviteName.trim(), email: inviteEmail.trim() }; }
+    setAssigning(true); setMsg('');
+    try {
+      const res = await fetch('/api/admin/casting/assign', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { setMsg(j.error || '指派失敗'); return; }
+      setPickRoles(new Set()); setPay(''); setInviteName(''); setInviteEmail('');
+      let m = `✓ 已指派 ${j.assigned} 個角色`;
+      if (j.skipped?.length) m += `(跳過 ${j.skipped.length}:已指派過)`;
+      if (j.setup_url) m += ` · 已寄設定密碼信給新配音員`;
+      setMsg(m);
+    } finally { setAssigning(false); }
+  }
+
   async function uploadRoleImage(i: number, file: File) {
     setMsg(''); setImgBusy(i);
     try {
@@ -99,7 +132,10 @@ export default function EditCasting() {
           </div>
           <div className="space-y-3">
             {roles.map((r, i) => (
-              <div key={i} className="flex gap-3 bg-white border border-gray-200 rounded-xl p-4">
+              <div key={i} className={`flex gap-3 bg-white border rounded-xl p-4 ${r.name && pickRoles.has(r.name) ? 'border-violet-400 ring-1 ring-violet-200' : 'border-gray-200'}`}>
+                <label className="flex items-start pt-1" title={r.name ? '選取以指派' : '先填角色名才能指派'}>
+                  <input type="checkbox" className="accent-violet-600" checked={!!r.name && pickRoles.has(r.name)} disabled={!r.name} onChange={() => r.name && togglePick(r.name)} />
+                </label>
                 <div className="w-16 shrink-0">
                   {r.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -130,6 +166,34 @@ export default function EditCasting() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+            <h2 className="text-base font-semibold mb-1">🎯 指派配音員(直接派工)</h2>
+            <p className="text-xs text-gray-600 mb-3">勾選上方角色 → 選配音員(或邀請新人)→ 填每角派工價 → 指派。免試音、免付款,角色直接進配音員後台可錄。目前已選 <span className="font-semibold text-violet-700">{pickRoles.size}</span> 角。</p>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex gap-1">
+                {(['existing', 'invite'] as const).map((m) => (
+                  <button key={m} type="button" onClick={() => setAssignMode(m)} className={`text-xs px-3 py-1.5 rounded-full border ${assignMode === m ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-300'}`}>{m === 'existing' ? '選現有配音員' : '邀請新配音員'}</button>
+                ))}
+              </div>
+              {assignMode === 'existing' ? (
+                <label className="block"><span className="text-xs text-gray-600 mb-1 block">配音員</span>
+                  <select className={`${input} min-w-[220px]`} value={assignTalent} onChange={(e) => setAssignTalent(e.target.value)}>
+                    <option value="">— 選一位 —</option>
+                    {talents.map((t) => <option key={t.id} value={t.id}>{t.name}{t.email ? ` (${t.email})` : ''}</option>)}
+                  </select>
+                </label>
+              ) : (
+                <>
+                  <label className="block"><span className="text-xs text-gray-600 mb-1 block">姓名</span><input className={`${input} w-36`} value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="配音員姓名" /></label>
+                  <label className="block"><span className="text-xs text-gray-600 mb-1 block">Email</span><input className={`${input} w-52`} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="email@example.com" /></label>
+                </>
+              )}
+              <label className="block"><span className="text-xs text-gray-600 mb-1 block">每角派工價</span><input type="number" className={`${input} w-28`} value={pay} onChange={(e) => setPay(e.target.value)} placeholder="NT$" /></label>
+              <button onClick={assign} disabled={assigning || !pickRoles.size} className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2 text-sm">{assigning ? '指派中…' : `指派選取的 ${pickRoles.size} 角`}</button>
+            </div>
+            {assignMode === 'invite' && <p className="text-[11px] text-gray-500 mt-2">邀請新人:會自動建帳號 + 寄設定密碼信;他登入後就看到被指派的角色,之後也能補完檔案送審成為正式配音員。</p>}
           </div>
         </>
       )}
