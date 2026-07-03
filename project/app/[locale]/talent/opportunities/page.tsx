@@ -1038,7 +1038,9 @@ function CaseHeader({
             {brief.rate_note && <span className="text-[#E4CB94] font-medium">{brief.rate_note}</span>}
             {isCasting && roleCount > 0 && <span className="text-gray-300">{tx(`共 ${roleCount} 角`, `共 ${roleCount} 角`, `${roleCount} roles`)}</span>}
             {!isCasting && brief.budget && <span className="text-gray-300">{tx('預算', '预算', 'Budget')} {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
-            {due && <span className="text-amber-300/80">{tx('截止', '截止', 'Due')} {due}</span>}
+            {due && (auditionClosed(brief)
+              ? <span className="text-red-300 font-medium">{tx('已截止', '已截止', 'Closed')}</span>
+              : <span className="text-amber-300/80">{tx('截止', '截止', 'Due')} {due}</span>)}
           </div>
         </div>
         <div className="shrink-0 flex items-center gap-2 pt-0.5">
@@ -1053,7 +1055,7 @@ function CaseHeader({
 // 試音是否已截止:audition_deadline 那天 23:59 之後就鎖(當天仍可交)。
 // parse 失敗一律不鎖(不誤鎖)。後端 quotes API 另有同樣把關,前端只是提早擋 UI。
 function auditionClosed(brief: Brief): boolean {
-  const d = brief.audition_deadline;
+  const d = brief.audition_deadline || brief.deadline;   // 沒設試音截止就用交付截止當界線,與卡片顯示的截止日一致
   if (!d) return false;
   const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
   return Number.isFinite(t) && Date.now() > t;

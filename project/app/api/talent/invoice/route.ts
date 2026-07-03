@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
         const tax = (d.tax && typeof d.tax === 'object' ? d.tax : {}) as Record<string, string>;
         sellerName = twd.account_holder || usd.account_holder || '';
         sellerAddress = tax.tax_address || '';
-        sellerTaxId = tax.tax_id || '';   // 稅籍編號:配音員有填才置入(台灣=身分證,海外=Tax ID)
+        // 稅籍編號:優先用自填的;台灣人沒填就自動帶身分證(national_id),海外只用自填的。
+        sellerTaxId = tax.tax_id || (tax.tax_location === 'TW' ? tax.national_id : '') || '';
       } catch { /* 解不開就留空 */ }
     }
   }

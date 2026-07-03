@@ -12,8 +12,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
   verify: client returns { email, code, token, exp }; server recomputes the
           HMAC and timing-safe compares + checks expiry.
   Secret reuses an existing server-only key (never shipped to the client).
-  Known v1 limitation: no rate-limiting / send-throttle (audience is an invited
-  ~2000-talent list); add a durable throttle before opening this publicly.
+  Rate-limited (durable, otp_send_log): same email ≤1/60s, same IP ≤10/hour.
 */
 
 const SECRET = process.env.EMAIL_CODE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -48,12 +47,23 @@ export async function POST(request: NextRequest) {
     if (tRes.data) return NextResponse.json({ error: 'already_member' }, { status: 409 });
     if (aRes.data) return NextResponse.json({ error: 'already_applied' }, { status: 409 });
 
+    // ⑤ 發送限流(durable, otp_send_log):同 email 60 秒內一次、同 IP 每小時最多 10 次。
+    const ip = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+    const nowMs = Date.now();
+    const [recent, ipCount] = await Promise.all([
+      db.from('otp_send_log').select('id', { head: true, count: 'exact' }).ilike('email', email).gte('created_at', new Date(nowMs - 60_000).toISOString()),
+      db.from('otp_send_log').select('id', { head: true, count: 'exact' }).eq('ip', ip).gte('created_at', new Date(nowMs - 3_600_000).toISOString()),
+    ]);
+    if ((recent.count || 0) > 0) return NextResponse.json({ error: 'too_soon' }, { status: 429 });
+    if ((ipCount.count || 0) >= 10) return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     const exp = Date.now() + TTL_MS;
     const token = sign(email, code, exp);
     const { subject, html } = verificationCodeEmail({ code, locale: typeof body.locale === 'string' ? body.locale : undefined });
     const res = await sendEmail({ category: 'HELLO', to: email, subject, html });
     if (!res.success) return NextResponse.json({ error: res.error || 'Failed to send code' }, { status: 502 });
+    await db.from('otp_send_log').insert({ email: email.toLowerCase(), ip });   // 成功才計入限流
     return NextResponse.json({ token, exp });
   }
 

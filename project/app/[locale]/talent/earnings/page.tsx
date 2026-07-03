@@ -144,12 +144,15 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
       )}
       {taxLoc && <p className="text-[11px] text-sky-200/80 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 mb-4">{taxNotice({ taxLocation: taxLoc, twResident }, locale)}</p>}
 
-      {taxLoc && (
+      {taxLoc === 'overseas' && (
         <div className="mb-4">
-          <label className={lbl}>{tx('稅籍編號(選填)', '税籍编号(选填)', 'Tax ID (optional)')}</label>
-          <input className={inputCls} value={tax.tax_id || ''} onChange={(e) => setTx('tax_id', e.target.value)} placeholder={tx('台灣個人可填身分證;海外填當地 Tax ID', '台湾个人可填身份证;海外填当地 Tax ID', 'Taiwan: national ID; overseas: local Tax ID')} />
-          <p className="text-xs text-gray-300 mt-1">{tx('有填就會顯示在系統生成的發票上;不填則發票省略此欄。', '有填就会显示在系统生成的发票上;不填则发票省略此栏。', 'If provided, it appears on the generated invoice; otherwise it is omitted.')}</p>
+          <label className={lbl}>{tx('稅籍編號 / Tax ID(選填)', '税籍编号 / Tax ID(选填)', 'Tax ID (optional)')}</label>
+          <input className={inputCls} value={tax.tax_id || ''} onChange={(e) => setTx('tax_id', e.target.value)} placeholder={tx('您當地的稅籍編號', '您当地的税籍编号', 'Your local tax ID')} />
+          <p className="text-xs text-gray-300 mt-1">{tx('有填就會顯示在系統生成的發票上;不填則省略此欄。', '有填就会显示在系统生成的发票上;不填则省略此栏。', 'If provided, it appears on the invoice; otherwise omitted.')}</p>
         </div>
+      )}
+      {taxLoc === 'TW' && (
+        <p className="text-xs text-gray-400 mb-4">{tx('※ 發票的稅籍編號會自動使用您上方填的身分證字號。', '※ 发票的税籍编号会自动使用您上方填的身份证号。', '※ The invoice tax ID will automatically use the national ID you entered above.')}</p>
       )}
 
       {/* 台幣收款 */}
@@ -280,13 +283,13 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
         const c = currency; const n = (x: number) => x.toLocaleString('en-US', { maximumFractionDigits: 2 });
         return (
           <div className="text-xs text-gray-200 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 mb-3 space-y-1">
-            <p className="text-gray-300 pb-1">{tx('我們會全額支付您的請款金額;以下為「估算實收」—— 中途手續費由對方收款機構收取,非我們扣除。', '我们会全额支付您的请款金额;以下为「估算实收」—— 中途手续费由对方收款机构收取,非我们扣除。', 'We pay your full requested amount; below is an ESTIMATED net — fees are taken by the receiving institution, not by us.')}</p>
-            <div className="flex justify-between"><span>{tx('請款金額(我們支付)', '请款金额(我们支付)', 'Requested (we pay)')}</span><span>{c} {n(Number(amount))}</span></div>
+            <p className="text-gray-300 pb-1">{tx('我們會全額支付您的請款金額;但收款機構可能收取中途手續費。', '我们会全额支付您的请款金额;但收款机构可能收取中途手续费。', 'We pay your full requested amount; the receiving institution may charge a fee along the way.')}</p>
+            <div className="flex justify-between"><span>{tx('請款金額', '请款金额', 'Requested')}</span><span>{c} {n(Number(amount))}</span></div>
             {dd.tax > 0 && <div className="flex justify-between text-gray-300"><span>{tx('代扣所得稅', '代扣所得税', 'Tax withheld')}</span><span>− {c} {n(dd.tax)}</span></div>}
             {dd.nhi > 0 && <div className="flex justify-between text-gray-300"><span>{tx('二代健保', '二代健保', 'NHI')}</span><span>− {c} {n(dd.nhi)}</span></div>}
             <div className="flex justify-between text-gray-300"><span>{tx('預估手續費', '预估手续费', 'Est. fee')} <span className="text-gray-400">({dd.feeNote})</span></span><span>− {c} {n(dd.fee)}</span></div>
             <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/10"><span>{tx('預估實收 ≈', '预估实收 ≈', 'Est. you receive ≈')}</span><span>{c} {n(dd.net)}</span></div>
-            <p className="text-gray-400 pt-0.5 leading-relaxed">{tx('僅為預估參考、非保證金額。各國 PayPal 費率不同(可能另有匯率轉換費)、國際電匯中轉行費用不一、台灣匯費最多約 NT$30。實際到手以您的收款機構入帳為準。', '仅为预估参考、非保证金额。各国 PayPal 费率不同(可能另有汇率转换费)、国际电汇中转行费用不一、台湾汇费最多约 NT$30。实际到手以您的收款机构入账为准。', 'Estimate only, not guaranteed. PayPal rates vary by country (may add FX fees); intl-wire intermediary fees vary; TW wire is at most ~NT$30. Final amount per your receiving institution.')}</p>
+            <p className="text-gray-400 pt-0.5 leading-relaxed">{tx('僅為預估、非保證金額。各國 PayPal 費率不同、國際電匯中轉行費用不一、台灣匯費約 NT$30。實際到帳以您的收款機構入帳為準。', '仅为预估、非保证金额。各国 PayPal 费率不同、国际电汇中转行费用不一、台湾汇费约 NT$30。实际到账以您的收款机构入账为准。', 'Estimate only, not guaranteed. PayPal rates vary by region; intl-wire intermediary fees vary; TW wire ~NT$30. Final amount per your receiving institution.')}</p>
           </div>
         );
       })()}

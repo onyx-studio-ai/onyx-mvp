@@ -211,6 +211,8 @@ export default function TalentApply() {
           setCodeMsg(tx('這個 Email 已註冊 / 申請過,不需重新申請。請至 onyxstudios.ai/talent 登入(忘記密碼可用「重寄設定密碼信」)。', '这个 Email 已注册 / 申请过,不需重新申请。请至 onyxstudios.ai/talent 登录(忘记密码可用「重寄设置密码邮件」)。', 'This email has already registered / applied — no need to re-apply. Please sign in at onyxstudios.ai/talent (use “resend set-password” if you forgot your password).'));
           return;
         }
+        if (j.error === 'too_soon') { setCodeMsg(tx('剛剛才寄出驗證碼,請稍等一分鐘再重寄。', '刚刚才寄出验证码,请稍等一分钟再重寄。', 'A code was just sent — please wait a minute before resending.')); return; }
+        if (j.error === 'rate_limited') { setCodeMsg(tx('嘗試次數過多,請稍後再試。', '尝试次数过多,请稍后再试。', 'Too many attempts — please try again later.')); return; }
         throw new Error(j.error || tx('寄送失敗', '发送失败', 'Failed to send'));
       }
       setCodeMeta({ token: j.token, exp: j.exp });
