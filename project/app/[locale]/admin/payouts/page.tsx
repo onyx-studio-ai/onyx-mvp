@@ -128,25 +128,31 @@ function PayoutDetails({ talentId }: { talentId: string }) {
   if (status === 'none') return <span className="text-xs text-gray-500">配音員尚未填寫收款資料。</span>;
 
   const x = d!.details;
+  const method = d!.payout_method;
+  const taxLoc = d!.region; // 'TW' | 'overseas'
   return (
     <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3 text-xs space-y-1 max-w-md">
-      <div className="font-medium text-violet-800 mb-1">{d!.region === 'TW' ? '🇹🇼 台灣 · 勞務 / 銀行匯款' : '🌐 國外 · PayPal'}</div>
-      {d!.region === 'TW' ? (
+      <div className="font-medium text-violet-800 mb-1">{method === 'bank' ? '🏦 銀行匯款' : '💸 PayPal'}</div>
+      {method === 'bank' ? (
         <>
-          <Row k="法定姓名" v={x.legal_name} />
-          <Row k="身分證字號" v={x.national_id} />
-          <Row k="戶籍地址" v={x.address} />
-          <Row k="銀行" v={[x.bank_name, x.bank_branch].filter(Boolean).join(' ')} />
-          <Row k="戶名" v={x.bank_account_name} />
-          <Row k="帳號" v={x.bank_account} />
+          <Row k="帳戶姓名" v={x.account_holder} />
+          <Row k="銀行" v={[x.bank_name, x.bank_country ? `(${x.bank_country})` : '', x.bank_branch].filter(Boolean).join(' ')} />
+          <Row k="帳號" v={x.account_number} />
+          <Row k="IBAN" v={x.iban} />
+          <Row k="SWIFT/BIC" v={x.swift} />
         </>
       ) : (
         <>
-          <Row k="姓名/公司" v={x.legal_name} />
+          <Row k="姓名/公司" v={x.account_holder} />
           <Row k="PayPal" v={x.paypal_email} />
           <p className="text-[11px] text-amber-700 pt-1">付款前請向配音員索取 invoice。</p>
         </>
       )}
+      <div className="border-t border-violet-200 mt-1.5 pt-1.5">
+        <Row k="稅務" v={taxLoc === 'TW' ? (x.tw_resident ? '台灣居住者(≥2萬才扣10%+2.11%)' : '台灣非居住者(扣20%)') : '海外(不扣台灣稅)'} />
+        {taxLoc === 'TW' && <Row k="身分/居留證" v={x.national_id} />}
+        {taxLoc === 'TW' && <Row k="地址" v={x.tax_address} />}
+      </div>
     </div>
   );
 }
