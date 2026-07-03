@@ -96,6 +96,61 @@ function PaymentBadge({ method, details }: { method?: string | null; details?: R
   return <span className="text-xs text-gray-500">{method}</span>;
 }
 
+// Decrypted payout details, fetched ON DEMAND (click to reveal) from the restricted
+// table so the national ID / bank account is only materialised when Wing actually
+// needs to pay. Admin-role only; never bulk-loaded.
+function PayoutDetails({ talentId }: { talentId: string }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'none' | 'error'>('idle');
+  const [d, setD] = useState<{ region: string; payout_method: string; details: Record<string, string>; updated_at?: string } | null>(null);
+  const [err, setErr] = useState('');
+
+  async function load() {
+    setStatus('loading'); setErr('');
+    try {
+      const r = await fetch(`/api/admin/payout-details?talent_id=${encodeURIComponent(talentId)}`);
+      const j = await r.json();
+      if (!r.ok) { setErr(j.error === 'payout_enc_unconfigured' ? '加密金鑰未設定 (Vercel env: PAYOUT_ENC_KEY)' : j.error === 'decrypt_failed' ? '解密失敗(金鑰不符?)' : (j.error || '讀取失敗')); setStatus('error'); return; }
+      if (!j.found) { setStatus('none'); return; }
+      setD({ region: j.region, payout_method: j.payout_method, details: j.details || {}, updated_at: j.updated_at });
+      setStatus('done');
+    } catch { setErr('讀取失敗'); setStatus('error'); }
+  }
+
+  const Row = ({ k, v }: { k: string; v?: string }) => v ? (
+    <div className="flex gap-2"><span className="text-gray-500 w-24 shrink-0">{k}</span><span className="text-gray-800 font-mono break-all select-all">{v}</span></div>
+  ) : null;
+
+  if (status === 'idle') {
+    return <button onClick={load} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors">🔒 查看收款資料</button>;
+  }
+  if (status === 'loading') return <span className="text-xs text-gray-500">讀取中…</span>;
+  if (status === 'error') return <span className="text-xs text-red-600">{err}</span>;
+  if (status === 'none') return <span className="text-xs text-gray-500">配音員尚未填寫收款資料。</span>;
+
+  const x = d!.details;
+  return (
+    <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3 text-xs space-y-1 max-w-md">
+      <div className="font-medium text-violet-800 mb-1">{d!.region === 'TW' ? '🇹🇼 台灣 · 勞務 / 銀行匯款' : '🌐 國外 · PayPal'}</div>
+      {d!.region === 'TW' ? (
+        <>
+          <Row k="法定姓名" v={x.legal_name} />
+          <Row k="身分證字號" v={x.national_id} />
+          <Row k="戶籍地址" v={x.address} />
+          <Row k="銀行" v={[x.bank_name, x.bank_branch].filter(Boolean).join(' ')} />
+          <Row k="戶名" v={x.bank_account_name} />
+          <Row k="帳號" v={x.bank_account} />
+        </>
+      ) : (
+        <>
+          <Row k="姓名/公司" v={x.legal_name} />
+          <Row k="PayPal" v={x.paypal_email} />
+          <p className="text-[11px] text-amber-700 pt-1">付款前請向配音員索取 invoice。</p>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function PayoutsPage() {
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [loading, setLoading] = useState(true);
@@ -437,6 +492,12 @@ export default function PayoutsPage() {
                   <tr className="bg-gray-50 border-b border-gray-200/50">
                     <td colSpan={colSpanForExpanded(showCheckbox)} className="px-5 py-4">
                       <div className="space-y-3">
+                        {e.talent_id && (
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">收款資料</p>
+                            <PayoutDetails talentId={e.talent_id} />
+                          </div>
+                        )}
                         {e.local_folder_path && (
                           <div className="flex items-center gap-2 text-xs">
                             <Folder className="w-3.5 h-3.5 text-gray-500" />
