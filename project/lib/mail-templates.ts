@@ -1076,6 +1076,26 @@ export function briefReceivedEmail(p: { clientName?: string; briefNumber?: strin
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, layoutLocale) };
 }
 
+/** Client: their brief passed review and is now live — talents can audition/quote. */
+export function clientBriefPublishedEmail(p: { clientName?: string; title?: string; briefNumber?: string; url: string; locale?: string }): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const name = mpEsc((p.clientName || '').trim());
+  const t = mpEsc((p.title || '').trim());
+  const n = (p.briefNumber || '').trim();
+  const titleBit = t ? `「<strong style="color:#f3f4f6;">${t}</strong>」` : '';
+  const C = {
+    tw: { subject: `您的配音需求已上平台${t ? ` —— ${t}` : ''}`, headline: '您的配音需求已上平台', sub: '配音員現在可以看到並試音、報價', card: n ? `案件編號 ${n}` : '配音需求',
+      greet: `${name ? name + ' ' : ''}您好,`, l1: `您的案件${titleBit}已通過審核並正式上架。平台上合適的配音員現在可以看到這個案子,開始為您試音與報價。`, l2: '待試音陸續進來後,Onyx 會為您整理合適的人選與報價;您也可以隨時登入後台查看進度、聆聽試音。', cta: '登入後台查看進度', sign: 'Onyx Studios 業務團隊 敬上' },
+    cn: { subject: `您的配音需求已上平台${t ? ` —— ${t}` : ''}`, headline: '您的配音需求已上平台', sub: '配音员现在可以看到并试音、报价', card: n ? `案件编号 ${n}` : '配音需求',
+      greet: `${name ? name + ' ' : ''}您好,`, l1: `您的案件${titleBit}已通过审核并正式上架。平台上合适的配音员现在可以看到这个案子,开始为您试音与报价。`, l2: '待试音陆续进来后,Onyx 会为您整理合适的人选与报价;您也可以随时登录后台查看进度、聆听试音。', cta: '登录后台查看进度', sign: 'Onyx Studios 业务团队 敬上' },
+    en: { subject: `Your voiceover brief is now live${t ? ` — ${t}` : ''}`, headline: 'Your brief is now live', sub: 'Voice talent can now audition and quote', card: n ? `Brief ${n}` : 'Voiceover brief',
+      greet: `Dear ${name || 'there'},`, l1: `Your brief ${t ? `“<strong style="color:#f3f4f6;">${t}</strong>” ` : ''}has passed review and is now live. Suitable voice talent on the platform can now see it and begin auditioning and quoting for you.`, l2: 'As auditions come in, Onyx will shortlist suitable talent and quotes for you. You can sign in any time to track progress and listen to auditions.', cta: 'Sign in to track progress', sign: 'The Onyx Studios Team' },
+  }[L];
+  const content = `${headlineBlock(C.headline, C.sub, BRAND_GREEN)}${bodyCard(C.card, `${mp(C.greet)}${mp(C.l1)}${mp(C.l2)}<p style="color:#9ca3af;font-size:13px;margin:0;">${C.sign}</p>`)}${ctaRow(C.cta, p.url, BRAND_GREEN)}`;
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
+
 /** Notify the winning talent that their audition was selected. */
 export function castingAwardedTalentEmail(p: { talentName?: string; title: string; url: string; locale?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
-import { castingNotifyEmail } from '@/lib/mail-templates';
+import { castingNotifyEmail, clientBriefPublishedEmail } from '@/lib/mail-templates';
 import { caseCode } from '@/lib/casting';
 
 /*
@@ -195,10 +195,24 @@ export async function POST(request: NextRequest) {
   // keep the client's identity + budget (no duplicate row). From scratch: insert
   // with the poster-side placeholder client (talents never see it).
   const result = fromId
-    ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number, created_at, gender_needs').single()
-    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number, created_at, gender_needs').single();
+    ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number, created_at, gender_needs, client_email, client_name, locale').single()
+    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number, created_at, gender_needs, client_email, client_name, locale').single();
   const { data, error } = result;
   if (error || !data) return NextResponse.json({ error: error?.message || '發案失敗' }, { status: 500 });
+
+  // Publishing a CLIENT-commissioned brief (not the platform's own casting@ placeholder):
+  // let the client know their brief passed review and is now live for auditions.
+  // Best-effort — never block the publish on a mail failure.
+  const clientEmail = String((data as { client_email?: string | null }).client_email || '');
+  if (clientEmail && clientEmail !== 'casting@onyxstudios.ai') {
+    const note = clientBriefPublishedEmail({
+      clientName: (data as { client_name?: string | null }).client_name || undefined,
+      title, briefNumber: data.brief_number as string,
+      url: `${SITE}/dashboard/requests`,
+      locale: (data as { locale?: string | null }).locale || row.locale,
+    });
+    sendEmail({ category: 'PRODUCTION', to: clientEmail, subject: note.subject, html: note.html }).catch(() => {});
+  }
 
   // Invite talents. If the publish-time picker sent an explicit selection
   // (invite_talent_ids — an array, possibly empty), invite exactly those ONLINE
