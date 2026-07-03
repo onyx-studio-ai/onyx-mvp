@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests';
@@ -30,6 +30,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/talents', labelKey: 'talentManagement', icon: Mic },
       { href: '/admin/finance', labelKey: 'finance', icon: TrendingUp },
       { href: '/admin/payouts', labelKey: 'talentPayouts', icon: DollarSign },
+      { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt },
       { href: '/admin/pockets', labelKey: 'pockets', icon: Wallet },
     ],
   },
@@ -62,6 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     talentManagement: '人才管理',
     finance: '📊 財務總覽',
     talentPayouts: '人才分潤',
+    payoutRequests: '請款單',
     pockets: '💰 口袋',
     content: '內容',
     certificates: '授權證書',
@@ -95,6 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     talentManagement: 'Talent Management',
     finance: '📊 Finance',
     talentPayouts: 'Talent Payouts',
+    payoutRequests: 'Payout Requests',
     pockets: '💰 Pockets',
     content: 'Content',
     certificates: 'Certificates',
