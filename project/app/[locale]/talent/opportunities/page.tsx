@@ -602,7 +602,7 @@ export default function Opportunities() {
         const titleOf = (bid: string) => { const bb = briefs.find((x) => x.id === bid); return bb?.title || bb?.content_type || tx('配音案', '配音案', 'Voice case'); };
         return (
           <div className="mb-8">
-            <h2 className="text-sm font-semibold text-violet-300 mb-3">🎬 {tx('客戶想聽更多 demo', '客户想听更多 demo', 'Client wants more demos')}</h2>
+            <h2 className="text-sm font-semibold text-violet-300 mb-3">{tx('客戶想聽更多 demo', '客户想听更多 demo', 'Client wants more demos')}</h2>
             <div className="grid grid-cols-1 gap-4">
               {moreDemos.map((q) => (
                 <EntityCard key={q.id} icon={Briefcase} accent="violet" code={q.role_name || undefined}
@@ -619,7 +619,7 @@ export default function Opportunities() {
 
       {assignedOrders.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-sm font-semibold text-violet-300 mb-3">🎯 {tx('我被指派的角色', '我被指派的角色', 'My assigned roles')}</h2>
+          <h2 className="text-sm font-semibold text-violet-300 mb-3">{tx('我被指派的角色', '我被指派的角色', 'My assigned roles')}</h2>
           <div className="grid grid-cols-1 gap-4">
             {assignedOrders.map((o) => (
               <EntityCard key={o.id} icon={Briefcase} accent="violet" code={o.role_name || undefined}

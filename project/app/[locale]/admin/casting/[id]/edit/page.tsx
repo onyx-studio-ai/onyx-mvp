@@ -169,7 +169,7 @@ export default function EditCasting() {
           </div>
 
           <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
-            <h2 className="text-base font-semibold mb-1">🎯 指派配音員(直接派工)</h2>
+            <h2 className="text-base font-semibold mb-1">指派配音員(直接派工)</h2>
             <p className="text-xs text-gray-600 mb-3">勾選上方角色 → 選配音員(或邀請新人)→ 填每角派工價 → 指派。免試音、免付款,角色直接進配音員後台可錄。目前已選 <span className="font-semibold text-violet-700">{pickRoles.size}</span> 角。</p>
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex gap-1">

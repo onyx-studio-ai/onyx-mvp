@@ -145,7 +145,7 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
       {taxLoc && <p className="text-[11px] text-sky-200/80 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 mb-4">{taxNotice({ taxLocation: taxLoc, twResident }, locale)}</p>}
 
       {/* 台幣收款 */}
-      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={twdOn} onChange={(e) => { setTwdOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>💰 {tx('台幣收款(TWD)', '台币收款(TWD)', 'TWD payout')}</span></label>
+      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={twdOn} onChange={(e) => { setTwdOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>{tx('台幣收款(TWD)', '台币收款(TWD)', 'TWD payout')}</span></label>
       {twdOn && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 pl-6">
           <div className="sm:col-span-2"><label className={lbl}>{tx('戶名(法定)', '户名(法定)', 'Account holder')} *</label><input className={inputCls} value={twd.account_holder || ''} onChange={(e) => setT('account_holder', e.target.value)} /></div>
@@ -157,7 +157,7 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
       )}
 
       {/* 美金收款 */}
-      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={usdOn} onChange={(e) => { setUsdOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>💵 {tx('美金收款(USD)', '美金收款(USD)', 'USD payout')}</span></label>
+      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={usdOn} onChange={(e) => { setUsdOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>{tx('美金收款(USD)', '美金收款(USD)', 'USD payout')}</span></label>
       {usdOn && (
         <div className="mb-4 pl-6">
           <div className="flex gap-2 mb-3">

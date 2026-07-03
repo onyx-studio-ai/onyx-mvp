@@ -122,7 +122,7 @@ function PayoutDetails({ talentId, gross }: { talentId: string; gross: number })
   ) : null;
 
   if (status === 'idle') {
-    return <button onClick={load} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors">🔒 查看收款資料</button>;
+    return <button onClick={load} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors">查看收款資料</button>;
   }
   if (status === 'loading') return <span className="text-xs text-gray-500">讀取中…</span>;
   if (status === 'error') return <span className="text-xs text-red-600">{err}</span>;
@@ -140,7 +140,7 @@ function PayoutDetails({ talentId, gross }: { talentId: string; gross: number })
     <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3 text-xs space-y-1 max-w-md">
       {twd && (
         <div>
-          <div className="font-medium text-violet-800 mb-0.5">💰 台幣收款</div>
+          <div className="font-medium text-violet-800 mb-0.5">台幣收款</div>
           <Row k="戶名" v={twd.account_holder} />
           <Row k="銀行" v={[twd.bank_name, twd.bank_branch].filter(Boolean).join(' ')} />
           <Row k="代碼" v={twd.bank_code} />
@@ -149,7 +149,7 @@ function PayoutDetails({ talentId, gross }: { talentId: string; gross: number })
       )}
       {usd && (
         <div className={twd ? 'border-t border-violet-200 mt-1.5 pt-1.5' : ''}>
-          <div className="font-medium text-violet-800 mb-0.5">💵 美金收款 · {usd.method === 'paypal' ? 'PayPal' : '外幣帳戶'}</div>
+          <div className="font-medium text-violet-800 mb-0.5">美金收款 · {usd.method === 'paypal' ? 'PayPal' : '外幣帳戶'}</div>
           {usd.method === 'paypal' ? (
             <>
               <Row k="姓名/公司" v={usd.account_holder} />
@@ -458,11 +458,11 @@ export default function PayoutsPage() {
                     #{e.order_number}
                     {isBuyout ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
-                        🔒 Buyout
+                        Buyout
                       </span>
                     ) : isManaged ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
-                        🎯 指派製作
+                        指派製作
                       </span>
                     ) : isManual ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
@@ -1080,7 +1080,7 @@ function ManualEntryModal({
                 isBuyout ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              🔒 買斷配音員
+              買斷配音員
               <span className="block text-[10px] font-normal text-gray-500 mt-0.5">
                 Wing 一次付清,聲音歸我
               </span>
