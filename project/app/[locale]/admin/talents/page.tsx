@@ -345,6 +345,7 @@ export default function AdminTalentsPage() {
     category: "in_house",
     tags: [] as string[],
     bio: "",
+    portfolio_url: "",
     internal_cost: 0,
     is_active: true,
     sort_order: 0,
@@ -623,6 +624,7 @@ export default function AdminTalentsPage() {
         category: formData.category,
         tags: formData.tags,
         bio: formData.bio,
+        portfolio_url: formData.portfolio_url || null,
         internal_cost: formData.internal_cost,
         is_active: formData.is_active,
         sort_order: formData.sort_order,
@@ -682,6 +684,7 @@ export default function AdminTalentsPage() {
       category: talent.category,
       tags: talent.tags || [],
       bio: talent.bio || "",
+      portfolio_url: talent.portfolio_url || "",
       internal_cost: talent.internal_cost,
       is_active: talent.is_active,
       sort_order: talent.sort_order,
@@ -1052,6 +1055,18 @@ export default function AdminTalentsPage() {
                   rows={3}
                   placeholder="Short bio or description of the talent..."
                   className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 resize-y"
+                />
+              </div>
+
+              {/* 網站 / 作品集連結 — 內部參考,不公開給客戶 */}
+              <div className="space-y-2">
+                <Label className="text-gray-700">網站 / 作品集連結 <span className="text-gray-400 font-normal">· 內部參考,不公開</span></Label>
+                <input
+                  type="url"
+                  value={formData.portfolio_url}
+                  onChange={e => setFormData({ ...formData, portfolio_url: e.target.value })}
+                  placeholder="https://…"
+                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 

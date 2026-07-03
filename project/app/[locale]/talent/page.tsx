@@ -63,7 +63,7 @@ type Talent = {
   voice_traits: string[] | null; specialties: string[] | null; voice_ages: string[] | null; demos: DemoItem[] | null;
   headshot_url: string | null; location: string | null; availability_note: string | null;
   clients: string | null; awards: string | null; notable_works: string | null; special_skills: string | null;
-  equipment: string | null; studio_partner: string | null;
+  equipment: string | null; studio_partner: string | null; portfolio_url: string | null;
   turnaround: string | null; years_experience: number | null; native_languages: string[] | null;
   coop_accept_jobs?: boolean; coop_open_buyout?: boolean; coop_ai_clone?: boolean; coop_ai_training?: boolean;
   coop_proofread?: boolean; coop_voice_director?: boolean; low_price_data_optin?: boolean;
@@ -75,7 +75,7 @@ const COOP_KEYS = ['coop_accept_jobs', 'coop_open_buyout', 'coop_ai_clone', 'coo
 type CoopKey = typeof COOP_KEYS[number];
 type ListField = 'voice_traits' | 'specialties' | 'availability' | 'voice_ages';
 type Form = {
-  name: string; english_name: string; bio: string; gender: string; location: string; studio_partner: string;
+  name: string; english_name: string; bio: string; gender: string; location: string; studio_partner: string; portfolio_url: string;
   equipment: string; clients: string; awards: string; notable_works: string; special_skills: string;
   turnaround: string; years_experience: string; native_languages: string[];
   availability: string[]; languages: string[]; voice_traits: string[]; specialties: string[]; voice_ages: string[];
@@ -158,7 +158,7 @@ export default function TalentDashboard() {
   const [token, setToken] = useState('');
   const [t, setT] = useState<Talent | null>(null);
   const [form, setForm] = useState<Form>({
-    name: '', english_name: '', bio: '', gender: '', location: '', studio_partner: '', equipment: '',
+    name: '', english_name: '', bio: '', gender: '', location: '', studio_partner: '', portfolio_url: '', equipment: '',
     clients: '', awards: '', notable_works: '', special_skills: '', turnaround: '', years_experience: '', native_languages: [],
     availability: [], languages: [], voice_traits: [], specialties: [], voice_ages: [], headshot_url: '', demos: [],
     coop: { ...EMPTY_COOP }, rates: { ...EMPTY_RATES },
@@ -198,7 +198,7 @@ export default function TalentDashboard() {
     setT(talent);
     setForm({
       name: talent.name || '', english_name: talent.english_name || '', bio: talent.bio || '', gender: talent.gender || '',
-      location: talent.location || '', studio_partner: talent.studio_partner || '', equipment: talent.equipment || '',
+      location: talent.location || '', studio_partner: talent.studio_partner || '', portfolio_url: talent.portfolio_url || '', equipment: talent.equipment || '',
       clients: talent.clients || '', awards: talent.awards || '', notable_works: talent.notable_works || '', special_skills: talent.special_skills || '',
       turnaround: talent.turnaround || '', years_experience: talent.years_experience != null ? String(talent.years_experience) : '',
       native_languages: Array.isArray(talent.native_languages) ? talent.native_languages : [],
@@ -290,7 +290,7 @@ export default function TalentDashboard() {
       body: JSON.stringify({
         submit,
         name: form.name, english_name: form.english_name, bio: form.bio, gender: form.gender, location: form.location,
-        availability_note: form.availability.join(','), studio_partner: form.studio_partner, equipment: form.equipment,
+        availability_note: form.availability.join(','), studio_partner: form.studio_partner, portfolio_url: form.portfolio_url, equipment: form.equipment,
         clients: form.clients, awards: form.awards, notable_works: form.notable_works, special_skills: form.special_skills,
         turnaround: form.turnaround, years_experience: form.years_experience ? parseInt(form.years_experience, 10) : null,
         native_languages: form.native_languages,
@@ -792,6 +792,10 @@ export default function TalentDashboard() {
           <div>
             <label className={labelCls}>{tx('錄音器材', '录音器材', 'Recording equipment')} <span className="font-normal text-gray-400">· {tx('選填', '选填', 'optional')}</span></label>
             <input className={inputCls} value={form.equipment} onChange={(e) => setForm({ ...form, equipment: e.target.value })} placeholder={tx('例如:Neumann TLM103 + Apollo Twin', '例如:Neumann TLM103 + Apollo Twin', 'e.g. Neumann TLM103 + Apollo Twin')} />
+          </div>
+          <div className="mt-4">
+            <label className={labelCls}>{tx('網站 / 作品集連結', '网站 / 作品集链接', 'Website / portfolio link')} <span className="font-normal text-gray-300">· {tx('只給 Onyx 內部參考,不會公開給客戶', '只给 Onyx 内部参考,不会公开给客户', 'internal only — never shown to clients')}</span></label>
+            <input type="url" className={inputCls} value={form.portfolio_url} onChange={(e) => setForm({ ...form, portfolio_url: e.target.value })} placeholder="https://…" />
           </div>
         </div>
 

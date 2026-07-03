@@ -19,11 +19,11 @@ import { stripContactsAndLinks } from '@/lib/sanitize-text';
 // is_active, pricing and the published_snapshot are intentionally excluded.
 // location = country key, availability_note = comma-joined preset keys,
 // studio_partner = URL, clients/awards/notable_works = structured credits.
-const TEXT_FIELDS = ['name', 'english_name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills', 'turnaround'] as const;
+const TEXT_FIELDS = ['name', 'english_name', 'bio', 'gender', 'location', 'availability_note', 'studio_partner', 'equipment', 'clients', 'awards', 'notable_works', 'special_skills', 'turnaround', 'portfolio_url'] as const;
 
 const COLS =
   'id, name, english_name, bio, languages, accent, gender, tags, voice_traits, specialties, voice_ages, demos, demo_urls, headshot_url, ' +
-  'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, turnaround, years_experience, native_languages, type, email, is_active, ' +
+  'location, availability_note, equipment, studio_partner, clients, awards, notable_works, special_skills, turnaround, portfolio_url, years_experience, native_languages, type, email, is_active, ' +
   'coop_accept_jobs, coop_open_buyout, coop_ai_clone, coop_ai_training, coop_proofread, coop_voice_director, low_price_data_optin, expected_rates, ' +
   'pending_review, published_snapshot, liveness_status';
 

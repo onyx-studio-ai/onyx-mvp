@@ -72,6 +72,7 @@ export type Talent = {
   languages: string[];
   tags: string[];
   bio: string | null;
+  portfolio_url: string | null;   // 網站/作品集連結:內部參考,不進 published_snapshot、不給客戶
   is_active: boolean;
   sort_order: number;
   created_at: string;
