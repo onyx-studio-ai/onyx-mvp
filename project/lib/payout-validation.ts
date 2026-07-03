@@ -20,7 +20,7 @@ const s = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SWIFT = /^[A-Za-z]{4}[A-Za-z]{2}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$/;   // 8 或 11
 const IBAN = /^[A-Za-z]{2}\d{2}[A-Za-z0-9]{10,30}$/;
-const TW_BANKCODE = /^\d{7}$/;                                              // 3 銀行 + 4 分行
+const TW_BANKCODE = /^(\d{3}|\d{7})$/;                                       // 3 碼銀行 或 7 碼分行(電匯建議 7 碼)
 const TW_ID = /^[A-Za-z][A-Za-z1-2]\d{8}$/;                                 // 身分證/居留證,10 碼
 
 export function validatePayout(d: PayoutInput): FieldError[] {
@@ -40,7 +40,7 @@ export function validatePayout(d: PayoutInput): FieldError[] {
 
     if (country === 'TW') {
       // 台灣本地:必填 7 碼分行代碼(電匯用)
-      if (!TW_BANKCODE.test(s(d.bank_code))) e.push({ field: 'bank_code', msg: '台灣匯款需填 7 碼銀行分行代碼(3碼銀行+4碼分行)' });
+      if (!TW_BANKCODE.test(s(d.bank_code))) e.push({ field: 'bank_code', msg: '請填 3 碼銀行代碼或 7 碼分行代碼(電匯建議 7 碼)' });
     } else {
       // 國際:必填 SWIFT/BIC
       if (!SWIFT.test(s(d.swift))) e.push({ field: 'swift', msg: 'SWIFT/BIC 格式不正確(8 或 11 碼英數)' });
