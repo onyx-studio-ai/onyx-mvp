@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { encryptJson, decryptJson, payoutEncConfigured } from '@/lib/payout-crypto';
+import { validatePayout, type PayoutInput } from '@/lib/payout-validation';
 
 /*
   GET/PUT /api/talent/payout-details — the talent manages their OWN payout details
@@ -60,33 +61,26 @@ export async function PUT(request: NextRequest) {
     tax_location: taxLocation,
     tw_resident: twResident,
   };
-  const missing: string[] = [];
-  if (!payload.account_holder) missing.push('account_holder');
 
   if (method === 'bank') {
     payload.bank_name = S(d.bank_name, 120);
     payload.bank_country = S(d.bank_country, 60).toUpperCase();
     payload.account_number = S(d.account_number, 60);
-    payload.iban = S(d.iban, 60);
-    payload.swift = S(d.swift, 30);
+    payload.iban = S(d.iban, 60).toUpperCase();
+    payload.swift = S(d.swift, 30).toUpperCase();
+    payload.bank_code = S(d.bank_code, 20);   // 台灣 7 碼分行代碼
     payload.bank_branch = S(d.bank_branch, 120);
-    for (const k of ['bank_name', 'bank_country', 'account_number']) if (!payload[k]) missing.push(k);
-    // International bank → SWIFT/BIC required (need it to route the wire).
-    if (payload.bank_country && payload.bank_country !== 'TW' && !payload.swift) missing.push('swift');
   } else {
     payload.paypal_email = S(d.paypal_email, 200);
-    if (!payload.paypal_email) missing.push('paypal_email');
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.paypal_email as string)) return NextResponse.json({ error: 'PayPal Email 格式不正確' }, { status: 400 });
   }
-
-  // Taiwan tax cases need ID + address for the withholding statement.
   if (taxLocation === 'TW') {
-    payload.national_id = S(d.national_id, 40);
+    payload.national_id = S(d.national_id, 40).toUpperCase();
     payload.tax_address = S(d.tax_address, 300);
-    for (const k of ['national_id', 'tax_address']) if (!payload[k]) missing.push(k);
   }
 
-  if (missing.length) return NextResponse.json({ error: 'incomplete', missing }, { status: 400 });
+  // 嚴格驗證(格式/長度)—— 亂填擋下,回具體欄位錯誤。匯錯錢很麻煩,寧可先擋。
+  const errs = validatePayout(payload as unknown as PayoutInput);
+  if (errs.length) return NextResponse.json({ error: 'invalid', fields: errs }, { status: 400 });
 
   const enc_payload = encryptJson(payload);
   const { error } = await r.db.from('talent_payout_details').upsert({

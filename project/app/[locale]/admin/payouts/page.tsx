@@ -144,6 +144,7 @@ function PayoutDetails({ talentId, gross }: { talentId: string; gross: number })
           <Row k="帳號" v={x.account_number} />
           <Row k="IBAN" v={x.iban} />
           <Row k="SWIFT/BIC" v={x.swift} />
+          <Row k="分行代碼" v={x.bank_code} />
         </>
       ) : (
         <>

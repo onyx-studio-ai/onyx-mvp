@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { DollarSign, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { StatModule } from '@/components/dashboard/cards';
 import { taxNotice } from '@/lib/payout-policy';
+import { validatePayout, type PayoutInput } from '@/lib/payout-validation';
 
 type Earning = { id: string; order_type: string | null; commission_amount: number | null; status: string | null; created_at: string };
 type Totals = { paid: number; pending: number; total: number };
@@ -57,13 +58,17 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
   const isTWbank = (f.bank_country || '').trim().toUpperCase() === 'TW';
 
   async function save() {
-    setErr(''); setMsg(''); setBusy(true);
+    setErr(''); setMsg('');
+    const details = { ...f, tax_location: taxLoc, tw_resident: twResident };
+    // 前端先驗一次(即時提示);後端還會再硬擋一次。
+    const errs = validatePayout({ method, ...details } as PayoutInput);
+    if (errs.length) { setErr(errs[0].msg); return; }
+    setBusy(true);
     try {
-      const details = { ...f, tax_location: taxLoc, tw_resident: twResident };
       const r = await fetch('/api/talent/payout-details', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ method, details }) });
       const j = await r.json();
       if (!r.ok) {
-        if (j.error === 'incomplete') setErr(tx('請把必填欄位(標 *)補齊。', '请把必填栏位(标 *)补齐。', 'Please complete all required (*) fields.'));
+        if (j.error === 'invalid' && j.fields?.length) setErr(j.fields[0].msg);
         else if (j.error === 'payout_enc_unconfigured') setErr(tx('收款系統維護中,請稍後再填。', '收款系统维护中,请稍后再填。', 'Payout setup is under maintenance — please try again later.'));
         else setErr(j.error || tx('儲存失敗', '保存失败', 'Save failed'));
       } else { setCompleted(true); setMsg(tx('✓ 已儲存收款資料', '✓ 已保存收款资料', '✓ Payout details saved')); }
@@ -113,7 +118,8 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
           <div><label className={lbl}>{tx('銀行所在國(TW=台灣本地)', '银行所在国(TW=台湾本地)', 'Bank country (TW = local)')} *</label><input className={inputCls} value={f.bank_country || ''} onChange={(e) => set('bank_country', e.target.value)} placeholder="TW / US / TH…" /></div>
           <div><label className={lbl}>{tx('帳號', '账号', 'Account number')} *</label><input className={inputCls} value={f.account_number || ''} onChange={(e) => set('account_number', e.target.value)} /></div>
           <div><label className={lbl}>IBAN <span className="text-gray-600">{tx('(有才填)', '(有才填)', '(if any)')}</span></label><input className={inputCls} value={f.iban || ''} onChange={(e) => set('iban', e.target.value)} /></div>
-          <div><label className={lbl}>SWIFT / BIC {isTWbank ? <span className="text-gray-600">{tx('(海外必填)', '(海外必填)', '(intl required)')}</span> : <span className="text-amber-400">*</span>}</label><input className={inputCls} value={f.swift || ''} onChange={(e) => set('swift', e.target.value)} /></div>
+          <div><label className={lbl}>SWIFT / BIC {isTWbank ? <span className="text-gray-600">{tx('(選填)', '(选填)', '(optional)')}</span> : <span className="text-amber-400">*</span>}</label><input className={inputCls} value={f.swift || ''} onChange={(e) => set('swift', e.target.value)} placeholder="CHASUS33" /></div>
+          {isTWbank && <div><label className={lbl}>{tx('銀行分行代碼(7碼)', '银行分行代码(7码)', 'Branch code (7 digits)')} <span className="text-amber-400">*</span></label><input className={inputCls} value={f.bank_code || ''} onChange={(e) => set('bank_code', e.target.value)} placeholder={tx('3碼銀行+4碼分行 例:8220123', '3码银行+4码分行 例:8220123', 'e.g. 8220123')} /></div>}
           <div><label className={lbl}>{tx('分行', '分行', 'Branch')}</label><input className={inputCls} value={f.bank_branch || ''} onChange={(e) => set('bank_branch', e.target.value)} /></div>
         </div>
       )}
@@ -201,6 +207,8 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
       const j = await r.json();
       if (!r.ok) {
         if (j.error === 'payout_details_required') setErr(tx('請先完成上方「收款設定」再請款。', '请先完成上方「收款设置」再请款。', 'Please complete Payout details above first.'));
+        else if (j.error === 'no_balance') setErr(tx('您目前沒有可請款的款項 —— 接到案子、或您的 AI 聲音被使用後才會有。', '您目前没有可请款的款项 —— 接到案子、或您的 AI 声音被使用后才会有。', 'You have no balance to withdraw yet — it appears after you take on work or your AI voice is used.'));
+        else if (j.error === 'exceeds_balance') setErr(tx(`超過可請款餘額(US$${j.balance})。`, `超过可请款余额(US$${j.balance})。`, `Exceeds your available balance (US$${j.balance}).`));
         else setErr(j.error || tx('送出失敗', '送出失败', 'Failed'));
       } else { setMsg(tx('✓ 已發起請款,請到下方完成發票', '✓ 已发起请款,请到下方完成发票', '✓ Request created — finish the invoice below')); setNote(''); await load(); }
     } catch { setErr(tx('送出失敗', '送出失败', 'Failed')); }

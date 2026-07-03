@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
   const { data: pd } = await r.db.from('talent_payout_details').select('completed').eq('talent_id', talentId).maybeSingle();
   if (!pd?.completed) return NextResponse.json({ error: 'payout_details_required' }, { status: 400 });
 
+  // 🔒 堵漏洞:沒有可請款款項就不能請款。可請款餘額 = 未付(pending)earnings 加總(USD)。
+  const { data: earns } = await r.db.from('talent_earnings').select('commission_amount').eq('talent_id', talentId).eq('status', 'pending');
+  const balance = (earns || []).reduce((sum, x) => sum + (Number(x.commission_amount) || 0), 0);
+  if (balance <= 0) return NextResponse.json({ error: 'no_balance' }, { status: 400 });
+  // 餘額以 USD 計;請款幣別為 USD 時才做上限檢查(跨幣別上限之後精算)。
+  if (currency === 'USD' && amount > balance + 0.01) return NextResponse.json({ error: 'exceeds_balance', balance }, { status: 400 });
+
   // 發票號:ONX-INV-yyMMdd-當天序號。
   const d = new Date();
   const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
