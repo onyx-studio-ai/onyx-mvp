@@ -128,46 +128,57 @@ function PayoutDetails({ talentId, gross }: { talentId: string; gross: number })
   if (status === 'error') return <span className="text-xs text-red-600">{err}</span>;
   if (status === 'none') return <span className="text-xs text-gray-500">配音員尚未填寫收款資料。</span>;
 
-  const x = d!.details;
-  const method = d!.payout_method;
-  const taxLoc = d!.region; // 'TW' | 'overseas'
-  const dd = gross > 0 ? computeDeductions({ gross, method: method === 'bank' ? 'bank' : 'paypal', bankCountry: x.bank_country, taxLocation: taxLoc === 'TW' ? 'TW' : 'overseas', twResident: !!x.tw_resident }) : null;
-  const isIntl = !(method === 'bank' && (x.bank_country || '').toUpperCase() === 'TW');
-  const belowMin = isIntl && gross > 0 && gross < MIN_PAYOUT_USD_INTL;
+  const x = d!.details as Record<string, unknown>;
+  const twd = x.twd && typeof x.twd === 'object' ? x.twd as Record<string, string> : null;
+  const usd = x.usd && typeof x.usd === 'object' ? x.usd as Record<string, string> : null;
+  const t0 = (x.tax && typeof x.tax === 'object' ? x.tax : {}) as Record<string, unknown>;
+  const taxLocation = t0.tax_location === 'TW' ? 'TW' : 'overseas';
+  const twRes = t0.tw_resident === true;
+  const dd = gross > 0 && taxLocation === 'TW' ? computeDeductions({ gross, method: 'bank', bankCountry: 'X', taxLocation: 'TW', twResident: twRes }) : null;
+  void MIN_PAYOUT_USD_INTL;
   return (
     <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3 text-xs space-y-1 max-w-md">
-      <div className="font-medium text-violet-800 mb-1">{method === 'bank' ? '🏦 銀行匯款' : '💸 PayPal'}</div>
-      {method === 'bank' ? (
-        <>
-          <Row k="帳戶姓名" v={x.account_holder} />
-          <Row k="銀行" v={[x.bank_name, x.bank_country ? `(${x.bank_country})` : '', x.bank_branch].filter(Boolean).join(' ')} />
-          <Row k="帳號" v={x.account_number} />
-          <Row k="IBAN" v={x.iban} />
-          <Row k="SWIFT/BIC" v={x.swift} />
-          <Row k="分行代碼" v={x.bank_code} />
-        </>
-      ) : (
-        <>
-          <Row k="姓名/公司" v={x.account_holder} />
-          <Row k="PayPal" v={x.paypal_email} />
-          <p className="text-[11px] text-amber-700 pt-1">付款前請向配音員索取 invoice。</p>
-        </>
+      {twd && (
+        <div>
+          <div className="font-medium text-violet-800 mb-0.5">💰 台幣收款</div>
+          <Row k="戶名" v={twd.account_holder} />
+          <Row k="銀行" v={[twd.bank_name, twd.bank_branch].filter(Boolean).join(' ')} />
+          <Row k="代碼" v={twd.bank_code} />
+          <Row k="帳號" v={twd.account_number} />
+        </div>
+      )}
+      {usd && (
+        <div className={twd ? 'border-t border-violet-200 mt-1.5 pt-1.5' : ''}>
+          <div className="font-medium text-violet-800 mb-0.5">💵 美金收款 · {usd.method === 'paypal' ? 'PayPal' : '外幣帳戶'}</div>
+          {usd.method === 'paypal' ? (
+            <>
+              <Row k="姓名/公司" v={usd.account_holder} />
+              <Row k="PayPal" v={usd.paypal_email} />
+              <p className="text-[11px] text-amber-700">付款前請向配音員索取 invoice。</p>
+            </>
+          ) : (
+            <>
+              <Row k="戶名" v={usd.account_holder} />
+              <Row k="銀行" v={usd.bank_name} />
+              <Row k="帳號" v={usd.account_number} />
+              <Row k="SWIFT/BIC" v={usd.swift} />
+              <Row k="IBAN" v={usd.iban} />
+            </>
+          )}
+        </div>
       )}
       <div className="border-t border-violet-200 mt-1.5 pt-1.5">
-        <Row k="稅務" v={taxLoc === 'TW' ? (x.tw_resident ? '台灣居住者(≥2萬才扣10%+2.11%)' : '台灣非居住者(扣20%)') : '海外(不扣台灣稅)'} />
-        {taxLoc === 'TW' && <Row k="身分/居留證" v={x.national_id} />}
-        {taxLoc === 'TW' && <Row k="地址" v={x.tax_address} />}
+        <Row k="稅務" v={taxLocation === 'TW' ? (twRes ? '台灣居住者(≥2萬才扣10%+2.11%)' : '台灣非居住者(扣20%)') : '海外(不扣台灣稅)'} />
+        {taxLocation === 'TW' && <Row k="身分/居留證" v={t0.national_id as string} />}
+        {taxLocation === 'TW' && <Row k="地址" v={t0.tax_address as string} />}
       </div>
       {dd && (
         <div className="border-t border-violet-200 mt-1.5 pt-1.5">
           <div className="text-violet-800 font-medium mb-0.5">扣繳試算(供參)</div>
           <Row k="請款額" v={String(gross)} />
-          {dd.tax > 0 && <Row k={taxLoc === 'TW' && x.tw_resident ? '扣繳稅 10%' : '扣繳稅 20%'} v={`-${dd.tax}`} />}
+          {dd.tax > 0 && <Row k={twRes ? '扣繳稅 10%' : '扣繳稅 20%'} v={`-${dd.tax}`} />}
           {dd.nhi > 0 && <Row k="二代健保 2.11%" v={`-${dd.nhi}`} />}
-          <Row k="手續費" v={dd.feeNote} />
-          <Row k="實收(估)" v={String(dd.net)} />
-          <p className="text-[10px] text-gray-500 pt-1">試算供參,實際稅額以會計為準;手續費單位依收款方式(台灣 NT$ / 國際 US$)。</p>
-          {belowMin && <p className="text-[10px] text-amber-700 pt-0.5">⚠ 低於國際最低請款 US${MIN_PAYOUT_USD_INTL},建議累積後再撥。</p>}
+          <p className="text-[10px] text-gray-500 pt-1">稅供參、以會計為準;另收轉帳手續費(台幣 NT$30 / 國際 US$20 / PayPal ~5%)。</p>
         </div>
       )}
     </div>

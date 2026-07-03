@@ -1,41 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { encryptJson, decryptJson, payoutEncConfigured } from '@/lib/payout-crypto';
-import { validatePayout, type PayoutInput } from '@/lib/payout-validation';
+import { validatePayout, hasTwd, hasUsd, type PayoutInput } from '@/lib/payout-validation';
 
 /*
-  GET/PUT /api/talent/payout-details — the talent manages their OWN payout details
-  (session-scoped), stored encrypted in the restricted talent_payout_details table.
-
-  Organised by PAYMENT METHOD (not region), anyone worldwide:
-   - method 'bank'   → account holder, bank name, bank country, account no / IBAN,
-     SWIFT/BIC (required when the bank is outside Taiwan), branch.
-   - method 'paypal' → account holder + PayPal email (talent invoices us per payout).
-
-  Tax profile (drives withholding, shown to Onyx for payout):
-   - tax_location 'overseas' → no Taiwan tax.
-   - tax_location 'TW' + tw_resident → resident rules (10%+NHI over NT$20,000).
-   - tax_location 'TW' + non-resident → 20% withholding.
-   TW cases also collect national_id + address for the 扣繳憑單.
+  GET/PUT /api/talent/payout-details — 配音員自己的收款資料(session-scoped),加密存
+  於受限表 talent_payout_details。兩組結構(台灣人台幣戶 / 外幣戶是不同帳號):
+    twd = 台幣收款(台灣本地銀行);usd = 美金收款(外幣銀行 或 PayPal)。至少填一組。
+  稅務(tax)共用一份 —— 海外免台灣稅;台灣居住者/非居住者分別扣繳。
 */
 
 const S = (v: unknown, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const obj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
 
 export async function GET(request: NextRequest) {
   const r = await resolveTalentFromRequest(request, 'id');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
   if (!payoutEncConfigured()) return NextResponse.json({ configured: false }, { status: 200 });
 
-  const { data } = await r.db.from('talent_payout_details').select('region, payout_method, enc_payload, completed').eq('talent_id', (r.talent as { id: string }).id).maybeSingle();
-  let details: Record<string, unknown> = {};
-  if (data?.enc_payload) { try { details = decryptJson(data.enc_payload as string); } catch { details = {}; } }
-  return NextResponse.json({
-    configured: true,
-    method: data?.payout_method || '',
-    tax_location: data?.region || '',
-    completed: !!data?.completed,
-    details,
-  });
+  const { data } = await r.db.from('talent_payout_details').select('enc_payload, completed').eq('talent_id', (r.talent as { id: string }).id).maybeSingle();
+  let p: Record<string, unknown> = {};
+  if (data?.enc_payload) { try { p = decryptJson(data.enc_payload as string); } catch { p = {}; } }
+  return NextResponse.json({ configured: true, twd: p.twd || null, usd: p.usd || null, tax: p.tax || {}, completed: !!data?.completed });
 }
 
 export async function PUT(request: NextRequest) {
@@ -46,48 +32,26 @@ export async function PUT(request: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const method = body.method === 'bank' ? 'bank' : body.method === 'paypal' ? 'paypal' : '';
-  if (!method) return NextResponse.json({ error: '請選擇收款方式(銀行匯款 / PayPal)' }, { status: 400 });
-  const d = (body.details && typeof body.details === 'object' ? body.details : {}) as Record<string, unknown>;
+  const tin = obj(body.twd), uin = obj(body.usd), tax = obj(body.tax);
+  const twd = { account_holder: S(tin.account_holder, 120), bank_name: S(tin.bank_name, 120), bank_branch: S(tin.bank_branch, 120), bank_code: S(tin.bank_code, 20), account_number: S(tin.account_number, 60) };
+  const usd = { method: uin.method === 'paypal' ? 'paypal' : 'bank', account_holder: S(uin.account_holder, 120), bank_name: S(uin.bank_name, 120), swift: S(uin.swift, 30).toUpperCase(), iban: S(uin.iban, 60).toUpperCase(), account_number: S(uin.account_number, 60), paypal_email: S(uin.paypal_email, 200) };
+  const taxLocation = tax.tax_location === 'TW' ? 'TW' : tax.tax_location === 'overseas' ? 'overseas' : '';
+  const twResident = taxLocation === 'TW' ? (tax.tw_resident === true || tax.tw_resident === 'true') : false;
+  const nationalId = S(tax.national_id, 40).toUpperCase();
+  const taxAddress = S(tax.tax_address, 300);
 
-  // ── Tax profile (common to both methods) ──
-  const taxLocation = d.tax_location === 'TW' ? 'TW' : d.tax_location === 'overseas' ? 'overseas' : '';
-  if (!taxLocation) return NextResponse.json({ error: '請選擇稅務所在地(台灣 / 海外)' }, { status: 400 });
-  const twResident = taxLocation === 'TW' ? d.tw_resident === true || d.tw_resident === 'true' : false;
-
-  const payload: Record<string, string | boolean> = {
-    method,
-    account_holder: S(d.account_holder, 120),
-    tax_location: taxLocation,
-    tw_resident: twResident,
-  };
-
-  if (method === 'bank') {
-    payload.bank_name = S(d.bank_name, 120);
-    payload.bank_country = S(d.bank_country, 60).toUpperCase();
-    payload.account_number = S(d.account_number, 60);
-    payload.iban = S(d.iban, 60).toUpperCase();
-    payload.swift = S(d.swift, 30).toUpperCase();
-    payload.bank_code = S(d.bank_code, 20);   // 台灣 7 碼分行代碼
-    payload.bank_branch = S(d.bank_branch, 120);
-  } else {
-    payload.paypal_email = S(d.paypal_email, 200);
-  }
-  if (taxLocation === 'TW') {
-    payload.national_id = S(d.national_id, 40).toUpperCase();
-    payload.tax_address = S(d.tax_address, 300);
-  }
-
-  // 嚴格驗證(格式/長度)—— 亂填擋下,回具體欄位錯誤。匯錯錢很麻煩,寧可先擋。
-  const errs = validatePayout(payload as unknown as PayoutInput);
+  const forVal: PayoutInput = { twd, usd, tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress };
+  const errs = validatePayout(forVal);
   if (errs.length) return NextResponse.json({ error: 'invalid', fields: errs }, { status: 400 });
 
-  const enc_payload = encryptJson(payload);
+  const useTwd = hasTwd(forVal), useUsd = hasUsd(forVal);
+  const payload = { twd: useTwd ? twd : null, usd: useUsd ? usd : null, tax: { tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress } };
+  const method = [useTwd ? 'twd' : '', useUsd ? (usd.method === 'paypal' ? 'usd_paypal' : 'usd_bank') : ''].filter(Boolean).join(',');
+
   const { error } = await r.db.from('talent_payout_details').upsert({
     talent_id: (r.talent as { id: string }).id,
-    region: taxLocation, payout_method: method, enc_payload, completed: true, updated_at: new Date().toISOString(),
+    region: taxLocation, payout_method: method, enc_payload: encryptJson(payload), completed: true, updated_at: new Date().toISOString(),
   }, { onConflict: 'talent_id' });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ ok: true, method, tax_location: taxLocation, completed: true });
+  return NextResponse.json({ ok: true, completed: true });
 }

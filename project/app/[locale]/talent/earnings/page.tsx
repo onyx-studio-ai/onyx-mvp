@@ -19,17 +19,20 @@ type Earning = { id: string; order_type: string | null; commission_amount: numbe
 type Totals = { paid: number; pending: number; total: number };
 type PayoutReq = { id: string; invoice_number: string; amount: number; currency: string; note: string | null; invoice_type: string; invoice_url: string | null; consent_at: string | null; status: string; created_at: string };
 
-// 收款設定 — the talent fills in their own payout details (encrypted, restricted
-// table). Organised by METHOD (bank / PayPal), not region; a tax-residence question
-// drives the Taiwan withholding notice. Never shown to clients; only Onyx pays.
+// 收款設定 — 配音員自己填(加密、受限表)。台幣戶與外幣戶是不同帳號,拆成台幣區/美金區,
+// 稅務共用一份。至少填一種;請款選哪種幣別就要有對應那組。絕不給客戶看。
 function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a: string, b: string, c: string) => string; locale: string; pending: number }) {
   const [loaded, setLoaded] = useState(false);
   const [configured, setConfigured] = useState(true);
-  const [method, setMethod] = useState<'bank' | 'paypal' | ''>('');
+  const [twdOn, setTwdOn] = useState(false);
+  const [usdOn, setUsdOn] = useState(false);
+  const [usdMethod, setUsdMethod] = useState<'bank' | 'paypal'>('bank');
+  const [twd, setTwd] = useState<Record<string, string>>({});
+  const [usd, setUsd] = useState<Record<string, string>>({});
   const [taxLoc, setTaxLoc] = useState<'TW' | 'overseas' | ''>('');
   const [twResident, setTwResident] = useState(false);
+  const [tax, setTax] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
-  const [f, setF] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
@@ -41,31 +44,38 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
         const r = await fetch('/api/talent/payout-details', { headers: { Authorization: `Bearer ${token}` } });
         const j = await r.json();
         if (j.configured === false) setConfigured(false);
-        setMethod(j.method || '');
-        setTaxLoc(j.tax_location || '');
-        const dt = j.details && typeof j.details === 'object' ? j.details : {};
-        setTwResident(dt.tw_resident === true);
-        setF(dt);
+        const tw = j.twd && typeof j.twd === 'object' ? j.twd : null;
+        const us = j.usd && typeof j.usd === 'object' ? j.usd : null;
+        const tx0 = j.tax && typeof j.tax === 'object' ? j.tax : {};
+        if (tw) { setTwdOn(true); setTwd(tw); }
+        if (us) { setUsdOn(true); setUsd(us); setUsdMethod(us.method === 'paypal' ? 'paypal' : 'bank'); }
+        setTaxLoc(tx0.tax_location || '');
+        setTwResident(tx0.tw_resident === true);
+        setTax({ national_id: tx0.national_id || '', tax_address: tx0.tax_address || '' });
         setCompleted(!!j.completed);
       } catch { /* leave empty */ }
       setLoaded(true);
     })();
   }, [token]);
 
-  const set = (k: string, v: string) => { setF((p) => ({ ...p, [k]: v })); setMsg(''); };
+  const setT = (k: string, v: string) => { setTwd((p) => ({ ...p, [k]: v })); setMsg(''); };
+  const setU = (k: string, v: string) => { setUsd((p) => ({ ...p, [k]: v })); setMsg(''); };
+  const setTx = (k: string, v: string) => { setTax((p) => ({ ...p, [k]: v })); setMsg(''); };
   const inputCls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-amber-400/60';
   const lbl = 'block text-xs text-gray-400 mb-1';
-  const isTWbank = (f.bank_country || '').trim().toUpperCase() === 'TW';
 
   async function save() {
     setErr(''); setMsg('');
-    const details = { ...f, tax_location: taxLoc, tw_resident: twResident };
-    // 前端先驗一次(即時提示);後端還會再硬擋一次。
-    const errs = validatePayout({ method, ...details } as PayoutInput);
+    const payload = {
+      twd: twdOn ? twd : undefined,
+      usd: usdOn ? { ...usd, method: usdMethod } : undefined,
+      tax: { tax_location: taxLoc, tw_resident: twResident, national_id: tax.national_id || '', tax_address: tax.tax_address || '' },
+    };
+    const errs = validatePayout({ twd: payload.twd, usd: payload.usd, tax_location: taxLoc, tw_resident: twResident, national_id: tax.national_id, tax_address: tax.tax_address } as PayoutInput);
     if (errs.length) { setErr(errs[0].msg); return; }
     setBusy(true);
     try {
-      const r = await fetch('/api/talent/payout-details', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ method, details }) });
+      const r = await fetch('/api/talent/payout-details', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
       const j = await r.json();
       if (!r.ok) {
         if (j.error === 'invalid' && j.fields?.length) setErr(j.fields[0].msg);
@@ -96,82 +106,91 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
     return wrap(<p className="text-xs text-gray-400">{tx('收款設定即將開放,請稍後再回來填寫。', '收款设置即将开放,请稍后再回来填写。', 'Payout setup is coming online shortly — please check back soon.')}</p>);
   }
 
+  const secTitle = 'text-xs font-semibold text-white';
+
   return wrap(
     <>
       {pending > 0 && !completed && (
         <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2 mb-4">{tx('您有待付款項 —— 請先完成收款設定,我們才能付款給您。', '您有待付款项 —— 请先完成收款设置,我们才能付款给您。', 'You have a pending payout — please complete this so we can pay you.')}</p>
       )}
 
-      <label className={lbl}>{tx('收款方式', '收款方式', 'Payment method')} *</label>
-      <div className="flex gap-2 mb-4">
-        {(['bank', 'paypal'] as const).map((m) => (
-          <button key={m} type="button" onClick={() => { setMethod(m); setMsg(''); }} className={`text-xs px-3 py-1.5 rounded-full border transition ${method === m ? 'bg-amber-500/20 border-amber-400/50 text-amber-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
-            {m === 'bank' ? tx('銀行匯款', '银行汇款', 'Bank transfer') : 'PayPal'}
+      {/* 稅務(共用一份) */}
+      <label className={lbl}>{tx('稅務所在地', '税务所在地', 'Tax residence')} *</label>
+      <div className="flex gap-2 mb-3">
+        {(['overseas', 'TW'] as const).map((t) => (
+          <button key={t} type="button" onClick={() => { setTaxLoc(t); setMsg(''); }} className={`text-xs px-3 py-1.5 rounded-full border transition ${taxLoc === t ? 'bg-sky-500/20 border-sky-400/50 text-sky-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+            {t === 'overseas' ? tx('海外(境外完成)', '海外(境外完成)', 'Overseas') : tx('台灣', '台湾', 'Taiwan')}
           </button>
         ))}
       </div>
+      {taxLoc === 'TW' && (
+        <div className="mb-3 space-y-3">
+          <div>
+            <label className={lbl}>{tx('你是台灣稅務居住者嗎?', '你是台湾税务居住者吗?', 'Taiwan tax resident?')} *</label>
+            <p className="text-[11px] text-gray-500 mb-1.5">{tx('本國籍(有身分證),或外國籍持居留證且年度居留 ≥183 天 = 居住者。', '本国籍(有身份证),或外国籍持居留证且年度居留 ≥183 天 = 居住者。', 'Local citizen (with ID), or foreign national with an ARC residing ≥183 days = resident.')}</p>
+            <div className="flex gap-2">
+              {[true, false].map((v) => (
+                <button key={String(v)} type="button" onClick={() => { setTwResident(v); setMsg(''); }} className={`text-xs px-3 py-1.5 rounded-full border transition ${twResident === v ? 'bg-sky-500/20 border-sky-400/50 text-sky-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+                  {v ? tx('是,居住者', '是,居住者', 'Yes, resident') : tx('否,非居住者(<183天)', '否,非居住者(<183天)', 'No, non-resident')}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label className={lbl}>{tx('身分證 / 居留證號', '身份证 / 居留证号', 'National ID / ARC')} *</label><input className={inputCls} value={tax.national_id || ''} onChange={(e) => setTx('national_id', e.target.value)} placeholder="A123456789" /></div>
+            <div><label className={lbl}>{tx('地址(扣繳憑單用)', '地址(扣缴凭单用)', 'Address (for withholding)')} *</label><input className={inputCls} value={tax.tax_address || ''} onChange={(e) => setTx('tax_address', e.target.value)} /></div>
+          </div>
+        </div>
+      )}
+      {taxLoc && <p className="text-[11px] text-sky-200/80 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 mb-4">{taxNotice({ taxLocation: taxLoc, twResident }, locale)}</p>}
 
-      {method === 'bank' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div className="sm:col-span-2"><label className={lbl}>{tx('帳戶姓名(法定)', '账户姓名(法定)', 'Account holder (legal name)')} *</label><input className={inputCls} value={f.account_holder || ''} onChange={(e) => set('account_holder', e.target.value)} /></div>
-          <div><label className={lbl}>{tx('銀行名稱', '银行名称', 'Bank name')} *</label><input className={inputCls} value={f.bank_name || ''} onChange={(e) => set('bank_name', e.target.value)} placeholder={tx('例如:國泰世華', '例如:国泰世华', 'e.g. Cathay United')} /></div>
-          <div><label className={lbl}>{tx('分行', '分行', 'Branch')}</label><input className={inputCls} value={f.bank_branch || ''} onChange={(e) => set('bank_branch', e.target.value)} /></div>
-          <div><label className={lbl}>{tx('銀行所在國(TW=台灣本地)', '银行所在国(TW=台湾本地)', 'Bank country (TW = local)')} *</label><input className={inputCls} value={f.bank_country || ''} onChange={(e) => set('bank_country', e.target.value)} placeholder="TW / US / TH…" /></div>
-          <div><label className={lbl}>{tx('帳號', '账号', 'Account number')} *</label><input className={inputCls} value={f.account_number || ''} onChange={(e) => set('account_number', e.target.value)} /></div>
-          <div><label className={lbl}>IBAN</label><input className={inputCls} value={f.iban || ''} onChange={(e) => set('iban', e.target.value)} /></div>
-          <div><label className={lbl}>SWIFT / BIC <span className="text-gray-600">{tx('(選填)', '(选填)', '(optional)')}</span></label><input className={inputCls} value={f.swift || ''} onChange={(e) => set('swift', e.target.value)} placeholder="CHASUS33" /></div>
-          {isTWbank && <div><label className={lbl}>{tx('銀行/分行代碼(3或7碼)', '银行/分行代码(3或7码)', 'Bank/branch code (3 or 7 digits)')} <span className="text-amber-400">*</span></label><input className={inputCls} value={f.bank_code || ''} onChange={(e) => set('bank_code', e.target.value)} placeholder={tx('3碼銀行代碼或7碼分行代碼', '3码银行代码或7码分行代码', '3-digit bank or 7-digit branch')} /></div>}
+      {/* 台幣收款 */}
+      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={twdOn} onChange={(e) => { setTwdOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>💰 {tx('台幣收款(TWD)', '台币收款(TWD)', 'TWD payout')}</span></label>
+      {twdOn && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 pl-6">
+          <div className="sm:col-span-2"><label className={lbl}>{tx('戶名(法定)', '户名(法定)', 'Account holder')} *</label><input className={inputCls} value={twd.account_holder || ''} onChange={(e) => setT('account_holder', e.target.value)} /></div>
+          <div><label className={lbl}>{tx('銀行名稱', '银行名称', 'Bank')} *</label><input className={inputCls} value={twd.bank_name || ''} onChange={(e) => setT('bank_name', e.target.value)} placeholder={tx('例如:國泰世華', '例如:国泰世华', 'e.g. Cathay United')} /></div>
+          <div><label className={lbl}>{tx('分行', '分行', 'Branch')}</label><input className={inputCls} value={twd.bank_branch || ''} onChange={(e) => setT('bank_branch', e.target.value)} /></div>
+          <div><label className={lbl}>{tx('銀行/分行代碼(3或7碼)', '银行/分行代码(3或7码)', 'Bank/branch code')} *</label><input className={inputCls} value={twd.bank_code || ''} onChange={(e) => setT('bank_code', e.target.value)} placeholder={tx('3或7碼', '3或7码', '3 or 7 digits')} /></div>
+          <div><label className={lbl}>{tx('帳號', '账号', 'Account number')} *</label><input className={inputCls} value={twd.account_number || ''} onChange={(e) => setT('account_number', e.target.value)} /></div>
         </div>
       )}
 
-      {method === 'paypal' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div><label className={lbl}>{tx('帳戶姓名 / 公司名(法定)', '账户姓名 / 公司名(法定)', 'Account holder / company (legal)')} *</label><input className={inputCls} value={f.account_holder || ''} onChange={(e) => set('account_holder', e.target.value)} /></div>
-          <div><label className={lbl}>PayPal Email *</label><input className={inputCls} value={f.paypal_email || ''} onChange={(e) => set('paypal_email', e.target.value)} placeholder="you@example.com" /></div>
-          <p className="sm:col-span-2 text-[11px] text-gray-500">{tx('每次付款前請提供 invoice(email 給我們);PayPal 跨境約 5% 手續費由收款方負擔。', '每次付款前请提供 invoice(email 给我们);PayPal 跨境约 5% 手续费由收款方负担。', 'Send us an invoice before each payment; the PayPal cross-border fee (~5%) is borne by the recipient.')}</p>
-        </div>
-      )}
-
-      {method && (
-        <>
-          <label className={lbl}>{tx('稅務所在地', '税务所在地', 'Tax residence')} *</label>
+      {/* 美金收款 */}
+      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={usdOn} onChange={(e) => { setUsdOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>💵 {tx('美金收款(USD)', '美金收款(USD)', 'USD payout')}</span></label>
+      {usdOn && (
+        <div className="mb-4 pl-6">
           <div className="flex gap-2 mb-3">
-            {(['overseas', 'TW'] as const).map((t) => (
-              <button key={t} type="button" onClick={() => { setTaxLoc(t); setMsg(''); }} className={`text-xs px-3 py-1.5 rounded-full border transition ${taxLoc === t ? 'bg-sky-500/20 border-sky-400/50 text-sky-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
-                {t === 'overseas' ? tx('海外(境外完成)', '海外(境外完成)', 'Overseas (work outside Taiwan)') : tx('台灣', '台湾', 'Taiwan')}
+            {(['bank', 'paypal'] as const).map((m) => (
+              <button key={m} type="button" onClick={() => { setUsdMethod(m); setMsg(''); }} className={`text-xs px-3 py-1.5 rounded-full border transition ${usdMethod === m ? 'bg-amber-500/20 border-amber-400/50 text-amber-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+                {m === 'bank' ? tx('外幣銀行帳戶', '外币银行账户', 'Foreign-currency bank') : 'PayPal'}
               </button>
             ))}
           </div>
-
-          {taxLoc === 'TW' && (
-            <div className="mb-3 space-y-3">
-              <div>
-                <label className={lbl}>{tx('你是台灣稅務居住者嗎?', '你是台湾税务居住者吗?', 'Are you a Taiwan tax resident?')} *</label>
-                <p className="text-[11px] text-gray-500 mb-1.5">{tx('本國籍(有身分證),或外國籍持居留證且年度居留 ≥183 天 = 居住者。', '本国籍(有身份证),或外国籍持居留证且年度居留 ≥183 天 = 居住者。', 'Local citizen (with ID), or a foreign national with an ARC residing ≥183 days = resident.')}</p>
-                <div className="flex gap-2">
-                  {[true, false].map((v) => (
-                    <button key={String(v)} type="button" onClick={() => { setTwResident(v); setMsg(''); }} className={`text-xs px-3 py-1.5 rounded-full border transition ${twResident === v ? 'bg-sky-500/20 border-sky-400/50 text-sky-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
-                      {v ? tx('是,居住者', '是,居住者', 'Yes, resident') : tx('否,非居住者(<183天)', '否,非居住者(<183天)', 'No, non-resident (<183 days)')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className={lbl}>{tx('身分證 / 居留證號', '身份证 / 居留证号', 'National ID / ARC number')} *</label><input className={inputCls} value={f.national_id || ''} onChange={(e) => set('national_id', e.target.value)} placeholder="A123456789" /></div>
-                <div><label className={lbl}>{tx('地址(扣繳憑單用)', '地址(扣缴凭单用)', 'Address (for withholding statement)')} *</label><input className={inputCls} value={f.tax_address || ''} onChange={(e) => set('tax_address', e.target.value)} /></div>
-              </div>
-            </div>
-          )}
-
-          {taxLoc && (
-            <p className="text-[11px] text-sky-200/80 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 mb-4">{taxNotice({ taxLocation: taxLoc, twResident }, locale)}</p>
-          )}
-
-          <button onClick={save} disabled={busy} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2 text-sm transition">
-            {busy ? tx('儲存中…', '保存中…', 'Saving…') : tx('儲存收款資料', '保存收款资料', 'Save payout details')}
-          </button>
-        </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2"><label className={lbl}>{tx('戶名 / 公司名(法定)', '户名 / 公司名(法定)', 'Account holder / company')} *</label><input className={inputCls} value={usd.account_holder || ''} onChange={(e) => setU('account_holder', e.target.value)} /></div>
+            {usdMethod === 'bank' ? (
+              <>
+                <div><label className={lbl}>{tx('銀行名稱', '银行名称', 'Bank')} *</label><input className={inputCls} value={usd.bank_name || ''} onChange={(e) => setU('bank_name', e.target.value)} /></div>
+                <div><label className={lbl}>{tx('帳號', '账号', 'Account number')} *</label><input className={inputCls} value={usd.account_number || ''} onChange={(e) => setU('account_number', e.target.value)} /></div>
+                <div><label className={lbl}>SWIFT / BIC <span className="text-gray-600">{tx('(建議填)', '(建议填)', '(recommended)')}</span></label><input className={inputCls} value={usd.swift || ''} onChange={(e) => setU('swift', e.target.value)} placeholder="CHASUS33" /></div>
+                <div><label className={lbl}>IBAN</label><input className={inputCls} value={usd.iban || ''} onChange={(e) => setU('iban', e.target.value)} /></div>
+              </>
+            ) : (
+              <>
+                <div><label className={lbl}>PayPal Email *</label><input className={inputCls} value={usd.paypal_email || ''} onChange={(e) => setU('paypal_email', e.target.value)} placeholder="you@example.com" /></div>
+                <p className="sm:col-span-2 text-[11px] text-gray-500">{tx('PayPal 跨境約 5% 手續費由收款方負擔。', 'PayPal 跨境约 5% 手续费由收款方负担。', 'PayPal cross-border fee (~5%) is borne by the recipient.')}</p>
+              </>
+            )}
+          </div>
+        </div>
       )}
+
+      <p className="text-[11px] text-gray-500 mb-3">{tx('※ 請至少填一種收款方式(台幣或美金);請款時選哪種幣別,就要有對應那組帳戶。', '※ 请至少填一种收款方式(台币或美金);请款时选哪种币别,就要有对应那组账户。', '※ Fill at least one (TWD or USD); the currency you request must have a matching account.')}</p>
+
+      <button onClick={save} disabled={busy} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2 text-sm transition">
+        {busy ? tx('儲存中…', '保存中…', 'Saving…') : tx('儲存收款資料', '保存收款资料', 'Save payout details')}
+      </button>
     </>
   );
 }
