@@ -14,7 +14,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
-import { Briefcase, CheckCircle2, Archive } from 'lucide-react';
+import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
@@ -213,7 +213,7 @@ function AssignedDelivery({ orderId, deliveries, token, tx, onChanged }: {
         </div>
       ))}
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
-        {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('⬆ 上傳更多檔', '⬆ 上传更多档', '⬆ Upload more') : tx('⬆ 上傳完成音檔', '⬆ 上传完成音档', '⬆ Upload final audio')}
+        {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('上傳更多檔', '上传更多档', 'Upload more') : tx('上傳完成音檔', '上传完成音档', 'Upload final audio')}
         <input type="file" accept=".wav,.mp3,.m4a,.aac,.ogg,.flac,.zip" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
       {err && <p className="text-[10px] text-red-400">{err}</p>}
@@ -270,7 +270,7 @@ function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
         </div>
       ))}
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
-        {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('⬆ 上傳更多檔', '⬆ 上传更多档', '⬆ Upload more') : tx('⬆ 上傳完成音檔', '⬆ 上传完成音档', '⬆ Upload final audio')}
+        {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('上傳更多檔', '上传更多档', 'Upload more') : tx('上傳完成音檔', '上传完成音档', 'Upload final audio')}
         <input type="file" accept={ACCEPT} className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
       <p className="text-[10px] text-gray-300">{tx('可上傳多個完成檔 / 修改檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '可上传多个完成档 / 修改档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Upload several final / revision files (48kHz/24-bit WAV preferred; zip for bundles)')}</p>
@@ -302,7 +302,7 @@ function ReauditUpload({ quote, token, tx, onDone }: { quote: Quote; token: stri
   return (
     <div className="mt-1.5">
       <label className="inline-flex items-center gap-1.5 text-xs bg-sky-500/15 border border-sky-500/40 text-sky-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-sky-500/25 transition">
-        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳新的試音', '⬆ 上传新的试音', '⬆ Upload new take')}
+        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳新的試音', '上传新的试音', 'Upload new take')}
         <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
       {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
@@ -344,7 +344,7 @@ function AddExtraDemos({ quote, token, tx, onDone }: { quote: Quote; token: stri
         </div>
       )}
       <label className="inline-flex items-center gap-1.5 text-xs bg-violet-500/15 border border-violet-500/40 text-violet-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-violet-500/25 transition">
-        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳一段 demo', '⬆ 上传一段 demo', '⬆ Add a demo')}
+        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳一段 demo', '上传一段 demo', 'Add a demo')}
         <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
       <p className="text-[11px] text-gray-300 mt-1">{tx('可上傳多段(不同語氣 / 角色);不會取代原試音。', '可上传多段(不同语气 / 角色);不会取代原试音。', 'Add several (different tones / characters); won’t replace your audition.')}</p>
@@ -424,7 +424,7 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
       {/* header — title + 案號, like the License # on a Voices agreement */}
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#C9A86A]/25 bg-[#C9A86A]/[0.08]">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-base">📄</span>
+          <FileText className="w-4 h-4 text-[#E4CB94] shrink-0" />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[#E4CB94]">{tx('授權書 · Job Agreement', '授权书 · Job Agreement', 'Job Agreement')}</p>
             <p className="text-[11px] text-gray-300">{tx('接單前請確認以下條款,雙方依此履約。', '接单前请确认以下条款,双方依此履约。', 'Review the full terms before accepting.')}</p>
@@ -577,7 +577,7 @@ export default function Opportunities() {
         const titleOf = (bid: string) => { const bb = briefs.find((x) => x.id === bid); return bb?.title || bb?.content_type || tx('配音案', '配音案', 'Voice case'); };
         return (
           <div className="mb-8">
-            <h2 className="text-sm font-semibold text-sky-300 mb-3">🔁 {tx('客戶請你重錄', '客户请你重录', 'Client asked for a re-record')}</h2>
+            <h2 className="text-sm font-semibold text-sky-300 mb-3">{tx('客戶請你重錄', '客户请你重录', 'Client asked for a re-record')}</h2>
             <div className="grid grid-cols-1 gap-4">
               {reaudits.map((q) => (
                 <EntityCard key={q.id} icon={Briefcase} accent="sky" code={q.role_name || undefined}
@@ -626,7 +626,7 @@ export default function Opportunities() {
                   ? <span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('已交付 · 待驗收', '已交付 · 待验收', 'Delivered · in review')}</span>
                   : <span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('待錄製', '待录制', 'To record')}</span>}>
                 {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
-                {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('📄 下載稿件檔', '📄 下载稿件档', '📄 Download script')}</a>}
+                {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('下載稿件檔', '下载稿件档', 'Download script')}</a>}
                 {o.deadline && <p className="text-[11px] text-gray-300 mt-1">{tx('希望交付', '希望交付', 'Due')}: {o.deadline}</p>}
                 <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
               </EntityCard>
@@ -662,7 +662,7 @@ export default function Opportunities() {
                         </div>
                       )}
                       {w.final_script_url && (
-                        <a href={w.final_script_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline mt-1.5">📄 {tx('下載正式稿件檔', '下载正式稿件档', 'Download script file')}</a>
+                        <a href={w.final_script_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline mt-1.5">{tx('下載正式稿件檔', '下载正式稿件档', 'Download script file')}</a>
                       )}
                     </div>
                   )}
@@ -672,7 +672,7 @@ export default function Opportunities() {
                     if (!rev) return null;
                     return (
                       <div className="mb-3 rounded-lg border border-sky-500/30 bg-sky-500/[0.08] px-3 py-2.5">
-                        <p className="text-sm font-semibold text-sky-300 mb-1">🔁 {tx('客戶要求修改', '客户要求修改', 'Client requested changes')}</p>
+                        <p className="text-sm font-semibold text-sky-300 mb-1">{tx('客戶要求修改', '客户要求修改', 'Client requested changes')}</p>
                         {rev.client_feedback && <p className="text-sm text-gray-200 whitespace-pre-wrap"><span className="text-gray-300">{tx('客戶意見', '客户意见', 'Notes')}:</span> {rev.client_feedback}</p>}
                         <p className="text-[11px] text-gray-300 mt-1">{tx('請依意見修改後,在下方重新上傳修改版。', '请依意见修改后,在下方重新上传修改版。', 'Revise per the notes and upload the new version below.')}</p>
                       </div>
@@ -701,7 +701,7 @@ export default function Opportunities() {
                   ))}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                     <p className="text-[11px] text-gray-300">{tx('接單後即可開始錄製,完成在此上傳交付檔。', '接单后即可开始录制,完成在此上传交付档。', 'Once you accept, record and upload your delivery here.')}</p>
-                    <Link href={`/talent/messages?brief=${w.id}`} className="inline-flex items-center gap-1 text-[11px] text-sky-300 hover:text-sky-200 hover:underline">💬 {tx('與客戶直接對話', '与客户直接对话', 'Message the client')} →</Link>
+                    <Link href={`/talent/messages?brief=${w.id}`} className="inline-flex items-center gap-1 text-[11px] text-sky-300 hover:text-sky-200 hover:underline">{tx('與客戶直接對話', '与客户直接对话', 'Message the client')} →</Link>
                   </div>
                   {w.order_status === 'completed' && w.order_id && (
                     <div className="mt-3"><ReviewBox orderId={w.order_id} myType="talent" /></div>
@@ -903,7 +903,7 @@ function BriefCard({
                   {refs.map((r, i) => (
                     isAudio(r.url) ? <audio key={i} controls src={r.url} className="w-full h-9" />
                       : isImg(r.url) ? <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"><img src={r.url} alt={r.name || 'reference'} className="max-h-40 rounded-lg border border-white/10" /></a>
-                      : <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline break-all">🔗 {r.name || r.url}</a>
+                      : <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline break-all">{r.name || r.url}</a>
                   ))}
                 </div>
               </div>
@@ -1134,7 +1134,7 @@ function RoleAudition({
       {role.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={role.image} alt={role.name} className="absolute inset-0 w-full h-full object-cover object-top" />
-      ) : <div className="absolute inset-0 flex items-center justify-center text-3xl text-gray-400">🎭</div>}
+      ) : <div className="absolute inset-0 flex items-center justify-center text-gray-500"><User className="w-8 h-8" /></div>}
       {role.is_lead && <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded font-medium z-10" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)' }}>★ {tx('主角', '主角', 'Lead')}</span>}
     </div>
   );
