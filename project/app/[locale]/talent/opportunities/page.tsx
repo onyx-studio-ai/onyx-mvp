@@ -1052,6 +1052,15 @@ function CaseHeader({
   );
 }
 
+// 試音是否已截止:audition_deadline 那天 23:59 之後就鎖(當天仍可交)。
+// parse 失敗一律不鎖(不誤鎖)。後端 quotes API 另有同樣把關,前端只是提早擋 UI。
+function auditionClosed(brief: Brief): boolean {
+  const d = brief.audition_deadline;
+  if (!d) return false;
+  const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
+  return Number.isFinite(t) && Date.now() > t;
+}
+
 // One role's audition: view its line → upload audition → write your price/terms.
 // Full roles are disabled (no count shown); near-full nudges to try another.
 function RoleAudition({
@@ -1147,6 +1156,19 @@ function RoleAudition({
           {nameRow}
           <p className="text-sm text-[#6FCF97] mt-1.5">{tx('✓ 已試音', '✓ 已试音', '✓ Auditioned')}</p>
           {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
+        </div>
+      </div>
+    );
+  }
+
+  // 試音已截止:不給上傳/報價,只顯示截止狀態(當天仍可交,隔天起鎖)。
+  if (auditionClosed(brief)) {
+    return (
+      <div className="flex rounded-2xl overflow-hidden bg-[#1d1b25] border border-white/[0.08] opacity-70">
+        {imageLeft}
+        <div className="flex-1 min-w-0 p-4">
+          {nameRow}
+          <p className="text-sm text-gray-300 mt-1.5">{tx('這個案子的試音已截止。', '这个案子的试音已截止。', 'Auditions for this case have closed.')}</p>
         </div>
       </div>
     );

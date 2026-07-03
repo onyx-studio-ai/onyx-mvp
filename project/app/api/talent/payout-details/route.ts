@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
 
   const tin = obj(body.twd), uin = obj(body.usd), tax = obj(body.tax);
   const twd = { account_holder: S(tin.account_holder, 120), bank_name: S(tin.bank_name, 120), bank_branch: S(tin.bank_branch, 120), bank_code: S(tin.bank_code, 20), account_number: S(tin.account_number, 60) };
-  const usd = { method: uin.method === 'paypal' ? 'paypal' : 'bank', account_holder: S(uin.account_holder, 120), bank_name: S(uin.bank_name, 120), swift: S(uin.swift, 30).toUpperCase(), iban: S(uin.iban, 60).toUpperCase(), account_number: S(uin.account_number, 60), paypal_email: S(uin.paypal_email, 200) };
+  const usd = { method: uin.method === 'paypal' ? 'paypal' : 'bank', account_holder: S(uin.account_holder, 120), bank_name: S(uin.bank_name, 120), bank_address: S(uin.bank_address, 200), swift: S(uin.swift, 30).toUpperCase(), iban: S(uin.iban, 60).toUpperCase(), account_number: S(uin.account_number, 60), paypal_email: S(uin.paypal_email, 200) };
   const taxLocation = tax.tax_location === 'TW' ? 'TW' : tax.tax_location === 'overseas' ? 'overseas' : '';
   const twResident = taxLocation === 'TW' ? (tax.tw_resident === true || tax.tw_resident === 'true') : false;
   const nationalId = S(tax.national_id, 40).toUpperCase();

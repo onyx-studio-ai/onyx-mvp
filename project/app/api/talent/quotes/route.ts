@@ -49,11 +49,16 @@ export async function POST(request: NextRequest) {
     // Brief must exist and be open.
     const { data: brief } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, status, kind, client_email')
+      .select('id, brief_number, status, kind, client_email, audition_deadline')
       .eq('id', briefId)
       .maybeSingle();
     if (!brief) return NextResponse.json({ error: 'Brief not found' }, { status: 404 });
     if (brief.status !== 'open') return NextResponse.json({ error: 'This brief is no longer open' }, { status: 400 });
+    // 試音截止:過了截止日(當天 23:59)就不再收試音;parse 失敗不擋(不誤鎖)。後台延長 deadline 即自動重新開放。
+    if (brief.audition_deadline) {
+      const dl = new Date(`${String(brief.audition_deadline).slice(0, 10)}T23:59:59`).getTime();
+      if (Number.isFinite(dl) && Date.now() > dl) return NextResponse.json({ error: '這個案子的試音已截止。' }, { status: 400 });
+    }
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
 

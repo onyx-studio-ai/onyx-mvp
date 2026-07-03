@@ -10,7 +10,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
-import { DollarSign, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { DollarSign, Loader2, CheckCircle2, Clock, ChevronDown } from 'lucide-react';
 import { StatModule } from '@/components/dashboard/cards';
 import { taxNotice } from '@/lib/payout-policy';
 import { validatePayout, type PayoutInput } from '@/lib/payout-validation';
@@ -183,6 +183,7 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
                 <div><label className={lbl}>{tx('帳號', '账号', 'Account number')} *</label><input className={inputCls} value={usd.account_number || ''} onChange={(e) => setU('account_number', e.target.value)} /></div>
                 <div><label className={lbl}>SWIFT / BIC <span className="text-gray-400">{tx('(建議填)', '(建议填)', '(recommended)')}</span></label><input className={inputCls} value={usd.swift || ''} onChange={(e) => setU('swift', e.target.value)} placeholder="CHASUS33" /></div>
                 <div><label className={lbl}>IBAN</label><input className={inputCls} value={usd.iban || ''} onChange={(e) => setU('iban', e.target.value)} /></div>
+                <div className="sm:col-span-2"><label className={lbl}>{tx('銀行地址(建議填)', '银行地址(建议填)', 'Bank address (recommended)')}</label><input className={inputCls} value={usd.bank_address || ''} onChange={(e) => setU('bank_address', e.target.value)} placeholder={tx('部分國際電匯需要銀行地址', '部分国际电汇需要银行地址', 'Some international wires require the bank address')} /></div>
               </>
             ) : (
               <>
@@ -255,7 +256,10 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
         <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
         <div><label className={lbl}>{tx('幣別', '币别', 'Currency')}</label>
-          <select className={inputCls} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
+          <div className="relative">
+            <select className={`${inputCls} appearance-none pr-9 cursor-pointer`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
+            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
         <div className="sm:col-span-2"><label className={lbl}>{tx('備註(選填)', '备注(选填)', 'Note (optional)')}</label><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></div>
       </div>
