@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { DollarSign, Download, CheckCircle, Clock, Filter, RefreshCw, User, ChevronRight, CreditCard, ArrowLeft, Calendar, Wallet, Plus, X, Folder, ChevronDown } from 'lucide-react';
+import { computeDeductions, MIN_PAYOUT_USD_INTL } from '@/lib/payout-policy';
 
 const CHECKLIST_FIELDS = ['contract_filed', 'invoice_sent', 'payment_received', 'talent_paid', 'delivered'] as const;
 type ChecklistField = typeof CHECKLIST_FIELDS[number];
@@ -99,7 +100,7 @@ function PaymentBadge({ method, details }: { method?: string | null; details?: R
 // Decrypted payout details, fetched ON DEMAND (click to reveal) from the restricted
 // table so the national ID / bank account is only materialised when Wing actually
 // needs to pay. Admin-role only; never bulk-loaded.
-function PayoutDetails({ talentId }: { talentId: string }) {
+function PayoutDetails({ talentId, gross }: { talentId: string; gross: number }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'none' | 'error'>('idle');
   const [d, setD] = useState<{ region: string; payout_method: string; details: Record<string, string>; updated_at?: string } | null>(null);
   const [err, setErr] = useState('');
@@ -130,6 +131,9 @@ function PayoutDetails({ talentId }: { talentId: string }) {
   const x = d!.details;
   const method = d!.payout_method;
   const taxLoc = d!.region; // 'TW' | 'overseas'
+  const dd = gross > 0 ? computeDeductions({ gross, method: method === 'bank' ? 'bank' : 'paypal', bankCountry: x.bank_country, taxLocation: taxLoc === 'TW' ? 'TW' : 'overseas', twResident: !!x.tw_resident }) : null;
+  const isIntl = !(method === 'bank' && (x.bank_country || '').toUpperCase() === 'TW');
+  const belowMin = isIntl && gross > 0 && gross < MIN_PAYOUT_USD_INTL;
   return (
     <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3 text-xs space-y-1 max-w-md">
       <div className="font-medium text-violet-800 mb-1">{method === 'bank' ? '🏦 銀行匯款' : '💸 PayPal'}</div>
@@ -153,6 +157,18 @@ function PayoutDetails({ talentId }: { talentId: string }) {
         {taxLoc === 'TW' && <Row k="身分/居留證" v={x.national_id} />}
         {taxLoc === 'TW' && <Row k="地址" v={x.tax_address} />}
       </div>
+      {dd && (
+        <div className="border-t border-violet-200 mt-1.5 pt-1.5">
+          <div className="text-violet-800 font-medium mb-0.5">扣繳試算(供參)</div>
+          <Row k="請款額" v={String(gross)} />
+          {dd.tax > 0 && <Row k={taxLoc === 'TW' && x.tw_resident ? '扣繳稅 10%' : '扣繳稅 20%'} v={`-${dd.tax}`} />}
+          {dd.nhi > 0 && <Row k="二代健保 2.11%" v={`-${dd.nhi}`} />}
+          <Row k="手續費" v={dd.feeNote} />
+          <Row k="實收(估)" v={String(dd.net)} />
+          <p className="text-[10px] text-gray-500 pt-1">試算供參,實際稅額以會計為準;手續費單位依收款方式(台灣 NT$ / 國際 US$)。</p>
+          {belowMin && <p className="text-[10px] text-amber-700 pt-0.5">⚠ 低於國際最低請款 US${MIN_PAYOUT_USD_INTL},建議累積後再撥。</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -501,7 +517,7 @@ export default function PayoutsPage() {
                         {e.talent_id && (
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">收款資料</p>
-                            <PayoutDetails talentId={e.talent_id} />
+                            <PayoutDetails talentId={e.talent_id} gross={Number(e.commission_amount) || 0} />
                           </div>
                         )}
                         {e.local_folder_path && (
