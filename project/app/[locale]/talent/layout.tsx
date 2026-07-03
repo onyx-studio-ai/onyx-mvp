@@ -163,7 +163,7 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
                 {oppCount > 0 && <Link href="/talent/opportunities" className="text-amber-300 hover:text-amber-200 font-medium">{tx(`${oppCount} 個新案件機會`, `${oppCount} 个新案件机会`, `${oppCount} new ${oppCount === 1 ? 'opportunity' : 'opportunities'}`)}</Link>}
                 {oppCount > 0 && quoteUpdates > 0 && <span className="text-gray-500"> · </span>}
                 {quoteUpdates > 0 && <Link href="/talent/opportunities" className="text-amber-300 hover:text-amber-200 font-medium">{tx(`${quoteUpdates} 個報價有進展`, `${quoteUpdates} 个报价有进展`, `${quoteUpdates} quote ${quoteUpdates === 1 ? 'update' : 'updates'}`)}</Link>}
-                <span className="text-gray-400">{tx(' — 需要你看一下', ' — 需要你看一下', ' need your attention')}</span>
+                <span className="text-gray-400">{tx(' — 需要你看一下', ' — 需要你看一下', ' — take a look')}</span>
               </span>
             </div>
           </div>

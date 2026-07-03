@@ -333,7 +333,7 @@ export default function VoiceIdUploadPage() {
           <ol className="space-y-2 text-sm text-gray-400 list-decimal list-inside">
             <li>{tx('找一個安靜、無背景雜音的空間', '找一个安静、无背景杂音的空间', 'Find a quiet room with no background noise')}</li>
             <li>{tx('用您自然的聲音清楚唸出', '用您自然的声音清楚念出', 'Speak clearly in your natural voice')}</li>
-            <li>{tx('唸出:', '念出:', 'Say: ')}<span className="text-white italic">{tx('「我,[您的全名],確認這是我本人的真實聲音。我在此授權 Onyx Studios 依雙方簽署之協議,製作並商業管理我的 AI 聲音分身,日期為 [今日日期]。」', '「我,[您的全名],确认这是我本人的真实声音。我在此授权 Onyx Studios 依双方签署之协议,制作并商业管理我的 AI 声音分身,日期为 [今日日期]。」', '“I, [Your Full Name], confirm this is my own biological voice. I hereby authorize Onyx Studios to create and commercially manage an AI digital twin of my voice under our signed agreement, on this date, [Today’s Date].”')}</span></li>
+            <li>{tx('唸出:', '念出:', 'Say: ')}<span className="text-white italic">{tx('「我,[您的全名],確認這是我本人的真實聲音。我在此授權 Onyx Studios 依雙方簽署之協議,製作並商業管理我的 AI 聲音分身,日期為 [今日日期]。」', '「我,[您的全名],确认这是我本人的真实声音。我在此授权 Onyx Studios 依双方签署之协议,制作并商业管理我的 AI 声音分身,日期为 [今日日期]。」', '“I, [Your Full Name], confirm this is my own, genuine human voice. I hereby authorize Onyx Studios to create and commercially manage an AI digital twin of my voice under our signed agreement, on this date, [Today’s Date].”')}</span></li>
             <li>{tx('以 WAV 或 MP3 儲存(最大 10MB)', '以 WAV 或 MP3 保存(最大 10MB)', 'Save as WAV or MP3 (max 10MB)')}</li>
           </ol>
         </div>
@@ -765,7 +765,7 @@ export default function VoiceIdUploadPage() {
         )}
 
         <p className="text-center text-gray-600 text-xs leading-relaxed">
-          {tx('提交即表示您確認此錄音為您本人的真實聲音,且您的電子簽名構成依您與 Onyx Studios 簽署之配音員協議下「聲音 ID 聲明」的合法同意。', '提交即表示您确认此录音为您本人的真实声音,且您的电子签名构成依您与 Onyx Studios 签署之配音员协议下「声音 ID 声明」的合法同意。', 'By submitting, you confirm this recording is your genuine biological voice and your electronic signature serves as lawful consent for the Voice ID Affidavit under your signed talent agreement with Onyx Studios.')}
+          {tx('提交即表示您確認此錄音為您本人的真實聲音,且您的電子簽名構成依您與 Onyx Studios 簽署之配音員協議下「聲音 ID 聲明」的合法同意。', '提交即表示您确认此录音为您本人的真实声音,且您的电子签名构成依您与 Onyx Studios 签署之配音员协议下「声音 ID 声明」的合法同意。', 'By submitting, you confirm this recording is your own genuine voice and your electronic signature serves as lawful consent for the Voice ID Affidavit under your signed talent agreement with Onyx Studios.')}
         </p>
       </div>
     </div>
