@@ -244,10 +244,15 @@ export async function PATCH(request: NextRequest) {
 
       // --- Phase 5 pocket side-effects ---
       const isBuyout = priorEarning.tier === 'buyout';
+      // Managed production (directly-assigned casting roles): a fixed fee Onyx pays
+      // the talent. NOT client income — the client is invoiced separately — so it
+      // never allocates to the income pockets and, unlike buyout, has no outflow
+      // side-effect either. It's purely a "have we paid the talent yet" tracker.
+      const skipIncome = isBuyout || priorEarning.tier === 'managed';
 
-      // payment_received: income allocation (skip buyout — buyout is
-      // outflow not income; its talent_paid handler does the work)
-      if ('payment_received' in checklist && !isBuyout) {
+      // payment_received: income allocation (skip buyout/managed — not client income;
+      // buyout's talent_paid handler does its own outflow work)
+      if ('payment_received' in checklist && !skipIncome) {
         const flippedOn = !priorEarning.payment_received && checklist.payment_received === true;
         const flippedOff = priorEarning.payment_received && checklist.payment_received === false;
         try {
@@ -329,7 +334,9 @@ export async function PATCH(request: NextRequest) {
     if (priorRows) {
       for (const prior of priorRows) {
         const isBuyout = prior.tier === 'buyout';
-        if (isBuyout) continue; // buyout handled by talent_paid checkbox
+        // buyout handled by its talent_paid checkbox; managed is a fixed payout, not
+        // client income → neither allocates to the income pockets.
+        if (isBuyout || prior.tier === 'managed') continue;
         const flippedOn = !prior.payment_received && newStatus === 'paid';
         const flippedOff = prior.payment_received && newStatus === 'pending';
         try {

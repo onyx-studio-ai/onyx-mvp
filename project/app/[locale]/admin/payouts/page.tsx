@@ -300,7 +300,9 @@ export default function PayoutsPage() {
   ) as readonly ChecklistField[];
 
   const effectiveChecklist = (e: Earning): readonly ChecklistField[] =>
-    e.tier === 'buyout' ? BUYOUT_CHECKLIST_FIELDS : CHECKLIST_FIELDS;
+    // buyout + managed (directly-assigned casting role) skip the client
+    // invoice/payment boxes — Onyx pays the talent a fixed fee, client billed apart.
+    e.tier === 'buyout' || e.tier === 'managed' ? BUYOUT_CHECKLIST_FIELDS : CHECKLIST_FIELDS;
 
   const checklistCount = (e: Earning) =>
     effectiveChecklist(e).reduce((acc, f) => acc + (e[f] ? 1 : 0), 0);
@@ -346,6 +348,8 @@ export default function PayoutsPage() {
             const filed = checklistCount(e);
             const isManual = e.order_type === 'manual';
             const isBuyout = e.tier === 'buyout';
+            const isManaged = e.tier === 'managed';   // directly-assigned casting role
+            const isSimplified = isBuyout || isManaged; // simplified filing checklist
             const checklistTotal = effectiveChecklist(e).length;
             return (
               <React.Fragment key={e.id}>
@@ -366,6 +370,10 @@ export default function PayoutsPage() {
                     {isBuyout ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
                         🔒 Buyout
+                      </span>
+                    ) : isManaged ? (
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
+                        🎯 指派製作
                       </span>
                     ) : isManual ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
@@ -440,9 +448,9 @@ export default function PayoutsPage() {
                         )}
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-                            歸檔進度{isBuyout && <span className="ml-1 text-purple-700">(買斷流程簡化版)</span>}
+                            歸檔進度{isBuyout && <span className="ml-1 text-purple-700">(買斷流程簡化版)</span>}{isManaged && <span className="ml-1 text-violet-700">(指派製作簡化版)</span>}
                           </p>
-                          <div className={`grid grid-cols-2 ${isBuyout ? 'md:grid-cols-3' : 'md:grid-cols-5'} gap-2`}>
+                          <div className={`grid grid-cols-2 ${isSimplified ? 'md:grid-cols-3' : 'md:grid-cols-5'} gap-2`}>
                             {effectiveChecklist(e).map(field => {
                               const checked = !!e[field];
                               const stamp = e[`${field}_at` as keyof Earning] as string | null | undefined;

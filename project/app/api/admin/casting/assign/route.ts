@@ -98,8 +98,9 @@ export async function POST(request: NextRequest) {
     const { data: dup } = await db.from('voice_orders').select('id').eq('brief_id', briefId).eq('role_name', rn).maybeSingle();
     if (dup) { skipped.push(rn); continue; }
     seq += 1;
-    const { error } = await db.from('voice_orders').insert({
-      order_number: `VO-${ymd}-${String(seq).padStart(4, '0')}`,
+    const orderNumber = `VO-${ymd}-${String(seq).padStart(4, '0')}`;
+    const { data: ord, error } = await db.from('voice_orders').insert({
+      order_number: orderNumber,
       email: orderEmail,
       language: brief.language || '',
       voice_selection: talentName,
@@ -121,9 +122,22 @@ export async function POST(request: NextRequest) {
       rights_level: 'global',
       brief_id: briefId,
       role_name: rn,
-    });
-    if (error) { skipped.push(`${rn}(${error.message})`); seq -= 1; continue; }
+    }).select('id').single();
+    if (error || !ord) { skipped.push(`${rn}(${error?.message || 'insert failed'})`); seq -= 1; continue; }
     assigned += 1;
+
+    // Open a payout record so this role appears in /admin/payouts and Wing can
+    // settle it (tick 已付配音員 → done). Managed production = Onyx pays a FIXED
+    // per-role fee; tier 'managed' keeps it OUT of the Profit-First income pockets
+    // (client billing is invoiced separately). Best-effort — a payout-record hiccup
+    // must never undo a successful assignment (backfillable later).
+    if (pay > 0) {
+      const { error: eErr } = await db.from('talent_earnings').insert({
+        talent_id: talentId, order_id: ord.id, order_type: 'voice', order_number: orderNumber,
+        tier: 'managed', order_total: pay, commission_rate: 1, commission_amount: pay, status: 'pending',
+      });
+      if (eErr) console.error('[casting/assign] payout record insert failed', orderNumber, eErr.message);
+    }
   }
 
   if (assigned > 0 && talentId) {

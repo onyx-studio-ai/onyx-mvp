@@ -1347,6 +1347,29 @@ export default function AdminTalentsPage() {
                           💰 真人20%·AI25%
                         </span>
                       )}
+                      {(() => {
+                        // Cooperation opt-ins the talent themselves ticked — show only the
+                        // DIFFERENTIATING ones (everyone accepts regular jobs; these aren't
+                        // universal). Lets Wing see at a glance who's open to buyout / AI /
+                        // low-price data before assigning that kind of work.
+                        const c = talent as unknown as Record<string, boolean>;
+                        const flags = [
+                          c.coop_open_buyout && { t: '買斷', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
+                          c.coop_ai_clone && { t: '做AI', cls: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
+                          c.coop_ai_training && { t: 'AI素材', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+                          c.low_price_data_optin && { t: '低價資料', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+                          c.coop_proofread && { t: '校稿', cls: 'bg-teal-50 text-teal-700 border-teal-200' },
+                          c.coop_voice_director && { t: '配音指導', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                        ].filter(Boolean) as { t: string; cls: string }[];
+                        if (!flags.length) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-0.5" title="配音員自選的合作意願">
+                            {flags.map((f) => (
+                              <span key={f.t} className={`inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium border w-fit ${f.cls}`}>{f.t}</span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </TableCell>
