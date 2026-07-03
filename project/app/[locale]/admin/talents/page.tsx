@@ -371,6 +371,7 @@ export default function AdminTalentsPage() {
   const [verifyingVoiceId, setVerifyingVoiceId] = useState<string | null>(null);
   const [sendingLiveness, setSendingLiveness] = useState<string | null>(null);
   const [reviewingLiveness, setReviewingLiveness] = useState<string | null>(null);
+  const [nudging, setNudging] = useState<string | null>(null);
 
   const headshotRef = useRef<HTMLInputElement>(null);
   const demoRef = useRef<HTMLInputElement>(null);
@@ -470,6 +471,21 @@ export default function AdminTalentsPage() {
       fetchTalents();
     } catch { toast.error('Update failed'); }
     finally { setReviewingLiveness(null); }
+  };
+
+  // Nudge a草稿中 talent to log in and finish their profile (so we can publish).
+  const handleNudgeComplete = async (talentId: string) => {
+    setNudging(talentId);
+    try {
+      const res = await fetch('/api/admin/talents/nudge-complete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: talentId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) toast.success(`已寄「完成檔案」通知 → ${data.to}`);
+      else toast.error(data.error || '寄送失敗');
+    } catch { toast.error('寄送失敗'); }
+    finally { setNudging(null); }
   };
 
   // --- Publish: promote the talent's draft into the public snapshot ---
@@ -1568,7 +1584,14 @@ export default function AdminTalentsPage() {
                         : <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>;
                     }
                     if (tt.pending_review) return <Badge className="bg-amber-50 text-amber-700 border border-amber-300">待審核</Badge>;
-                    if (onboarded) return <Badge className="bg-sky-50 text-sky-700 border border-sky-200">草稿中</Badge>;
+                    if (onboarded) return (
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge className="bg-sky-50 text-sky-700 border border-sky-200">草稿中</Badge>
+                        <button type="button" onClick={() => handleNudgeComplete(talent.id)} disabled={nudging === talent.id} title="寄信請他登入補完 demo / 聲線 / 專長,才能上前台" className="text-[11px] text-amber-700 hover:text-amber-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
+                          {nudging === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 催填資料
+                        </button>
+                      </div>
+                    );
                     return <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>;
                   })()}
                 </TableCell>

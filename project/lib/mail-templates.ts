@@ -1694,6 +1694,67 @@ export function livenessRequestEmail(p: {
 }
 
 // ---------------------------------------------------------------------------
+// 12c. "You're verified — now complete your profile so we can publish you"
+// Sent by admin when a talent is onboarded but their profile is still empty
+// (no demos / traits / specialties), so they can't go live yet.
+// ---------------------------------------------------------------------------
+
+export function completeProfileEmail(p: {
+  talentName: string;
+  profileLink: string;
+  locale?: string;
+}): { subject: string; html: string } {
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
+  const name = (p.talentName || '').trim();
+  const T = {
+    tw: {
+      subject: 'Onyx Studios — 補完檔案即可上線',
+      headline: '就差最後一步',
+      sub: '補完檔案,即可在 Onyx 名冊上架。',
+      card: '補完您的配音員檔案',
+      intro: `${name ? name + ' 您好,' : ''}您的帳號已開通。想在 Onyx 名冊上架、開始接到試音與案子邀約,請登入補完您的檔案:`,
+      steps: ['上傳至少一段 demo(您提供的每個語言各一段)', '設定聲線與專長', '確認語言、口音與期望報價', '按「送出審核」—— 我們確認後就為您上線'],
+      cta: '前往補完檔案',
+      note: '只要幾分鐘。送出後由我們審核並發布到前台。',
+    },
+    cn: {
+      subject: 'Onyx Studios — 补完资料即可上线',
+      headline: '就差最后一步',
+      sub: '补完资料,即可在 Onyx 名册上架。',
+      card: '补完您的配音员资料',
+      intro: `${name ? name + ' 您好,' : ''}您的账号已开通。想在 Onyx 名册上架、开始接到试音与案子邀约,请登录补完您的资料:`,
+      steps: ['上传至少一段 demo(您提供的每个语言各一段)', '设置声线与专长', '确认语言、口音与期望报价', '点「提交审核」—— 我们确认后就为您上线'],
+      cta: '前往补完资料',
+      note: '只要几分钟。提交后由我们审核并发布到前台。',
+    },
+    en: {
+      subject: 'Onyx Studios — complete your profile to go live',
+      headline: 'One last step',
+      sub: 'Complete your profile to appear on the Onyx roster.',
+      card: 'Complete your talent profile',
+      intro: `${name ? 'Hi ' + name + ', ' : ''}your account is active. To appear on the Onyx roster and start receiving auditions and job invitations, please sign in and complete your profile:`,
+      steps: ['Upload at least one demo (one per language you offer)', 'Set your voice traits & specialties', 'Confirm your languages, accents and expected rates', 'Hit "Submit for review" — we’ll publish you once confirmed'],
+      cta: 'Complete my profile',
+      note: 'It only takes a few minutes. After you submit, our team reviews and publishes you to the roster.',
+    },
+  }[L];
+
+  const stepsHtml = T.steps.map((s, i) => `<p style="margin:0 0 4px;color:#d1d5db;font-size:14px;">${i + 1}. ${s}</p>`).join('');
+  const content = `
+    ${headlineBlock(T.headline, T.sub, BRAND_GREEN)}
+    ${bodyCard(T.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${T.intro}</p>
+      <div style="background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:18px 20px;margin:0 0 16px;">
+        ${stepsHtml}
+      </div>
+      <p style="color:#9ca3af;font-size:13px;margin:0;">${T.note}</p>
+    `)}
+    ${ctaRow(T.cta, p.profileLink, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}`;
+
+  return { subject: T.subject, html: baseLayout(content) };
+}
+
+// ---------------------------------------------------------------------------
 // Talent profile review result (approved / changes requested)
 // ---------------------------------------------------------------------------
 
