@@ -62,9 +62,9 @@ export function computeDeductions(args: {
     }
   }
   let fee = 0, feeNote = '';
-  if (args.method === 'paypal') { fee = round2(g * FEES.paypalPct); feeNote = 'PayPal ~5%'; }
-  else if ((args.bankCountry || '').toUpperCase() === 'TW') { fee = FEES.bankTW.amount; feeNote = 'NT$30 (同行免費)'; }
-  else { fee = FEES.bankIntl.amount; feeNote = 'US$20 (SWIFT/SHA)'; }
+  if (args.method === 'paypal') { fee = round2(g * FEES.paypalPct); feeNote = 'PayPal 約 5%(各國不同)'; }
+  else if ((args.bankCountry || '').toUpperCase() === 'TW') { fee = FEES.bankTW.amount; feeNote = '最多 NT$30'; }
+  else { fee = FEES.bankIntl.amount; feeNote = '約 US$20'; }
   return { tax, nhi, fee, feeNote, net: round2(g - tax - nhi - fee) };
 }
 

@@ -280,12 +280,13 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
         const c = currency; const n = (x: number) => x.toLocaleString('en-US', { maximumFractionDigits: 2 });
         return (
           <div className="text-xs text-gray-200 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 mb-3 space-y-1">
-            <div className="flex justify-between"><span>{tx('請款金額', '请款金额', 'Requested')}</span><span>{c} {n(Number(amount))}</span></div>
+            <p className="text-gray-300 pb-1">{tx('我們會全額支付您的請款金額;以下為「估算實收」—— 中途手續費由對方收款機構收取,非我們扣除。', '我们会全额支付您的请款金额;以下为「估算实收」—— 中途手续费由对方收款机构收取,非我们扣除。', 'We pay your full requested amount; below is an ESTIMATED net — fees are taken by the receiving institution, not by us.')}</p>
+            <div className="flex justify-between"><span>{tx('請款金額(我們支付)', '请款金额(我们支付)', 'Requested (we pay)')}</span><span>{c} {n(Number(amount))}</span></div>
             {dd.tax > 0 && <div className="flex justify-between text-gray-300"><span>{tx('代扣所得稅', '代扣所得税', 'Tax withheld')}</span><span>− {c} {n(dd.tax)}</span></div>}
             {dd.nhi > 0 && <div className="flex justify-between text-gray-300"><span>{tx('二代健保', '二代健保', 'NHI')}</span><span>− {c} {n(dd.nhi)}</span></div>}
-            <div className="flex justify-between text-gray-300"><span>{tx('轉帳手續費', '转账手续费', 'Transfer fee')} <span className="text-gray-400">({dd.feeNote})</span></span><span>− {c} {n(dd.fee)}</span></div>
-            <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/10"><span>{tx('實際到手 ≈', '实际到手 ≈', 'You receive ≈')}</span><span>{c} {n(dd.net)}</span></div>
-            <p className="text-gray-400 pt-0.5 leading-relaxed">{tx('手續費由收款方負擔;PayPal 約 5%、國際電匯 US$20、台灣匯費 NT$30。實際金額以銀行 / PayPal 為準。', '手续费由收款方负担;PayPal 约 5%、国际电汇 US$20、台湾汇费 NT$30。实际金额以银行 / PayPal 为准。', 'Fees borne by recipient; PayPal ~5%, intl wire US$20, TW wire NT$30. Final amount per bank/PayPal.')}</p>
+            <div className="flex justify-between text-gray-300"><span>{tx('預估手續費', '预估手续费', 'Est. fee')} <span className="text-gray-400">({dd.feeNote})</span></span><span>− {c} {n(dd.fee)}</span></div>
+            <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/10"><span>{tx('預估實收 ≈', '预估实收 ≈', 'Est. you receive ≈')}</span><span>{c} {n(dd.net)}</span></div>
+            <p className="text-gray-400 pt-0.5 leading-relaxed">{tx('僅為預估參考、非保證金額。各國 PayPal 費率不同(可能另有匯率轉換費)、國際電匯中轉行費用不一、台灣匯費最多約 NT$30。實際到手以您的收款機構入帳為準。', '仅为预估参考、非保证金额。各国 PayPal 费率不同(可能另有汇率转换费)、国际电汇中转行费用不一、台湾汇费最多约 NT$30。实际到手以您的收款机构入账为准。', 'Estimate only, not guaranteed. PayPal rates vary by country (may add FX fees); intl-wire intermediary fees vary; TW wire is at most ~NT$30. Final amount per your receiving institution.')}</p>
           </div>
         );
       })()}
