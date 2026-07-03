@@ -15,7 +15,7 @@ import { caseCode } from '@/lib/casting';
 import { downloadWatermarked } from '@/lib/watermark';
 import { currencySymbol } from '@/lib/currency';
 
-const CURRENCIES = ['USD', 'TWD', 'CNY', 'GBP', 'EUR', 'JPY', 'KRW', 'HKD'];
+const CURRENCIES = ['USD', 'TWD'];   // 全站只收台幣 / 美金
 const LANGS = ['中文 · 台灣國語', '中文 · 大陸普通話', '粵語 · 香港', '台語 · 台灣閩南語', '英文 · 美式', '英文 · 英式', '日語', '韓語', '其他'];
 const input = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 [color-scheme:dark]';
 

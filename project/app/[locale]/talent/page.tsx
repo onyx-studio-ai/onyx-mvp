@@ -826,7 +826,7 @@ export default function TalentDashboard() {
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs text-gray-300">{tx('幣別', '币别', 'Currency')}</span>
             <select className="bg-zinc-900 text-sm text-gray-200 rounded-lg px-2.5 py-1.5 border border-white/10" value={form.rates.currency} onChange={(e) => setForm((f) => ({ ...f, rates: { ...f.rates, currency: e.target.value } }))}>
-              {['TWD', 'USD', 'CNY', 'EUR', 'GBP', 'JPY'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
+              {['TWD', 'USD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
