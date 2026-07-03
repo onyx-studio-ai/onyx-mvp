@@ -223,6 +223,7 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-8">
       <h2 className="text-sm font-semibold text-white mb-1">{tx('請款', '请款', 'Request a payout')}</h2>
       <p className="text-xs text-gray-500 mb-4">{tx(`可請款餘額參考:US$${pending}。填金額 → 系統生成發票 → 您確認簽名上傳(或上傳自家發票)。`, `可请款余额参考:US$${pending}。填金额 → 系统生成发票 → 您确认签名上传(或上传自家发票)。`, `Pending balance ref: US$${pending}. Enter an amount → we generate an invoice → confirm, sign & upload (or upload your own).`)}</p>
+      <p className="text-[11px] text-gray-500 mb-4">{tx('※ 款項每月結算,核准後約 30–45 天內撥付。', '※ 款项每月结算,核准后约 30–45 天内拨付。', '※ Payouts settle monthly — about 30–45 days after approval.')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
         <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>

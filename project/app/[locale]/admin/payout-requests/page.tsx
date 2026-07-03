@@ -61,7 +61,7 @@ export default function PayoutRequestsPage() {
     <div className="p-6 lg:p-10">
       <div className="max-w-5xl">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-1"><Receipt className="w-6 h-6 text-violet-600" /> 請款單</h1>
-        <p className="text-sm text-gray-500 mb-6">配音員發起的請款。看發票、確認同意,撥款後按「已撥款」結案。</p>
+        <p className="text-sm text-gray-500 mb-6">配音員發起的請款。看發票、確認同意,撥款後按「已撥款」結案。款項每月結算、核准後約 30–45 天撥付。</p>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
           {([['待處理', 'pending'], ['已上傳發票', 'invoice_uploaded'], ['已撥款', 'paid']] as const).map(([label, key]) => (

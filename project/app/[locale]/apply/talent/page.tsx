@@ -330,6 +330,7 @@ export default function TalentApply() {
       if (cats.length === 0) return tx('「能接的案件類型」請至少選 1 項', '「能接的案件类型」请至少选 1 项', 'Please select at least one job type');
     }
     if (s === 2 && env === null) return tx('請選擇您目前的錄音環境', '请选择您目前的录音环境', 'Please select your recording setup');
+    if (s === 2 && !form.microphone_model.trim()) return tx('請填寫您的麥克風 / 錄音設備', '请填写您的麦克风 / 录音设备', 'Please enter your microphone / recording gear');
     if (s === 3 && !Object.values(coop).some(Boolean)) return tx('「合作意願」請至少選 1 項', '「合作意愿」请至少选 1 项', 'Please select at least one way to collaborate');
     return '';
   };
@@ -479,8 +480,9 @@ export default function TalentApply() {
               <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('高品質案件(尤其 AI 語音)需要乾淨、無雜訊的錄音。台灣與香港的配音員,Onyx 可協助安排錄音室。', '高品质案件(尤其 AI 语音)需要干净、无杂讯的录音。台湾与香港的配音员,Onyx 可协助安排录音室。', 'High-quality projects — particularly AI voice — require clean, noise-free recordings. For talents in Taiwan and Hong Kong, Onyx can help arrange studio access.')}</p>
               <Label req>{tx('您目前的錄音環境', '您目前的录音环境', 'Your current recording setup')}</Label>
               <div className="mb-4">{ENVS.map((e) => <Chip key={e.v || 'none'} active={env === e.v} onClick={() => setEnv(e.v)}>{lbl(e)}</Chip>)}</div>
-              <Label hint={tx('選填', '选填', 'Optional')}>{tx('主要器材', '主要器材', 'Main gear')}</Label>
+              <Label req>{tx('麥克風 / 錄音設備', '麦克风 / 录音设备', 'Microphone / recording gear')}</Label>
               <input className={inputCls} value={form.microphone_model} onChange={(e) => set('microphone_model', e.target.value)} placeholder={tx('例:Rode NT1 + Focusrite 2i2', '例:Rode NT1 + Focusrite 2i2', 'e.g. Rode NT1 + Focusrite 2i2')} />
+              <p className="text-xs text-amber-300/90 leading-relaxed mt-4 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2">{tx('本平台僅收專業錄音作品 —— 手機錄音、或有明顯雜訊 / 回音者,恕不予錄取。', '本平台仅收专业录音作品 —— 手机录音、或有明显杂讯 / 回音者,恕不予录取。', 'We only accept professionally recorded work — phone recordings or audio with noticeable noise / echo will not be accepted.')}</p>
             </div>
           )}
 
