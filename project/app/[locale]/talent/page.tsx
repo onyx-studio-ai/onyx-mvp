@@ -114,7 +114,7 @@ const RATE_FIELDS: { key: 'tts_hourly' | 'narration_min' | 'ad_spot' | 'game_rol
 ];
 
 const inputCls =
-  'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 transition';
+  'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:outline-none focus:border-amber-400/60 transition';
 
 function cropSquareJpeg(file: File, size = 512, quality = 0.85): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -423,12 +423,12 @@ export default function TalentDashboard() {
     )
   );
 
-  if (phase === 'loading') return shell(<p className="text-gray-500 text-sm text-center py-20">{tx('載入中…', '加载中…', 'Loading…')}</p>);
+  if (phase === 'loading') return shell(<p className="text-gray-300 text-sm text-center py-20">{tx('載入中…', '加载中…', 'Loading…')}</p>);
 
   if (phase === 'notalent') return shell(
     <div className="text-center py-16">
       <h1 className="text-xl font-semibold mb-3">{tx('這裡是配音員後台', '这里是配音员后台', 'Talent area')}</h1>
-      <p className="text-gray-400 text-sm mb-6">{tx('此登入帳號尚未連結配音員檔案。如有疑問,請聯絡 hello@onyxstudios.ai。', '此登录账号尚未关联配音员资料。如有疑问,请联系 hello@onyxstudios.ai。', 'This account is not linked to a talent profile. If you think this is a mistake, contact hello@onyxstudios.ai.')}</p>
+      <p className="text-gray-300 text-sm mb-6">{tx('此登入帳號尚未連結配音員檔案。如有疑問,請聯絡 hello@onyxstudios.ai。', '此登录账号尚未关联配音员资料。如有疑问,请联系 hello@onyxstudios.ai。', 'This account is not linked to a talent profile. If you think this is a mistake, contact hello@onyxstudios.ai.')}</p>
       <button onClick={handleLogout} className="text-sm text-amber-400 hover:underline">{tx('登出', '登出', 'Sign out')}</button>
     </div>
   );
@@ -436,7 +436,7 @@ export default function TalentDashboard() {
   if (phase === 'login') return shell(
     <div className="pt-8">
       <h1 className="text-2xl font-semibold mb-1">{tx('配音員後台', '配音员后台', 'Talent Dashboard')}</h1>
-      <p className="text-gray-400 text-sm mb-8">{tx('登入以管理您的個人檔案。', '登录以管理您的个人资料。', 'Sign in to manage your profile.')}</p>
+      <p className="text-gray-300 text-sm mb-8">{tx('登入以管理您的個人檔案。', '登录以管理您的个人资料。', 'Sign in to manage your profile.')}</p>
       <form onSubmit={handleLogin} className="space-y-3">
         <input type="email" className={inputCls} placeholder={tx('電子郵件', '电子邮件', 'Email')} value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input type="password" className={inputCls} placeholder={tx('密碼', '密码', 'Password')} value={password} onChange={(e) => setPassword(e.target.value)} required />
@@ -453,7 +453,7 @@ export default function TalentDashboard() {
         </button>
       </div>
       {resetMsg && <p className="text-green-400 text-xs mt-2">{resetMsg}</p>}
-      <p className="text-gray-500 text-xs mt-6 leading-relaxed">{tx('第一次登入?請點開我們寄給您的「設定密碼」信件設定密碼。連結若過期,點上方「重寄」即可拿到新的。', '第一次登录?请打开我们发送给您的「设置密码」邮件设置密码。链接若过期,点上方「重寄」即可拿到新的。', 'First time? Open the “Set Password” email we sent you. If the link expired, tap “Resend” above for a fresh one.')}</p>
+      <p className="text-gray-300 text-xs mt-6 leading-relaxed">{tx('第一次登入?請點開我們寄給您的「設定密碼」信件設定密碼。連結若過期,點上方「重寄」即可拿到新的。', '第一次登录?请打开我们发送给您的「设置密码」邮件设置密码。链接若过期,点上方「重寄」即可拿到新的。', 'First time? Open the “Set Password” email we sent you. If the link expired, tap “Resend” above for a fresh one.')}</p>
     </div>
   );
 
@@ -490,7 +490,7 @@ export default function TalentDashboard() {
       {isClient && (
         <Link
           href={`${locale === 'en' ? '' : `/${locale}`}/dashboard`}
-          className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-full px-3 py-1.5 mb-5 transition"
+          className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-full px-3 py-1.5 mb-5 transition"
         >
           <LayoutDashboard className="w-3.5 h-3.5" />
           {tx('前往客戶後台', '前往客户后台', 'Go to client dashboard')}
@@ -529,12 +529,12 @@ export default function TalentDashboard() {
           </div>
           <input className="w-full bg-transparent text-2xl font-bold focus:outline-none focus:border-b focus:border-white/20 pb-0.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tx('顯示名稱', '显示名称', 'Display name')} />
           <input className="w-full bg-transparent text-sm text-gray-300 focus:outline-none focus:border-b focus:border-white/20 pb-0.5 mt-1" value={form.english_name} onChange={(e) => setForm({ ...form, english_name: e.target.value })} placeholder={tx('英文 / 羅馬拼音名(選填,英文頁顯示)', '英文 / 罗马拼音名(选填,英文页显示)', 'English / Romanized name (optional, shown on English site)')} />
-          <p className="text-xs text-gray-500 mt-1.5">{t?.email}</p>
+          <p className="text-xs text-gray-300 mt-1.5">{t?.email}</p>
         </div>
       </div>
       {photoErr && <p className="text-red-400 text-xs mb-3 -mt-2">{photoErr}</p>}
 
-      <p className="text-xs text-gray-500 mb-5">{tx('隨時可「儲存草稿」,不會送審;填好後再按「送出審核」。我們聽過 demo、確認資料才會公開到前台,通過或需調整都會 email 通知您。', '随时可「保存草稿」,不会送审;填好后再按「提交审核」。我们听过 demo、确认资料才会公开到前台,通过或需调整都会 email 通知您。', 'Save a draft anytime — it isn’t reviewed. When you’re ready, hit Submit for review. We check your demos and details before going public, and email you on approval or if anything needs a tweak.')}</p>
+      <p className="text-xs text-gray-300 mb-5">{tx('隨時可「儲存草稿」,不會送審;填好後再按「送出審核」。我們聽過 demo、確認資料才會公開到前台,通過或需調整都會 email 通知您。', '随时可「保存草稿」,不会送审;填好后再按「提交审核」。我们听过 demo、确认资料才会公开到前台,通过或需调整都会 email 通知您。', 'Save a draft anytime — it isn’t reviewed. When you’re ready, hit Submit for review. We check your demos and details before going public, and email you on approval or if anything needs a tweak.')}</p>
 
       <div className="space-y-8">
         {/* Bio */}
@@ -568,7 +568,7 @@ export default function TalentDashboard() {
           <div className="flex flex-wrap gap-2 mb-2">
             {VOICE_TRAITS.map((o) => {
               const on = form.voice_traits.includes(o.key);
-              return <button key={o.key} type="button" onClick={() => toggleList('voice_traits', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
+              return <button key={o.key} type="button" onClick={() => toggleList('voice_traits', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
             })}
             {form.voice_traits.filter((x) => !TRAIT_KEYS.has(x)).map((x) => (
               <span key={x} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200">{x}<button onClick={() => removeFromList('voice_traits', x)} className="opacity-70 hover:opacity-100" aria-label="remove">×</button></span>
@@ -583,7 +583,7 @@ export default function TalentDashboard() {
           <div className="flex flex-wrap gap-2 mb-2">
             {USE_CASES.map((o) => {
               const on = form.specialties.includes(o.key);
-              return <button key={o.key} type="button" onClick={() => toggleList('specialties', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-violet-500/20 border-violet-400/40 text-violet-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
+              return <button key={o.key} type="button" onClick={() => toggleList('specialties', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-violet-500/20 border-violet-400/40 text-violet-200' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
             })}
             {form.specialties.filter((x) => !USE_CASE_KEYS.has(x)).map((x) => (
               <span key={x} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-violet-500/20 border border-violet-400/40 text-violet-200">{x}<button onClick={() => removeFromList('specialties', x)} className="opacity-70 hover:opacity-100" aria-label="remove">×</button></span>
@@ -597,14 +597,14 @@ export default function TalentDashboard() {
 
         {/* Special skills / impressions */}
         <div className={sectionCls}>
-          <label className={labelCls}>{tx('特殊技能 / 模仿', '特殊技能 / 模仿', 'Special skills & impressions')} <span className="font-normal text-gray-600">· {tx('選填', '选填', 'optional')}</span></label>
+          <label className={labelCls}>{tx('特殊技能 / 模仿', '特殊技能 / 模仿', 'Special skills & impressions')} <span className="font-normal text-gray-400">· {tx('選填', '选填', 'optional')}</span></label>
           <textarea className={`${inputCls} min-h-[70px] resize-y`} value={form.special_skills} onChange={(e) => setForm({ ...form, special_skills: e.target.value })} placeholder={tx('例如:模仿名人/卡通角色、口技、方言、會唱歌、Rap…', '例如:模仿名人/卡通角色、口技、方言、会唱歌、Rap…', 'e.g. Celebrity/character impressions, beatbox, dialects, singing, rap…')} />
         </div>
 
         {/* Languages — searchable language + accent, with custom fallback */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</label>
-          <p className="text-xs text-gray-500 mb-2.5">{tx('搜尋語言(中/英),選口音;找不到可直接輸入。每個語言都要有一段該語言的 demo 才能掛上。', '搜寻语言(中/英),选口音;找不到可直接输入。每个语言都要有一段该语言的 demo 才能挂上。', 'Search a language (any name), pick an accent; type your own if not listed. Each needs a demo in it.')}</p>
+          <p className="text-xs text-gray-300 mb-2.5">{tx('搜尋語言(中/英),選口音;找不到可直接輸入。每個語言都要有一段該語言的 demo 才能掛上。', '搜寻语言(中/英),选口音;找不到可直接输入。每个语言都要有一段该语言的 demo 才能挂上。', 'Search a language (any name), pick an accent; type your own if not listed. Each needs a demo in it.')}</p>
           {form.languages.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {form.languages.map((v) => {
@@ -620,7 +620,7 @@ export default function TalentDashboard() {
           )}
           {form.languages.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1.5">{tx('哪些是母語?點選標記(客戶頁會標「母語」)', '哪些是母语?点选标记(客户页会标「母语」)', 'Which are native? Tap to mark (shown as “Native” on your profile)')}</p>
+              <p className="text-xs text-gray-300 mb-1.5">{tx('哪些是母語?點選標記(客戶頁會標「母語」)', '哪些是母语?点选标记(客户页会标「母语」)', 'Which are native? Tap to mark (shown as “Native” on your profile)')}</p>
               <div className="flex flex-wrap gap-2">
                 {form.languages.map((v) => {
                   const isNative = form.native_languages.includes(v);
@@ -647,7 +647,7 @@ export default function TalentDashboard() {
           ) : (
             <>
             <div className="flex flex-wrap gap-2 items-center">
-              <span className="inline-flex items-center gap-1.5 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-200">{baseLangLabel(langPick, locale)}<button onClick={() => setLangPick('')} className="text-gray-400 hover:text-white" aria-label="change">×</button></span>
+              <span className="inline-flex items-center gap-1.5 text-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-200">{baseLangLabel(langPick, locale)}<button onClick={() => setLangPick('')} className="text-gray-300 hover:text-white" aria-label="change">×</button></span>
               {(() => {
                 const opts = accentOptionsFor(langPick);
                 const hasRegional = opts.length > 1; // more than just 'native' → must pick a region
@@ -672,7 +672,7 @@ export default function TalentDashboard() {
         {/* Demos — collapsed: only categories with demos, plus one add control */}
         <div className={sectionCls}>
           <label className={labelCls}>{tx('試聽 demo', '试听 demo', 'Demos')}</label>
-          <p className="text-xs text-gray-500 mb-3">{tx('只收 MP3,單檔 3 分鐘內(建議 1 分鐘)。建議純人聲最清晰;可有音樂襯底,但請避免過大或破音的配樂。命名簡短就好 —— 廣告填品牌名、角色填角色名。點 ★ 設「主打」,它會在人才庫卡片上播放。', '只收 MP3,单档 3 分钟内(建议 1 分钟)。建议纯人声最清晰;可有音乐衬底,但请避免过大或破音的配乐。命名简短就好 —— 广告填品牌名、角色填角色名。点 ★ 设「主打」,它会在人才库卡片上播放。', 'MP3 only, under 3 min (1 min ideal). Clean voice-only is clearest; light music is fine, but avoid loud or clipping backing tracks. Keep names short — a brand for ads, a character for games. Tap ★ to set a primary demo — it previews on your roster card.')}</p>
+          <p className="text-xs text-gray-300 mb-3">{tx('只收 MP3,單檔 3 分鐘內(建議 1 分鐘)。建議純人聲最清晰;可有音樂襯底,但請避免過大或破音的配樂。命名簡短就好 —— 廣告填品牌名、角色填角色名。點 ★ 設「主打」,它會在人才庫卡片上播放。', '只收 MP3,单档 3 分钟内(建议 1 分钟)。建议纯人声最清晰;可有音乐衬底,但请避免过大或破音的配乐。命名简短就好 —— 广告填品牌名、角色填角色名。点 ★ 设「主打」,它会在人才库卡片上播放。', 'MP3 only, under 3 min (1 min ideal). Clean voice-only is clearest; light music is fine, but avoid loud or clipping backing tracks. Keep names short — a brand for ads, a character for games. Tap ★ to set a primary demo — it previews on your roster card.')}</p>
           {uploadErr && <p className="text-red-400 text-xs mb-2">{uploadErr}</p>}
 
           {demosByCat.length > 0 && (
@@ -681,7 +681,7 @@ export default function TalentDashboard() {
                 <div key={c.key}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm text-gray-300">{pickLabel(c, locale)}</span>
-                    <span className="text-[11px] text-gray-600">{DEMO_UNLIMITED.has(c.key) ? tx('不限', '不限', 'unlimited') : `${items.length} / ${demoLimit(c.key)}`}</span>
+                    <span className="text-[11px] text-gray-400">{DEMO_UNLIMITED.has(c.key) ? tx('不限', '不限', 'unlimited') : `${items.length} / ${demoLimit(c.key)}`}</span>
                   </div>
                   <div className="space-y-2">
                     {items.map((d) => (
@@ -696,9 +696,9 @@ export default function TalentDashboard() {
                           {form.demos[0]?.url === d.url ? (
                             <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] text-amber-300 bg-amber-500/15 rounded-full px-2 py-0.5"><Star className="w-3 h-3 fill-amber-300" />{tx('主打', '主打', 'Primary')}</span>
                           ) : (
-                            <button onClick={() => setPrimaryDemo(d.url)} title={tx('設為主打(在卡片播放)', '设为主打(在卡片播放)', 'Set as primary (plays on card)')} className="text-gray-500 hover:text-amber-300 shrink-0" aria-label="set primary"><Star className="w-4 h-4" /></button>
+                            <button onClick={() => setPrimaryDemo(d.url)} title={tx('設為主打(在卡片播放)', '设为主打(在卡片播放)', 'Set as primary (plays on card)')} className="text-gray-300 hover:text-amber-300 shrink-0" aria-label="set primary"><Star className="w-4 h-4" /></button>
                           )}
-                          <button onClick={() => removeDemo(d.url)} className="text-gray-500 hover:text-red-400 shrink-0" aria-label="remove"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => removeDemo(d.url)} className="text-gray-300 hover:text-red-400 shrink-0" aria-label="remove"><Trash2 className="w-4 h-4" /></button>
                         </div>
                         <audio controls src={d.url} className="w-full h-8" />
                       </div>
@@ -720,7 +720,7 @@ export default function TalentDashboard() {
                 return <option key={c.key} value={c.key} disabled={full} className="bg-zinc-900">{pickLabel(c, locale)}{unlimited ? tx('(不限)', '(不限)', ' (unlimited)') : ` (${count}/${demoLimit(c.key)})`}{full ? tx(' 已滿', ' 已满', ' full') : ''}</option>;
               })}
             </select>
-            <label className={`shrink-0 inline-flex items-center gap-1.5 text-sm rounded-lg px-4 py-2.5 cursor-pointer transition ${!addCat || uploadingCat ? 'bg-white/5 text-gray-500 cursor-not-allowed' : 'bg-amber-500/90 hover:bg-amber-400 text-black font-medium'}`}>
+            <label className={`shrink-0 inline-flex items-center gap-1.5 text-sm rounded-lg px-4 py-2.5 cursor-pointer transition ${!addCat || uploadingCat ? 'bg-white/5 text-gray-300 cursor-not-allowed' : 'bg-amber-500/90 hover:bg-amber-400 text-black font-medium'}`}>
               <input type="file" accept=".mp3,audio/mpeg" className="hidden" disabled={!addCat || !!uploadingCat} onChange={(e) => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleDemoUpload(f, addCat); }} />
               <Plus className="w-3.5 h-3.5" />{uploadingCat ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳 demo', '上传 demo', 'Upload demo')}
             </label>
@@ -746,11 +746,11 @@ export default function TalentDashboard() {
             </div>
           </div>
           <div className="mt-4">
-            <label className={labelCls}>{tx('聲音年齡', '声音年龄', 'Voice age')} <span className="font-normal text-gray-500">· {tx('可複選', '可复选', 'multi-select')}</span></label>
+            <label className={labelCls}>{tx('聲音年齡', '声音年龄', 'Voice age')} <span className="font-normal text-gray-300">· {tx('可複選', '可复选', 'multi-select')}</span></label>
             <div className="flex flex-wrap gap-2">
               {VOICE_AGES.map((o) => {
                 const on = form.voice_ages.includes(o.key);
-                return <button key={o.key} type="button" onClick={() => toggleList('voice_ages', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-amber-500/20 border-amber-400/40 text-amber-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
+                return <button key={o.key} type="button" onClick={() => toggleList('voice_ages', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-amber-500/20 border-amber-400/40 text-amber-200' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
               })}
             </div>
           </div>
@@ -758,11 +758,11 @@ export default function TalentDashboard() {
 
         {/* Availability */}
         <div className={sectionCls}>
-          <label className={labelCls}>{tx('可工作時段', '可工作时段', 'Availability')} <span className="font-normal text-gray-500">· {tx('參考,逐案仍會再確認', '参考,逐案仍会再确认', 'reference; confirmed per project')}</span></label>
+          <label className={labelCls}>{tx('可工作時段', '可工作时段', 'Availability')} <span className="font-normal text-gray-300">· {tx('參考,逐案仍會再確認', '参考,逐案仍会再确认', 'reference; confirmed per project')}</span></label>
           <div className="flex flex-wrap gap-2">
             {AVAILABILITY.map((o) => {
               const on = form.availability.includes(o.key);
-              return <button key={o.key} type="button" onClick={() => toggleList('availability', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-amber-500/20 border-amber-400/40 text-amber-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
+              return <button key={o.key} type="button" onClick={() => toggleList('availability', o.key)} className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? 'bg-amber-500/20 border-amber-400/40 text-amber-200' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>{pickLabel(o, locale)}</button>;
             })}
           </div>
         </div>
@@ -778,7 +778,7 @@ export default function TalentDashboard() {
             <textarea className={`${inputCls} min-h-[90px] resize-y`} value={form.notable_works} onChange={(e) => setForm({ ...form, notable_works: e.target.value })} placeholder={tx('一行一個,作品 + 媒介/角色,例如:\nLINDOR 農曆新年電視廣告\n《XX》有聲書全集旁白\n《某遊戲》主角配音', '一行一个,作品 + 媒介/角色,例如:\nLINDOR 农历新年电视广告\n《XX》有声书全集旁白\n《某游戏》主角配音', 'One per line — work + medium/role, e.g.\nLINDOR Lunar New Year TV ad\nNarrator, “XX” audiobook series\nLead role, “Some Game”')} />
           </div>
           <div>
-            <label className={labelCls}>{tx('獎項', '奖项', 'Awards')} <span className="font-normal text-gray-600">· {tx('選填', '选填', 'optional')}</span></label>
+            <label className={labelCls}>{tx('獎項', '奖项', 'Awards')} <span className="font-normal text-gray-400">· {tx('選填', '选填', 'optional')}</span></label>
             <input className={inputCls} value={form.awards} onChange={(e) => setForm({ ...form, awards: e.target.value })} placeholder={tx('得過的獎項…', '得过的奖项…', 'Awards you’ve won…')} />
           </div>
         </div>
@@ -786,19 +786,19 @@ export default function TalentDashboard() {
         {/* Studio / equipment */}
         <div className={sectionCls}>
           <div className="mb-4">
-            <label className={labelCls}>{tx('配合的專業錄音室(網址)', '合作的专业录音室(网址)', 'Partner studio (link)')} <span className="font-normal text-gray-600">· {tx('選填', '选填', 'optional')}</span></label>
+            <label className={labelCls}>{tx('配合的專業錄音室(網址)', '合作的专业录音室(网址)', 'Partner studio (link)')} <span className="font-normal text-gray-400">· {tx('選填', '选填', 'optional')}</span></label>
             <input type="url" className={inputCls} value={form.studio_partner} onChange={(e) => setForm({ ...form, studio_partner: e.target.value })} placeholder="https://…" />
           </div>
           <div>
-            <label className={labelCls}>{tx('錄音器材', '录音器材', 'Recording equipment')} <span className="font-normal text-gray-600">· {tx('選填', '选填', 'optional')}</span></label>
+            <label className={labelCls}>{tx('錄音器材', '录音器材', 'Recording equipment')} <span className="font-normal text-gray-400">· {tx('選填', '选填', 'optional')}</span></label>
             <input className={inputCls} value={form.equipment} onChange={(e) => setForm({ ...form, equipment: e.target.value })} placeholder={tx('例如:Neumann TLM103 + Apollo Twin', '例如:Neumann TLM103 + Apollo Twin', 'e.g. Neumann TLM103 + Apollo Twin')} />
           </div>
         </div>
 
         {/* Cooperation opt-ins — internal only, never shown to clients */}
         <div className={sectionCls}>
-          <label className={labelCls}>{tx('合作意願', '合作意愿', 'What work you’re open to')} <span className="font-normal text-gray-500">· {tx('只給 Onyx 內部參考,不會公開', '只给 Onyx 内部参考,不会公开', 'internal only — never shown to clients')}</span></label>
-          <p className="text-xs text-gray-500 mb-3">{tx('勾選你願意承接的類型,我們才會把對的案子發給你。隨時可改。', '勾选你愿意承接的类型,我们才会把对的案子发给你。随时可改。', 'Tick what you’ll take on, so we only send you the right jobs. Change anytime.')}</p>
+          <label className={labelCls}>{tx('合作意願', '合作意愿', 'What work you’re open to')} <span className="font-normal text-gray-300">· {tx('只給 Onyx 內部參考,不會公開', '只给 Onyx 内部参考,不会公开', 'internal only — never shown to clients')}</span></label>
+          <p className="text-xs text-gray-300 mb-3">{tx('勾選你願意承接的類型,我們才會把對的案子發給你。隨時可改。', '勾选你愿意承接的类型,我们才会把对的案子发给你。随时可改。', 'Tick what you’ll take on, so we only send you the right jobs. Change anytime.')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {COOP_OPTIONS.map((o) => {
               const on = form.coop[o.key];
@@ -808,7 +808,7 @@ export default function TalentDashboard() {
                   <span className={`mt-0.5 w-4 h-4 shrink-0 rounded border flex items-center justify-center text-[10px] font-bold ${on ? 'bg-emerald-400 border-emerald-400 text-black' : 'border-white/30 text-transparent'}`}>✓</span>
                   <span>
                     <span className={`block text-sm font-medium ${on ? 'text-emerald-100' : 'text-gray-200'}`}>{tx(o.zh, o.cn, o.en)}</span>
-                    <span className="block text-xs text-gray-500">{tx(o.zhd, o.cnd, o.end)}</span>
+                    <span className="block text-xs text-gray-300">{tx(o.zhd, o.cnd, o.end)}</span>
                   </span>
                 </button>
               );
@@ -818,9 +818,9 @@ export default function TalentDashboard() {
 
         {/* Expected rates — internal reference, optional, negotiated per project */}
         <div className={sectionCls}>
-          <label className={labelCls}>{tx('期望報價', '期望报价', 'Your rate expectations')} <span className="font-normal text-gray-500">· {tx('選填 · 內部參考,不公開,逐案仍會談', '选填 · 内部参考,不公开,逐案仍会谈', 'optional · internal reference, negotiated per project')}</span></label>
+          <label className={labelCls}>{tx('期望報價', '期望报价', 'Your rate expectations')} <span className="font-normal text-gray-300">· {tx('選填 · 內部參考,不公開,逐案仍會談', '选填 · 内部参考,不公开,逐案仍会谈', 'optional · internal reference, negotiated per project')}</span></label>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs text-gray-400">{tx('幣別', '币别', 'Currency')}</span>
+            <span className="text-xs text-gray-300">{tx('幣別', '币别', 'Currency')}</span>
             <select className="bg-zinc-900 text-sm text-gray-200 rounded-lg px-2.5 py-1.5 border border-white/10" value={form.rates.currency} onChange={(e) => setForm((f) => ({ ...f, rates: { ...f.rates, currency: e.target.value } }))}>
               {['TWD', 'USD', 'CNY', 'EUR', 'GBP', 'JPY'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
             </select>
@@ -828,13 +828,13 @@ export default function TalentDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {RATE_FIELDS.map((rf) => (
               <div key={rf.key}>
-                <label className="block text-xs text-gray-400 mb-1">{tx(rf.zh, rf.cn, rf.en)}</label>
+                <label className="block text-xs text-gray-300 mb-1">{tx(rf.zh, rf.cn, rf.en)}</label>
                 <input type="number" min="0" className={inputCls} value={form.rates[rf.key]} onChange={(e) => setForm((f) => ({ ...f, rates: { ...f.rates, [rf.key]: e.target.value } }))} placeholder={form.rates.currency} />
               </div>
             ))}
           </div>
           <div className="mt-3">
-            <label className="block text-xs text-gray-400 mb-1">{tx('補充說明', '补充说明', 'Notes')}</label>
+            <label className="block text-xs text-gray-300 mb-1">{tx('補充說明', '补充说明', 'Notes')}</label>
             <input className={inputCls} value={form.rates.note} onChange={(e) => setForm((f) => ({ ...f, rates: { ...f.rates, note: e.target.value } }))} placeholder={tx('例如:買斷 ×2、急件 +30%…', '例如:买断 ×2、急件 +30%…', 'e.g. buyout ×2, rush +30%…')} />
           </div>
         </div>
@@ -854,16 +854,16 @@ export default function TalentDashboard() {
         {/* Service classification — read-only */}
         {serviceTags.length > 0 && (
           <div className={sectionCls}>
-            <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">{tx('服務類型 · 由 Onyx 管理', '服务类型 · 由 Onyx 管理', 'Services — managed by Onyx')}</p>
+            <p className="text-xs text-gray-300 uppercase tracking-widest mb-3">{tx('服務類型 · 由 Onyx 管理', '服务类型 · 由 Onyx 管理', 'Services — managed by Onyx')}</p>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {serviceTags.map((tag) => <span key={tag} className="text-xs bg-sky-500/15 border border-sky-400/20 text-sky-200 px-2.5 py-1 rounded-full">{tx(SERVICE_LABEL[tag]?.tw || tag, SERVICE_LABEL[tag]?.cn || tag, SERVICE_LABEL[tag]?.en || tag)}</span>)}
             </div>
-            <p className="text-[11px] text-gray-600">{tx('想調整服務範圍?請聯絡 hello@onyxstudios.ai。', '想调整服务范围?请联系 hello@onyxstudios.ai。', 'Want to change these? Contact hello@onyxstudios.ai.')}</p>
+            <p className="text-[11px] text-gray-400">{tx('想調整服務範圍?請聯絡 hello@onyxstudios.ai。', '想调整服务范围?请联系 hello@onyxstudios.ai。', 'Want to change these? Contact hello@onyxstudios.ai.')}</p>
           </div>
         )}
 
         <div className="pt-2 pb-8 text-center">
-          <Link href="/talents" className="text-xs text-gray-500 hover:text-gray-300 transition">{tx('查看公開人才庫 →', '查看公开人才库 →', 'View public roster →')}</Link>
+          <Link href="/talents" className="text-xs text-gray-300 hover:text-gray-300 transition">{tx('查看公開人才庫 →', '查看公开人才库 →', 'View public roster →')}</Link>
         </div>
       </div>
     </>,

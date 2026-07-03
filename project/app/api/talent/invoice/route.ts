@@ -20,15 +20,20 @@ export async function GET(request: NextRequest) {
     .eq('id', id).eq('talent_id', talentId).maybeSingle();
   if (!pr) return NextResponse.json({ error: 'not your request' }, { status: 403 });
 
-  // 賣方(配音員)姓名 + 地址 ← 解密收款資料。
-  let sellerName = '', sellerAddress = '';
+  // 賣方(配音員)姓名 + 地址 + 稅籍編號 ← 解密收款資料。
+  // 收款資料是兩組結構 {twd,usd,tax}:姓名取台幣戶名,沒有再取美金戶名;地址/稅籍取稅務區。
+  let sellerName = '', sellerAddress = '', sellerTaxId = '';
   if (payoutEncConfigured()) {
     const { data: pd } = await r.db.from('talent_payout_details').select('enc_payload').eq('talent_id', talentId).maybeSingle();
     if (pd?.enc_payload) {
       try {
-        const d = decryptJson<Record<string, string>>(pd.enc_payload as string);
-        sellerName = d.account_holder || '';
-        sellerAddress = d.tax_address || '';
+        const d = decryptJson<Record<string, unknown>>(pd.enc_payload as string);
+        const twd = (d.twd && typeof d.twd === 'object' ? d.twd : {}) as Record<string, string>;
+        const usd = (d.usd && typeof d.usd === 'object' ? d.usd : {}) as Record<string, string>;
+        const tax = (d.tax && typeof d.tax === 'object' ? d.tax : {}) as Record<string, string>;
+        sellerName = twd.account_holder || usd.account_holder || '';
+        sellerAddress = tax.tax_address || '';
+        sellerTaxId = tax.tax_id || '';   // 稅籍編號:配音員有填才置入(台灣=身分證,海外=Tax ID)
       } catch { /* 解不開就留空 */ }
     }
   }
@@ -38,6 +43,7 @@ export async function GET(request: NextRequest) {
     dateISO: (pr.created_at as string) || new Date().toISOString(),
     sellerName: sellerName || (r.talent as { name?: string }).name || '',
     sellerAddress,
+    sellerTaxId,
     amount: Number(pr.amount) || 0,
     currency: (pr.currency as string) || 'USD',
     note: (pr.note as string) || '',

@@ -21,7 +21,8 @@ export interface InvoiceData {
   dateISO: string;              // 開立日期
   sellerName: string;           // 配音員姓名 / 公司(法定)
   sellerAddress?: string;       // 配音員地址(台灣的有,海外選填)
-  description?: string;         // 服務說明,預設 Voiceover services
+  sellerTaxId?: string;         // 賣方稅籍編號(台灣=身分證,海外=Tax ID),選填,有填才顯示
+  description?: string;         // 服務說明 = 案名(英文);沒帶案名時用預設 Voiceover services
   amount: number;               // 請款額 gross
   currency: string;
   note?: string;
@@ -30,7 +31,7 @@ export interface InvoiceData {
 // 回傳一張完整、可列印(A4)的 HTML 發票。是獨立頁面,故含 <html>。
 export function renderInvoiceHtml(p: InvoiceData): string {
   const date = (p.dateISO || '').slice(0, 10);
-  const desc = p.description || 'Voiceover / voice talent services 配音勞務';
+  const desc = p.description || 'Voiceover services';
   const buyerLines = [ONYX_ENTITY.address, ONYX_ENTITY.taxId ? `統編 ${ONYX_ENTITY.taxId}` : '', ONYX_ENTITY.email].filter(Boolean).map((l) => `<div>${esc(l)}</div>`).join('');
   return `<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Invoice ${esc(p.invoiceNumber)}</title>
@@ -61,7 +62,7 @@ export function renderInvoiceHtml(p: InvoiceData): string {
     <div style="text-align:right"><div class="muted">開立日期 Date</div><div>${esc(date)}</div></div>
   </div>
   <div class="cols">
-    <div><div class="lbl">賣方 / From(收款人)</div><div style="font-weight:600">${esc(p.sellerName)}</div>${p.sellerAddress ? `<div>${esc(p.sellerAddress)}</div>` : ''}</div>
+    <div><div class="lbl">賣方 / From(收款人)</div><div style="font-weight:600">${esc(p.sellerName)}</div>${p.sellerAddress ? `<div>${esc(p.sellerAddress)}</div>` : ''}${p.sellerTaxId ? `<div>Tax ID / 稅籍編號: ${esc(p.sellerTaxId)}</div>` : ''}</div>
     <div><div class="lbl">買方 / Bill to(付款人)</div><div style="font-weight:600">${esc(ONYX_ENTITY.name)}</div>${buyerLines}</div>
   </div>
   <table>

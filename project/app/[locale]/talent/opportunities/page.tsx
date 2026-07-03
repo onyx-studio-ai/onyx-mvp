@@ -114,7 +114,7 @@ type Tpl = { name: string; body: string };
 type Templates = { intro?: Tpl[]; revision?: Tpl[] };
 
 const inputCls =
-  'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60 transition';
+  'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:outline-none focus:border-green-400/60 transition';
 
 // A text field with quick templates: a built-in starter chip + the talent's saved
 // templates (click to fill, ✕ to delete) + "存成範本" to save the current text.
@@ -138,7 +138,7 @@ function TemplatedField({ kind, label, optional, multiline, value, onChange, bui
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <div className="text-xs text-gray-300">{label}{optional && <span className="text-gray-500"> {tx('選填', '选填', 'optional')}</span>}</div>
+        <div className="text-xs text-gray-300">{label}{optional && <span className="text-gray-300"> {tx('選填', '选填', 'optional')}</span>}</div>
         <button type="button" onClick={save} className="text-[11px] text-amber-300 hover:underline">💾 {tx('存成範本', '存成范本', 'Save template')}</button>
       </div>
       <div className="flex flex-wrap gap-1.5 mb-1.5">
@@ -146,7 +146,7 @@ function TemplatedField({ kind, label, optional, multiline, value, onChange, bui
         {saved.map((t) => (
           <span key={t.name} className="inline-flex items-center text-[11px] bg-white/5 border border-white/10 rounded-full pl-2.5 pr-1 py-1 text-gray-300">
             <button type="button" onClick={() => onChange(t.body)} className="hover:text-white">{t.name}</button>
-            <button type="button" onClick={() => del(t.name)} className="text-gray-500 hover:text-red-300 px-1" title={tx('刪除', '删除', 'Delete')}>✕</button>
+            <button type="button" onClick={() => del(t.name)} className="text-gray-300 hover:text-red-300 px-1" title={tx('刪除', '删除', 'Delete')}>✕</button>
           </span>
         ))}
       </div>
@@ -211,7 +211,7 @@ function AssignedDelivery({ orderId, deliveries, token, tx, onChanged }: {
       {deliveries.length > 0 && deliveries.map((d) => (
         <div key={d.id} className="flex items-center gap-2 text-xs bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-lg px-3 py-1.5">
           <span className="text-[#6FCF97]">✓</span><span className="text-gray-200 truncate flex-1">{d.file_name}</span>
-          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-400 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
+          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-300 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
         </div>
       ))}
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
@@ -267,15 +267,15 @@ function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
         <div key={d.id} className="flex items-center gap-2 text-xs bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-lg px-3 py-1.5">
           <span className="text-[#6FCF97]">✓</span>
           <span className="text-gray-200 truncate flex-1">{d.file_name}</span>
-          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-400 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
-          <button onClick={() => remove(d.id)} disabled={busy} title={tx('刪除', '删除', 'Remove')} className="text-gray-500 hover:text-red-300 disabled:opacity-50 shrink-0">✕</button>
+          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-300 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
+          <button onClick={() => remove(d.id)} disabled={busy} title={tx('刪除', '删除', 'Remove')} className="text-gray-300 hover:text-red-300 disabled:opacity-50 shrink-0">✕</button>
         </div>
       ))}
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
         {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('⬆ 上傳更多檔', '⬆ 上传更多档', '⬆ Upload more') : tx('⬆ 上傳完成音檔', '⬆ 上传完成音档', '⬆ Upload final audio')}
         <input type="file" accept={ACCEPT} className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
-      <p className="text-[10px] text-gray-500">{tx('可上傳多個完成檔 / 修改檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '可上传多个完成档 / 修改档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Upload several final / revision files (48kHz/24-bit WAV preferred; zip for bundles)')}</p>
+      <p className="text-[10px] text-gray-300">{tx('可上傳多個完成檔 / 修改檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '可上传多个完成档 / 修改档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Upload several final / revision files (48kHz/24-bit WAV preferred; zip for bundles)')}</p>
       {err && <p className="text-[10px] text-red-400">{err}</p>}
     </div>
   );
@@ -339,7 +339,7 @@ function AddExtraDemos({ quote, token, tx, onDone }: { quote: Quote; token: stri
         <div className="space-y-1 mb-2">
           {samples.map((s, i) => (
             <div key={i} className="flex items-center gap-2">
-              <span className="text-[11px] text-gray-500 w-5">{i + 1}.</span>
+              <span className="text-[11px] text-gray-300 w-5">{i + 1}.</span>
               <audio controls src={s.url} className="h-8 flex-1 min-w-0" />
             </div>
           ))}
@@ -349,7 +349,7 @@ function AddExtraDemos({ quote, token, tx, onDone }: { quote: Quote; token: stri
         {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('⬆ 上傳一段 demo', '⬆ 上传一段 demo', '⬆ Add a demo')}
         <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
-      <p className="text-[11px] text-gray-500 mt-1">{tx('可上傳多段(不同語氣 / 角色);不會取代原試音。', '可上传多段(不同语气 / 角色);不会取代原试音。', 'Add several (different tones / characters); won’t replace your audition.')}</p>
+      <p className="text-[11px] text-gray-300 mt-1">{tx('可上傳多段(不同語氣 / 角色);不會取代原試音。', '可上传多段(不同语气 / 角色);不会取代原试音。', 'Add several (different tones / characters); won’t replace your audition.')}</p>
       {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
     </div>
   );
@@ -410,7 +410,7 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
   // One label:value row inside a section. Skips itself when there's no value.
   const row = (k: string, v: React.ReactNode, opts?: { gold?: boolean }) => v ? (
     <div className="flex items-baseline justify-between gap-3 py-1.5">
-      <span className="text-[12px] text-gray-400 shrink-0">{k}</span>
+      <span className="text-[12px] text-gray-300 shrink-0">{k}</span>
       <span className={`text-sm text-right ${opts?.gold ? 'text-[#6FCF97] font-semibold' : 'text-gray-100'}`}>{v}</span>
     </div>
   ) : null;
@@ -429,7 +429,7 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
           <span className="text-base">📄</span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[#E4CB94]">{tx('授權書 · Job Agreement', '授权书 · Job Agreement', 'Job Agreement')}</p>
-            <p className="text-[11px] text-gray-400">{tx('接單前請確認以下條款,雙方依此履約。', '接单前请确认以下条款,双方依此履约。', 'Review the full terms before accepting.')}</p>
+            <p className="text-[11px] text-gray-300">{tx('接單前請確認以下條款,雙方依此履約。', '接单前请确认以下条款,双方依此履约。', 'Review the full terms before accepting.')}</p>
           </div>
         </div>
         {brief.brief_number && <span className="text-[11px] font-mono text-[#C9A86A]/80 shrink-0">#{brief.brief_number}</span>}
@@ -544,13 +544,13 @@ export default function Opportunities() {
     </div>
   );
 
-  if (phase === 'loading') return shell(<p className="text-gray-500 text-sm text-center py-20">{tx('載入中…', '加载中…', 'Loading…')}</p>);
+  if (phase === 'loading') return shell(<p className="text-gray-300 text-sm text-center py-20">{tx('載入中…', '加载中…', 'Loading…')}</p>);
 
   if (phase === 'nologin') {
     return shell(
       <div className="text-center py-16">
         <h1 className="text-xl font-semibold mb-3">{tx('案件', '案件', 'Cases')}</h1>
-        <p className="text-gray-400 text-sm mb-6">{tx('請先登入您的配音員後台。', '请先登录您的配音员后台。', 'Please sign in to your talent dashboard first.')}</p>
+        <p className="text-gray-300 text-sm mb-6">{tx('請先登入您的配音員後台。', '请先登录您的配音员后台。', 'Please sign in to your talent dashboard first.')}</p>
         <Link href="/talent" className="text-green-400 hover:underline text-sm">{tx('前往登入 →', '前往登录 →', 'Go to sign in →')}</Link>
       </div>
     );
@@ -560,11 +560,11 @@ export default function Opportunities() {
     <>
       <div className="flex items-start justify-between gap-3 mb-8">
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-medium">{tx('配音員入口', '配音员入口', 'Talent portal')}</p>
+          <p className="text-xs text-gray-300 uppercase tracking-widest mb-2 font-medium">{tx('配音員入口', '配音员入口', 'Talent portal')}</p>
           <h1 className="text-3xl font-bold tracking-tight">{tx('案件機會', '案件机会', 'Opportunities')}</h1>
-          <p className="text-gray-500 text-sm mt-1">{tx('開放中的試音案、您接到的案件與應徵紀錄。', '开放中的试音案、您接到的案件与应征记录。', 'Open auditions, jobs you won, and your audition history.')}</p>
+          <p className="text-gray-300 text-sm mt-1">{tx('開放中的試音案、您接到的案件與應徵紀錄。', '开放中的试音案、您接到的案件与应征记录。', 'Open auditions, jobs you won, and your audition history.')}</p>
         </div>
-        <Link href="/talent" className="text-xs text-gray-400 hover:text-white transition whitespace-nowrap shrink-0 pt-1">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
+        <Link href="/talent" className="text-xs text-gray-300 hover:text-white transition whitespace-nowrap shrink-0 pt-1">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
@@ -585,10 +585,10 @@ export default function Opportunities() {
                 <EntityCard key={q.id} icon={Briefcase} accent="sky" code={q.role_name || undefined}
                   title={titleOf(q.brief_id)}
                   badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('二次試音', '二次试音', 'Second take')}</span>}>
-                  {q.reaudition_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-500">{tx('客戶方向', '客户方向', 'Direction')}:</span> {q.reaudition_note}</p>}
+                  {q.reaudition_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-300">{tx('客戶方向', '客户方向', 'Direction')}:</span> {q.reaudition_note}</p>}
                   {q.sample_url && <audio controls src={q.sample_url} className="w-full h-9 mb-1" />}
                   <ReauditUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
-                  <p className="text-[11px] text-gray-500 mt-1">{tx('上傳新版本後,這個請求就會清除。', '上传新版本后,这个请求就会清除。', 'Uploading a new take clears this request.')}</p>
+                  <p className="text-[11px] text-gray-300 mt-1">{tx('上傳新版本後,這個請求就會清除。', '上传新版本后,这个请求就会清除。', 'Uploading a new take clears this request.')}</p>
                 </EntityCard>
               ))}
             </div>
@@ -608,7 +608,7 @@ export default function Opportunities() {
                 <EntityCard key={q.id} icon={Briefcase} accent="violet" code={q.role_name || undefined}
                   title={titleOf(q.brief_id)}
                   badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('追加 demo', '追加 demo', 'More demos')}</span>}>
-                  {q.more_demos_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-500">{tx('想聽的方向', '想听的方向', 'What they’d like')}:</span> {q.more_demos_note}</p>}
+                  {q.more_demos_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-300">{tx('想聽的方向', '想听的方向', 'What they’d like')}:</span> {q.more_demos_note}</p>}
                   <AddExtraDemos quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
                 </EntityCard>
               ))}
@@ -627,9 +627,9 @@ export default function Opportunities() {
                 badge={o.status === 'delivered'
                   ? <span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('已交付 · 待驗收', '已交付 · 待验收', 'Delivered · in review')}</span>
                   : <span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('待錄製', '待录制', 'To record')}</span>}>
-                {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-500 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
+                {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
                 {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('📄 下載稿件檔', '📄 下载稿件档', '📄 Download script')}</a>}
-                {o.deadline && <p className="text-[11px] text-gray-500 mt-1">{tx('希望交付', '希望交付', 'Due')}: {o.deadline}</p>}
+                {o.deadline && <p className="text-[11px] text-gray-300 mt-1">{tx('希望交付', '希望交付', 'Due')}: {o.deadline}</p>}
                 <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
               </EntityCard>
             ))}
@@ -656,7 +656,7 @@ export default function Opportunities() {
                 >
                   {(w.final_script || w.final_script_url) && (
                     <div className="mb-3">
-                      <p className="text-xs text-gray-500 mb-1.5">{tx('正式稿件(客戶提供 · 請依此錄製)', '正式稿件(客户提供 · 请依此录制)', 'Final script (from the client — record this)')}</p>
+                      <p className="text-xs text-gray-300 mb-1.5">{tx('正式稿件(客戶提供 · 請依此錄製)', '正式稿件(客户提供 · 请依此录制)', 'Final script (from the client — record this)')}</p>
                       {w.final_script && (
                         <div className="text-sm text-gray-100 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 max-h-60 overflow-y-auto select-none"
                           style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
@@ -675,14 +675,14 @@ export default function Opportunities() {
                     return (
                       <div className="mb-3 rounded-lg border border-sky-500/30 bg-sky-500/[0.08] px-3 py-2.5">
                         <p className="text-sm font-semibold text-sky-300 mb-1">🔁 {tx('客戶要求修改', '客户要求修改', 'Client requested changes')}</p>
-                        {rev.client_feedback && <p className="text-sm text-gray-200 whitespace-pre-wrap"><span className="text-gray-500">{tx('客戶意見', '客户意见', 'Notes')}:</span> {rev.client_feedback}</p>}
-                        <p className="text-[11px] text-gray-400 mt-1">{tx('請依意見修改後,在下方重新上傳修改版。', '请依意见修改后,在下方重新上传修改版。', 'Revise per the notes and upload the new version below.')}</p>
+                        {rev.client_feedback && <p className="text-sm text-gray-200 whitespace-pre-wrap"><span className="text-gray-300">{tx('客戶意見', '客户意见', 'Notes')}:</span> {rev.client_feedback}</p>}
+                        <p className="text-[11px] text-gray-300 mt-1">{tx('請依意見修改後,在下方重新上傳修改版。', '请依意见修改后,在下方重新上传修改版。', 'Revise per the notes and upload the new version below.')}</p>
                       </div>
                     );
                   })()}
                   {myAccepted.map((q) => (
                     <div key={q.id} className="mb-2">
-                      <div className="text-xs text-gray-400 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
+                      <div className="text-xs text-gray-300 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
                       {(() => {
                         if (w.order_status === 'completed') return null;
                         // Real-person case: nothing happens until the client pays.
@@ -690,7 +690,7 @@ export default function Opportunities() {
                         if (!paid) return (
                           <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5">
                             <p className="text-sm font-medium text-amber-200">⏳ {tx('等待客戶付款', '等待客户付款', 'Awaiting client payment')}</p>
-                            <p className="text-[11px] text-gray-400 mt-0.5">{tx('客戶完成付款後即可開始製作並上傳交付。', '客户完成付款后即可开始制作并上传交付。', 'You can start once the client has paid.')}</p>
+                            <p className="text-[11px] text-gray-300 mt-0.5">{tx('客戶完成付款後即可開始製作並上傳交付。', '客户完成付款后即可开始制作并上传交付。', 'You can start once the client has paid.')}</p>
                           </div>
                         );
                         return q.agreement_accepted_at ? (
@@ -702,7 +702,7 @@ export default function Opportunities() {
                     </div>
                   ))}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                    <p className="text-[11px] text-gray-500">{tx('接單後即可開始錄製,完成在此上傳交付檔。', '接单后即可开始录制,完成在此上传交付档。', 'Once you accept, record and upload your delivery here.')}</p>
+                    <p className="text-[11px] text-gray-300">{tx('接單後即可開始錄製,完成在此上傳交付檔。', '接单后即可开始录制,完成在此上传交付档。', 'Once you accept, record and upload your delivery here.')}</p>
                     <Link href={`/talent/messages?brief=${w.id}`} className="inline-flex items-center gap-1 text-[11px] text-sky-300 hover:text-sky-200 hover:underline">💬 {tx('與客戶直接對話', '与客户直接对话', 'Message the client')} →</Link>
                   </div>
                   {w.order_status === 'completed' && w.order_id && (
@@ -717,7 +717,7 @@ export default function Opportunities() {
 
       {endedBriefs.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-400 mb-3">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
+          <h2 className="text-sm font-semibold text-gray-300 mb-3">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {endedBriefs.map((e) => {
               const label = e.status === 'cancelled'
@@ -732,7 +732,7 @@ export default function Opportunities() {
                   accent="gray"
                   code={e.brief_number}
                   title={<span className="text-gray-300">{e.title || e.content_type || tx('配音案', '配音案', 'Voice case')}</span>}
-                  badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-white/10 text-gray-400 border-white/15 whitespace-nowrap">{label}</span>}
+                  badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-white/10 text-gray-300 border-white/15 whitespace-nowrap">{label}</span>}
                 />
               );
             })}
@@ -745,7 +745,7 @@ export default function Opportunities() {
       )}
 
       {briefs.length === 0 && wonBriefs.length === 0 && endedBriefs.length === 0 && (
-        <p className="text-gray-500 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
+        <p className="text-gray-300 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
       )}
 
       <div className="space-y-3">
@@ -848,7 +848,7 @@ function BriefCard({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
                 {stats.map((s, i) => (
                   <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
-                    <p className="text-[11px] text-gray-500">{s.l}</p>
+                    <p className="text-[11px] text-gray-300">{s.l}</p>
                     <p className={`text-lg font-semibold mt-0.5 ${s.gold ? 'text-[#E4CB94]' : 'text-white'}`} style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{s.v}</p>
                   </div>
                 ))}
@@ -872,7 +872,7 @@ function BriefCard({
             ] as [string, string | null | undefined][]).filter((x): x is [string, string] => !!x[1]);
             return info.length ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-2 text-sm bg-[#1d1b25] border border-white/[0.08] rounded-xl p-4 mb-4">
-                {info.map(([k, v], i) => <div key={i} className="min-w-0"><span className="text-gray-500">{k} </span><span className="text-gray-200">{v}</span></div>)}
+                {info.map(([k, v], i) => <div key={i} className="min-w-0"><span className="text-gray-300">{k} </span><span className="text-gray-200">{v}</span></div>)}
               </div>
             ) : null;
           })()}
@@ -882,7 +882,7 @@ function BriefCard({
               image is never played as audio. */}
           {brief.audition_script && (
             <div className="mb-3">
-              <p className="text-xs text-gray-500 mb-1.5">{tx('試音方向 / 聲音方向(僅供線上閱讀)', '试音方向 / 声音方向(仅供线上阅读)', 'Audition / voice direction (read-only)')}</p>
+              <p className="text-xs text-gray-300 mb-1.5">{tx('試音方向 / 聲音方向(僅供線上閱讀)', '试音方向 / 声音方向(仅供线上阅读)', 'Audition / voice direction (read-only)')}</p>
               <div className="text-sm text-gray-200 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3 select-none"
                 style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
                 {brief.audition_script}
@@ -900,7 +900,7 @@ function BriefCard({
             const isImg = (u: string) => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'bmp'].includes(ext(u));
             return (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1.5">{tx('參考素材', '参考素材', 'Reference')}</p>
+                <p className="text-xs text-gray-300 mb-1.5">{tx('參考素材', '参考素材', 'Reference')}</p>
                 <div className="space-y-2">
                   {refs.map((r, i) => (
                     isAudio(r.url) ? <audio key={i} controls src={r.url} className="w-full h-9" />
@@ -923,16 +923,16 @@ function BriefCard({
                 ].map((r, i) => (
                   <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
                     <p className="text-sm font-medium text-[#E4CB94] mb-1">{r.t}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{r.d}</p>
+                    <p className="text-xs text-gray-300 leading-relaxed">{r.d}</p>
                   </div>
                 ))}
               </div>
 
               <div className="flex items-baseline justify-between mb-1">
                 <h4 className="text-lg font-semibold text-white" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{tx('試音角色', '试音角色', 'Roles')}</h4>
-                {(() => { const rs = brief.roles || []; const m = rs.filter((r) => (r.gender || '').includes('男')).length; const f = rs.filter((r) => (r.gender || '').includes('女')).length; return <span className="text-xs text-gray-500">{tx(`共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `${rs.length} roles · ${m}M / ${f}F`)}</span>; })()}
+                {(() => { const rs = brief.roles || []; const m = rs.filter((r) => (r.gender || '').includes('男')).length; const f = rs.filter((r) => (r.gender || '').includes('女')).length; return <span className="text-xs text-gray-300">{tx(`共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `共 ${rs.length} 角 · 男 ${m} / 女 ${f}`, `${rs.length} roles · ${m}M / ${f}F`)}</span>; })()}
               </div>
-              <p className="text-xs text-gray-400 mb-3">{tx('挑選角色 → 唸出台詞並錄音 → 上傳試音並報價。可應徵多個角色。', '挑选角色 → 念出台词并录音 → 上传试音并报价。可应征多个角色。', 'Pick a role → read its line aloud and record → upload your audition and quote. You may audition for several roles.')}</p>
+              <p className="text-xs text-gray-300 mb-3">{tx('挑選角色 → 唸出台詞並錄音 → 上傳試音並報價。可應徵多個角色。', '挑选角色 → 念出台词并录音 → 上传试音并报价。可应征多个角色。', 'Pick a role → read its line aloud and record → upload your audition and quote. You may audition for several roles.')}</p>
               <div className="space-y-3">
                 {(brief.roles || []).map((ro, i) => (
                   <RoleAudition
@@ -960,7 +960,7 @@ function BriefCard({
       ) : (
         <>
           <p className="text-sm text-gray-200 whitespace-pre-wrap mb-2">{brief.brief}</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300 mb-3">
             {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
             {brief.territory && <span>{tx('地區', '地区', 'Territory')}: {brief.territory}</span>}
             {brief.license_term && <span>{tx('授權', '授权', 'License')}: {brief.license_term}</span>}
@@ -972,7 +972,7 @@ function BriefCard({
           {myQuote ? (
             <div className="border-t border-white/10 pt-3 text-sm">
               <span className="text-green-300">{tx('已報價', '已报价', 'Quoted')}: {myQuote.currency} {myQuote.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}</span>
-              <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {quoteStatusLabel(myQuote.status, tx)}</span>
+              <span className="text-gray-300 ml-2">· {tx('狀態', '状态', 'Status')}: {quoteStatusLabel(myQuote.status, tx)}</span>
             </div>
           ) : (
             <div className="border-t border-white/10 pt-3 space-y-2">
@@ -982,7 +982,7 @@ function BriefCard({
                   placeholder={tx('客戶支付金額(報價)', '客户支付金额(报价)', 'Amount the client pays (your quote)')} />
               </div>
               {grossN > 0 && (
-                <p className="text-xs text-green-300">{tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview} <span className="text-gray-500">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span></p>
+                <p className="text-xs text-green-300">{tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview} <span className="text-gray-300">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span></p>
               )}
               <textarea className={`${inputCls} min-h-[60px] resize-y`} value={message} onChange={(e) => setMessage(e.target.value)}
                 placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')} />
@@ -1021,7 +1021,7 @@ function CaseHeader({
         <div className="p-2.5 rounded-lg border mt-0.5 shrink-0 bg-amber-500/10 border-amber-500/20"><Briefcase className="w-4 h-4 text-amber-400" /></div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-            <span className="text-xs text-gray-500 font-mono">{isCasting ? caseCode(brief) : brief.brief_number}</span>
+            <span className="text-xs text-gray-300 font-mono">{isCasting ? caseCode(brief) : brief.brief_number}</span>
             {brief.source === 'client'
               ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#7fb2e8]/15 text-[#9ec4ee] border border-[#7fb2e8]/30">{tx('客戶委託', '客户委托', 'Client brief')}</span>
               : <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#C9A86A]/15 text-[#E4CB94] border border-[#C9A86A]/30">{tx('平台發案', '平台发案', 'Onyx-posted')}</span>}
@@ -1038,14 +1038,14 @@ function CaseHeader({
           </h3>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs">
             {brief.rate_note && <span className="text-[#E4CB94] font-medium">{brief.rate_note}</span>}
-            {isCasting && roleCount > 0 && <span className="text-gray-400">{tx(`共 ${roleCount} 角`, `共 ${roleCount} 角`, `${roleCount} roles`)}</span>}
-            {!isCasting && brief.budget && <span className="text-gray-400">{tx('預算', '预算', 'Budget')} {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
+            {isCasting && roleCount > 0 && <span className="text-gray-300">{tx(`共 ${roleCount} 角`, `共 ${roleCount} 角`, `${roleCount} roles`)}</span>}
+            {!isCasting && brief.budget && <span className="text-gray-300">{tx('預算', '预算', 'Budget')} {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
             {due && <span className="text-amber-300/80">{tx('截止', '截止', 'Due')} {due}</span>}
           </div>
         </div>
         <div className="shrink-0 flex items-center gap-2 pt-0.5">
           {hasMine && <span className="text-[11px] text-[#6FCF97] whitespace-nowrap">{tx('已試', '已试', 'Done')}</span>}
-          <span className={`text-gray-500 text-xs transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+          <span className={`text-gray-300 text-xs transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
         </div>
       </div>
     </button>
@@ -1127,7 +1127,7 @@ function RoleAudition({
       {role.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={role.image} alt={role.name} className="absolute inset-0 w-full h-full object-cover object-top" />
-      ) : <div className="absolute inset-0 flex items-center justify-center text-3xl text-gray-600">🎭</div>}
+      ) : <div className="absolute inset-0 flex items-center justify-center text-3xl text-gray-400">🎭</div>}
       {role.is_lead && <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded font-medium z-10" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)' }}>★ {tx('主角', '主角', 'Lead')}</span>}
     </div>
   );
@@ -1158,13 +1158,13 @@ function RoleAudition({
       <div className="flex-1 min-w-0 p-4 space-y-2.5">
         {nameRow}
         {role.timbre && <p className="text-sm text-[#C9A86A] leading-snug">{tx('聲線', '声线', 'Voice')} · {role.timbre}</p>}
-        {role.personality && <p className="text-sm text-gray-400 leading-snug">{role.personality}</p>}
+        {role.personality && <p className="text-sm text-gray-300 leading-snug">{role.personality}</p>}
 
         {(role.emotion || role.speed || role.volume) && (
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
-            {role.emotion && <span><span className="text-gray-500">{tx('情緒', '情绪', 'Emotion')} </span><span className="text-gray-200">{role.emotion}</span></span>}
-            {role.speed && <span><span className="text-gray-500">{tx('語速', '语速', 'Pace')} </span><span className="text-gray-200">{role.speed}</span></span>}
-            {role.volume && <span><span className="text-gray-500">{tx('台詞量', '台词量', 'Volume')} </span><span className="text-gray-200">{role.volume}</span></span>}
+            {role.emotion && <span><span className="text-gray-300">{tx('情緒', '情绪', 'Emotion')} </span><span className="text-gray-200">{role.emotion}</span></span>}
+            {role.speed && <span><span className="text-gray-300">{tx('語速', '语速', 'Pace')} </span><span className="text-gray-200">{role.speed}</span></span>}
+            {role.volume && <span><span className="text-gray-300">{tx('台詞量', '台词量', 'Volume')} </span><span className="text-gray-200">{role.volume}</span></span>}
           </div>
         )}
 
@@ -1175,10 +1175,10 @@ function RoleAudition({
             <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{role.sample_line}</p>
           </div>
         )}
-        {role.note && <p className="text-xs text-gray-500 leading-snug"><span className="text-gray-600">{tx('備註', '备注', 'Note')} </span>{role.note}</p>}
+        {role.note && <p className="text-xs text-gray-300 leading-snug"><span className="text-gray-400">{tx('備註', '备注', 'Note')} </span>{role.note}</p>}
 
         <div className="flex items-center justify-between">
-          <span className={`text-xs ${isPopular ? 'text-[#E4CB94]' : 'text-gray-500'}`}>{count} {tx('人已試', '人已试', 'auditioned')}{isPopular && tx(' · 熱門', ' · 热门', ' · popular')}</span>
+          <span className={`text-xs ${isPopular ? 'text-[#E4CB94]' : 'text-gray-300'}`}>{count} {tx('人已試', '人已试', 'auditioned')}{isPopular && tx(' · 熱門', ' · 热门', ' · popular')}</span>
           <button onClick={() => setOpen((o) => !o)} className="text-sm rounded-xl px-4 py-2 transition"
             style={open ? { border: '1px solid rgba(201,168,106,.4)', color: '#E4CB94', background: 'transparent' } : { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>
             {open ? tx('收起', '收起', 'Close') : tx('試這個角色 →', '试这个角色 →', 'Audition →')}
@@ -1189,12 +1189,12 @@ function RoleAudition({
         {open && (
           <div className="space-y-2 border-t border-white/[0.08] pt-3">
             <label className="block">
-              <span className="text-xs text-gray-400">{tx('上傳這個角色的試音(唸上面的樣詞)', '上传这个角色的试音(念上面的样词)', 'Upload your audition (read the line above)')}</span>
+              <span className="text-xs text-gray-300">{tx('上傳這個角色的試音(唸上面的樣詞)', '上传这个角色的试音(念上面的样词)', 'Upload your audition (read the line above)')}</span>
               <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
-                className="block w-full text-xs text-gray-400 mt-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+                className="block w-full text-xs text-gray-300 mt-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
             </label>
-            {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
+            {uploading && <p className="text-xs text-gray-300">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
             {(() => {
               const isClient = brief.source === 'client';
@@ -1212,19 +1212,19 @@ function RoleAudition({
                   <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
                     <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">
                       <div className="text-[11px] text-[#E4CB94] mb-0.5">{tx('您的報酬', '您的报酬', 'You receive')}</div>
-                      <div className="flex items-baseline gap-1"><span className="text-xs text-gray-500">{currency}</span>
+                      <div className="flex items-baseline gap-1"><span className="text-xs text-gray-300">{currency}</span>
                         <input type="number" min="0" value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
                     </div>
                     {isClient && (
                       <div className="bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2">
-                        <div className="text-[11px] text-gray-400 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
-                        <div className="flex items-baseline gap-1"><span className="text-xs text-gray-500">{currency}</span>
+                        <div className="text-[11px] text-gray-300 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
+                        <div className="flex items-baseline gap-1"><span className="text-xs text-gray-300">{currency}</span>
                           <input type="number" min="0" value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
                       </div>
                     )}
                   </div>
                   {isClient ? (
-                    <p className={`text-[11px] ${over ? 'text-[#f0997b]' : 'text-gray-400'}`}>{tx('客戶支付', '客户支付', 'Client pays')} {currency} {clientPays.toLocaleString()}{budgetN > 0 && (over ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}` : ` · ${tx('在客戶預算內 ✓', '在客户预算内 ✓', 'within budget ✓')}`)}</p>
+                    <p className={`text-[11px] ${over ? 'text-[#f0997b]' : 'text-gray-300'}`}>{tx('客戶支付', '客户支付', 'Client pays')} {currency} {clientPays.toLocaleString()}{budgetN > 0 && (over ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}` : ` · ${tx('在客戶預算內 ✓', '在客户预算内 ✓', 'within budget ✓')}`)}</p>
                   ) : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 報價即您實得', '平台发案 · 报价即您实得', 'Platform-posted — your quote is what you get')}</p>}
                 </div>
               );
@@ -1321,7 +1321,7 @@ function GeneralResponse({
     return (
       <div className="border-t border-white/10 pt-3 text-sm">
         <span className="text-green-300">{tx('已應徵', '已应征', 'Applied')}: {done.currency} {done.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}</span>
-        <span className="text-gray-500 ml-2">· {tx('狀態', '状态', 'Status')}: {quoteStatusLabel(done.status, tx)}</span>
+        <span className="text-gray-300 ml-2">· {tx('狀態', '状态', 'Status')}: {quoteStatusLabel(done.status, tx)}</span>
         {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
       </div>
     );
@@ -1329,12 +1329,12 @@ function GeneralResponse({
 
   return (
     <div className="border-t border-white/10 pt-3 space-y-2">
-      <p className="text-xs text-gray-500">{tx('用你的 demo 應徵(挑平台現有的,或上傳一段),再報價即可。', '用你的 demo 应征(挑平台现有的,或上传一段),再报价即可。', 'Apply with a demo — pick an existing one or upload — then quote.')}</p>
+      <p className="text-xs text-gray-300">{tx('用你的 demo 應徵(挑平台現有的,或上傳一段),再報價即可。', '用你的 demo 应征(挑平台现有的,或上传一段),再报价即可。', 'Apply with a demo — pick an existing one or upload — then quote.')}</p>
       {myDemos.length > 0 && (
         <div className="flex gap-2 text-xs">
           {([['demo', '挑現有 demo', '挑现有 demo', 'My demos'], ['upload', '上傳新 demo', '上传新 demo', 'Upload']] as const).map(([k, twl, cnl, enl]) => (
             <button key={k} type="button" onClick={() => setSrc(k)}
-              className={`flex-1 rounded-lg px-2 py-1.5 border transition ${src === k ? 'bg-green-500/20 border-green-400/60 text-green-100' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>{tx(twl, cnl, enl)}</button>
+              className={`flex-1 rounded-lg px-2 py-1.5 border transition ${src === k ? 'bg-green-500/20 border-green-400/60 text-green-100' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>{tx(twl, cnl, enl)}</button>
           ))}
         </div>
       )}
@@ -1350,8 +1350,8 @@ function GeneralResponse({
         <>
           <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
-            className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
-          {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
+            className="block w-full text-xs text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+          {uploading && <p className="text-xs text-gray-300">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
           {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
         </>
       )}
@@ -1373,22 +1373,22 @@ function GeneralResponse({
               <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">
                 <div className="text-[11px] text-[#E4CB94] mb-0.5">{tx('您的報酬', '您的报酬', 'You receive')}</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xs text-gray-500">{currency}</span>
+                  <span className="text-xs text-gray-300">{currency}</span>
                   <input type="number" min="0" value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
                 </div>
               </div>
               {isClient && (
                 <div className="bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2">
-                  <div className="text-[11px] text-gray-400 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
+                  <div className="text-[11px] text-gray-300 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-xs text-gray-500">{currency}</span>
+                    <span className="text-xs text-gray-300">{currency}</span>
                     <input type="number" min="0" value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
                   </div>
                 </div>
               )}
             </div>
             {isClient ? (
-              <p className={`text-xs ${over ? 'text-[#f0997b]' : 'text-gray-400'}`}>
+              <p className={`text-xs ${over ? 'text-[#f0997b]' : 'text-gray-300'}`}>
                 {tx('客戶支付', '客户支付', 'Client pays')} {currency} {clientPays.toLocaleString()}
                 {budgetN > 0 && (over
                   ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}`

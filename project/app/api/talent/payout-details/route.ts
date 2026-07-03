@@ -39,13 +39,14 @@ export async function PUT(request: NextRequest) {
   const twResident = taxLocation === 'TW' ? (tax.tw_resident === true || tax.tw_resident === 'true') : false;
   const nationalId = S(tax.national_id, 40).toUpperCase();
   const taxAddress = S(tax.tax_address, 300);
+  const taxId = S(tax.tax_id, 40).toUpperCase();   // 稅籍編號(選填):台灣可填身分證,海外填 Tax ID;有填才置入發票賣方欄
 
   const forVal: PayoutInput = { twd, usd, tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress };
   const errs = validatePayout(forVal);
   if (errs.length) return NextResponse.json({ error: 'invalid', fields: errs }, { status: 400 });
 
   const useTwd = hasTwd(forVal), useUsd = hasUsd(forVal);
-  const payload = { twd: useTwd ? twd : null, usd: useUsd ? usd : null, tax: { tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress } };
+  const payload = { twd: useTwd ? twd : null, usd: useUsd ? usd : null, tax: { tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress, tax_id: taxId } };
   const method = [useTwd ? 'twd' : '', useUsd ? (usd.method === 'paypal' ? 'usd_paypal' : 'usd_bank') : ''].filter(Boolean).join(',');
 
   const { error } = await r.db.from('talent_payout_details').upsert({

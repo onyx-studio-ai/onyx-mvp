@@ -63,6 +63,11 @@
   * {
     @apply border-border;
   }
+  html {
+    /* 基準字級 = Apple body ≈ 17px。整站 Tailwind 字級以 rem 計,會等比放大 6%,
+       回應「字太小」的反饋且不破版(等比,不改版面比例)。要再大改這一個值即可。 */
+    font-size: 17px;
+  }
   body {
     @apply bg-background text-foreground;
   }

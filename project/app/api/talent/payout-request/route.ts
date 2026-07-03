@@ -46,12 +46,15 @@ export async function POST(request: NextRequest) {
   // 餘額以 USD 計;請款幣別為 USD 時才做上限檢查(跨幣別上限之後精算)。
   if (currency === 'USD' && amount > balance + 0.01) return NextResponse.json({ error: 'exceeds_balance', balance }, { status: 400 });
 
-  // 發票號:ONX-INV-yyMMdd-當天序號。
+  // 發票號 = ONX-{配音員短碼}-{yyMMdd}-{該員當天序號}。
+  //   短碼 = 該配音員 id 前 6 碼(每人固定、可回查本人),讓每個號碼都能辨識到
+  //   「哪位配音員 + 哪天開的 + 當天第幾筆」,不再是全平台流水號。
   const d = new Date();
+  const short = talentId.replace(/-/g, '').slice(0, 6).toUpperCase();
   const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-  const { count } = await r.db.from('payout_requests').select('id', { count: 'exact', head: true }).gte('created_at', dayStart);
-  const invoiceNumber = `ONX-INV-${ymd}-${String((count || 0) + 1).padStart(4, '0')}`;
+  const { count } = await r.db.from('payout_requests').select('id', { count: 'exact', head: true }).eq('talent_id', talentId).gte('created_at', dayStart);
+  const invoiceNumber = `ONX-${short}-${ymd}-${String((count || 0) + 1).padStart(3, '0')}`;
 
   const { data, error } = await r.db.from('payout_requests').insert({
     talent_id: talentId, invoice_number: invoiceNumber, amount, currency, note,
