@@ -10,6 +10,17 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        // 英文續走 SF(清晰);中文明確指到 PingFang TC / Noto Sans TC,不再 fallback
+        // 到糊字體。瀏覽器逐字挑第一個含該字元的字體 → 拉丁走 SF、中文走蘋方。
+        // 搭配 globals.css 的字型平滑(antialiased)。
+        sans: [
+          '-apple-system', 'BlinkMacSystemFont', 'system-ui', '"Segoe UI"',
+          'Roboto', '"Helvetica Neue"', 'Arial',
+          '"PingFang TC"', '"Noto Sans TC"', '"Microsoft JhengHei"', '"Heiti TC"',
+          'sans-serif',
+        ],
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
