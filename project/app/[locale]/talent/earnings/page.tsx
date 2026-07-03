@@ -16,6 +16,7 @@ import { taxNotice } from '@/lib/payout-policy';
 
 type Earning = { id: string; order_type: string | null; commission_amount: number | null; status: string | null; created_at: string };
 type Totals = { paid: number; pending: number; total: number };
+type PayoutReq = { id: string; invoice_number: string; amount: number; currency: string; note: string | null; invoice_type: string; invoice_url: string | null; consent_at: string | null; status: string; created_at: string };
 
 // 收款設定 — the talent fills in their own payout details (encrypted, restricted
 // table). Organised by METHOD (bank / PayPal), not region; a tax-residence question
@@ -169,6 +170,137 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
   );
 }
 
+// 請款 — 配音員發起請款、系統生成發票、他同意+簽名上傳(或上傳自家發票)。
+function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, b: string, c: string) => string; pending: number }) {
+  const [reqs, setReqs] = useState<PayoutReq[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [amount, setAmount] = useState(pending > 0 ? String(pending) : '');
+  const [currency, setCurrency] = useState('USD');
+  const [note, setNote] = useState('');
+  const [invType, setInvType] = useState<'generated' | 'own'>('generated');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [msg, setMsg] = useState('');
+
+  async function load() {
+    try {
+      const r = await fetch('/api/talent/payout-request', { headers: { Authorization: `Bearer ${token}` } });
+      const j = await r.json();
+      setReqs(Array.isArray(j.requests) ? j.requests : []);
+    } catch { /* ignore */ }
+    setLoaded(true);
+  }
+  useEffect(() => { if (token) load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token]);
+
+  async function create() {
+    setErr(''); setMsg('');
+    if (!(Number(amount) > 0)) { setErr(tx('請填請款金額。', '请填请款金额。', 'Enter an amount.')); return; }
+    setBusy(true);
+    try {
+      const r = await fetch('/api/talent/payout-request', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ amount: Number(amount), currency, note, invoice_type: invType }) });
+      const j = await r.json();
+      if (!r.ok) {
+        if (j.error === 'payout_details_required') setErr(tx('請先完成上方「收款設定」再請款。', '请先完成上方「收款设置」再请款。', 'Please complete Payout details above first.'));
+        else setErr(j.error || tx('送出失敗', '送出失败', 'Failed'));
+      } else { setMsg(tx('✓ 已發起請款,請到下方完成發票', '✓ 已发起请款,请到下方完成发票', '✓ Request created — finish the invoice below')); setNote(''); await load(); }
+    } catch { setErr(tx('送出失敗', '送出失败', 'Failed')); }
+    finally { setBusy(false); }
+  }
+
+  const inputCls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-amber-400/60';
+  const lbl = 'block text-xs text-gray-400 mb-1';
+  if (!loaded) return null;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-8">
+      <h2 className="text-sm font-semibold text-white mb-1">{tx('請款', '请款', 'Request a payout')}</h2>
+      <p className="text-xs text-gray-500 mb-4">{tx(`可請款餘額參考:US$${pending}。填金額 → 系統生成發票 → 您確認簽名上傳(或上傳自家發票)。`, `可请款余额参考:US$${pending}。填金额 → 系统生成发票 → 您确认签名上传(或上传自家发票)。`, `Pending balance ref: US$${pending}. Enter an amount → we generate an invoice → confirm, sign & upload (or upload your own).`)}</p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
+        <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        <div><label className={lbl}>{tx('幣別', '币别', 'Currency')}</label>
+          <select className={inputCls} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD', 'EUR', 'GBP', 'JPY', 'CNY'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
+        </div>
+        <div className="sm:col-span-2"><label className={lbl}>{tx('備註(選填)', '备注(选填)', 'Note (optional)')}</label><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></div>
+      </div>
+      <div className="flex items-center gap-2 mb-3">
+        {(['generated', 'own'] as const).map((t) => (
+          <button key={t} type="button" onClick={() => setInvType(t)} className={`text-xs px-3 py-1.5 rounded-full border transition ${invType === t ? 'bg-amber-500/20 border-amber-400/50 text-amber-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+            {t === 'generated' ? tx('系統生成發票(我簽名)', '系统生成发票(我签名)', 'System invoice (I sign)') : tx('上傳自家公司發票', '上传自家公司发票', 'Upload my own invoice')}
+          </button>
+        ))}
+      </div>
+      <button onClick={create} disabled={busy} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2 text-sm transition">{busy ? tx('送出中…', '送出中…', 'Working…') : tx('發起請款', '发起请款', 'Create request')}</button>
+      {(msg || err) && <p className={`text-xs mt-2 ${err ? 'text-red-400' : 'text-green-400'}`}>{err || msg}</p>}
+
+      {reqs.length > 0 && (
+        <div className="mt-6 space-y-3">
+          <div className="text-xs font-semibold text-gray-300">{tx('我的請款單', '我的请款单', 'My requests')}</div>
+          {reqs.map((r) => <RequestRow key={r.id} r={r} token={token} tx={tx} onChanged={load} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RequestRow({ r, token, tx, onChanged }: { r: PayoutReq; token: string; tx: (a: string, b: string, c: string) => string; onChanged: () => void }) {
+  const [consent, setConsent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const SL: Record<string, string> = { pending: tx('待完成發票', '待完成发票', 'Invoice pending'), invoice_uploaded: tx('已送出 · 待撥款', '已送出 · 待拨款', 'Submitted'), paid: tx('已撥款', '已拨款', 'Paid'), rejected: tx('已退回', '已退回', 'Rejected') };
+
+  async function viewInvoice() {
+    const res = await fetch(`/api/talent/invoice?id=${r.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) { setErr(tx('發票讀取失敗', '发票读取失败', 'Could not load invoice')); return; }
+    const html = await res.text();
+    window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
+  }
+  async function upload(file: File) {
+    if (!consent) { setErr(tx('請先勾選「我同意以此開立發票」。', '请先勾选「我同意以此开立发票」。', 'Please tick consent first.')); return; }
+    setErr(''); setBusy(true);
+    try {
+      const u = await fetch('/api/talent/invoice-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json(); if (!u.ok) throw new Error(uj.error || 'upload prep failed');
+      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (error) throw new Error(error.message);
+      const p = await fetch('/api/talent/payout-request', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: r.id, invoice_url: uj.publicUrl, consent: true }) });
+      const pj = await p.json(); if (!p.ok) throw new Error(pj.error || 'save failed');
+      onChanged();
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); }
+    finally { setBusy(false); }
+  }
+
+  const paid = r.status === 'paid', done = r.status === 'invoice_uploaded' || paid;
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <span className="text-sm text-white font-medium">{r.currency} {r.amount}</span>
+          <span className="text-[11px] text-gray-500 ml-2">{r.invoice_number}</span>
+        </div>
+        <span className={`text-[11px] px-2 py-0.5 rounded-full border ${paid ? 'bg-green-500/15 text-green-300 border-green-500/30' : done ? 'bg-sky-500/15 text-sky-200 border-sky-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'}`}>{SL[r.status] || r.status}</span>
+      </div>
+      {!done && (
+        <div className="mt-2 space-y-2">
+          {r.invoice_type === 'generated' && (
+            <button onClick={viewInvoice} className="text-xs text-amber-300 hover:underline">{tx('① 檢視 / 列印發票 → 簽名', '① 查看 / 打印发票 → 签名', '① View / print invoice → sign')}</button>
+          )}
+          <label className="flex items-start gap-2 text-[11px] text-gray-300">
+            <input type="checkbox" className="mt-0.5 accent-amber-500" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+            <span>{tx('我同意以此金額、以我(或我公司)名義開立此發票。', '我同意以此金额、以我(或我公司)名义开立此发票。', 'I agree to issue this invoice for this amount in my (or my company’s) name.')}</span>
+          </label>
+          <label className="inline-flex items-center gap-1.5 text-xs bg-amber-500/15 border border-amber-500/40 text-amber-200 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-amber-500/25">
+            {busy ? tx('上傳中…', '上传中…', 'Uploading…') : (r.invoice_type === 'own' ? tx('⬆ 上傳自家發票', '⬆ 上传自家发票', '⬆ Upload my invoice') : tx('② 上傳簽名發票', '② 上传签名发票', '② Upload signed invoice'))}
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+          </label>
+          {err && <p className="text-[10px] text-red-400">{err}</p>}
+        </div>
+      )}
+      {done && r.invoice_url && <a href={r.invoice_url} target="_blank" rel="noreferrer" className="text-[11px] text-gray-400 hover:underline mt-1 inline-block">{tx('看已上傳發票', '看已上传发票', 'View uploaded invoice')}</a>}
+    </div>
+  );
+}
+
 export default function TalentEarningsPage() {
   const locale = useLocale();
   const isZhCN = locale === 'zh-CN';
@@ -225,6 +357,8 @@ export default function TalentEarningsPage() {
         <p className="text-sm text-gray-500 mt-1 mb-8">{tx('您透過 Onyx 接案/分潤所得,月結。', '您通过 Onyx 接案/分润所得,月结。', 'Your share from work and royalties through Onyx, settled monthly.')}</p>
 
         <PayoutSettings token={token} tx={tx} locale={locale} pending={totals.pending} />
+
+        <PayoutRequest token={token} tx={tx} pending={totals.pending} />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <StatModule icon={DollarSign} label={tx('累計', '累计', 'Total')} value={money(totals.total)} />
