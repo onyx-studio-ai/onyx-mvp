@@ -211,7 +211,6 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
   const [amount, setAmount] = useState(pending > 0 ? String(pending) : '');
   const [currency, setCurrency] = useState('USD');
   const [note, setNote] = useState('');
-  const [invType, setInvType] = useState<'generated' | 'own'>('generated');
   const [feeInfo, setFeeInfo] = useState<{ usdMethod: string; taxLoc: 'TW' | 'overseas'; twResident: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -238,7 +237,7 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
     if (!(Number(amount) > 0)) { setErr(tx('請填請款金額。', '请填请款金额。', 'Enter an amount.')); return; }
     setBusy(true);
     try {
-      const r = await fetch('/api/talent/payout-request', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ amount: Number(amount), currency, note, invoice_type: invType }) });
+      const r = await fetch('/api/talent/payout-request', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ amount: Number(amount), currency, note }) });
       const j = await r.json();
       if (!r.ok) {
         if (j.error === 'payout_details_required') setErr(tx('請先完成上方「收款設定」再請款。', '请先完成上方「收款设置」再请款。', 'Please complete Payout details above first.'));
@@ -291,13 +290,6 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
         );
       })()}
 
-      <div className="flex items-center gap-2 mb-3">
-        {(['generated', 'own'] as const).map((t) => (
-          <button key={t} type="button" onClick={() => setInvType(t)} className={`text-xs px-3 py-1.5 rounded-full border transition ${invType === t ? 'bg-amber-500/20 border-amber-400/50 text-amber-200' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>
-            {t === 'generated' ? tx('系統生成發票', '系统生成发票', 'System invoice') : tx('上傳發票', '上传发票', 'Upload invoice')}
-          </button>
-        ))}
-      </div>
       <button onClick={create} disabled={busy} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2 text-sm transition">{busy ? tx('送出中…', '送出中…', 'Working…') : tx('發起請款', '发起请款', 'Create request')}</button>
       {(msg || err) && <p className={`text-xs mt-2 ${err ? 'text-red-400' : 'text-green-400'}`}>{err || msg}</p>}
 
@@ -349,19 +341,23 @@ function RequestRow({ r, token, tx, onChanged }: { r: PayoutReq; token: string; 
         <span className={`text-[11px] px-2 py-0.5 rounded-full border ${paid ? 'bg-green-500/15 text-green-300 border-green-500/30' : done ? 'bg-sky-500/15 text-sky-200 border-sky-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'}`}>{SL[r.status] || r.status}</span>
       </div>
       {!done && (
-        <div className="mt-2 space-y-2">
-          {r.invoice_type === 'generated' && (
-            <button onClick={viewInvoice} className="text-xs text-amber-300 hover:underline">{tx('① 檢視 / 列印發票 → 簽名', '① 查看 / 打印发票 → 签名', '① View / print invoice → sign')}</button>
-          )}
-          <label className="flex items-start gap-2 text-[11px] text-gray-300">
+        <div className="mt-3 space-y-2.5">
+          <p className="text-xs text-gray-200">{tx('完成發票即可送出請款,以下兩種擇一:', '完成发票即可送出请款,以下两种择一:', 'Finish the invoice to submit — either way:')}</p>
+          <ul className="text-xs text-gray-300 space-y-1">
+            <li>{tx('・個人:用系統發票 —— 點下方「檢視 / 列印」,親筆簽名後上傳。', '・个人:用系统发票 —— 点下方「查看 / 打印」,亲笔签名后上传。', '· Individual: use the system invoice — view/print below, sign, then upload.')}</li>
+            <li>{tx('・公司 / 有自己的發票:直接上傳貴公司(或個人)開立的發票,系統發票不用理會。', '・公司 / 有自己的发票:直接上传贵公司(或个人)开立的发票,系统发票不用理会。', '· Company / own invoice: upload your own; ignore the system one.')}</li>
+          </ul>
+          <button onClick={viewInvoice} className="text-xs text-amber-300 hover:underline">{tx('檢視 / 列印系統發票(供簽名)', '查看 / 打印系统发票(供签名)', 'View / print system invoice (to sign)')}</button>
+          <label className="flex items-start gap-2 text-xs text-gray-300">
             <input type="checkbox" className="mt-0.5 accent-amber-500" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>{tx('我同意以此金額、以我(或我公司)名義開立此發票。', '我同意以此金额、以我(或我公司)名义开立此发票。', 'I agree to issue this invoice for this amount in my (or my company’s) name.')}</span>
           </label>
-          <label className="inline-flex items-center gap-1.5 text-xs bg-amber-500/15 border border-amber-500/40 text-amber-200 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-amber-500/25">
-            {busy ? tx('上傳中…', '上传中…', 'Uploading…') : (r.invoice_type === 'own' ? tx('⬆ 上傳自家發票', '⬆ 上传自家发票', '⬆ Upload my invoice') : tx('② 上傳簽名發票', '② 上传签名发票', '② Upload signed invoice'))}
+          <label className="inline-flex items-center gap-1.5 text-sm bg-amber-500/15 border border-amber-500/40 text-amber-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-amber-500/25">
+            {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳發票(簽名版 或 自家發票)', '上传发票(签名版 或 自家发票)', 'Upload invoice (signed system one or your own)')}
             <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
           </label>
-          {err && <p className="text-[10px] text-red-400">{err}</p>}
+          <p className="text-xs text-gray-400">{tx('可接受 PDF 或圖檔。', '可接受 PDF 或图档。', 'PDF or image accepted.')}</p>
+          {err && <p className="text-xs text-red-400">{err}</p>}
         </div>
       )}
       {done && r.invoice_url && <a href={r.invoice_url} target="_blank" rel="noreferrer" className="text-[11px] text-gray-300 hover:underline mt-1 inline-block">{tx('看已上傳發票', '看已上传发票', 'View uploaded invoice')}</a>}
