@@ -112,9 +112,9 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             'What languages does Onyx Studios support?'
           ),
           a: tx(
-            'Onyx Studios 涵蓋 16+ 主要商業語言：英文（美式 / 英式）、普通話（繁體 / 簡體）、粵語、日文、韓文、西班牙文、法文、德文、葡萄牙文、義大利文、俄文、阿拉伯文、印地文、印尼文、越南文、泰文。稀有語言（達里語、斯瓦希里語、緬甸語等）可按需求提供。',
-            'Onyx Studios 涵盖 16+ 主要商业语言：英文（美式 / 英式）、普通话（繁体 / 简体）、粤语、日文、韩文、西班牙文、法文、德文、葡萄牙文、意大利文、俄文、阿拉伯文、印地文、印尼文、越南文、泰文。稀有语言（达里语、斯瓦希里语、缅甸语等）可按需提供。',
-            'Onyx Studios covers 16+ major commercial languages: English (US / UK), Mandarin (Traditional / Simplified), Cantonese, Japanese, Korean, Spanish, French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian, Vietnamese, and Thai. Rare languages (Dari, Swahili, Burmese, etc.) are available on request.'
+            'Onyx Studios 涵蓋 30+ 語言，包括主要商業語言：英文（美式 / 英式）、普通話（繁體 / 簡體）、粵語、日文、韓文、西班牙文、法文、德文、葡萄牙文、義大利文、俄文、阿拉伯文、印地文、印尼文、越南文、泰文等。稀有語言（達里語、斯瓦希里語、緬甸語等）可按需求提供。',
+            'Onyx Studios 涵盖 30+ 语言，包括主要商业语言：英文（美式 / 英式）、普通话（繁体 / 简体）、粤语、日文、韩文、西班牙文、法文、德文、葡萄牙文、意大利文、俄文、阿拉伯文、印地文、印尼文、越南文、泰文等。稀有语言（达里语、斯瓦希里语、缅甸语等）可按需提供。',
+            'Onyx Studios covers 30+ languages, including major commercial languages: English (US / UK), Mandarin (Traditional / Simplified), Cantonese, Japanese, Korean, Spanish, French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian, Vietnamese, and Thai. Rare languages (Dari, Swahili, Burmese, etc.) are available on request.'
           ),
         },
         {

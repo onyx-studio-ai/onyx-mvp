@@ -114,20 +114,16 @@ export default function LobbyPage() {
 
   const trust = [
     {
-      stat: '2008',
-      label: tx('成立至今 17 年',     '成立至今 17 年',     'Established'),
+      stat: '16+',
+      label: tx('年經驗',   '年经验',   'Years'),
     },
     {
       stat: '1,500+',
-      label: tx('配音員陣容',         '配音员阵容',         'Voice talents'),
+      label: tx('配音員',   '配音员',   'Voice Talents'),
     },
     {
       stat: '30+',
-      label: tx('語種覆蓋',           '语种覆盖',           'Languages'),
-    },
-    {
-      stat: tx('全球', '全球', 'Global'),
-      label: tx('接案範圍',           '接案范围',           'Project reach'),
+      label: tx('語言',     '语言',     'Languages'),
     },
   ];
 
@@ -332,7 +328,7 @@ export default function LobbyPage() {
             transition={{ duration: 0.6 }}
             className="rounded-2xl bg-white/[0.02] border border-white/10 p-8 md:p-10"
           >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
+            <div className="grid grid-cols-3 gap-6 md:gap-4">
               {trust.map((item, i) => (
                 <motion.div
                   key={item.label}

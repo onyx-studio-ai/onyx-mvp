@@ -32,7 +32,7 @@ export default function AboutPage() {
               of the original "Projects Delivered" / "Broadcast Quality". */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 max-w-5xl mx-auto">
             <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-blue-950/30 to-transparent border border-blue-500/20">
-              <div className="text-5xl font-bold text-blue-400 mb-2">17+</div>
+              <div className="text-5xl font-bold text-blue-400 mb-2">16+</div>
               <div className="text-gray-300 font-medium">{t('statYearsExperience')}</div>
             </div>
             <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-cyan-950/30 to-transparent border border-cyan-500/20">
@@ -40,7 +40,7 @@ export default function AboutPage() {
               <div className="text-gray-300 font-medium">{t('statProjectsDelivered')}</div>
             </div>
             <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-cyan-950/30 to-transparent border border-cyan-500/20">
-              <div className="text-5xl font-bold text-cyan-400 mb-2">28</div>
+              <div className="text-5xl font-bold text-cyan-400 mb-2">30+</div>
               <div className="text-gray-300 font-medium">{t('statBroadcastQuality')}</div>
             </div>
           </div>
