@@ -137,18 +137,16 @@ function TemplatedField({ kind, label, optional, multiline, value, onChange, bui
   }
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <div className="text-xs text-gray-300">{label}{optional && <span className="text-gray-300"> {tx('選填', '选填', 'optional')}</span>}</div>
-        <button type="button" onClick={save} className="text-[11px] text-amber-300 hover:underline">💾 {tx('存成範本', '存成范本', 'Save template')}</button>
-      </div>
-      <div className="flex flex-wrap gap-1.5 mb-1.5">
-        <button type="button" onClick={() => onChange(builtin)} className="text-[11px] bg-white/5 border border-white/10 rounded-full px-2.5 py-1 text-gray-300 hover:border-white/30 transition">{tx('內建範本', '内建范本', 'Starter')}</button>
+      <div className="text-sm text-gray-200 mb-1.5">{label}{optional && <span className="text-gray-400"> {tx('選填', '选填', 'optional')}</span>}</div>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <button type="button" onClick={() => onChange(builtin)} className="text-xs bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-gray-200 hover:border-white/30 transition">{tx('內建範本', '内建范本', 'Starter')}</button>
         {saved.map((t) => (
-          <span key={t.name} className="inline-flex items-center text-[11px] bg-white/5 border border-white/10 rounded-full pl-2.5 pr-1 py-1 text-gray-300">
+          <span key={t.name} className="inline-flex items-center text-xs bg-white/5 border border-white/10 rounded-full pl-3 pr-1.5 py-1.5 text-gray-200">
             <button type="button" onClick={() => onChange(t.body)} className="hover:text-white">{t.name}</button>
-            <button type="button" onClick={() => del(t.name)} className="text-gray-300 hover:text-red-300 px-1" title={tx('刪除', '删除', 'Delete')}>✕</button>
+            <button type="button" onClick={() => del(t.name)} className="text-gray-400 hover:text-red-300 px-1.5 leading-none" title={tx('刪除', '删除', 'Delete')}>×</button>
           </span>
         ))}
+        <button type="button" onClick={save} className="text-xs text-amber-300 border border-amber-400/30 bg-amber-500/10 rounded-full px-3 py-1.5 hover:bg-amber-500/20 transition">＋ {tx('存成範本', '存成范本', 'Save as template')}</button>
       </div>
       {multiline
         ? <textarea className={`${inputCls} min-h-[56px] resize-y`} value={value} onChange={(e) => onChange(e.target.value)} />
@@ -1247,7 +1245,7 @@ function RoleAudition({
                   </div>
                   {isClient ? (
                     <p className={`text-[11px] ${over ? 'text-[#f0997b]' : 'text-gray-300'}`}>{tx('客戶支付', '客户支付', 'Client pays')} {currency} {clientPays.toLocaleString()}{budgetN > 0 && (over ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}` : ` · ${tx('在客戶預算內 ✓', '在客户预算内 ✓', 'within budget ✓')}`)}</p>
-                  ) : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 報價即您實得', '平台发案 · 报价即您实得', 'Platform-posted — your quote is what you get')}</p>}
+                  ) : <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 報價即您實際報酬', '平台发案 · 报价即您实际报酬', 'Platform-posted — your quote is what you get')}</p>}
                 </div>
               );
             })()}
@@ -1416,7 +1414,7 @@ function GeneralResponse({
                   ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}`
                   : ` · ${tx('在客戶預算內 ✓', '在客户预算内 ✓', 'within budget ✓')}`)}
               </p>
-            ) : <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 不收取平台費,報價即您實得', '平台发案 · 不收取平台费,报价即您实得', 'Platform-posted — no fee; your quote is what you get')}</p>}
+            ) : <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 不收取平台費,報價即您實際報酬', '平台发案 · 不收取平台费,报价即您实际报酬', 'Platform-posted — no fee; your quote is what you get')}</p>}
           </div>
         );
       })()}

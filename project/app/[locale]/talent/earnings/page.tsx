@@ -12,7 +12,7 @@ import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { DollarSign, Loader2, CheckCircle2, Clock, ChevronDown } from 'lucide-react';
 import { StatModule } from '@/components/dashboard/cards';
-import { taxNotice } from '@/lib/payout-policy';
+import { taxNotice, computeDeductions } from '@/lib/payout-policy';
 import { validatePayout, type PayoutInput } from '@/lib/payout-validation';
 
 type Earning = { id: string; order_type: string | null; commission_amount: number | null; status: string | null; created_at: string };
@@ -212,6 +212,7 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
   const [currency, setCurrency] = useState('USD');
   const [note, setNote] = useState('');
   const [invType, setInvType] = useState<'generated' | 'own'>('generated');
+  const [feeInfo, setFeeInfo] = useState<{ usdMethod: string; taxLoc: 'TW' | 'overseas'; twResident: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -221,6 +222,12 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
       const r = await fetch('/api/talent/payout-request', { headers: { Authorization: `Bearer ${token}` } });
       const j = await r.json();
       setReqs(Array.isArray(j.requests) ? j.requests : []);
+    } catch { /* ignore */ }
+    // 也載入收款方式 + 稅務,用來即時試算「扣手續費後實際到手」。
+    try {
+      const pd = await fetch('/api/talent/payout-details', { headers: { Authorization: `Bearer ${token}` } });
+      const pj = await pd.json();
+      setFeeInfo({ usdMethod: pj.usd?.method === 'paypal' ? 'paypal' : 'bank', taxLoc: pj.tax?.tax_location === 'TW' ? 'TW' : 'overseas', twResident: pj.tax?.tw_resident === true });
     } catch { /* ignore */ }
     setLoaded(true);
   }
@@ -263,6 +270,27 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
         </div>
         <div className="sm:col-span-2"><label className={lbl}>{tx('備註(選填)', '备注(选填)', 'Note (optional)')}</label><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></div>
       </div>
+
+      {Number(amount) > 0 && feeInfo && (() => {
+        // 手續費由收款方負擔:USD 看收款方式(PayPal 5% / 電匯 US$20)、TWD 用台灣匯費 NT$30。
+        // 台灣稅只在「TWD 請款 + 台灣稅務」時試算(避免跨幣別門檻誤判);其餘只算手續費。
+        const method = currency === 'USD' ? (feeInfo.usdMethod === 'paypal' ? 'paypal' : 'bank') : 'bank';
+        const bankCountry = currency === 'TWD' ? 'TW' : 'X';
+        const taxLocation = (currency === 'TWD' && feeInfo.taxLoc === 'TW') ? 'TW' : 'overseas';
+        const dd = computeDeductions({ gross: Number(amount), method, bankCountry, taxLocation, twResident: feeInfo.twResident });
+        const c = currency; const n = (x: number) => x.toLocaleString('en-US', { maximumFractionDigits: 2 });
+        return (
+          <div className="text-xs text-gray-200 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 mb-3 space-y-1">
+            <div className="flex justify-between"><span>{tx('請款金額', '请款金额', 'Requested')}</span><span>{c} {n(Number(amount))}</span></div>
+            {dd.tax > 0 && <div className="flex justify-between text-gray-300"><span>{tx('代扣所得稅', '代扣所得税', 'Tax withheld')}</span><span>− {c} {n(dd.tax)}</span></div>}
+            {dd.nhi > 0 && <div className="flex justify-between text-gray-300"><span>{tx('二代健保', '二代健保', 'NHI')}</span><span>− {c} {n(dd.nhi)}</span></div>}
+            <div className="flex justify-between text-gray-300"><span>{tx('轉帳手續費', '转账手续费', 'Transfer fee')} <span className="text-gray-400">({dd.feeNote})</span></span><span>− {c} {n(dd.fee)}</span></div>
+            <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/10"><span>{tx('實際到手 ≈', '实际到手 ≈', 'You receive ≈')}</span><span>{c} {n(dd.net)}</span></div>
+            <p className="text-gray-400 pt-0.5 leading-relaxed">{tx('手續費由收款方負擔;PayPal 約 5%、國際電匯 US$20、台灣匯費 NT$30。實際金額以銀行 / PayPal 為準。', '手续费由收款方负担;PayPal 约 5%、国际电汇 US$20、台湾汇费 NT$30。实际金额以银行 / PayPal 为准。', 'Fees borne by recipient; PayPal ~5%, intl wire US$20, TW wire NT$30. Final amount per bank/PayPal.')}</p>
+          </div>
+        );
+      })()}
+
       <div className="flex items-center gap-2 mb-3">
         {(['generated', 'own'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setInvType(t)} className={`text-xs px-3 py-1.5 rounded-full border transition ${invType === t ? 'bg-amber-500/20 border-amber-400/50 text-amber-200' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>
