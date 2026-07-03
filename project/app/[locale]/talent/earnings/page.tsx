@@ -348,16 +348,16 @@ function RequestRow({ r, token, tx, onChanged }: { r: PayoutReq; token: string; 
         <div className="mt-3 space-y-2.5">
           <p className="text-xs text-gray-200">{tx('完成發票即可送出請款,以下兩種擇一:', '完成发票即可送出请款,以下两种择一:', 'Finish the invoice to submit — either way:')}</p>
           <ul className="text-xs text-gray-300 space-y-1">
-            <li>{tx('・個人:用系統發票 —— 點下方「檢視 / 列印」,親筆簽名後上傳。', '・个人:用系统发票 —— 点下方「查看 / 打印」,亲笔签名后上传。', '· Individual: use the system invoice — view/print below, sign, then upload.')}</li>
-            <li>{tx('・公司 / 有自己的發票:直接上傳貴公司(或個人)開立的發票,系統發票不用理會。', '・公司 / 有自己的发票:直接上传贵公司(或个人)开立的发票,系统发票不用理会。', '· Company / own invoice: upload your own; ignore the system one.')}</li>
+            <li>{tx('・個人:用系統生成發票 —— 點下方「檢視 / 列印」,親筆/電子簽名後上傳。', '・个人:用系统生成发票 —— 点下方「查看 / 打印」,亲笔/电子签名后上传。', '· Individual: use the generated invoice — view/print below, sign (by hand or e-sign), then upload.')}</li>
+            <li>{tx('・公司 / 個人的發票:直接上傳公司(或個人)開立的發票。', '・公司 / 个人的发票:直接上传公司(或个人)开立的发票。', '· Company / personal invoice: upload the invoice issued by your company (or you).')}</li>
           </ul>
           <button onClick={viewInvoice} className="text-xs text-amber-300 hover:underline">{tx('檢視 / 列印系統發票(供簽名)', '查看 / 打印系统发票(供签名)', 'View / print system invoice (to sign)')}</button>
           <label className="flex items-start gap-2 text-xs text-gray-300">
             <input type="checkbox" className="mt-0.5 accent-amber-500" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-            <span>{tx('我同意以此金額、以我(或我公司)名義開立此發票。', '我同意以此金额、以我(或我公司)名义开立此发票。', 'I agree to issue this invoice for this amount in my (or my company’s) name.')}</span>
+            <span>{tx('我同意以此金額、以我(或公司)名義開立此發票。', '我同意以此金额、以我(或公司)名义开立此发票。', 'I agree to issue this invoice for this amount in my (or the company’s) name.')}</span>
           </label>
           <label className="inline-flex items-center gap-1.5 text-sm bg-amber-500/15 border border-amber-500/40 text-amber-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-amber-500/25">
-            {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳發票(簽名版 或 自家發票)', '上传发票(签名版 或 自家发票)', 'Upload invoice (signed system one or your own)')}
+            {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳發票(已簽名 或 公司發票)', '上传发票(已签名 或 公司发票)', 'Upload invoice (signed or company invoice)')}
             <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
           </label>
           <p className="text-xs text-gray-400">{tx('可接受 PDF 或圖檔。', '可接受 PDF 或图档。', 'PDF or image accepted.')}</p>
