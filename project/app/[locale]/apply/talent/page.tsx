@@ -206,7 +206,13 @@ export default function TalentApply() {
         body: JSON.stringify({ action: 'send', email: form.email, locale }),
       });
       const j = await r.json();
-      if (!r.ok) throw new Error(j.error || tx('寄送失敗', '发送失败', 'Failed to send'));
+      if (!r.ok) {
+        if (j.error === 'already_member' || j.error === 'already_applied') {
+          setCodeMsg(tx('這個 Email 已註冊 / 申請過,不需重新申請。請至 onyxstudios.ai/talent 登入(忘記密碼可用「重寄設定密碼信」)。', '这个 Email 已注册 / 申请过,不需重新申请。请至 onyxstudios.ai/talent 登录(忘记密码可用「重寄设置密码邮件」)。', 'This email has already registered / applied — no need to re-apply. Please sign in at onyxstudios.ai/talent (use “resend set-password” if you forgot your password).'));
+          return;
+        }
+        throw new Error(j.error || tx('寄送失敗', '发送失败', 'Failed to send'));
+      }
       setCodeMeta({ token: j.token, exp: j.exp });
       setCodeMsg(tx('驗證碼已寄到你的 Email', '验证码已寄到你的 Email', 'Code sent to your email'));
     } catch (e) { setCodeMsg(e instanceof Error ? e.message : tx('寄送失敗', '发送失败', 'Failed to send')); }
@@ -332,6 +338,7 @@ export default function TalentApply() {
     if (s === 2 && env === null) return tx('請選擇您目前的錄音環境', '请选择您目前的录音环境', 'Please select your recording setup');
     if (s === 2 && !form.microphone_model.trim()) return tx('請填寫您的麥克風 / 錄音設備', '请填写您的麦克风 / 录音设备', 'Please enter your microphone / recording gear');
     if (s === 3 && !Object.values(coop).some(Boolean)) return tx('「合作意願」請至少選 1 項', '「合作意愿」请至少选 1 项', 'Please select at least one way to collaborate');
+    if (s === 4 && !file) return tx('請上傳一段 demo 音檔', '请上传一段 demo 音档', 'Please upload a demo file');
     return '';
   };
 
@@ -514,7 +521,7 @@ export default function TalentApply() {
 
           {step === 4 && (
             <div>
-              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('請上傳一段個人配音 demo,供客戶了解您的聲音特質。建議優先提供以居家設備、於居家環境錄製的純人聲樣本(無需配樂或其他效果);如需保護權益,可自行加註浮水印。若暫無上述錄音條件,提供一般 demo 亦可。本欄為選填,亦可日後補件。檔案支援 wav / mp3 / m4a / aac / ogg / flac,單檔請勿超過 50MB。', '请上传一段个人配音 demo,供客户了解您的声音特质。建议优先提供以居家设备、于居家环境录制的纯人声样本(无需配乐或其他效果);如需保护权益,可自行加注浮水印。若暂无上述录音条件,提供一般 demo 亦可。本栏为选填,亦可日后补件。档案支援 wav / mp3 / m4a / aac / ogg / flac,单档请勿超过 50MB。', 'Please upload a voiceover demo so clients can assess your voice. A clean, voice-only sample recorded with your home equipment in a home setting is preferred (no background music or effects); you may add a watermark to protect your work if you wish. If such a setup is not currently available, a standard demo is also acceptable. This field is optional and may be added later. Supported formats: wav / mp3 / m4a / aac / ogg / flac, up to 50MB per file.')}</p>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('請上傳一段個人配音 demo,供我們了解您的錄音品質。建議優先提供以專業設備、於專業環境錄製的純人聲樣本(無需配樂或其他效果);如需保護權益,可自行加註浮水印。若暫無上述錄音條件,提供一般 demo 亦可。檔案支援 wav / mp3 / m4a / aac / ogg / flac,單檔請勿超過 50MB。', '请上传一段个人配音 demo,供我们了解您的录音品质。建议优先提供以专业设备、于专业环境录制的纯人声样本(无需配乐或其他效果);如需保护权益,可自行加注浮水印。若暂无上述录音条件,提供一般 demo 亦可。档案支援 wav / mp3 / m4a / aac / ogg / flac,单档请勿超过 50MB。', 'Please upload a voiceover demo so we can assess your recording quality. A clean, voice-only sample recorded with professional equipment in a professional setting is preferred (no background music or effects); you may add a watermark to protect your work if you wish. If such a setup is not currently available, a standard demo is also acceptable. Supported formats: wav / mp3 / m4a / aac / ogg / flac, up to 50MB per file.')}</p>
               <label className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-zinc-600 text-sm text-gray-300 cursor-pointer hover:border-amber-500 w-fit">
                 <Upload className="w-4 h-4" /> {file ? tx('更換檔案', '更换档案', 'Replace file') : tx('選擇 demo 檔案', '选择 demo 档案', 'Choose a demo file')}
                 <input type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.ogg,.flac,audio/*" className="hidden" onChange={handleFile} />

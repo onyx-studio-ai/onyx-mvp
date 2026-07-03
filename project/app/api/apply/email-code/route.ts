@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import { sendEmail } from '@/lib/mail';
 import { verificationCodeEmail } from '@/lib/mail-templates';
+import { getSupabaseServiceClient } from '@/lib/supabase-server';
 
 /*
   Stateless email-verification OTP — no DB table / no migration.
@@ -38,6 +39,15 @@ export async function POST(request: NextRequest) {
   if (!EMAIL_RE.test(email)) return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
 
   if (action === 'send') {
+    // 已是會員 / 已申請過 → 不再發驗證碼,回頭引導登入(防同一 email 一直重複申請)。
+    const db = getSupabaseServiceClient();
+    const [tRes, aRes] = await Promise.all([
+      db.from('talents').select('id').ilike('email', email).limit(1).maybeSingle(),
+      db.from('talent_applications').select('id').ilike('email', email).limit(1).maybeSingle(),
+    ]);
+    if (tRes.data) return NextResponse.json({ error: 'already_member' }, { status: 409 });
+    if (aRes.data) return NextResponse.json({ error: 'already_applied' }, { status: 409 });
+
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     const exp = Date.now() + TTL_MS;
     const token = sign(email, code, exp);
