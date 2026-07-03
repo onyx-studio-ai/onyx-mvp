@@ -482,7 +482,7 @@ export default function TalentApply() {
               <div className="mb-4">{ENVS.map((e) => <Chip key={e.v || 'none'} active={env === e.v} onClick={() => setEnv(e.v)}>{lbl(e)}</Chip>)}</div>
               <Label req>{tx('麥克風 / 錄音設備', '麦克风 / 录音设备', 'Microphone / recording gear')}</Label>
               <input className={inputCls} value={form.microphone_model} onChange={(e) => set('microphone_model', e.target.value)} placeholder={tx('例:Rode NT1 + Focusrite 2i2', '例:Rode NT1 + Focusrite 2i2', 'e.g. Rode NT1 + Focusrite 2i2')} />
-              <p className="text-xs text-amber-300/90 leading-relaxed mt-4 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2">{tx('本平台僅收專業錄音作品 —— 手機錄音、或有明顯雜訊 / 回音者,恕不予錄取。', '本平台仅收专业录音作品 —— 手机录音、或有明显杂讯 / 回音者,恕不予录取。', 'We only accept professionally recorded work — phone recordings or audio with noticeable noise / echo will not be accepted.')}</p>
+              <p className="text-xs text-amber-300/90 leading-relaxed mt-4 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2">{tx('如上傳 DEMO 使用手機錄音、或有明顯雜訊 / 回音者,有機會會被駁回申請。', '如上传 DEMO 使用手机录音、或有明显杂讯 / 回音者,有机会会被驳回申请。', 'Demos recorded on a phone, or with noticeable noise / echo, may lead to your application being declined.')}</p>
             </div>
           )}
 

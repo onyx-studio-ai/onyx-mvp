@@ -39,12 +39,11 @@ export function validatePayout(d: PayoutInput): FieldError[] {
     if (!/^[A-Za-z0-9]{6,34}$/.test(acct)) e.push({ field: 'account_number', msg: '帳號格式不正確(去掉空格後 6–34 碼英數)' });
 
     if (country === 'TW') {
-      // 台灣本地:必填 7 碼分行代碼(電匯用)
+      // 台灣本地:必填銀行/分行代碼(電匯用)
       if (!TW_BANKCODE.test(s(d.bank_code))) e.push({ field: 'bank_code', msg: '請填 3 碼銀行代碼或 7 碼分行代碼(電匯建議 7 碼)' });
-    } else {
-      // 國際:必填 SWIFT/BIC
-      if (!SWIFT.test(s(d.swift))) e.push({ field: 'swift', msg: 'SWIFT/BIC 格式不正確(8 或 11 碼英數)' });
     }
+    // SWIFT/BIC 選填(國際建議填);有填才驗格式
+    if (s(d.swift) && !SWIFT.test(s(d.swift))) e.push({ field: 'swift', msg: 'SWIFT/BIC 格式不正確(8 或 11 碼英數)' });
     // IBAN 選填,有填才驗
     if (s(d.iban) && !IBAN.test(s(d.iban).replace(/\s/g, ''))) e.push({ field: 'iban', msg: 'IBAN 格式不正確' });
   } else {

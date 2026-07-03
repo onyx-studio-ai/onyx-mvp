@@ -115,12 +115,12 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div className="sm:col-span-2"><label className={lbl}>{tx('帳戶姓名(法定)', '账户姓名(法定)', 'Account holder (legal name)')} *</label><input className={inputCls} value={f.account_holder || ''} onChange={(e) => set('account_holder', e.target.value)} /></div>
           <div><label className={lbl}>{tx('銀行名稱', '银行名称', 'Bank name')} *</label><input className={inputCls} value={f.bank_name || ''} onChange={(e) => set('bank_name', e.target.value)} placeholder={tx('例如:國泰世華', '例如:国泰世华', 'e.g. Cathay United')} /></div>
+          <div><label className={lbl}>{tx('分行', '分行', 'Branch')}</label><input className={inputCls} value={f.bank_branch || ''} onChange={(e) => set('bank_branch', e.target.value)} /></div>
           <div><label className={lbl}>{tx('銀行所在國(TW=台灣本地)', '银行所在国(TW=台湾本地)', 'Bank country (TW = local)')} *</label><input className={inputCls} value={f.bank_country || ''} onChange={(e) => set('bank_country', e.target.value)} placeholder="TW / US / TH…" /></div>
           <div><label className={lbl}>{tx('帳號', '账号', 'Account number')} *</label><input className={inputCls} value={f.account_number || ''} onChange={(e) => set('account_number', e.target.value)} /></div>
-          <div><label className={lbl}>IBAN <span className="text-gray-600">{tx('(有才填)', '(有才填)', '(if any)')}</span></label><input className={inputCls} value={f.iban || ''} onChange={(e) => set('iban', e.target.value)} /></div>
-          <div><label className={lbl}>SWIFT / BIC {isTWbank ? <span className="text-gray-600">{tx('(選填)', '(选填)', '(optional)')}</span> : <span className="text-amber-400">*</span>}</label><input className={inputCls} value={f.swift || ''} onChange={(e) => set('swift', e.target.value)} placeholder="CHASUS33" /></div>
+          <div><label className={lbl}>IBAN</label><input className={inputCls} value={f.iban || ''} onChange={(e) => set('iban', e.target.value)} /></div>
+          <div><label className={lbl}>SWIFT / BIC <span className="text-gray-600">{tx('(選填)', '(选填)', '(optional)')}</span></label><input className={inputCls} value={f.swift || ''} onChange={(e) => set('swift', e.target.value)} placeholder="CHASUS33" /></div>
           {isTWbank && <div><label className={lbl}>{tx('銀行/分行代碼(3或7碼)', '银行/分行代码(3或7码)', 'Bank/branch code (3 or 7 digits)')} <span className="text-amber-400">*</span></label><input className={inputCls} value={f.bank_code || ''} onChange={(e) => set('bank_code', e.target.value)} placeholder={tx('3碼銀行代碼或7碼分行代碼', '3码银行代码或7码分行代码', '3-digit bank or 7-digit branch')} /></div>}
-          <div><label className={lbl}>{tx('分行', '分行', 'Branch')}</label><input className={inputCls} value={f.bank_branch || ''} onChange={(e) => set('bank_branch', e.target.value)} /></div>
         </div>
       )}
 
@@ -228,14 +228,14 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
         <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
         <div><label className={lbl}>{tx('幣別', '币别', 'Currency')}</label>
-          <select className={inputCls} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD', 'EUR', 'GBP', 'JPY', 'CNY'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
+          <select className={inputCls} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
         </div>
         <div className="sm:col-span-2"><label className={lbl}>{tx('備註(選填)', '备注(选填)', 'Note (optional)')}</label><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></div>
       </div>
       <div className="flex items-center gap-2 mb-3">
         {(['generated', 'own'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setInvType(t)} className={`text-xs px-3 py-1.5 rounded-full border transition ${invType === t ? 'bg-amber-500/20 border-amber-400/50 text-amber-200' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
-            {t === 'generated' ? tx('系統生成發票(我簽名)', '系统生成发票(我签名)', 'System invoice (I sign)') : tx('上傳自家公司發票', '上传自家公司发票', 'Upload my own invoice')}
+            {t === 'generated' ? tx('系統生成發票', '系统生成发票', 'System invoice') : tx('上傳發票', '上传发票', 'Upload invoice')}
           </button>
         ))}
       </div>
