@@ -61,7 +61,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, reasons, ...updateData } = body;   // reasons 只用於拒絕信,不寫進 DB
 
     if (!id) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
@@ -96,6 +96,7 @@ export async function PATCH(request: NextRequest) {
           status: updateData.status as 'approved' | 'rejected',
           locale: application.locale,
           onboardUrl,
+          reasons: Array.isArray(reasons) ? reasons : undefined,
         });
         await sendEmail({ category: 'HELLO', to: application.email, subject, html });
       }

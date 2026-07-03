@@ -853,7 +853,7 @@ export function applicationTeamNotifyEmail(p: { applicantName: string; applicati
   };
 }
 
-export function applicationStatusEmail(p: { applicantName: string; applicationNumber: string; status: 'approved' | 'rejected'; locale?: string; onboardUrl?: string }): { subject: string; html: string } {
+export function applicationStatusEmail(p: { applicantName: string; applicationNumber: string; status: 'approved' | 'rejected'; locale?: string; onboardUrl?: string; reasons?: string[] }): { subject: string; html: string } {
   // Localized approve/reject email. Approved = warm welcome (we accept most);
   // rejected = gracious. Defaults to English when no locale stored.
   const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
@@ -940,6 +940,16 @@ export function applicationStatusEmail(p: { applicantName: string; applicationNu
     <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${desc}</p></td></tr>`;
 
   const a = C.ap, r = C.rj;
+  // 拒絕原因(依後台勾選)—— 組成信裡的列點,讓對方知道為什麼。
+  const reasonMap = {
+    tw: { audio: 'Demo 音質尚未達製作標準(雜訊、房間回音或清晰度)。', gear: '錄音似乎非以專業設備錄製(例如手機錄音),此類作品我們無法媒合客戶。', proof: '申請內容不足以確認具備專業配音經驗。' },
+    cn: { audio: 'Demo 音质尚未达制作标准(杂讯、房间回音或清晰度)。', gear: '录音似乎非以专业设备录制(例如手机录音),此类作品我们无法媒合客户。', proof: '申请内容不足以确认具备专业配音经验。' },
+    en: { audio: "Demo audio quality doesn't yet meet our production standard (noise, room echo, or clarity).", gear: 'Recordings appear not to be made with professional equipment (e.g. phone recordings), which we can’t place with clients.', proof: "The application didn't include enough to confirm professional voiceover experience." },
+  }[L] as Record<string, string>;
+  const reasonLines = (p.reasons || []).map((c) => reasonMap[c]).filter(Boolean);
+  const reasonHtml = reasonLines.length
+    ? `<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px 16px;margin:0 0 16px;"><p style="color:#fcd34d;font-size:13px;margin:0 0 6px;">${{ tw: '主要原因:', cn: '主要原因:', en: 'Main reasons:' }[L]}</p>${reasonLines.map((l) => `<p style="color:#d1d5db;font-size:14px;line-height:1.6;margin:0 0 4px;">• ${l}</p>`).join('')}</div>`
+    : '';
   const ctaLabel = { tw: '完成報名 · 開通帳號', cn: '完成报名 · 开通账号', en: 'Complete onboarding' }[L];
   const ctaIntro = { tw: '請點下方完成報名,確認合作條款後即開通帳號、正式進入人才庫:', cn: '请点下方完成报名,确认合作条款后即开通账号、正式进入人才库:', en: 'Click below to complete onboarding — confirm the cooperation terms and your profile goes live on the roster:' }[L];
   const approvedBody = p.onboardUrl
@@ -953,7 +963,7 @@ export function applicationStatusEmail(p: { applicantName: string; applicationNu
        <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${a.outro}</p>`;
   const body = approved
     ? approvedBody
-    : `${P(C.greet)}${P(r.l1)}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${r.l2}</p>`;
+    : `${P(C.greet)}${P(r.l1)}${reasonHtml}<p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${r.l2}</p>`;
 
   const meta = approved ? a : r;
   const content = `

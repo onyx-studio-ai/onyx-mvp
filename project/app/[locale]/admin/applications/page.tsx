@@ -153,27 +153,24 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
   const [expanded, setExpanded] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [notes, setNotes] = useState(app.admin_notes || '');
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejReasons, setRejReasons] = useState<string[]>([]);
   const [savingNotes, setSavingNotes] = useState(false);
 
-  const updateStatus = async (status: Application['status']) => {
+  const updateStatus = async (status: Application['status'], reasons?: string[]) => {
     if (status === 'approved') {
       const ok = window.confirm(
         `Approve ${app.full_name}?\n\nThis will:\n• Send approval email to ${app.email}\n• Create a talent record in the system\n• The email will include next-step instructions (contract signing + Voice ID recording)`
       );
       if (!ok) return;
     }
-    if (status === 'rejected') {
-      const ok = window.confirm(
-        `Reject ${app.full_name}'s application?\n\nA polite rejection email will be sent to ${app.email}.`
-      );
-      if (!ok) return;
-    }
+    // 拒絕改由「勾原因」彈窗觸發(見下方 modal),勾選的原因一併帶入拒絕信。
     setUpdating(true);
     try {
       const res = await fetch('/api/admin/applications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: app.id, status, reviewed_at: new Date().toISOString() }),
+        body: JSON.stringify({ id: app.id, status, reviewed_at: new Date().toISOString(), ...(status === 'rejected' && reasons?.length ? { reasons } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -505,7 +502,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   {(Object.keys(STATUS_CONFIG) as Application['status'][]).map(s => (
                     <button
                       key={s}
-                      onClick={() => updateStatus(s)}
+                      onClick={() => (s === 'rejected' ? (setRejReasons([]), setRejectOpen(true)) : updateStatus(s))}
                       disabled={updating || app.status === s}
                       className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all disabled:cursor-not-allowed ${
                         app.status === s
@@ -518,6 +515,22 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                     </button>
                   ))}
                 </div>
+                {rejectOpen && (
+                  <div className="mt-3 rounded-lg border border-red-200 bg-red-50/50 p-3">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">拒絕原因(勾選,會寫進拒絕信):</p>
+                    {([['audio', 'Demo 音質太差(雜訊 / 回音 / 清晰度)'], ['gear', '非專業設備(手機錄音等)'], ['proof', '無法證明專業配音經驗']] as [string, string][]).map(([code, label]) => (
+                      <label key={code} className="flex items-center gap-2 text-xs text-gray-700 mb-1.5">
+                        <input type="checkbox" checked={rejReasons.includes(code)} onChange={(e) => setRejReasons((prev) => e.target.checked ? [...prev, code] : prev.filter((x) => x !== code))} />
+                        {label}
+                      </label>
+                    ))}
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => { updateStatus('rejected', rejReasons); setRejectOpen(false); }} disabled={updating} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">確認拒絕並寄信</button>
+                      <button onClick={() => setRejectOpen(false)} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-600">取消</button>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1.5">不勾也可以寄(用通用版拒絕信);外國申請人自動寄英文版。</p>
+                  </div>
+                )}
               </div>
 
               {/* Delete */}
