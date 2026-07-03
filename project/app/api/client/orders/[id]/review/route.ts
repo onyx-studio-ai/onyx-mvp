@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (action === 'revise' && !feedback) return NextResponse.json({ error: '請說明要修改的地方。' }, { status: 400 });
 
   const { data: order } = await db.from('voice_orders')
-    .select('id, order_number, email, status, talent_id, project_name, use_case, download_url, revision_count, max_revisions')
+    .select('id, order_number, email, status, talent_id, project_name, use_case, download_url, revision_count, max_revisions, talent_price, quote_id, brief_id, currency')
     .eq('id', id).maybeSingle();
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   if (String(order.email || '').toLowerCase() !== email.toLowerCase()) return NextResponse.json({ error: 'Not your order' }, { status: 403 });
@@ -77,6 +77,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (isCasting && order.download_url) upd.download_url = order.download_url; // keep final file downloadable
     const { error } = await db.from('voice_orders').update(upd).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // ② 真人接案:客戶驗收通過 → 自動建一筆 pending 收入(配音員實得 = talent_price,
+    //    已是扣佣後的淨額,故 commission_rate=1)。綁 quote_id / brief_id 供之後請款帶案名。
+    //    防重複:同一訂單已記過就跳過(驗收被重複觸發也不會記兩筆)。
+    if (isCasting && order.talent_id) {
+      const { data: existingEarn } = await db.from('talent_earnings').select('id').eq('order_id', id).maybeSingle();
+      const net = Number(order.talent_price) || 0;
+      if (!existingEarn && net > 0) {
+        const { error: teErr } = await db.from('talent_earnings').insert({
+          talent_id: order.talent_id, order_id: id, order_type: 'voice', order_number: order.order_number,
+          tier: 'marketplace', order_total: net, commission_rate: 1, commission_amount: net, status: 'pending',
+          quote_id: order.quote_id || null, brief_id: order.brief_id || null,
+        });
+        if (teErr) console.error('[review/approve] talent_earnings insert failed', order.order_number, teErr.message);
+      }
+    }
+
     if (order.talent_id) {
       const { data: talent } = await db.from('talents').select('name, email').eq('id', order.talent_id).maybeSingle();
       if (talent?.email) {

@@ -87,6 +87,17 @@
     background-position: right 0.6rem center;
     padding-right: 1.75rem !important;
   }
+  /* number input 的上下 spinner 拿掉:避免它比相鄰 input/select 更「緊」、高度看起來
+     不一致(例如「配音年資」數字欄接「交期」下拉並排時一高一矮)。改用純打字輸入。 */
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 @keyframes shake {
