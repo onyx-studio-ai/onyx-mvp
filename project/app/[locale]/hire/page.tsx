@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { track } from '@/lib/track';
 
 type Opt = { v: string; tw: string; cn: string };
 type Opt3 = { v: string; tw: string; cn: string; en: string };
@@ -438,6 +439,7 @@ export default function Hire() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || tx('送出失敗,請重試', '送出失败,请重试', 'Submission failed — please try again'));
+      track('hire_submit'); // 詢價送出成功 → 流量埋點
       setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : tx('發生錯誤,請重試', '发生错误,请重试', 'Something went wrong'));

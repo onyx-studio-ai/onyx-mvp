@@ -16,6 +16,7 @@ import { useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Check, X, Plus, ArrowRight, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { track } from '@/lib/track';
 
 const STEPS = [
   { tw: '基本資料', cn: '基本资料', en: 'Basics' },
@@ -339,6 +340,7 @@ export default function TalentApply() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || tx('送出失敗,請重試', '送出失败,请重试', 'Submission failed — please try again'));
+      track('apply_submit'); // 配音員申請送出成功 → 流量埋點
       setDoneNo(data.application_number || tx('已送出', '已送出', 'Submitted'));
     } catch (e) {
       setError(e instanceof Error ? e.message : tx('發生錯誤,請重試', '发生错误,请重试', 'Something went wrong — please try again'));

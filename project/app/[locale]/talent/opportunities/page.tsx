@@ -20,6 +20,7 @@ import { caseCode } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
 import ReviewBox from '@/components/marketplace/ReviewBox';
 import { StatModule, EntityCard, InfoPills } from '@/components/dashboard/cards';
+import { track } from '@/lib/track';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 
@@ -761,7 +762,7 @@ export default function Opportunities() {
             onTemplates={setTemplates}
             token={token}
             tx={tx}
-            onQuoted={(q) => setQuotes((prev) => [q, ...prev])}
+            onQuoted={(q) => { track('quote_submit'); setQuotes((prev) => [q, ...prev]); }}
           />
         ))}
       </div>

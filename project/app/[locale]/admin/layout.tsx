@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests';
@@ -33,6 +33,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt },
       { href: '/admin/costs', labelKey: 'costs', icon: Wallet },
       { href: '/admin/pockets', labelKey: 'pockets', icon: Wallet },
+      { href: '/admin/analytics', labelKey: 'analytics', icon: Activity },
     ],
   },
   {
@@ -62,11 +63,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     applications: '申請資料',
     users: '使用者',
     talentManagement: '人才管理',
-    finance: '📊 財務總覽',
+    finance: '財務總覽',
     talentPayouts: '人才分潤',
     payoutRequests: '請款單',
     costs: '營運成本',
-    pockets: '💰 口袋',
+    pockets: '口袋',
+    analytics: '流量',
     content: '內容',
     certificates: '授權證書',
     promos: '優惠碼',
@@ -97,11 +99,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     applications: 'Applications',
     users: 'Users',
     talentManagement: 'Talent Management',
-    finance: '📊 Finance',
+    finance: 'Finance',
     talentPayouts: 'Talent Payouts',
     payoutRequests: 'Payout Requests',
     costs: 'Operating Costs',
-    pockets: '💰 Pockets',
+    pockets: 'Pockets',
+    analytics: 'Analytics',
     content: 'Content',
     certificates: 'Certificates',
     promos: 'Promos',
