@@ -751,6 +751,7 @@ export default function AdminTalentsPage() {
       category: "in_house",
       tags: [],
       bio: "",
+      portfolio_url: "",
       internal_cost: 0,
       is_active: true,
       sort_order: 0,

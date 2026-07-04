@@ -2,7 +2,7 @@ const SITE_URL = 'https://www.onyxstudios.ai';
 const BRAND_GREEN = '#4ade80';
 const BRAND_AMBER = '#f59e0b';
 
-type SupportedLocale = 'en' | 'zh-TW' | 'zh-CN';
+export type SupportedLocale = 'en' | 'zh-TW' | 'zh-CN';
 
 const EMAIL_I18N: Record<SupportedLocale, Record<string, string>> = {
   en: {

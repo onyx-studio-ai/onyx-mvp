@@ -26,10 +26,10 @@ const nextConfig = {
     ];
   },
   typescript: {
-    // TODO: flip to false after we've held 0 TS errors for a week.
-    // We're at 0 errors today (2026-05-18) but this still allows
-    // builds to silently ship type-broken code.
-    ignoreBuildErrors: true,
+    // 型別守門已恢復:2026-07-04 清掉最後 3 個型別債、全專案 tsc 0 錯誤後翻回 false。
+    // 型別壞掉的 code 會被 build 擋下 —— 對「用 GitHub API 部署、沒本地 build」的
+    // 流程尤其重要,Vercel 的 type-check 從此才是真的安全網。
+    ignoreBuildErrors: false,
   },
 };
 

@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       const orderIdToBrief: Record<string, string> = {};
       for (const o of ords || []) { if (o.brief_id) { orderByBrief[o.brief_id as string] = { id: o.id as string, script_text: o.script_text as string | null, script_file_url: o.script_file_url as string | null, deadline: o.deadline as string | null, created_at: o.created_at as string | null, status: o.status as string | null, payment_status: o.payment_status as string | null }; orderIdToBrief[o.id as string] = o.brief_id as string; } }
       // The talent's delivered files (voice_order_versions) per won brief.
-      const deliveriesByBrief: Record<string, { id: string; file_name: string; file_url: string }[]> = {};
+      const deliveriesByBrief: Record<string, { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[]> = {};
       const orderIds = (ords || []).map((o) => o.id as string);
       if (orderIds.length) {
         const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, version_number, status, client_feedback').in('voice_order_id', orderIds).order('version_number', { ascending: true });

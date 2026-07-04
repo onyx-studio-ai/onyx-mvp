@@ -4,6 +4,7 @@ import {
   newOrderNotificationEmail,
   orderConfirmationEmail,
   paymentReceiptEmail,
+  type SupportedLocale,
 } from '@/lib/mail-templates';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -113,7 +114,9 @@ async function sendOrderEmails(params: {
     orderType,
     transactionId,
     dashboardLink,
-    locale: (order as { locale?: string }).locale,
+    // locale 欄位在 DB 為自由字串,收斂成 SupportedLocale 給 email payload;
+    // 值域外的字串由 orderConfirmationEmail 內部自行 fallback 成 'en',不改執行邏輯。
+    locale: (order as { locale?: string }).locale as SupportedLocale | undefined,
     orderDetails:
       orderType === 'voice'
         ? {
