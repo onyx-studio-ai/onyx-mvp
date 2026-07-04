@@ -39,6 +39,10 @@ export async function PATCH(request: NextRequest) {
   if (typeof body.admin_note === 'string') updates.admin_note = body.admin_note.slice(0, 500);
 
   const db = getSupabaseServiceClient();
+  // 狀態機把關:先讀現況,已撥款(paid)的單子不可再變更,防重複撥款 / 重蓋 paid_at / 狀態亂跳。
+  const { data: cur } = await db.from('payout_requests').select('status').eq('id', id).maybeSingle();
+  if (!cur) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  if (cur.status === 'paid') return NextResponse.json({ error: '此請款單已撥款,無法再變更。' }, { status: 400 });
   const { error } = await db.from('payout_requests').update(updates).eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

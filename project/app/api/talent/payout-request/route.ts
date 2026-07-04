@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
+import { EXCHANGE_RATES } from '@/lib/currency';
 
 /*
   配音員自己的請款單。
@@ -43,8 +44,9 @@ export async function POST(request: NextRequest) {
   const { data: earns } = await r.db.from('talent_earnings').select('commission_amount').eq('talent_id', talentId).eq('status', 'pending');
   const balance = (earns || []).reduce((sum, x) => sum + (Number(x.commission_amount) || 0), 0);
   if (balance <= 0) return NextResponse.json({ error: 'no_balance' }, { status: 400 });
-  // 餘額以 USD 計;請款幣別為 USD 時才做上限檢查(跨幣別上限之後精算)。
-  if (currency === 'USD' && amount > balance + 0.01) return NextResponse.json({ error: 'exceeds_balance', balance }, { status: 400 });
+  // 餘額以 USD 計;請款金額一律換算成 USD 後比對上限(台幣用匯率換算,不再只擋 USD、TWD 也擋)。
+  const rate = EXCHANGE_RATES[currency] || 1;   // USD=1、TWD≈30.1
+  if (amount / rate > balance + 0.01) return NextResponse.json({ error: 'exceeds_balance', balance }, { status: 400 });
 
   // 發票號 = ONX-{配音員短碼}-{yyMMdd}-{該員當天序號}。
   //   短碼 = 該配音員 id 前 6 碼(每人固定、可回查本人),讓每個號碼都能辨識到
