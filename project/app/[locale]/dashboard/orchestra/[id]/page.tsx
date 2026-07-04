@@ -164,7 +164,9 @@ export default function OrchestraOrderDetailPage() {
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [sendError, setSendError] = useState('');
   const [accepting, setAccepting] = useState(false);
+  const [acceptError, setAcceptError] = useState('');
   const [deliveryFiles, setDeliveryFiles] = useState<{ name: string; url: string; created_at: string; size: number }[]>([]);
 
   const loadOrder = useCallback(async () => {
@@ -292,6 +294,7 @@ export default function OrchestraOrderDetailPage() {
   async function handleSendMessage() {
     if (!newMessage.trim() || !order) return;
     setSendingMessage(true);
+    setSendError('');
     try {
       const res = await fetch('/api/orders/orchestra/messages', {
         method: 'POST',
@@ -305,9 +308,11 @@ export default function OrchestraOrderDetailPage() {
       if (res.ok) {
         setNewMessage('');
         fetchMessages();
+      } else {
+        setSendError(t('sendMessageFailed'));
       }
     } catch {
-      // silent
+      setSendError(t('sendMessageFailed'));
     } finally {
       setSendingMessage(false);
     }
@@ -316,12 +321,14 @@ export default function OrchestraOrderDetailPage() {
   async function handleAcceptDelivery() {
     if (!order) return;
     setAccepting(true);
+    setAcceptError('');
     try {
-      await fetch('/api/orders/orchestra', {
+      const res = await fetch('/api/orders/orchestra', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: order.id, status: 'completed' }),
       });
+      if (!res.ok) throw new Error('accept failed');
 
       try {
         await fetch('/api/mail/send', {
@@ -342,7 +349,7 @@ export default function OrchestraOrderDetailPage() {
 
       setOrder((prev) => prev ? { ...prev, status: 'completed' } : prev);
     } catch {
-      // silent
+      setAcceptError(t('acceptFailed'));
     } finally {
       setAccepting(false);
     }
@@ -609,6 +616,11 @@ export default function OrchestraOrderDetailPage() {
                 <><CheckCircle2 className="w-4 h-4 mr-2" /> {t('confirmAcceptDelivery')}</>
               )}
             </Button>
+            {acceptError && (
+              <p className="text-red-400 text-xs mt-3 flex items-start gap-1.5">
+                <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {acceptError}
+              </p>
+            )}
           </motion.div>
         )}
 
@@ -699,6 +711,11 @@ export default function OrchestraOrderDetailPage() {
                   {sendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
+            )}
+            {sendError && (
+              <p className="text-red-400 text-xs mt-2 flex items-start gap-1.5">
+                <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {sendError}
+              </p>
             )}
           </motion.div>
         )}

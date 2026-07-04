@@ -1395,6 +1395,7 @@
       "buttonDownload": "Download",
       "invoiceCount": "{count, plural, one {# invoice total} other {# invoices total}}",
       "totalPaidLabel": "Total paid",
+      "downloadFailed": "Could not generate the invoice. Please try again.",
       "footerNote": "Invoices are generated automatically for all paid orders. Each invoice includes your order number, billing details, line items, and payment confirmation. Contact support if you need a formal tax invoice."
     },
     "orderDetail": {
@@ -1483,7 +1484,9 @@
       "sessionInProduction": "Session In Production",
       "sessionInProductionDesc": "Our conservatory musicians are recording your piece. You will receive an email notification when your files are ready.",
       "unsupportedFileType": "Unsupported file type. Accepted: MIDI, PDF, MusicXML, Sibelius, Finale, MuseScore, Dorico, WAV, MP3, AAC, FLAC.",
-      "fileSizeExceeded": "File size exceeds 50MB limit."
+      "fileSizeExceeded": "File size exceeds 50MB limit.",
+      "acceptFailed": "Could not accept the delivery. Please try again.",
+      "sendMessageFailed": "Message could not be sent. Please try again."
     },
     "voiceDetail": {
       "productionProgress": "Production Progress",

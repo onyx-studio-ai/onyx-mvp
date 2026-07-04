@@ -36,6 +36,7 @@ export default function InvoicesPage() {
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState('');
 
   const fetchOrders = useCallback(async () => {
     if (!user.email) return;
@@ -115,6 +116,7 @@ export default function InvoicesPage() {
 
   const handleDownload = async (item: InvoiceItem) => {
     setDownloading(item.id);
+    setDownloadError('');
     try {
       const res = await fetch(`/api/invoices/${item.id}?type=${item.type}`);
       if (!res.ok) throw new Error('Failed to generate invoice');
@@ -126,7 +128,7 @@ export default function InvoicesPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      // silent
+      setDownloadError(t('downloadFailed'));
     } finally {
       setDownloading(null);
     }
@@ -258,6 +260,10 @@ export default function InvoicesPage() {
               </span>
             </div>
           </div>
+        )}
+
+        {downloadError && (
+          <p className="mt-4 text-red-400 text-xs">{downloadError}</p>
         )}
 
         <div className="mt-6 rounded-xl bg-white/[0.02] border border-white/[0.05] px-5 py-4 flex items-start gap-3">
