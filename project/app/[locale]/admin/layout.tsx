@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl';
 import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests';
+type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'payouts' | 'casting';
 
 type NavItem = { href: string; labelKey: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey };
 type NavGroup = { titleKey: string; items: NavItem[] };
@@ -19,7 +19,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/orders', labelKey: 'orders', icon: ShoppingCart, badgeKey: 'orders' },
       { href: '/admin/requests', labelKey: 'requests', icon: Inbox, badgeKey: 'requests' },
       { href: '/admin/inquiries', labelKey: 'inquiries', icon: MessageSquare, badgeKey: 'inquiries' },
-      { href: '/admin/marketplace', labelKey: 'marketplace', icon: Megaphone },
+      { href: '/admin/marketplace', labelKey: 'marketplace', icon: Megaphone, badgeKey: 'casting' },
     ],
   },
   {
@@ -30,7 +30,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/talents', labelKey: 'talentManagement', icon: Mic },
       { href: '/admin/finance', labelKey: 'finance', icon: TrendingUp },
       { href: '/admin/payouts', labelKey: 'talentPayouts', icon: DollarSign },
-      { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt },
+      { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt, badgeKey: 'payouts' },
       { href: '/admin/costs', labelKey: 'costs', icon: Wallet },
       { href: '/admin/pockets', labelKey: 'pockets', icon: Wallet },
       { href: '/admin/analytics', labelKey: 'analytics', icon: Activity },
@@ -133,7 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(true);
-  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0 });
+  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0, payouts: 0, casting: 0 });
 
   // Admin panel uses a light theme — explicitly ensure dark class is not set
   // (it may linger from public dark pages on client-side navigation).
@@ -171,17 +171,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const fetchBadges = async () => {
       try {
         const params = new URLSearchParams();
-        (['orders', 'inquiries', 'applications', 'requests'] as BadgeKey[]).forEach((key) => {
+        (['orders', 'inquiries', 'applications', 'requests', 'payouts', 'casting'] as BadgeKey[]).forEach((key) => {
           const seen = localStorage.getItem(`admin_badge_seen_${key}`);
           if (seen) params.set(`${key}_since`, seen);
         });
-        const res = await fetch(`/api/admin/badges?${params}`);
+        const res = await fetch(`/api/admin/nav-counts?${params}`);
         const data = await res.json();
         setBadges({
           orders: data.orders || 0,
           inquiries: data.inquiries || 0,
           applications: data.applications || 0,
           requests: data.requests || 0,
+          payouts: data.payouts || 0,
+          casting: data.casting || 0,
         });
       } catch { /* ignore */ }
     };
@@ -379,6 +381,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           item.badgeKey === 'orders' ? 'bg-amber-600' :
                           item.badgeKey === 'applications' ? 'bg-yellow-600' :
                           item.badgeKey === 'requests' ? 'bg-emerald-600' :
+                          item.badgeKey === 'payouts' ? 'bg-rose-600' :
+                          item.badgeKey === 'casting' ? 'bg-violet-600' :
                           'bg-blue-600'
                         )}>
                           {badgeCount > 99 ? '99+' : badgeCount}
