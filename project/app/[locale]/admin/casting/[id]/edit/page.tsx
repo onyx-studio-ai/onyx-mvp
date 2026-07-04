@@ -117,8 +117,8 @@ export default function EditCasting() {
         </div>
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">案件說明</span><textarea className={`${input} min-h-[80px] resize-y`} value={f.brief} onChange={(e) => set('brief', e.target.value)} /></label>
         <div className="grid grid-cols-3 gap-3">
-          <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音截止</span><input className={input} value={f.audition_deadline} onChange={(e) => set('audition_deadline', e.target.value)} /></label>
-          <label className="block"><span className="text-xs text-gray-600 mb-1 block">交付截止</span><input className={input} value={f.deadline} onChange={(e) => set('deadline', e.target.value)} /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音截止</span><input type="date" className={`${input} [color-scheme:light]`} value={f.audition_deadline} onChange={(e) => set('audition_deadline', e.target.value)} /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">交付截止</span><input type="date" className={`${input} [color-scheme:light]`} value={f.deadline} onChange={(e) => set('deadline', e.target.value)} /></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">規模</span><input className={input} value={f.length} onChange={(e) => set('length', e.target.value)} /></label>
         </div>
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音方向 / 聲音方向(選填)</span><textarea className={`${input} min-h-[60px] resize-y`} value={f.audition_script} onChange={(e) => set('audition_script', e.target.value)} /></label>

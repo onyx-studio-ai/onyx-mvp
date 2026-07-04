@@ -634,7 +634,7 @@ function NewCasting() {
         <Field label="案件說明 *"><textarea className={`${input} min-h-[90px] resize-y`} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="全劇共 X 條台詞… 先試音,通過後正式錄。試音範圍…" /></Field>
 
         <div className="grid grid-cols-4 gap-3">
-          <Field label="試音截止"><input className={input} value={auditionDeadline} onChange={(e) => setAuditionDeadline(e.target.value)} placeholder="6/30" /></Field>
+          <Field label="試音截止"><input type="date" className={`${input} [color-scheme:light]`} value={auditionDeadline} onChange={(e) => setAuditionDeadline(e.target.value)} /></Field>
           <Field label="預計開錄"><input className={input} value={recordingStart} onChange={(e) => setRecordingStart(e.target.value)} placeholder="7月初" /></Field>
           <Field label="含修改次數"><input type="number" min="0" className={input} value={baseRev} onChange={(e) => setBaseRev(e.target.value)} /></Field>
           <Field label="熱門門檻(人數提示)"><input type="number" min="1" className={input} value={cap} onChange={(e) => setCap(e.target.value)} /></Field>
@@ -654,7 +654,7 @@ function NewCasting() {
         <p className="text-xs text-gray-400 -mb-1 pt-1">案件資料(選填,會顯示在配音員看到的卡上)</p>
         <div className="grid grid-cols-2 gap-3">
           <Field label="規模(句數 / 字數 / 秒數 / 時數)"><input className={input} value={scale} onChange={(e) => setScale(e.target.value)} placeholder="例:全劇 129 句 / 30 秒 / 5 小時" /></Field>
-          <Field label="交付截止(最終交件)"><input className={input} value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="例:7/15" /></Field>
+          <Field label="交付截止(最終交件)"><input type="date" className={`${input} [color-scheme:light]`} value={deadline} onChange={(e) => setDeadline(e.target.value)} /></Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Field label="使用範圍"><select className={input} value={mediaScope} onChange={(e) => setMediaScope(e.target.value)}>{optsWith(USAGE_OPTS, mediaScope).map(optEl)}</select></Field>

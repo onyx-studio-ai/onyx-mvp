@@ -88,6 +88,7 @@ type Brief = {
   deadline: string | null;
   brief: string;
   created_at: string;
+  closed?: boolean;                 // 後端算好的「試音已截止」旗標(前端優先吃這個)
 };
 type Quote = {
   id: string;
@@ -797,6 +798,7 @@ function BriefCard({
   const isCasting = brief.kind === 'casting';
   const hasRoles = (brief.roles || []).length > 0; // casting WITHOUT roles = general single-voice call
   const myQuote = myQuotes[0]; // regular briefs have a single quote per talent
+  const closed = auditionClosed(brief); // 截止後普通報價區的報價 / 送出停用
   const [open, setOpen] = useState(!!defaultOpen);
   const [gross, setGross] = useState('');
   const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
@@ -974,19 +976,20 @@ function BriefCard({
             </div>
           ) : (
             <div className="border-t border-white/10 pt-3 space-y-2">
+              {closed && <ClosedNotice tx={tx} />}
               <div className="flex gap-2">
                 <span className={`${inputCls} w-24 flex items-center justify-center font-medium text-gray-200 bg-white/[0.07]`} title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
-                <input type="number" min="0" className={inputCls} value={gross} onChange={(e) => setGross(e.target.value)}
+                <input type="number" min="0" disabled={closed} className={`${inputCls} ${closed ? closedFieldCls : ''}`} value={gross} onChange={(e) => setGross(e.target.value)}
                   placeholder={tx('客戶支付金額(報價)', '客户支付金额(报价)', 'Amount the client pays (your quote)')} />
               </div>
               {grossN > 0 && (
                 <p className="text-xs text-green-300">{tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview} <span className="text-gray-300">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span></p>
               )}
-              <textarea className={`${inputCls} min-h-[60px] resize-y`} value={message} onChange={(e) => setMessage(e.target.value)}
+              <textarea className={`${inputCls} min-h-[60px] resize-y ${closed ? closedFieldCls : ''}`} disabled={closed} value={message} onChange={(e) => setMessage(e.target.value)}
                 placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')} />
               {err && <p className="text-red-400 text-xs">{err}</p>}
-              <button onClick={submitQuote} disabled={busy} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm transition">
-                {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出報價', '送出报价', 'Submit quote')}
+              <button onClick={submitQuote} disabled={busy || closed} className={`bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm transition ${closed ? 'cursor-not-allowed' : ''}`}>
+                {closed ? tx('已截止', '已截止', 'Closed') : busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出報價', '送出报价', 'Submit quote')}
               </button>
             </div>
           )}
@@ -1052,14 +1055,29 @@ function CaseHeader({
   );
 }
 
-// 試音是否已截止:audition_deadline 那天 23:59 之後就鎖(當天仍可交)。
-// parse 失敗一律不鎖(不誤鎖)。後端 quotes API 另有同樣把關,前端只是提早擋 UI。
+// 試音是否已截止。優先吃後端 briefs API 算好的 brief.closed(統一來源,截止日已改
+// date 欄位後 parse 一定穩定)。後端沒給時才 fallback 前端 runtime 算(向下相容):
+// audition_deadline 那天 23:59 之後就鎖(當天仍可交),parse 失敗一律不鎖(不誤鎖)。
+// 後端 quotes API 另有同樣把關,前端 disabled 只是提早擋 UI。
 function auditionClosed(brief: Brief): boolean {
+  if (typeof brief.closed === 'boolean') return brief.closed;
   const d = brief.audition_deadline || brief.deadline;   // 沒設試音截止就用交付截止當界線,與卡片顯示的截止日一致
   if (!d) return false;
   const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
   return Number.isFinite(t) && Date.now() > t;
 }
+
+// 截止時三處(角色試音 / 單一聲音案 / 普通報價)共用的統一提示條 —— 灰底、置頂,
+// 讓「上傳 / 報價 / 送出都變灰不能點」時,配音員知道原因是「試音已截止」。
+function ClosedNotice({ tx }: { tx: (tw: string, cn: string, en: string) => string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-gray-300">
+      {tx('這個案子的試音已截止,以下動作已停用。', '这个案子的试音已截止,以下动作已停用。', 'Auditions for this case have closed — the actions below are disabled.')}
+    </div>
+  );
+}
+// 截止時套在 input / button 上的一致 disabled 樣式(灰 + 禁點手勢)。
+const closedFieldCls = 'opacity-50 cursor-not-allowed pointer-events-none';
 
 // One role's audition: view its line → upload audition → write your price/terms.
 // Full roles are disabled (no count shown); near-full nudges to try another.
@@ -1161,18 +1179,8 @@ function RoleAudition({
     );
   }
 
-  // 試音已截止:不給上傳/報價,只顯示截止狀態(當天仍可交,隔天起鎖)。
-  if (auditionClosed(brief)) {
-    return (
-      <div className="flex rounded-2xl overflow-hidden bg-[#1d1b25] border border-white/[0.08] opacity-70">
-        {imageLeft}
-        <div className="flex-1 min-w-0 p-4">
-          {nameRow}
-          <p className="text-sm text-gray-300 mt-1.5">{tx('這個案子的試音已截止。', '这个案子的试音已截止。', 'Auditions for this case have closed.')}</p>
-        </div>
-      </div>
-    );
-  }
+  // 試音已截止:內容(角色/樣詞)照常可展開看,但上傳/報價/送出全部停用(見下方表單區)。
+  const closed = auditionClosed(brief);
 
   return (
     <div className={`flex rounded-2xl overflow-hidden bg-[#1d1b25] border transition ${role.is_lead ? 'border-[#C9A86A]/50' : 'border-white/[0.08]'} hover:border-[#C9A86A]/40`}>
@@ -1201,20 +1209,22 @@ function RoleAudition({
 
         <div className="flex items-center justify-between">
           <span className={`text-xs ${isPopular ? 'text-[#E4CB94]' : 'text-gray-300'}`}>{count} {tx('人已試', '人已试', 'auditioned')}{isPopular && tx(' · 熱門', ' · 热门', ' · popular')}</span>
+          {/* 截止後仍可展開看角色/樣詞;按鈕改為中性「查看/收起」不再是行動呼籲 */}
           <button onClick={() => setOpen((o) => !o)} className="text-sm rounded-xl px-4 py-2 transition"
-            style={open ? { border: '1px solid rgba(201,168,106,.4)', color: '#E4CB94', background: 'transparent' } : { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>
-            {open ? tx('收起', '收起', 'Close') : tx('試這個角色 →', '试这个角色 →', 'Audition →')}
+            style={open || closed ? { border: '1px solid rgba(201,168,106,.4)', color: '#E4CB94', background: 'transparent' } : { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>
+            {open ? tx('收起', '收起', 'Close') : closed ? tx('查看內容', '查看内容', 'View') : tx('試這個角色 →', '试这个角色 →', 'Audition →')}
           </button>
         </div>
-        {isPopular && !open && <p className="text-[11px] text-[#E4CB94]/70">{tx('很多人試了,試別的中選機會更高', '很多人试了,试别的中选机会更高', 'Popular — try another for better odds')}</p>}
+        {isPopular && !open && !closed && <p className="text-[11px] text-[#E4CB94]/70">{tx('很多人試了,試別的中選機會更高', '很多人试了,试别的中选机会更高', 'Popular — try another for better odds')}</p>}
 
         {open && (
           <div className="space-y-2 border-t border-white/[0.08] pt-3">
+            {closed && <ClosedNotice tx={tx} />}
             <label className="block">
               <span className="text-xs text-gray-300">{tx('上傳這個角色的試音(唸上面的樣詞)', '上传这个角色的试音(念上面的样词)', 'Upload your audition (read the line above)')}</span>
-              <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
+              <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading || closed}
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
-                className="block w-full text-xs text-gray-300 mt-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+                className={`block w-full text-xs text-gray-300 mt-1 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs ${closed ? closedFieldCls : ''}`} />
             </label>
             {uploading && <p className="text-xs text-gray-300">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
@@ -1232,16 +1242,16 @@ function RoleAudition({
                     <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
                   </div>
                   <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
-                    <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">
+                    <div className={`bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2 ${closed ? closedFieldCls : ''}`}>
                       <div className="text-[11px] text-[#E4CB94] mb-0.5">{tx('您的報酬', '您的报酬', 'You receive')}</div>
                       <div className="flex items-baseline gap-1"><span className="text-xs text-gray-300">{currency}</span>
-                        <input type="number" min="0" value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
+                        <input type="number" min="0" disabled={closed} value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
                     </div>
                     {isClient && (
-                      <div className="bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2">
+                      <div className={`bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2 ${closed ? closedFieldCls : ''}`}>
                         <div className="text-[11px] text-gray-300 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
                         <div className="flex items-baseline gap-1"><span className="text-xs text-gray-300">{currency}</span>
-                          <input type="number" min="0" value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
+                          <input type="number" min="0" disabled={closed} value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" /></div>
                       </div>
                     )}
                   </div>
@@ -1263,9 +1273,9 @@ function RoleAudition({
             <TemplatedField kind="revision" optional label={tx('修改政策(補充說明)', '修改政策(补充说明)', 'Revision notes')} value={revPolicy} onChange={setRevPolicy}
               builtin={builtinRev(tx)} saved={templates.revision || []} token={token} onTemplates={onTemplates} tx={tx} />
             {err && <p className="text-red-400 text-xs">{err}</p>}
-            <button onClick={submit} disabled={busy || uploading} className="w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm"
+            <button onClick={submit} disabled={busy || uploading || closed} className={`w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm ${closed ? 'cursor-not-allowed' : ''}`}
               style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
-              {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出試音', '送出试音', 'Submit audition')}
+              {closed ? tx('已截止', '已截止', 'Closed') : busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出試音', '送出试音', 'Submit audition')}
             </button>
           </div>
         )}
@@ -1304,6 +1314,7 @@ function GeneralResponse({
   useQuoteDefaults(templates, setIntro, setRevPolicy, setIncludedRev);
   const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
   const grossN = Number(gross);
+  const closed = auditionClosed(brief); // 截止後:上傳 / 報價 / 送出全部停用(內容照看)
 
   async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
@@ -1352,6 +1363,7 @@ function GeneralResponse({
   return (
     <div className="border-t border-white/10 pt-3 space-y-2">
       <p className="text-xs text-gray-300">{tx('用你的 demo 應徵(挑平台現有的,或上傳一段),再報價即可。', '用你的 demo 应征(挑平台现有的,或上传一段),再报价即可。', 'Apply with a demo — pick an existing one or upload — then quote.')}</p>
+      {closed && <ClosedNotice tx={tx} />}
       {myDemos.length > 0 && (
         <div className="flex gap-2 text-xs">
           {([['demo', '挑現有 demo', '挑现有 demo', 'My demos'], ['upload', '上傳新 demo', '上传新 demo', 'Upload']] as const).map(([k, twl, cnl, enl]) => (
@@ -1370,9 +1382,9 @@ function GeneralResponse({
       )}
       {src === 'upload' && (
         <>
-          <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading}
+          <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading || closed}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
-            className="block w-full text-xs text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+            className={`block w-full text-xs text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs ${closed ? closedFieldCls : ''}`} />
           {uploading && <p className="text-xs text-gray-300">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
           {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
         </>
@@ -1392,19 +1404,19 @@ function GeneralResponse({
               <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
             </div>
             <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
-              <div className="bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2">
+              <div className={`bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2 ${closed ? closedFieldCls : ''}`}>
                 <div className="text-[11px] text-[#E4CB94] mb-0.5">{tx('您的報酬', '您的报酬', 'You receive')}</div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xs text-gray-300">{currency}</span>
-                  <input type="number" min="0" value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
+                  <input type="number" min="0" disabled={closed} value={gross} onChange={(e) => setGross(e.target.value)} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
                 </div>
               </div>
               {isClient && (
-                <div className="bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2">
+                <div className={`bg-[#1d1b25] border border-white/10 rounded-xl px-3 py-2 ${closed ? closedFieldCls : ''}`}>
                   <div className="text-[11px] text-gray-300 mb-0.5">{tx('平台費', '平台费', 'Platform fee')} 20%</div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xs text-gray-300">{currency}</span>
-                    <input type="number" min="0" value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
+                    <input type="number" min="0" disabled={closed} value={fee || ''} onChange={(e) => { const f = Number(e.target.value) || 0; setGross(String(Math.round(f * 4 * 100) / 100)); }} placeholder="0" className="w-full bg-transparent border-0 outline-none text-white text-lg font-semibold p-0" />
                   </div>
                 </div>
               )}
@@ -1426,8 +1438,8 @@ function GeneralResponse({
       <TemplatedField kind="revision" optional label={tx('修改政策', '修改政策', 'Revisions')} value={revPolicy} onChange={setRevPolicy}
         builtin={builtinRev(tx)} saved={templates.revision || []} token={token} onTemplates={onTemplates} tx={tx} />
       {err && <p className="text-red-400 text-xs">{err}</p>}
-      <button onClick={submit} disabled={busy || uploading} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm">
-        {busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出應徵', '送出应征', 'Submit')}
+      <button onClick={submit} disabled={busy || uploading || closed} className={`bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm ${closed ? 'cursor-not-allowed' : ''}`}>
+        {closed ? tx('已截止', '已截止', 'Closed') : busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出應徵', '送出应征', 'Submit')}
       </button>
     </div>
   );

@@ -13,6 +13,16 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 */
 const CURRENCIES = ['USD', 'TWD'];
 
+// 試音是否已截止 = 案件非 open,或過了 audition_deadline||deadline(當天 23:59)。
+// 沒設截止日 / parse 失敗一律不算截止(與登入端 / briefs API 同一套規則)。
+function castingClosed(brief: { status?: string | null; audition_deadline?: string | null; deadline?: string | null }): boolean {
+  if (brief.status !== 'open') return true;
+  const d = brief.audition_deadline || brief.deadline;
+  if (!d) return false;
+  const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
+  return Number.isFinite(t) && Date.now() > t;
+}
+
 async function resolveInvite(token: string) {
   const db = getSupabaseServiceClient();
   const { data: invite } = await db.from('casting_invites').select('id, brief_id, email, name, talent_id, status').eq('token', token).maybeSingle();
@@ -40,14 +50,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   // Strip client identity from the guest payload; expose only a source label.
   const safeBrief = { ...brief, source: brief.client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client' } as Record<string, unknown>;
   delete safeBrief.client_email; delete safeBrief.client_name; delete safeBrief.company;
-  return NextResponse.json({ brief: safeBrief, roleCounts, myAuditions, invite: { email: invite.email, name: invite.name }, closed: brief.status !== 'open' });
+  return NextResponse.json({ brief: safeBrief, roleCounts, myAuditions, invite: { email: invite.email, name: invite.name }, closed: castingClosed(brief) });
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const { db, invite, brief } = await resolveInvite(token);
   if (!invite || !brief || brief.kind !== 'casting') return NextResponse.json({ error: 'invalid' }, { status: 404 });
-  if (brief.status !== 'open') return NextResponse.json({ error: '這個試音案已結束' }, { status: 400 });
+  if (castingClosed(brief)) return NextResponse.json({ error: '這個試音案已結束或已截止' }, { status: 400 });
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }

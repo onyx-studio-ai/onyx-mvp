@@ -14,11 +14,21 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 */
 const EMAILRE = /^[\w.%+-]+@[\w.-]+\.[a-z]{2,}$/i;
 
+// 試音是否已截止 = 案件非 open,或過了 audition_deadline||deadline(當天 23:59)。
+// 沒設 / parse 失敗一律不算截止(與登入端 / briefs API / [token] 端同一套規則)。
+function castingClosed(brief: { status?: string | null; audition_deadline?: string | null; deadline?: string | null }): boolean {
+  if (brief.status !== 'open') return true;
+  const d = brief.audition_deadline || brief.deadline;
+  if (!d) return false;
+  const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
+  return Number.isFinite(t) && Date.now() > t;
+}
+
 async function loadCasting(briefId: string) {
   const db = getSupabaseServiceClient();
   const { data } = await db
     .from('marketplace_briefs')
-    .select('id, title, language, rate_note, kind, status')
+    .select('id, title, language, rate_note, kind, status, audition_deadline, deadline')
     .eq('id', briefId)
     .maybeSingle();
   return { db, brief: data && data.kind === 'casting' ? data : null };
@@ -31,7 +41,7 @@ export async function GET(request: NextRequest) {
   if (!brief) return NextResponse.json({ error: 'invalid' }, { status: 404 });
   return NextResponse.json({
     title: brief.title, language: brief.language, rate_note: brief.rate_note,
-    closed: brief.status !== 'open',
+    closed: castingClosed(brief),
   });
 }
 
@@ -47,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   const { db, brief } = await loadCasting(briefId);
   if (!brief) return NextResponse.json({ error: '找不到這個試音案' }, { status: 404 });
-  if (brief.status !== 'open') return NextResponse.json({ error: '這個試音案已結束' }, { status: 400 });
+  if (castingClosed(brief)) return NextResponse.json({ error: '這個試音案已結束或已截止' }, { status: 400 });
 
   // Reuse an existing invite for this person (one stable personal link), else mint one.
   const { data: existing } = await db.from('casting_invites').select('token').eq('brief_id', briefId).eq('email', email).maybeSingle();

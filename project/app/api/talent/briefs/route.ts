@@ -57,10 +57,20 @@ export async function GET(request: NextRequest) {
       .eq('talent_id', (r.talent as { id: string }).id)
       .order('created_at', { ascending: false });
 
+    // 試音是否已截止(統一在後端算,前端各處都吃這個布林,不再各自 parse)。
+    // 取 audition_deadline || deadline;有值且 parse 成功且過了當天 23:59 = true。
+    // 沒設或 parse 失敗 = false(沿用「沒設=不截止;要截止就去後台設真日期」)。
+    const isClosed = (b: { audition_deadline?: string | null; deadline?: string | null }): boolean => {
+      const d = b.audition_deadline || b.deadline;
+      if (!d) return false;
+      const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
+      return Number.isFinite(t) && Date.now() > t;
+    };
+
     // Derive a non-identifying source flag (platform-posted vs from a client) and
     // STRIP client_email — talents see the source label, never the client identity.
     const safeBriefs = briefs.map((b) => {
-      const o = { ...b, source: (b as { client_email?: string }).client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client' } as Record<string, unknown>;
+      const o = { ...b, source: (b as { client_email?: string }).client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client', closed: isClosed(b) } as Record<string, unknown>;
       delete o.client_email;
       return o;
     });
