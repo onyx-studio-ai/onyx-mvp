@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
+import { randomInt, timingSafeEqual } from 'node:crypto';
 import { sendEmail } from '@/lib/mail';
 import { verificationCodeEmail } from '@/lib/mail-templates';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { signOtp } from '@/lib/otp-code';
 
 /*
   Stateless email-verification OTP — no DB table / no migration.
@@ -19,9 +20,8 @@ const SECRET = process.env.EMAIL_CODE_SECRET || process.env.SUPABASE_SERVICE_ROL
 const TTL_MS = 10 * 60 * 1000; // 10 minutes
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function sign(email: string, code: string, exp: number): string {
-  return createHmac('sha256', SECRET).update(`${email.toLowerCase()}:${code}:${exp}`).digest('hex');
-}
+// HMAC signing lives in lib/otp-code (signOtp) so apply/submit can re-verify the
+// same token independently. Behaviour here is unchanged (same secret + lowercasing).
 
 // Verification-code email now uses the shared branded template (verificationCodeEmail).
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
     const exp = Date.now() + TTL_MS;
-    const token = sign(email, code, exp);
+    const token = signOtp(email, code, exp);
     const { subject, html } = verificationCodeEmail({ code, locale: typeof body.locale === 'string' ? body.locale : undefined });
     const res = await sendEmail({ category: 'HELLO', to: email, subject, html });
     if (!res.success) return NextResponse.json({ error: res.error || 'Failed to send code' }, { status: 502 });
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     const exp = typeof body.exp === 'number' ? body.exp : 0;
     if (!/^\d{6}$/.test(code) || !token || !exp) return NextResponse.json({ ok: false }, { status: 400 });
     if (Date.now() > exp) return NextResponse.json({ ok: false, expired: true });
-    const expected = sign(email, code, exp);
+    const expected = signOtp(email, code, exp);
     const a = Buffer.from(expected), b = Buffer.from(token);
     const ok = a.length === b.length && timingSafeEqual(a, b);
     return NextResponse.json({ ok });

@@ -191,12 +191,15 @@ export default function TalentApply() {
   // Email verification (stateless OTP via /api/apply/email-code)
   const [emailVerified, setEmailVerified] = useState(false);
   const [codeMeta, setCodeMeta] = useState<{ token: string; exp: number } | null>(null);
+  // OTP proof kept after a successful verify so submit can re-prove it server-side
+  // (verifyCode clears codeMeta/code on success, so we must stash it separately).
+  const [otpProof, setOtpProof] = useState<{ code: string; token: string; exp: number } | null>(null);
   const [code, setCode] = useState('');
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeMsg, setCodeMsg] = useState('');
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
-  const onEmailChange = (v: string) => { set('email', v); setEmailVerified(false); setCodeMeta(null); setCode(''); setCodeMsg(''); };
+  const onEmailChange = (v: string) => { set('email', v); setEmailVerified(false); setCodeMeta(null); setOtpProof(null); setCode(''); setCodeMsg(''); };
 
   const sendCode = async () => {
     setCodeBusy(true); setCodeMsg('');
@@ -230,7 +233,11 @@ export default function TalentApply() {
         body: JSON.stringify({ action: 'verify', email: form.email, code, token: codeMeta.token, exp: codeMeta.exp }),
       });
       const j = await r.json();
-      if (j.ok) { setEmailVerified(true); setCodeMeta(null); setCodeMsg(''); }
+      if (j.ok) {
+        // Stash the proof (code+token+exp) so submit can re-verify it server-side.
+        setOtpProof({ code, token: codeMeta.token, exp: codeMeta.exp });
+        setEmailVerified(true); setCodeMeta(null); setCodeMsg('');
+      }
       else setCodeMsg(j.expired ? tx('驗證碼已過期,請重新傳送', '验证码已过期,请重新发送', 'Code expired — please resend') : tx('驗證碼不正確', '验证码不正确', 'Incorrect code'));
     } catch (e) { setCodeMsg(e instanceof Error ? e.message : tx('驗證失敗', '验证失败', 'Verification failed')); }
     finally { setCodeBusy(false); }
@@ -310,6 +317,10 @@ export default function TalentApply() {
         consent_age_verified: agreeTerms,
         consent_legal_agreement: agreeTerms,
         fileUrl, fileName, fileSize,
+        // OTP 證明 —— 後端用同一套 HMAC 重驗這個 email 真的通過驗證(不信前端布林)
+        otpCode: otpProof?.code ?? '',
+        otpToken: otpProof?.token ?? '',
+        otpExp: otpProof?.exp ?? 0,
       };
 
       const res = await fetch('/api/apply/submit', {

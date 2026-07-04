@@ -179,6 +179,20 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
 
   const latestRevisionForHandler = demos.filter(d => d.version_type === 'revision').slice(-1)[0];
 
+  // 狀態轉移(選 demo / 確認方向 / 確認版本 / 要求修改 / 切換版本)一律走 service-role 後端。
+  // 瀏覽器直寫 music_orders 會被 RLS(p0_music_orders_update_service_only)擋掉且靜默失敗,
+  // 導致「假成功」。此 helper 帶 Bearer token、並在 !res.ok 時丟錯,交由 catch 顯示失敗 toast。
+  const callMusicApi = async (payload: Record<string, unknown>) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`/api/client/music-orders/${order.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+      body: JSON.stringify(payload),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || t('operationFailed'));
+  };
+
   const fetchData = useCallback(async () => {
     setLoadingData(true);
     const [versionsRes, deliverablesRes] = await Promise.all([
@@ -195,9 +209,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
   const handleSelectDemo = async (demoId: string) => {
     setSelectingDemo(true);
     try {
-      await supabase.from('music_order_versions').update({ status: 'selected' }).eq('id', demoId);
-      await supabase.from('music_order_versions').update({ status: 'pending_review' }).eq('music_order_id', order.id).neq('id', demoId);
-      await supabase.from('music_orders').update({ confirmed_version_id: demoId }).eq('id', order.id);
+      await callMusicApi({ action: 'select_demo', demoId });
       toast({ title: t('directionSelectedToastTitle'), description: t('directionSelectedToastDesc') });
       fetchData();
       onRefresh();
@@ -215,7 +227,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
     }
     setSubmittingFeedback(true);
     try {
-      await supabase.from('music_orders').update({ status: 'in_production' }).eq('id', order.id);
+      await callMusicApi({ action: 'confirm_direction' });
       await sendNotification('direction_confirmed', order.email, order.order_number, order.id);
       toast({ title: t('directionConfirmedToastTitle'), description: t('directionConfirmedToastDesc') });
       fetchData();
@@ -234,7 +246,7 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
     }
     setSubmittingFeedback(true);
     try {
-      await supabase.from('music_orders').update({ status: 'awaiting_final', awaiting_final_upload: true }).eq('id', order.id);
+      await callMusicApi({ action: 'confirm_version' });
       await sendNotification('version_confirmed', order.email, order.order_number, order.id);
       toast({ title: t('versionConfirmedToastTitle'), description: t('versionConfirmedToastDesc') });
       fetchData();
@@ -253,18 +265,12 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
     }
     setSubmittingRevision(true);
     try {
-      if (latestRevisionForHandler?.id) {
-        const updatePayload: Record<string, string> = {
-          revision_request: revisionNotes.trim(),
-        };
-        if (liveVersionNotes.trim()) {
-          updatePayload.overall_notes = liveVersionNotes.trim();
-        }
-        await supabase.from('music_order_versions').update(updatePayload).eq('id', latestRevisionForHandler.id);
-      }
-      await supabase.from('music_orders').update({
-        status: 'in_production',
-      }).eq('id', order.id);
+      // 版本 revision_request/overall_notes 的寫入 + 訂單狀態轉移 + 次數上限,全部由後端把關。
+      await callMusicApi({
+        action: 'request_revision',
+        notes: revisionNotes.trim(),
+        overallNotes: liveVersionNotes.trim() || undefined,
+      });
       await sendNotification('changes_requested', order.email, order.order_number, order.id, { extraMessage: revisionNotes.trim() });
       setRevisionNotes('');
       setShowRevisionForm(false);
@@ -663,13 +669,13 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                             onClick={async () => {
                               setSubmittingFeedback(true);
                               try {
-                                await supabase.from('music_orders').update({ confirmed_version_id: ver.id, status: 'awaiting_final', awaiting_final_upload: true }).eq('id', order.id);
+                                await callMusicApi({ action: 'confirm_version', versionId: ver.id });
                                 await sendNotification('version_confirmed', order.email, order.order_number, order.id);
                                 toast({ title: t('confirmVn', { version: verNum }), description: t('versionConfirmedToastDesc') });
                                 fetchData();
                                 onRefresh();
-                              } catch {
-                                toast({ title: tc('error'), description: t('operationFailed'), variant: 'destructive' });
+                              } catch (err: unknown) {
+                                toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
                               } finally {
                                 setSubmittingFeedback(false);
                               }
@@ -743,12 +749,12 @@ export default function MusicOrderDetail({ order, onRefresh }: MusicOrderDetailP
                             onClick={async () => {
                               setSubmittingFeedback(true);
                               try {
-                                await supabase.from('music_orders').update({ confirmed_version_id: ver.id }).eq('id', order.id);
+                                await callMusicApi({ action: 'switch_confirmed', versionId: ver.id });
                                 toast({ title: t('confirmVn', { version: verNum }), description: t('switchedToVersion') });
                                 fetchData();
                                 onRefresh();
-                              } catch {
-                                toast({ title: tc('error'), description: t('operationFailed'), variant: 'destructive' });
+                              } catch (err: unknown) {
+                                toast({ title: tc('error'), description: err instanceof Error ? err.message : t('operationFailed'), variant: 'destructive' });
                               } finally {
                                 setSubmittingFeedback(false);
                               }
