@@ -16,11 +16,11 @@ import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { caseCode } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
 import ReviewBox from '@/components/marketplace/ReviewBox';
 import { StatModule, EntityCard, InfoPills } from '@/components/dashboard/cards';
-import { track } from '@/lib/track';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
 
@@ -120,9 +120,9 @@ const inputCls =
 
 // A text field with quick templates: a built-in starter chip + the talent's saved
 // templates (click to fill, ✕ to delete) + "存成範本" to save the current text.
-function TemplatedField({ kind, label, optional, multiline, value, onChange, builtin, saved, token, onTemplates, tx }: {
+function TemplatedField({ kind, label, optional, multiline, value, onChange, builtin, saved, onTemplates, tx }: {
   kind: 'intro' | 'revision'; label: string; optional?: boolean; multiline?: boolean;
-  value: string; onChange: (v: string) => void; builtin: string; saved: Tpl[]; token: string;
+  value: string; onChange: (v: string) => void; builtin: string; saved: Tpl[];
   onTemplates: (t: Templates) => void; tx: (tw: string, cn: string, en: string) => string;
 }) {
   async function save() {
@@ -130,11 +130,11 @@ function TemplatedField({ kind, label, optional, multiline, value, onChange, bui
     if (!body) return;
     const name = window.prompt(tx('範本名稱(例:廣告 / 遊戲)', '范本名称(例:广告 / 游戏)', 'Template name (e.g. Ad / Game)'));
     if (!name || !name.trim()) return;
-    const r = await fetch('/api/talent/templates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ kind, name: name.trim(), body }) });
+    const r = await authedFetch('/api/talent/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, name: name.trim(), body }) });
     const j = await r.json().catch(() => ({})); if (r.ok) onTemplates(j.templates);
   }
   async function del(name: string) {
-    const r = await fetch(`/api/talent/templates?kind=${kind}&name=${encodeURIComponent(name)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    const r = await authedFetch(`/api/talent/templates?kind=${kind}&name=${encodeURIComponent(name)}`, { method: 'DELETE' });
     const j = await r.json().catch(() => ({})); if (r.ok) onTemplates(j.templates);
   }
   return (
@@ -186,8 +186,8 @@ function useQuoteDefaults(templates: Templates, setIntro: SetStr, setRevPolicy: 
 // becomes a client-reviewable version. Files preserve 48k/24-bit (not transcoded).
 // Deliver against a DIRECTLY-ASSIGNED role (managed production). Same upload
 // pipeline as won jobs, but attaches to the order by id (no quote).
-function AssignedDelivery({ orderId, deliveries, token, tx, onChanged }: {
-  orderId: string; deliveries: { id: string; file_name: string; file_url: string; status?: string | null }[]; token: string;
+function AssignedDelivery({ orderId, deliveries, tx, onChanged }: {
+  orderId: string; deliveries: { id: string; file_name: string; file_url: string; status?: string | null }[];
   tx: (a: string, b: string, c: string) => string; onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -195,12 +195,12 @@ function AssignedDelivery({ orderId, deliveries, token, tx, onChanged }: {
   async function upload(file: File) {
     setErr(''); setBusy(true);
     try {
-      const u = await fetch('/api/talent/delivery-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const u = await authedFetch('/api/talent/delivery-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json().catch(() => ({}));
       if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
       const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (upErr) throw new Error(upErr.message);
-      const p = await fetch('/api/talent/assigned-deliver', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ order_id: orderId, delivery_url: uj.publicUrl, file_name: file.name }) });
+      const p = await authedFetch('/api/talent/assigned-deliver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, delivery_url: uj.publicUrl, file_name: file.name }) });
       const pj = await p.json().catch(() => ({}));
       if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
       onChanged();
@@ -223,8 +223,8 @@ function AssignedDelivery({ orderId, deliveries, token, tx, onChanged }: {
   );
 }
 
-function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
-  quote: Quote; deliveries: { id: string; file_name: string; file_url: string }[]; token: string;
+function DeliveryUpload({ quote, deliveries, tx, onChanged }: {
+  quote: Quote; deliveries: { id: string; file_name: string; file_url: string }[];
   tx: (a: string, b: string, c: string) => string; onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -232,16 +232,16 @@ function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
   async function upload(file: File) {
     setErr(''); setBusy(true);
     try {
-      const u = await fetch('/api/talent/delivery-upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      const u = await authedFetch('/api/talent/delivery-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name }),
       });
       const uj = await u.json().catch(() => ({}));
       if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
       const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (upErr) throw new Error(upErr.message);
-      const p = await fetch('/api/talent/quotes', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      const p = await authedFetch('/api/talent/quotes', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: quote.id, delivery_url: uj.publicUrl, file_name: file.name }),
       });
       const pj = await p.json().catch(() => ({}));
@@ -252,8 +252,8 @@ function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
   async function remove(id: string) {
     setErr(''); setBusy(true);
     try {
-      const p = await fetch('/api/talent/quotes', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      const p = await authedFetch('/api/talent/quotes', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: quote.id, delete_version_id: id }),
       });
       if (!p.ok) { const j = await p.json().catch(() => ({})); throw new Error(j.error || 'failed'); }
@@ -283,19 +283,19 @@ function DeliveryUpload({ quote, deliveries, token, tx, onChanged }: {
 
 // Re-audition: the client asked for a second take. Upload a new sample, which
 // replaces sample_url and clears the request (same upload pipeline as auditions).
-function ReauditUpload({ quote, token, tx, onDone }: { quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
+function ReauditUpload({ quote, tx, onDone }: { quote: Quote; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   async function upload(rawFile: File) {
     setErr(''); setBusy(true);
     try {
       const file = await toMp3(rawFile);
-      const u = await fetch('/api/talent/audition-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const u = await authedFetch('/api/talent/audition-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json().catch(() => ({}));
       if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
       const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (upErr) throw new Error(upErr.message);
-      const p = await fetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: quote.id, sample_url: uj.publicUrl }) });
+      const p = await authedFetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: quote.id, sample_url: uj.publicUrl }) });
       const pj = await p.json().catch(() => ({}));
       if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
       onDone({ ...quote, sample_url: uj.publicUrl, reaudition_requested_at: null, reaudition_note: null });
@@ -314,7 +314,7 @@ function ReauditUpload({ quote, token, tx, onDone }: { quote: Quote; token: stri
 
 // Add EXTRA demos (other tones / characters) the client asked for. APPENDS — each
 // upload adds one, doesn't replace the audition. Same upload pipeline as auditions.
-function AddExtraDemos({ quote, token, tx, onDone }: { quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
+function AddExtraDemos({ quote, tx, onDone }: { quote: Quote; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const samples = quote.extra_samples || [];
@@ -322,12 +322,12 @@ function AddExtraDemos({ quote, token, tx, onDone }: { quote: Quote; token: stri
     setErr(''); setBusy(true);
     try {
       const file = await toMp3(rawFile);
-      const u = await fetch('/api/talent/audition-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const u = await authedFetch('/api/talent/audition-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json().catch(() => ({}));
       if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
       const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (upErr) throw new Error(upErr.message);
-      const p = await fetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: quote.id, add_extra_sample: uj.publicUrl }) });
+      const p = await authedFetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: quote.id, add_extra_sample: uj.publicUrl }) });
       const pj = await p.json().catch(() => ({}));
       if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
       onDone({ ...quote, extra_samples: (pj.quote?.extra_samples as Quote['extra_samples']) || [...samples, { url: uj.publicUrl }], more_demos_requested_at: null });
@@ -388,9 +388,9 @@ function licenseWindow(term: string | null | undefined, startISO: string | null 
 // skill (incl. the use-case), license scope + period (start / expiry dates),
 // payment, schedule and instructions. Must be accepted before uploading a
 // delivery. Auto-generated from the brief + the won quote.
-function JobAgreement({ brief, quote, token, tx, onAccepted }: {
+function JobAgreement({ brief, quote, tx, onAccepted }: {
   brief: { brief_number?: string | null; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null };
-  quote: Quote; token: string; tx: (a: string, b: string, c: string) => string; onAccepted: (at: string) => void;
+  quote: Quote; tx: (a: string, b: string, c: string) => string; onAccepted: (at: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -401,7 +401,7 @@ function JobAgreement({ brief, quote, token, tx, onAccepted }: {
   async function accept() {
     setErr(''); setBusy(true);
     try {
-      const r = await fetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: quote.id, accept_agreement: true }) });
+      const r = await authedFetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: quote.id, accept_agreement: true }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || tx('接單失敗', '接单失败', 'Failed'));
       onAccepted(j.quote?.agreement_accepted_at || new Date().toISOString());
@@ -500,7 +500,6 @@ export default function Opportunities() {
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
 
   const [phase, setPhase] = useState<'loading' | 'nologin' | 'ready'>('loading');
-  const [token, setToken] = useState('');
   const [briefs, setBriefs] = useState<Brief[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
@@ -511,9 +510,8 @@ export default function Opportunities() {
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
 
-  const load = useCallback(async (accessToken: string) => {
-    setToken(accessToken);
-    const res = await fetch('/api/talent/briefs', { headers: { Authorization: `Bearer ${accessToken}` } });
+  const load = useCallback(async () => {
+    const res = await authedFetch('/api/talent/briefs');
     if (res.status === 401) return setPhase('nologin');
     const j = await res.json().catch(() => ({}));
     setBriefs(j.briefs || []);
@@ -531,7 +529,7 @@ export default function Opportunities() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) await load(data.session.access_token);
+      if (data.session) await load();
       else setPhase('nologin');
     })();
   }, [load]);
@@ -587,7 +585,7 @@ export default function Opportunities() {
                   badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('二次試音', '二次试音', 'Second take')}</span>}>
                   {q.reaudition_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-300">{tx('客戶方向', '客户方向', 'Direction')}:</span> {q.reaudition_note}</p>}
                   {q.sample_url && <audio controls src={q.sample_url} className="w-full h-9 mb-1" />}
-                  <ReauditUpload quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
+                  <ReauditUpload quote={q} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
                   <p className="text-[11px] text-gray-300 mt-1">{tx('上傳新版本後,這個請求就會清除。', '上传新版本后,这个请求就会清除。', 'Uploading a new take clears this request.')}</p>
                 </EntityCard>
               ))}
@@ -609,7 +607,7 @@ export default function Opportunities() {
                   title={titleOf(q.brief_id)}
                   badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('追加 demo', '追加 demo', 'More demos')}</span>}>
                   {q.more_demos_note && <p className="text-sm text-gray-300 whitespace-pre-wrap mb-2"><span className="text-gray-300">{tx('想聽的方向', '想听的方向', 'What they’d like')}:</span> {q.more_demos_note}</p>}
-                  <AddExtraDemos quote={q} token={token} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
+                  <AddExtraDemos quote={q} tx={tx} onDone={(nq) => setQuotes((prev) => prev.map((x) => (x.id === nq.id ? nq : x)))} />
                 </EntityCard>
               ))}
             </div>
@@ -630,7 +628,7 @@ export default function Opportunities() {
                 {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
                 {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('下載稿件檔', '下载稿件档', 'Download script')}</a>}
                 {o.deadline && <p className="text-[11px] text-gray-300 mt-1">{tx('希望交付', '希望交付', 'Due')}: {o.deadline}</p>}
-                <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
+                <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} tx={tx} onChanged={() => load()} />
               </EntityCard>
             ))}
           </div>
@@ -694,9 +692,9 @@ export default function Opportunities() {
                           </div>
                         );
                         return q.agreement_accepted_at ? (
-                          <DeliveryUpload quote={q} deliveries={w.deliveries || []} token={token} tx={tx} onChanged={() => load(token)} />
+                          <DeliveryUpload quote={q} deliveries={w.deliveries || []} tx={tx} onChanged={() => load()} />
                         ) : (
-                          <JobAgreement brief={w} quote={q} token={token} tx={tx} onAccepted={(at) => setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, agreement_accepted_at: at } : x)))} />
+                          <JobAgreement brief={w} quote={q} tx={tx} onAccepted={(at) => setQuotes((prev) => prev.map((x) => (x.id === q.id ? { ...x, agreement_accepted_at: at } : x)))} />
                         );
                       })()}
                     </div>
@@ -760,9 +758,8 @@ export default function Opportunities() {
             myName={myName}
             templates={templates}
             onTemplates={setTemplates}
-            token={token}
             tx={tx}
-            onQuoted={(q) => { track('quote_submit'); setQuotes((prev) => [q, ...prev]); }}
+            onQuoted={(q) => setQuotes((prev) => [q, ...prev])}
           />
         ))}
       </div>
@@ -779,7 +776,6 @@ function BriefCard({
   myName,
   templates,
   onTemplates,
-  token,
   tx,
   onQuoted,
 }: {
@@ -791,7 +787,6 @@ function BriefCard({
   myName: string;
   templates: Templates;
   onTemplates: (t: Templates) => void;
-  token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
 }) {
@@ -813,9 +808,9 @@ function BriefCard({
     setErr('');
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請輸入大於 0 的金額', '请输入大于 0 的金额', 'Enter an amount greater than 0'));
     setBusy(true);
-    const res = await fetch('/api/talent/quotes', {
+    const res = await authedFetch('/api/talent/quotes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ brief_id: brief.id, gross_amount: grossN, currency, message }),
     });
     setBusy(false);
@@ -943,7 +938,6 @@ function BriefCard({
                     count={roleCounts[ro.name || ''] || 0}
                     popularThreshold={popularThreshold}
                     done={myQuotes.find((q) => (q.role_name || '') === (ro.name || ''))}
-                    token={token}
                     tx={tx}
                     onQuoted={onQuoted}
                     myName={myName}
@@ -955,7 +949,7 @@ function BriefCard({
             </div>
           ) : (
             /* General (single-voice) call — respond with an existing demo OR an upload + price. */
-            <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} token={token} tx={tx} onQuoted={onQuoted} myName={myName} templates={templates} onTemplates={onTemplates} />
+            <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} tx={tx} onQuoted={onQuoted} myName={myName} templates={templates} onTemplates={onTemplates} />
           )}
         </>
       ) : (
@@ -1083,14 +1077,13 @@ const closedFieldCls = 'opacity-50 cursor-not-allowed pointer-events-none';
 // One role's audition: view its line → upload audition → write your price/terms.
 // Full roles are disabled (no count shown); near-full nudges to try another.
 function RoleAudition({
-  brief, role, count, popularThreshold, done, token, tx, onQuoted, myName, templates, onTemplates,
+  brief, role, count, popularThreshold, done, tx, onQuoted, myName, templates, onTemplates,
 }: {
   brief: Brief;
   role: Role;
   count: number;          // how many have auditioned this role (shown to talents)
   popularThreshold: number; // soft nudge threshold — NOT a hard cap
   done?: Quote;
-  token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
   myName: string;
@@ -1116,8 +1109,8 @@ function RoleAudition({
     setErr(''); setUploading(true);
     try {
       const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
-      const u = await fetch('/api/talent/audition-upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      const u = await authedFetch('/api/talent/audition-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name }),
       });
       const uj = await u.json().catch(() => ({}));
@@ -1137,8 +1130,8 @@ function RoleAudition({
     const grossAmount = brief.source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
     const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
     setBusy(true);
-    const res = await fetch('/api/talent/quotes', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    const res = await authedFetch('/api/talent/quotes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
@@ -1263,7 +1256,7 @@ function RoleAudition({
               );
             })()}
             <TemplatedField kind="intro" multiline label={tx('自我介紹', '自我介绍', 'About you')} value={intro} onChange={setIntro}
-              builtin={builtinIntro(myName, tx)} saved={templates.intro || []} token={token} onTemplates={onTemplates} tx={tx} />
+              builtin={builtinIntro(myName, tx)} saved={templates.intro || []} onTemplates={onTemplates} tx={tx} />
             <div>
               <span className="text-xs text-gray-300">{tx('含修改次數', '含修改次数', 'Included revisions')}</span>
               <select className="mt-1 w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" value={includedRev} onChange={(e) => setIncludedRev(e.target.value)}>
@@ -1272,7 +1265,7 @@ function RoleAudition({
               </select>
             </div>
             <TemplatedField kind="revision" optional label={tx('修改政策(補充說明)', '修改政策(补充说明)', 'Revision notes')} value={revPolicy} onChange={setRevPolicy}
-              builtin={builtinRev(tx)} saved={templates.revision || []} token={token} onTemplates={onTemplates} tx={tx} />
+              builtin={builtinRev(tx)} saved={templates.revision || []} onTemplates={onTemplates} tx={tx} />
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button onClick={submit} disabled={busy || uploading || closed} className={`w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm ${closed ? 'cursor-not-allowed' : ''}`}
               style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
@@ -1289,12 +1282,11 @@ function RoleAudition({
 // or upload one, then quote a price. No per-role audition — used for ad/narration/
 // IVR/audiobook etc. One response per call.
 function GeneralResponse({
-  brief, myDemos, done, token, tx, onQuoted, myName, templates, onTemplates,
+  brief, myDemos, done, tx, onQuoted, myName, templates, onTemplates,
 }: {
   brief: Brief;
   myDemos: Demo[];
   done?: Quote;
-  token: string;
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
   myName: string;
@@ -1321,8 +1313,8 @@ function GeneralResponse({
     setErr(''); setUploading(true);
     try {
       const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
-      const u = await fetch('/api/talent/audition-upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      const u = await authedFetch('/api/talent/audition-upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name }),
       });
       const uj = await u.json().catch(() => ({}));
@@ -1340,8 +1332,8 @@ function GeneralResponse({
     const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
     const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
     setBusy(true);
-    const res = await fetch('/api/talent/quotes', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    const res = await authedFetch('/api/talent/quotes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
@@ -1435,9 +1427,9 @@ function GeneralResponse({
       })()}
 
       <TemplatedField kind="intro" multiline label={tx('自我介紹', '自我介绍', 'About you')} value={intro} onChange={setIntro}
-        builtin={builtinIntro(myName, tx)} saved={templates.intro || []} token={token} onTemplates={onTemplates} tx={tx} />
+        builtin={builtinIntro(myName, tx)} saved={templates.intro || []} onTemplates={onTemplates} tx={tx} />
       <TemplatedField kind="revision" optional label={tx('修改政策', '修改政策', 'Revisions')} value={revPolicy} onChange={setRevPolicy}
-        builtin={builtinRev(tx)} saved={templates.revision || []} token={token} onTemplates={onTemplates} tx={tx} />
+        builtin={builtinRev(tx)} saved={templates.revision || []} onTemplates={onTemplates} tx={tx} />
       {err && <p className="text-red-400 text-xs">{err}</p>}
       <button onClick={submit} disabled={busy || uploading || closed} className={`bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm ${closed ? 'cursor-not-allowed' : ''}`}>
         {closed ? tx('已截止', '已截止', 'Closed') : busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出應徵', '送出应征', 'Submit')}

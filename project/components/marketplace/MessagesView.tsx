@@ -14,6 +14,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 
 type Thread = {
   key: string; brief_id: string; talent_id: string; role: 'client' | 'talent';
@@ -32,7 +33,6 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
   const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
 
   const [phase, setPhase] = useState<'loading' | 'nologin' | 'ready'>('loading');
-  const [token, setToken] = useState('');
   const [threads, setThreads] = useState<Thread[]>([]);
   const [active, setActive] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -55,9 +55,8 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
     setReadTick((x) => x + 1);
   }, []);
 
-  const loadThreads = useCallback(async (accessToken: string) => {
-    setToken(accessToken);
-    const res = await fetch('/api/marketplace/threads', { headers: { Authorization: `Bearer ${accessToken}` } });
+  const loadThreads = useCallback(async () => {
+    const res = await authedFetch('/api/marketplace/threads');
     if (res.status === 401) return setPhase('nologin');
     const j = await res.json().catch(() => ({}));
     setThreads(j.threads || []);
@@ -67,7 +66,7 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) await loadThreads(data.session.access_token);
+      if (data.session) await loadThreads();
       else setPhase('nologin');
     })();
   }, [loadThreads]);
@@ -78,14 +77,12 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
       setMessages([]);
       setErr('');
       markRead(t);
-      const res = await fetch(`/api/marketplace/messages?brief_id=${t.brief_id}&talent_id=${t.talent_id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authedFetch(`/api/marketplace/messages?brief_id=${t.brief_id}&talent_id=${t.talent_id}`);
       const j = await res.json().catch(() => ({}));
       setMessages(j.messages || []);
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     },
-    [token, markRead]
+    [markRead]
   );
 
   // Deep-link: ?brief=<id> (from an awarded case page) auto-opens that thread, so
@@ -104,9 +101,9 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
     if (!body || !active) return;
     setBusy(true);
     setErr('');
-    const res = await fetch('/api/marketplace/messages', {
+    const res = await authedFetch('/api/marketplace/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ brief_id: active.brief_id, talent_id: active.talent_id, body }),
     });
     setBusy(false);

@@ -8,20 +8,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Send } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 
 type State = { linked: boolean; botConfigured: boolean; link: string | null };
 
 export default function TelegramConnect({ tx }: { tx: (a: string, b: string, c: string) => string }) {
   const [state, setState] = useState<State | null>(null);
-  const [token, setToken] = useState('');
 
   const load = useCallback(async () => {
-    const { data } = await supabase.auth.getSession();
-    const tk = data.session?.access_token || '';
-    setToken(tk);
-    if (!tk) return;
-    const r = await fetch('/api/talent/telegram', { headers: { Authorization: `Bearer ${tk}` } });
+    // authedFetch 內部即時 getSession 拿最新 token;沒 session 會回 401,直接略過不設 state。
+    const r = await authedFetch('/api/talent/telegram');
     const j = await r.json().catch(() => ({}));
     if (r.ok) setState(j as State);
   }, []);
@@ -43,7 +39,7 @@ export default function TelegramConnect({ tx }: { tx: (a: string, b: string, c: 
       <button type="button"
         onClick={async () => {
           if (!window.confirm(tx('取消 Telegram 綁定?', '取消 Telegram 绑定?', 'Unlink Telegram?'))) return;
-          await fetch('/api/talent/telegram', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+          await authedFetch('/api/talent/telegram', { method: 'DELETE' }).catch(() => {});
           load();
         }}
         title={tx('Telegram 已綁定 — 點擊取消', 'Telegram 已绑定 — 点击取消', 'Telegram linked — click to unlink')}

@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import Turnstile from '@/components/Turnstile';
 import TelegramConnect from '@/components/talent/TelegramConnect';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share } from 'lucide-react';
@@ -155,7 +156,6 @@ export default function TalentDashboard() {
   const namePh = (k: string) => { const h = DEMO_NAME_HINT[k]; return h ? pickLabel(h, locale) : tx('簡短名稱', '简短名称', 'Short label'); };
 
   const [phase, setPhase] = useState<'loading' | 'login' | 'dashboard' | 'notalent'>('loading');
-  const [token, setToken] = useState('');
   const [t, setT] = useState<Talent | null>(null);
   const [form, setForm] = useState<Form>({
     name: '', english_name: '', bio: '', gender: '', location: '', studio_partner: '', portfolio_url: '', equipment: '',
@@ -188,9 +188,8 @@ export default function TalentDashboard() {
   const [uploadingCat, setUploadingCat] = useState('');
   const [uploadErr, setUploadErr] = useState('');
 
-  const loadProfile = useCallback(async (accessToken: string) => {
-    setToken(accessToken);
-    const res = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${accessToken}` } });
+  const loadProfile = useCallback(async () => {
+    const res = await authedFetch('/api/talent/me');
     if (res.status === 404) return setPhase('notalent');
     if (!res.ok) return setPhase('login');
     const { talent, isClient: alsoClient } = (await res.json()) as { talent: Talent; isClient?: boolean };
@@ -234,7 +233,7 @@ export default function TalentDashboard() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) await loadProfile(data.session.access_token);
+      if (data.session) await loadProfile();
       else setPhase('login');
     })();
   }, [loadProfile]);
@@ -248,7 +247,7 @@ export default function TalentDashboard() {
       setLoginErr(tx('帳號或密碼錯誤,請再試一次。', '账号或密码错误,请再试一次。', 'Incorrect email or password. Please try again.'));
       return;
     }
-    await loadProfile(data.session.access_token);
+    await loadProfile();
   }
 
   // Self-serve: resend a fresh set-password / reset link (the old one expires in
@@ -284,9 +283,9 @@ export default function TalentDashboard() {
       return;
     }
     setBusy(true); setSavedMsg(''); setSaveErr('');
-    const res = await fetch('/api/talent/me', {
+    const res = await authedFetch('/api/talent/me', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         submit,
         name: form.name, english_name: form.english_name, bio: form.bio, gender: form.gender, location: form.location,
@@ -336,8 +335,8 @@ export default function TalentDashboard() {
     setPhotoErr(''); setPhotoBusy(true);
     try {
       const blob = await cropSquareJpeg(file);
-      const res = await fetch('/api/talent/photo-upload-url', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: '{}',
+      const res = await authedFetch('/api/talent/photo-upload-url', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || 'upload prep failed');
@@ -359,8 +358,8 @@ export default function TalentDashboard() {
     if (secs > DEMO_MAX_SECONDS + 1) { setUploadErr(tx('單檔不可超過 3 分鐘', '单档不可超过 3 分钟', 'Each demo must be under 3 minutes')); return; }
     setUploadingCat(categoryKey);
     try {
-      const res = await fetch('/api/talent/demo-upload-url', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      const res = await authedFetch('/api/talent/demo-upload-url', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name }),
       });
       const j = await res.json();

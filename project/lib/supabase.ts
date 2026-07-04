@@ -3,7 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// autoRefreshToken:client 在背景自動把過期的 access_token 續掉(這正是 authedFetch
+// 每次即時 getSession() 能拿到有效 token 的前提)。persistSession:重新整理仍保留登入。
+// detectSessionInUrl:維持既有行為(密碼重設 / OAuth 回跳解析 URL 裡的 session)。
+// 這三個本來就是 v2 預設值,明確寫出來是為了避免日後被誤改而重現「1 小時後被登出」。
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
+});
 
 export type Order = {
   id: string;

@@ -6,10 +6,11 @@
   the order's real total or internal cost.
 */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { DollarSign, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { StatModule } from '@/components/dashboard/cards';
 import { taxNotice, computeDeductions } from '@/lib/payout-policy';
@@ -21,7 +22,7 @@ type PayoutReq = { id: string; invoice_number: string; amount: number; currency:
 
 // 收款設定 — 配音員自己填(加密、受限表)。台幣戶與外幣戶是不同帳號,拆成台幣區/美金區,
 // 稅務共用一份。至少填一種;請款選哪種幣別就要有對應那組。絕不給客戶看。
-function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a: string, b: string, c: string) => string; locale: string; pending: number }) {
+function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c: string) => string; locale: string; pending: number }) {
   const [loaded, setLoaded] = useState(false);
   const [configured, setConfigured] = useState(true);
   const [twdOn, setTwdOn] = useState(false);
@@ -38,10 +39,9 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    if (!token) return;
     (async () => {
       try {
-        const r = await fetch('/api/talent/payout-details', { headers: { Authorization: `Bearer ${token}` } });
+        const r = await authedFetch('/api/talent/payout-details');
         const j = await r.json();
         if (j.configured === false) setConfigured(false);
         const tw = j.twd && typeof j.twd === 'object' ? j.twd : null;
@@ -56,7 +56,7 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
       } catch { /* leave empty */ }
       setLoaded(true);
     })();
-  }, [token]);
+  }, []);
 
   const setT = (k: string, v: string) => { setTwd((p) => ({ ...p, [k]: v })); setMsg(''); };
   const setU = (k: string, v: string) => { setUsd((p) => ({ ...p, [k]: v })); setMsg(''); };
@@ -75,7 +75,7 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
     if (errs.length) { setErr(errs[0].msg); return; }
     setBusy(true);
     try {
-      const r = await fetch('/api/talent/payout-details', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
+      const r = await authedFetch('/api/talent/payout-details', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const j = await r.json();
       if (!r.ok) {
         if (j.error === 'invalid' && j.fields?.length) setErr(j.fields[0].msg);
@@ -208,13 +208,10 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
 }
 
 // 請款 — 配音員發起請款、系統生成發票、他同意+簽名上傳(或上傳自家發票)。
-function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, b: string, c: string) => string; pending: number }) {
+function PayoutRequest({ tx, pending }: { tx: (a: string, b: string, c: string) => string; pending: number }) {
   const [reqs, setReqs] = useState<PayoutReq[]>([]);
   const [loaded, setLoaded] = useState(false);
-  // pending 是 async 載入,首 render 幾乎必為 0,故不能拿來當 useState 初值(會恆為空)。
-  // 改在 pending 到位後、且使用者尚未手動改過金額時,才補上預填餘額。
-  const [amount, setAmount] = useState('');
-  const amountTouched = useRef(false);
+  const [amount, setAmount] = useState(pending > 0 ? String(pending) : '');
   const [currency, setCurrency] = useState('USD');
   const [note, setNote] = useState('');
   const [feeInfo, setFeeInfo] = useState<{ usdMethod: string; taxLoc: 'TW' | 'overseas'; twResident: boolean } | null>(null);
@@ -224,31 +221,26 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
 
   async function load() {
     try {
-      const r = await fetch('/api/talent/payout-request', { headers: { Authorization: `Bearer ${token}` } });
+      const r = await authedFetch('/api/talent/payout-request');
       const j = await r.json();
       setReqs(Array.isArray(j.requests) ? j.requests : []);
     } catch { /* ignore */ }
     // 也載入收款方式 + 稅務,用來即時試算「扣手續費後實際到手」。
     try {
-      const pd = await fetch('/api/talent/payout-details', { headers: { Authorization: `Bearer ${token}` } });
+      const pd = await authedFetch('/api/talent/payout-details');
       const pj = await pd.json();
       setFeeInfo({ usdMethod: pj.usd?.method === 'paypal' ? 'paypal' : 'bank', taxLoc: pj.tax?.tax_location === 'TW' ? 'TW' : 'overseas', twResident: pj.tax?.tw_resident === true });
     } catch { /* ignore */ }
     setLoaded(true);
   }
-  useEffect(() => { if (token) load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token]);
-
-  // pending 載入到位後補上預填(僅在使用者還沒手動改過金額時)。
-  useEffect(() => {
-    if (!amountTouched.current && pending > 0) setAmount(String(pending));
-  }, [pending]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   async function create() {
     setErr(''); setMsg('');
     if (!(Number(amount) > 0)) { setErr(tx('請填請款金額。', '请填请款金额。', 'Enter an amount.')); return; }
     setBusy(true);
     try {
-      const r = await fetch('/api/talent/payout-request', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ amount: Number(amount), currency, note }) });
+      const r = await authedFetch('/api/talent/payout-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: Number(amount), currency, note }) });
       const j = await r.json();
       if (!r.ok) {
         if (j.error === 'payout_details_required') setErr(tx('請先完成上方「收款設定」再請款。', '请先完成上方「收款设置」再请款。', 'Please complete Payout details above first.'));
@@ -271,7 +263,7 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
       <p className="text-[11px] text-gray-300 mb-4">{tx('※ 款項每月結算,核准後約 30–45 天內撥付。', '※ 款项每月结算,核准后约 30–45 天内拨付。', '※ Payouts settle monthly — about 30–45 days after approval.')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
-        <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => { amountTouched.current = true; setAmount(e.target.value); }} /></div>
+        <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
         <div><label className={lbl}>{tx('幣別', '币别', 'Currency')}</label>
           <select className={`${inputCls} cursor-pointer`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
         </div>
@@ -305,21 +297,21 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
       {reqs.length > 0 && (
         <div className="mt-6 space-y-3">
           <div className="text-xs font-semibold text-gray-300">{tx('我的請款單', '我的请款单', 'My requests')}</div>
-          {reqs.map((r) => <RequestRow key={r.id} r={r} token={token} tx={tx} onChanged={load} />)}
+          {reqs.map((r) => <RequestRow key={r.id} r={r} tx={tx} onChanged={load} />)}
         </div>
       )}
     </div>
   );
 }
 
-function RequestRow({ r, token, tx, onChanged }: { r: PayoutReq; token: string; tx: (a: string, b: string, c: string) => string; onChanged: () => void }) {
+function RequestRow({ r, tx, onChanged }: { r: PayoutReq; tx: (a: string, b: string, c: string) => string; onChanged: () => void }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const SL: Record<string, string> = { pending: tx('待完成發票', '待完成发票', 'Invoice pending'), invoice_uploaded: tx('已送出 · 待撥款', '已送出 · 待拨款', 'Submitted'), paid: tx('已撥款', '已拨款', 'Paid'), rejected: tx('已退回', '已退回', 'Rejected') };
 
   async function viewInvoice() {
-    const res = await fetch(`/api/talent/invoice?id=${r.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authedFetch(`/api/talent/invoice?id=${r.id}`);
     if (!res.ok) { setErr(tx('發票讀取失敗', '发票读取失败', 'Could not load invoice')); return; }
     const html = await res.text();
     window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
@@ -328,11 +320,11 @@ function RequestRow({ r, token, tx, onChanged }: { r: PayoutReq; token: string; 
     if (!consent) { setErr(tx('請先勾選「我同意以此開立發票」。', '请先勾选「我同意以此开立发票」。', 'Please tick consent first.')); return; }
     setErr(''); setBusy(true);
     try {
-      const u = await fetch('/api/talent/invoice-upload', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ fileName: file.name }) });
+      const u = await authedFetch('/api/talent/invoice-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json(); if (!u.ok) throw new Error(uj.error || 'upload prep failed');
       const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (error) throw new Error(error.message);
-      const p = await fetch('/api/talent/payout-request', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id: r.id, invoice_url: uj.publicUrl, consent: true }) });
+      const p = await authedFetch('/api/talent/payout-request', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id, invoice_url: uj.publicUrl, consent: true }) });
       const pj = await p.json(); if (!p.ok) throw new Error(pj.error || 'save failed');
       onChanged();
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); }
@@ -383,16 +375,15 @@ export default function TalentEarningsPage() {
   const [state, setState] = useState<'loading' | 'unauth' | 'ready'>('loading');
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [totals, setTotals] = useState<Totals>({ paid: 0, pending: 0, total: 0 });
-  const [token, setToken] = useState('');
 
   useEffect(() => {
     (async () => {
+      // 先確認有 session(沒有就直接顯示未登入);之後每次打 API 都用 authedFetch
+      // 即時拿最新 token,不快取掛載時的 token(避免 1 小時後 401 被登出)。
       const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) { setState('unauth'); return; }
-      setToken(token);
+      if (!data.session) { setState('unauth'); return; }
       try {
-        const r = await fetch('/api/talent/earnings', { headers: { Authorization: `Bearer ${token}` } });
+        const r = await authedFetch('/api/talent/earnings');
         if (!r.ok) { setState('unauth'); return; }
         const j = await r.json();
         setEarnings(Array.isArray(j.earnings) ? j.earnings : []);
@@ -429,9 +420,9 @@ export default function TalentEarningsPage() {
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2"><DollarSign className="w-7 h-7 text-amber-300" /> {tx('收款', '收款', 'Earnings')}</h1>
         <p className="text-sm text-gray-300 mt-1 mb-8">{tx('您透過 Onyx 接案/分潤所得,月結。', '您通过 Onyx 接案/分润所得,月结。', 'Your share from work and royalties through Onyx, settled monthly.')}</p>
 
-        <PayoutSettings token={token} tx={tx} locale={locale} pending={totals.pending} />
+        <PayoutSettings tx={tx} locale={locale} pending={totals.pending} />
 
-        <PayoutRequest token={token} tx={tx} pending={totals.pending} />
+        <PayoutRequest tx={tx} pending={totals.pending} />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <StatModule icon={DollarSign} label={tx('累計', '累计', 'Total')} value={money(totals.total)} />
