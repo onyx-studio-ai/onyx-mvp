@@ -6,7 +6,7 @@
   the order's real total or internal cost.
 */
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
@@ -211,7 +211,10 @@ function PayoutSettings({ token, tx, locale, pending }: { token: string; tx: (a:
 function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, b: string, c: string) => string; pending: number }) {
   const [reqs, setReqs] = useState<PayoutReq[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [amount, setAmount] = useState(pending > 0 ? String(pending) : '');
+  // pending 是 async 載入,首 render 幾乎必為 0,故不能拿來當 useState 初值(會恆為空)。
+  // 改在 pending 到位後、且使用者尚未手動改過金額時,才補上預填餘額。
+  const [amount, setAmount] = useState('');
+  const amountTouched = useRef(false);
   const [currency, setCurrency] = useState('USD');
   const [note, setNote] = useState('');
   const [feeInfo, setFeeInfo] = useState<{ usdMethod: string; taxLoc: 'TW' | 'overseas'; twResident: boolean } | null>(null);
@@ -234,6 +237,11 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
     setLoaded(true);
   }
   useEffect(() => { if (token) load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [token]);
+
+  // pending 載入到位後補上預填(僅在使用者還沒手動改過金額時)。
+  useEffect(() => {
+    if (!amountTouched.current && pending > 0) setAmount(String(pending));
+  }, [pending]);
 
   async function create() {
     setErr(''); setMsg('');
@@ -263,7 +271,7 @@ function PayoutRequest({ token, tx, pending }: { token: string; tx: (a: string, 
       <p className="text-[11px] text-gray-300 mb-4">{tx('※ 款項每月結算,核准後約 30–45 天內撥付。', '※ 款项每月结算,核准后约 30–45 天内拨付。', '※ Payouts settle monthly — about 30–45 days after approval.')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
-        <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => { amountTouched.current = true; setAmount(e.target.value); }} /></div>
         <div><label className={lbl}>{tx('幣別', '币别', 'Currency')}</label>
           <select className={`${inputCls} cursor-pointer`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
         </div>

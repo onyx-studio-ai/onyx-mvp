@@ -107,6 +107,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // revise
+  // 冪等防護:極快雙擊會連送兩次 revise,原本每次都無條件 revision_count+1 且發兩封信。
+  // 若這個 version 已是 revision_requested(尚未被配音員重新交付),視為重複請求 —— 直接回既有
+  // 結果,不重複計數、不重複寄信。這是加防護,不改狀態機語義。
+  if (latest && latest.status === 'revision_requested') {
+    return NextResponse.json({ ok: true, status: 'in_production', duplicate: true });
+  }
   if (latest) await db.from('voice_order_versions').update({ status: 'revision_requested', client_feedback: feedback }).eq('id', latest.id);
   const { error } = await db.from('voice_orders').update({
     status: 'in_production',

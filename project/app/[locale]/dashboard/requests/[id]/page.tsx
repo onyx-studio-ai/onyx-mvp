@@ -422,7 +422,11 @@ export default function ClientRequestDetail() {
                         <button onClick={() => { setMoreTarget(a.id); setMoreNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget || !!moreTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{tx('請他多給 demo', '请他多给 demo', 'Ask for more demos')}</button>
                       )}
                     </div>
-                  ) : null}
+                  ) : (
+                    // 案件已非 open(已選定/製作中/結案),這張試音無可操作按鈕 —— 給一句說明,
+                    // 避免客戶困惑「按鈕怎麼不見了」。
+                    <p className="text-xs text-gray-500">{tx('此需求已進入下一階段,試音選擇已結束。如需異動請於下方與 Onyx 聯繫。', '此需求已进入下一阶段,试音选择已结束。如需异动请于下方与 Onyx 联系。', 'This request has moved to the next stage — audition selection is closed. To make changes, message Onyx below.')}</p>
+                  )}
                 </div>
               );
             })}

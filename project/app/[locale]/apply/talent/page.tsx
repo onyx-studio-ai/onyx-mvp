@@ -12,7 +12,7 @@
   coop_voice_director added in migration 20260623120000.
 */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Check, X, Plus, ArrowRight, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -182,6 +182,9 @@ export default function TalentApply() {
   const [lowData, setLowData] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
+  // 上傳成功後快取結果(綁定當下的 File 物件);送出失敗重試時若檔案沒換就重用,
+  // 避免每次重試都 mint 新的帶時間戳 path、把上一個變成 storage 孤兒檔。
+  const uploadedRef = useRef<{ file: File; path: string; name: string; size: number } | null>(null);
   const [agreeOwn, setAgreeOwn] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -253,6 +256,7 @@ export default function TalentApply() {
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; setFileError('');
+    uploadedRef.current = null; // 換檔就作廢舊快取,強制重傳
     if (!f) { setFile(null); return; }
     const ok = ['wav', 'wave', 'mp3', 'm4a', 'aac', 'ogg', 'flac'].some((x) => f.name.toLowerCase().endsWith('.' + x));
     if (!ok) { setFileError(tx('請上傳音檔(wav / mp3 / m4a / aac / ogg / flac)', '请上传音档(wav / mp3 / m4a / aac / ogg / flac)', 'Please upload an audio file (wav / mp3 / m4a / aac / ogg / flac)')); setFile(null); return; }
@@ -268,19 +272,25 @@ export default function TalentApply() {
     try {
       let fileUrl = '', fileName = '', fileSize = 0;
       if (file) {
-        const safe = (form.display_name || form.full_name).replace(/\s+/g, '');
-        fileName = `${safe || 'talent'}_demo.${file.name.split('.').pop()}`;
-        const urlRes = await fetch('/api/apply/upload-url', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName, role: 'Voice' }),
-        });
-        const urlJson = await urlRes.json();
-        if (!urlRes.ok) throw new Error(urlJson.error || tx('上傳準備失敗,請重試', '上传准备失败,请重试', 'Upload prep failed — please try again'));
-        const { error: upErr } = await supabase.storage
-          .from('talent-submissions')
-          .uploadToSignedUrl(urlJson.path, urlJson.token, file);
-        if (upErr) throw new Error(`${tx('上傳失敗', '上传失败', 'Upload failed')}: ${upErr.message}`);
-        fileUrl = urlJson.path as string; fileSize = file.size;
+        // 重試且檔案沒換 → 重用上次成功上傳的結果,不再重傳(避免孤兒檔)。
+        if (uploadedRef.current && uploadedRef.current.file === file) {
+          fileUrl = uploadedRef.current.path; fileName = uploadedRef.current.name; fileSize = uploadedRef.current.size;
+        } else {
+          const safe = (form.display_name || form.full_name).replace(/\s+/g, '');
+          fileName = `${safe || 'talent'}_demo.${file.name.split('.').pop()}`;
+          const urlRes = await fetch('/api/apply/upload-url', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName, role: 'Voice' }),
+          });
+          const urlJson = await urlRes.json();
+          if (!urlRes.ok) throw new Error(urlJson.error || tx('上傳準備失敗,請重試', '上传准备失败,请重试', 'Upload prep failed — please try again'));
+          const { error: upErr } = await supabase.storage
+            .from('talent-submissions')
+            .uploadToSignedUrl(urlJson.path, urlJson.token, file);
+          if (upErr) throw new Error(`${tx('上傳失敗', '上传失败', 'Upload failed')}: ${upErr.message}`);
+          fileUrl = urlJson.path as string; fileSize = file.size;
+          uploadedRef.current = { file, path: fileUrl, name: fileName, size: fileSize }; // 快取成功結果供重試重用
+        }
       }
 
       const payload = {
