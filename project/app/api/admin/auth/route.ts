@@ -21,6 +21,52 @@ function getAdminClient() {
 }
 
 /**
+ * 等長、常數時間比較 admin code。
+ * crypto.timingSafeEqual 對長度不同的 buffer 會直接拋錯,所以先比長度
+ * (長度不同 = 一定不相等,直接 false;長度本身不是機密)。空字串一律 false,
+ * 避免未設定的 code 意外通過。
+ */
+function safeCodeEqual(input: string, secret: string): boolean {
+  if (!secret || !input) return false;
+  const a = Buffer.from(input);
+  const b = Buffer.from(secret);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+// IP 級失敗限流:同 IP 近 RATE_WINDOW_MS 內失敗 ≥ RATE_MAX_FAILS 次就擋。
+const RATE_WINDOW_MS = 15 * 60 * 1000; // 15 分鐘
+const RATE_MAX_FAILS = 10;
+
+function clientIp(request: NextRequest): string {
+  return (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+}
+
+// 回 true = 已超限、應擋。任何 DB 錯誤都「放行」(fail-open),不因限流表故障把正常登入鎖死。
+async function isRateLimited(ip: string): Promise<boolean> {
+  try {
+    const db = getAdminClient();
+    const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+    const { count } = await db
+      .from('admin_auth_attempts')
+      .select('id', { head: true, count: 'exact' })
+      .eq('ip', ip)
+      .gte('created_at', since);
+    return (count || 0) >= RATE_MAX_FAILS;
+  } catch {
+    return false;
+  }
+}
+
+async function recordFailedAttempt(ip: string): Promise<void> {
+  try {
+    await getAdminClient().from('admin_auth_attempts').insert({ ip });
+  } catch {
+    /* 記錄失敗不影響回應 */
+  }
+}
+
+/**
  * Create a role-aware session token.
  *
  * Format: `<role>.<timestamp>.<hmac(role.timestamp)>`
@@ -115,8 +161,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Admin code not configured' }, { status: 500 });
       }
 
-      // Admin code → admin role (full access)
-      if (ADMIN_CODE && code === ADMIN_CODE) {
+      // 暴力破解防護:同 IP 近 15 分鐘失敗過多就擋(在比對 code 之前先擋)。
+      const ip = clientIp(request);
+      if (await isRateLimited(ip)) {
+        return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+      }
+
+      // Admin code → admin role (full access)。用常數時間比較,避免時序側信道洩漏 code。
+      if (safeCodeEqual(String(code), ADMIN_CODE)) {
         const sessionToken = createSessionToken('admin');
         const response = NextResponse.json({ success: true, method: 'code', role: 'admin' });
         return setSessionCookie(response, sessionToken);
@@ -124,12 +176,14 @@ export async function POST(request: NextRequest) {
 
       // Production code → production role (restricted access, only
       // orders / inquiries / applications / talents)
-      if (PRODUCTION_CODE && code === PRODUCTION_CODE) {
+      if (safeCodeEqual(String(code), PRODUCTION_CODE)) {
         const sessionToken = createSessionToken('production');
         const response = NextResponse.json({ success: true, method: 'code', role: 'production' });
         return setSessionCookie(response, sessionToken);
       }
 
+      // 失敗才計入限流(成功不佔額度)。
+      await recordFailedAttempt(ip);
       return NextResponse.json({ error: 'Invalid admin code' }, { status: 401 });
     }
 

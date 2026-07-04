@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { supabase, Order } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { useDashboardUser } from '@/contexts/DashboardContext';
 import { getMusicTierLabel } from '@/lib/config/pricing.config';
 import { languages } from '@/lib/voices';
@@ -36,7 +37,6 @@ export default function InvoicesPage() {
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
-  const [downloadError, setDownloadError] = useState('');
 
   const fetchOrders = useCallback(async () => {
     if (!user.email) return;
@@ -116,9 +116,9 @@ export default function InvoicesPage() {
 
   const handleDownload = async (item: InvoiceItem) => {
     setDownloading(item.id);
-    setDownloadError('');
     try {
-      const res = await fetch(`/api/invoices/${item.id}?type=${item.type}`);
+      // 帶當下最新的 access_token(authedFetch)→ 後端擁有者驗證才放行本人發票。
+      const res = await authedFetch(`/api/invoices/${item.id}?type=${item.type}`);
       if (!res.ok) throw new Error('Failed to generate invoice');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -128,7 +128,7 @@ export default function InvoicesPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      setDownloadError(t('downloadFailed'));
+      // silent
     } finally {
       setDownloading(null);
     }
@@ -260,10 +260,6 @@ export default function InvoicesPage() {
               </span>
             </div>
           </div>
-        )}
-
-        {downloadError && (
-          <p className="mt-4 text-red-400 text-xs">{downloadError}</p>
         )}
 
         <div className="mt-6 rounded-xl bg-white/[0.02] border border-white/[0.05] px-5 py-4 flex items-start gap-3">

@@ -4,10 +4,23 @@ import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.confi
 import { generateInvoicePdf } from '@/lib/invoice-pdf';
 import { currencySymbol } from '@/lib/currency';
 
+// 只用 service role —— 移除 ANON_KEY fallback:發票含帳單姓名 / email / 地址 /
+// VAT / 交易 ID,拿 anon key 建的 client 受 RLS 限制,行為不可預測;且下方擁有者
+// 驗證(getUser)本就需要 service role。缺 service key 時直接讓它壞,別退化成 anon。
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// 驗證呼叫者身分:讀 Authorization: Bearer <access_token> → getUser 拿 email。
+// 回 null = 未帶/無效 token(呼叫端據此回 401)。
+async function getRequesterEmail(req: NextRequest): Promise<string | null> {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data?.user?.email) return null;
+  return data.user.email.toLowerCase();
+}
 
 function buildHtml(params: {
   orderNum: string;
@@ -190,6 +203,13 @@ export async function GET(
   const { id } = await params;
   const type = req.nextUrl.searchParams.get('type') || 'voice';
 
+  // 擁有者驗證:必須帶有效 session,且該訂單 email 要等於呼叫者 email,才給發票。
+  // 沒帶 token → 401;非本人訂單 → 403。避免任何人用 order id 拉別人的帳單資料。
+  const requesterEmail = await getRequesterEmail(req);
+  if (!requesterEmail) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
   if (type === 'music') {
     const { data: order, error } = await supabaseAdmin
       .from('music_orders')
@@ -199,6 +219,10 @@ export async function GET(
 
     if (error || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    if (String(order.email || '').toLowerCase() !== requesterEmail) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const billing = order.billing_details as Record<string, string> | null;
@@ -254,6 +278,10 @@ export async function GET(
 
   if (error || !order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  }
+
+  if (String(order.email || '').toLowerCase() !== requesterEmail) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const billing = order.billing_details as Record<string, string> | null;
