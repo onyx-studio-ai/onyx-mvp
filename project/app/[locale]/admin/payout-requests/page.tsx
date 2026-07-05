@@ -15,6 +15,19 @@ type Req = {
   talents: { name: string | null; email: string | null } | null;
 };
 
+// 撥款發票 = 金流敏感檔,透過簽名 URL route 開(不管 casting bucket 公開或被鎖成私有都打得開)。
+async function openInvoice(invoiceUrl: string) {
+  try {
+    const res = await fetch(`/api/admin/payout-requests/signed-url?u=${encodeURIComponent(invoiceUrl)}`, { credentials: 'include' });
+    const j = await res.json().catch(() => ({}));
+    if (res.ok && j.url) { window.open(j.url, '_blank', 'noopener,noreferrer'); return; }
+    // 拿不到簽名 URL(例如舊路徑),退回直接開原網址,別讓使用者完全點不動。
+    window.open(invoiceUrl, '_blank', 'noopener,noreferrer');
+  } catch {
+    window.open(invoiceUrl, '_blank', 'noopener,noreferrer');
+  }
+}
+
 const STATUS_LABEL: Record<string, string> = { pending: '待處理', invoice_uploaded: '已上傳發票', paid: '已撥款', rejected: '已退回' };
 const STATUS_CLS: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-700 border-gray-300',
@@ -149,7 +162,7 @@ export default function PayoutRequestsPage() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {r.invoice_url
-                      ? <a href={r.invoice_url} target="_blank" rel="noreferrer" className="text-xs text-violet-700 hover:underline inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" /> 看發票</a>
+                      ? <button onClick={() => openInvoice(r.invoice_url!)} className="text-xs text-violet-700 hover:underline inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" /> 看發票</button>
                       : <span className="text-xs text-gray-400">尚未上傳發票</span>}
                     <button onClick={() => setExpanded(expanded === r.id ? null : r.id)} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 inline-flex items-center gap-1">
                       收款資料 <ChevronDown className={`w-3 h-3 transition-transform ${expanded === r.id ? 'rotate-180' : ''}`} />
