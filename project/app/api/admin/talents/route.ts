@@ -21,6 +21,18 @@ export async function GET(request: NextRequest) {
       .from('talent_earnings')
       .select('talent_id, status, commission_amount');
 
+    // Which talents are casting-invite accounts? These are the lightweight rows
+    // auto-created when a talent is invited to audition (magic-link, no signup).
+    // They have no application_id, so the onboarding button doesn't apply to them.
+    // ONE query — pull the distinct set of talent_id referenced by casting_invites
+    // and flag membership; we deliberately return only a boolean, never the
+    // invite token / brief content / any other casting column.
+    const { data: castingInvites } = await db
+      .from('casting_invites')
+      .select('talent_id')
+      .not('talent_id', 'is', null);
+    const castingTalentIds = new Set((castingInvites || []).map((r) => r.talent_id));
+
     const earningsMap: Record<string, { pending: number; paid: number; total: number; count: number }> = {};
     for (const e of (earnings || [])) {
       if (!earningsMap[e.talent_id]) earningsMap[e.talent_id] = { pending: 0, paid: 0, total: 0, count: 0 };
@@ -47,7 +59,11 @@ export async function GET(request: NextRequest) {
     const enriched = (talents || []).map((t: any) => {
       const clean = { ...t } as Record<string, unknown>;
       for (const k of STRIP) delete clean[k];
-      return { ...clean, earnings_summary: earningsMap[t.id] || null };
+      return {
+        ...clean,
+        earnings_summary: earningsMap[t.id] || null,
+        is_casting_invite: castingTalentIds.has(t.id),
+      };
     });
 
     return NextResponse.json(enriched);

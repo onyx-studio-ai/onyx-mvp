@@ -467,7 +467,7 @@ export default function AdminTalentsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<'all' | 'VO' | 'Singer'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'draft' | 'inactive'>('all');
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'application' | 'manual'>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'application' | 'casting' | 'manual'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTalent, setEditingTalent] = useState<Talent | null>(null);
   // Read-only "完整檔案" viewer — what the talent filled on /talent, incl. drafts.
@@ -965,13 +965,19 @@ export default function AdminTalentsPage() {
   };
   const isSinger = (t: Talent) => t.type === 'Singer' || t.type === 'singer';
   const hasApp = (t: Talent) => !!(t as Talent & { application_id?: string }).application_id;
+  // Casting-invite account: auto-created from an audition invite (magic-link, no
+  // signup). Flagged by the API. These have no application_id — they came in via
+  // the試音 flow, not the apply form, so onboarding links don't apply to them.
+  const isCastingInvite = (t: Talent) => !hasApp(t) && !!(t as Talent & { is_casting_invite?: boolean }).is_casting_invite;
+  // Three-way source: 有 application → Application;無 application 但有試音邀請 → 試音邀請;其餘 → 手動加入。
+  const sourceOf = (t: Talent): 'application' | 'casting' | 'manual' =>
+    hasApp(t) ? 'application' : isCastingInvite(t) ? 'casting' : 'manual';
 
   const filtered = talents.filter((t) => {
     if (typeFilter === 'VO' && isSinger(t)) return false;
     if (typeFilter === 'Singer' && !isSinger(t)) return false;
     if (statusFilter !== 'all' && tStatus(t) !== statusFilter) return false;
-    if (sourceFilter === 'application' && !hasApp(t)) return false;
-    if (sourceFilter === 'manual' && hasApp(t)) return false;
+    if (sourceFilter !== 'all' && sourceOf(t) !== sourceFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       // Search the whole profile the talent filled — name/email plus bio,
@@ -1003,6 +1009,8 @@ export default function AdminTalentsPage() {
     pending: talents.filter((t) => tStatus(t) === 'pending').length,
     draft: talents.filter((t) => tStatus(t) === 'draft').length,
     inactive: talents.filter((t) => tStatus(t) === 'inactive').length,
+    // 拆出 Inactive 裡「試音邀請帳號」的數量,讓 Inactive 統計卡標明別誤當成待催激活。
+    inactiveCasting: talents.filter((t) => tStatus(t) === 'inactive' && isCastingInvite(t)).length,
     liveness: talents.filter((t) => (t as Talent & { liveness_status?: string }).liveness_status === 'verified').length,
     voiceId: talents.filter((t) => (t as Talent & { voice_id_status?: string }).voice_id_status === 'verified').length,
   };
@@ -1484,7 +1492,20 @@ export default function AdminTalentsPage() {
         { label: 'Active', value: counts.active, color: 'text-emerald-700' },
         { label: '待審核', value: counts.pending, color: 'text-amber-700' },
         { label: '草稿', value: counts.draft, color: 'text-sky-700' },
-        { label: 'Inactive', value: counts.inactive, color: 'text-gray-500' },
+        {
+          // Inactive 混了三種來源;標明其中有幾個是「試音邀請帳號」(不該催激活),
+          // 老闆一眼就分得清,數字本身仍是完整 Inactive 總數不變。
+          label: (
+            <span className="inline-flex flex-col">
+              <span>Inactive</span>
+              {counts.inactiveCasting > 0 && (
+                <span className="text-[11px] text-gray-400 font-normal">含 {counts.inactiveCasting} 試音邀請</span>
+              )}
+            </span>
+          ),
+          value: counts.inactive,
+          color: 'text-gray-500',
+        },
         { label: '真人驗證', value: counts.liveness, color: 'text-emerald-700' },
         { label: 'Voice ID', value: counts.voiceId, color: 'text-cyan-700' },
       ]} />
@@ -1516,8 +1537,9 @@ export default function AdminTalentsPage() {
           </select>
           <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as typeof sourceFilter)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none">
             <option value="all">所有來源</option>
-            <option value="application">Application</option>
-            <option value="manual">Manual</option>
+            <option value="application">申請表 (Application)</option>
+            <option value="casting">試音邀請 (Casting)</option>
+            <option value="manual">手動加入 (Manual)</option>
           </select>
         </div>
       </div>
@@ -1591,18 +1613,26 @@ export default function AdminTalentsPage() {
                   {talent.type === 'Singer' || talent.type === 'singer' ? 'Singer' : talent.type === 'VO' || talent.type === 'voice_actor' ? 'Voice Actor' : talent.type?.replace("_", " ") || 'N/A'}
                 </TableCell>
                 <TableCell>
-                  {(talent as any).application_id ? (
+                  {/* 三態來源:申請表 / 試音邀請 / 手動加入 —— 老闆一眼分清 Inactive 是誰。 */}
+                  {sourceOf(talent) === 'application' ? (
                     <a
                       href="/admin/applications"
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
                     >
                       <FileText className="w-3 h-3" />
-                      Application
+                      申請表
                       <ArrowUpRight className="w-2.5 h-2.5" />
                     </a>
+                  ) : sourceOf(talent) === 'casting' ? (
+                    <span
+                      title="發試音案時用 email 自動建的輕量帳號(magic link 免註冊試音),非申請者,不需寄激活連結"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200"
+                    >
+                      試音邀請
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-200/50 text-gray-600 border border-gray-400/50">
-                      Manual
+                      手動加入
                     </span>
                   )}
                 </TableCell>
@@ -1790,13 +1820,22 @@ export default function AdminTalentsPage() {
                         </button>
                       </div>
                     );
-                    // Inactive = 核准了但從沒點連結建帳號。補寄 onboarding 連結請他進來同意合作。
+                    // Inactive 混三種來源。只有「真申請者(有 application_id)」才是
+                    // 核准了但沒點連結建帳號 → 顯示「寄激活連結」。試音邀請 / 手動加入
+                    // 沒有 application_id,產不出開通連結(後端會擋),不顯示按鈕免白點,
+                    // 改標一行說明來源,老闆知道這不是待催的申請者。
                     return (
                       <div className="flex flex-col items-start gap-1">
                         <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>
-                        <button type="button" onClick={() => handleSendOnboarding(talent.id)} disabled={sendingOnboarding === talent.id} title="補寄開通連結,請他點進來確認合作、同意合作即建帳號" className="text-[11px] text-emerald-700 hover:text-emerald-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
-                          {sendingOnboarding === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 寄激活連結
-                        </button>
+                        {hasApp(talent) ? (
+                          <button type="button" onClick={() => handleSendOnboarding(talent.id)} disabled={sendingOnboarding === talent.id} title="補寄開通連結,請他點進來確認合作、同意合作即建帳號" className="text-[11px] text-emerald-700 hover:text-emerald-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
+                            {sendingOnboarding === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 寄激活連結
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-gray-400" title={isCastingInvite(talent) ? '發試音案時自動建的輕量帳號,走試音流程,非申請者' : '手動建立、無報名紀錄'}>
+                            {isCastingInvite(talent) ? '試音邀請帳號' : '手動加入'}
+                          </span>
+                        )}
                       </div>
                     );
                   })()}
