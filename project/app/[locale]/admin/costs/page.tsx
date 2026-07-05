@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import {
   RefreshCw, Plus, Pencil, Trash2, ExternalLink, Receipt, Wrench,
   AlertTriangle, X, Upload, FileText, Package, Check,
+  ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 import { supabase } from '@/lib/supabase';
@@ -39,6 +40,40 @@ function currentPeriod(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
+
+// 上傳「歸屬月份」下拉選項:當前月往回推 24 個月(新到舊),讓補傳的發票能歸到對的月。
+function recentPeriods(count = 24): string[] {
+  const out: string[] = [];
+  const d = new Date();
+  for (let i = 0; i < count; i++) {
+    out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    d.setMonth(d.getMonth() - 1);
+  }
+  return out;
+}
+
+// 把某工具的發票依「年 → 月」分組並排序(新月在上、新年在上),供折疊清單渲染。
+function groupInvoicesByYearMonth(list: Invoice[]): { year: string; months: { period: string; items: Invoice[] }[] }[] {
+  const byPeriod = new Map<string, Invoice[]>();
+  for (const inv of list) {
+    const p = PERIOD_RE.test(inv.period) ? inv.period : '未分類'; // period 異常時歸「未分類」,不丟資料
+    (byPeriod.get(p) || byPeriod.set(p, []).get(p)!).push(inv);
+  }
+  const byYear = new Map<string, { period: string; items: Invoice[] }[]>();
+  for (const [period, items] of byPeriod) {
+    const year = period === '未分類' ? '未分類' : period.slice(0, 4);
+    (byYear.get(year) || byYear.set(year, []).get(year)!).push({ period, items });
+  }
+  return [...byYear.entries()]
+    .map(([year, months]) => ({
+      year,
+      months: months.sort((a, b) => (a.period < b.period ? 1 : -1)), // 新月在上
+    }))
+    .sort((a, b) => (a.year < b.year ? 1 : -1)); // 新年在上,「未分類」字串排序自然落到最後
+}
+
+const PERIOD_RE = /^\d{4}-\d{2}$/;
+const THIS_YEAR = String(new Date().getFullYear());
 
 const BILLING_LABEL: Record<string, string> = {
   monthly: '每月', yearly: '年費', usage: '按量', free: '免費',
@@ -185,19 +220,28 @@ async function openInvoice(invoice: Invoice) {
   }
 }
 
-function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }: {
-  cost: Cost; invoices: Invoice[]; period: string;
+function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceChanged }: {
+  cost: Cost; invoices: Invoice[]; currentMonth: string;
   onEdit: () => void; onDelete: () => void; onInvoiceChanged: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
-  const uploaded = invoices.length > 0;
+  // 上傳歸屬月份:預設當前月;補傳舊發票時可改成對應月份,不會全擠當前月。
+  const [uploadPeriod, setUploadPeriod] = useState(currentMonth);
+  // 折疊狀態:預設只展開今年;各月預設收合,點開才看該月發票。
+  const [openYears, setOpenYears] = useState<Record<string, boolean>>({ [THIS_YEAR]: true });
+  const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({});
+
+  // badge / 統計只看「當前月」子集,語意維持「本月發票是否已上傳」。
+  const currentMonthInvoices = invoices.filter((i) => i.period === currentMonth);
+  const uploaded = currentMonthInvoices.length > 0;
+  const grouped = groupInvoicesByYearMonth(invoices);
 
   // 上傳單一發票檔(不碰 UI/toast,失敗就 throw);批量由 uploadInvoices 統一收斂。
   const uploadOne = async (file: File): Promise<void> => {
-    // 步驟 1:拿 signed upload URL
+    // 步驟 1:拿 signed upload URL(帶所選歸屬月份 uploadPeriod)
     const prep = await fetch('/api/admin/costs/invoices', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cost_id: cost.id, period, fileName: file.name }),
+      body: JSON.stringify({ cost_id: cost.id, period: uploadPeriod, fileName: file.name }),
     });
     const pj = await prep.json().catch(() => ({}));
     if (!prep.ok) throw new Error(pj.error || '準備上傳失敗');
@@ -208,7 +252,7 @@ function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }
     // 簽名 URL route 來開,bucket 是公開或私有都不影響。
     const rec = await fetch('/api/admin/costs/invoices', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ record: true, cost_id: cost.id, period, invoice_url: pj.path, file_name: file.name }),
+      body: JSON.stringify({ record: true, cost_id: cost.id, period: uploadPeriod, invoice_url: pj.path, file_name: file.name }),
     });
     const rj = await rec.json().catch(() => ({}));
     if (!rec.ok) throw new Error(rj.error || '記錄發票失敗');
@@ -229,7 +273,7 @@ function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }
   };
 
   const removeInvoice = async (invoice: Invoice) => {
-    if (!window.confirm(`移除 ${cost.name} 的 ${period} 發票「${invoice.file_name || '發票'}」?`)) return;
+    if (!window.confirm(`移除 ${cost.name} 的 ${invoice.period} 發票「${invoice.file_name || '發票'}」?`)) return;
     const res = await fetch(`/api/admin/costs/invoices?id=${invoice.id}`, { method: 'DELETE' });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
@@ -287,6 +331,18 @@ function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }
               <FileText className="w-3.5 h-3.5" /> 本月發票未上傳
             </span>
           )}
+          {/* 歸屬月份:上傳這批算哪個月;預設當前月,補傳舊發票時改成對應月。 */}
+          <select
+            value={uploadPeriod}
+            onChange={(e) => setUploadPeriod(e.target.value)}
+            disabled={uploading}
+            title="這批發票歸屬月份"
+            className="px-2 py-1 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:border-amber-300 focus:outline-none transition-colors disabled:opacity-50"
+          >
+            {recentPeriods().map((p) => (
+              <option key={p} value={p}>{p}{p === currentMonth ? '(本月)' : ''}</option>
+            ))}
+          </select>
           <label className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
             <Upload className="w-3.5 h-3.5" /> {uploading ? '上傳中…' : (uploaded ? '再上傳(可多張)' : '上傳發票(可多張)')}
             <input type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden"
@@ -309,24 +365,65 @@ function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }
         </div>
       </div>
 
-      {/* 本月已上傳發票清單:檔名 + 看發票(簽名 URL 開新分頁)+ 刪除 */}
-      {uploaded && (
-        <ul className="mt-3 space-y-1.5">
-          {invoices.map((inv) => (
-            <li key={inv.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
-              <FileText className="w-4 h-4 text-gray-400 shrink-0" />
-              <span className="text-xs text-gray-700 truncate flex-1" title={inv.file_name || undefined}>{inv.file_name || '發票'}</span>
-              <button onClick={() => openInvoice(inv)}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors shrink-0">
-                <ExternalLink className="w-3.5 h-3.5" /> 看發票
-              </button>
-              <button onClick={() => removeInvoice(inv)}
-                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0" title="移除這張發票">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </li>
-          ))}
-        </ul>
+      {/* 全部發票:按「年 → 月」折疊。預設只展開今年、各月收合;點該行才看那月的發票。 */}
+      {invoices.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {grouped.map(({ year, months }) => {
+            const yearOpen = openYears[year] ?? false; // 只有今年在初始 state 設 true,其餘預設收合
+            const yearCount = months.reduce((s, m) => s + m.items.length, 0);
+            return (
+              <div key={year} className="border border-gray-100 rounded-lg overflow-hidden">
+                {/* 年份層 */}
+                <button
+                  onClick={() => setOpenYears((p) => ({ ...p, [year]: !yearOpen }))}
+                  className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                >
+                  {yearOpen ? <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-gray-500 shrink-0" />}
+                  <span className="text-sm font-semibold text-gray-800">{year === '未分類' ? '未分類' : `${year} 年`}</span>
+                  <span className="text-xs text-gray-500">({yearCount} 張)</span>
+                </button>
+                {/* 月份層 */}
+                {yearOpen && (
+                  <div className="px-2 py-2 space-y-1.5">
+                    {months.map(({ period: mPeriod, items }) => {
+                      const monthOpen = openMonths[mPeriod] ?? false; // 各月預設收合
+                      return (
+                        <div key={mPeriod}>
+                          <button
+                            onClick={() => setOpenMonths((p) => ({ ...p, [mPeriod]: !monthOpen }))}
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-gray-50 transition-colors text-left"
+                          >
+                            {monthOpen ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
+                            <span className="text-xs font-medium text-gray-700">{mPeriod}</span>
+                            <span className="text-xs text-gray-500">({items.length} 張)</span>
+                          </button>
+                          {monthOpen && (
+                            <ul className="mt-1 ml-5 space-y-1.5">
+                              {items.map((inv) => (
+                                <li key={inv.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+                                  <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                                  <span className="text-xs text-gray-700 truncate flex-1" title={inv.file_name || undefined}>{inv.file_name || '發票'}</span>
+                                  <button onClick={() => openInvoice(inv)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors shrink-0">
+                                    <ExternalLink className="w-3.5 h-3.5" /> 看發票
+                                  </button>
+                                  <button onClick={() => removeInvoice(inv)}
+                                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0" title="移除這張發票">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -345,7 +442,9 @@ export default function AdminCostsPage() {
     try {
       const [cr, ir] = await Promise.all([
         fetch('/api/admin/costs'),
-        fetch(`/api/admin/costs/invoices?period=${period}`),
+        // 不帶 period = 回全部發票(GET route 已支援),讓每個工具能瀏覽跨月歷史。
+        // 當前月子集在前端 filter 出來給 badge / 統計 / 月結打包用。
+        fetch('/api/admin/costs/invoices'),
       ]);
       if (!cr.ok) { toast.error('載入費用清單失敗'); }
       else setCosts(await cr.json());
@@ -354,7 +453,7 @@ export default function AdminCostsPage() {
       toast.error('網路錯誤');
     }
     setLoading(false);
-  }, [period]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -366,7 +465,10 @@ export default function AdminCostsPage() {
     load();
   };
 
+  // 傳給每個 CostCard 的是該工具的「全部」發票(跨月歷史),折疊清單在卡片內分組。
   const invoicesFor = (costId: string) => invoices.filter((i) => i.cost_id === costId);
+  // 當前月子集:給 badge / 右上統計 / 月結打包張數用(語意維持「本月」)。
+  const currentMonthInvoices = invoices.filter((i) => i.period === period);
 
   // 每月固定支出:只加 billing='monthly' 且 monthly_cost 有值的。USD / TWD 分開加總。
   const monthlyUSD = costs.filter((c) => c.billing_cycle === 'monthly' && c.currency === 'USD' && c.monthly_cost != null)
@@ -374,8 +476,8 @@ export default function AdminCostsPage() {
   const monthlyTWD = costs.filter((c) => c.billing_cycle === 'monthly' && c.currency === 'TWD' && c.monthly_cost != null)
     .reduce((s, c) => s + (c.monthly_cost || 0), 0);
   const reviewCount = costs.filter((c) => c.status === 'review').length;
-  const uploadedCount = invoices.length; // 本月發票總張數(打包用)
-  const toolsWithInvoice = new Set(invoices.map((i) => i.cost_id)).size; // 本月已有發票的工具數
+  const uploadedCount = currentMonthInvoices.length; // 本月發票總張數(打包用)
+  const toolsWithInvoice = new Set(currentMonthInvoices.map((i) => i.cost_id)).size; // 本月已有發票的工具數
 
   const fixedLabel = [
     monthlyUSD > 0 ? `US$${monthlyUSD.toLocaleString()}` : null,
@@ -443,7 +545,7 @@ export default function AdminCostsPage() {
               key={cost.id}
               cost={cost}
               invoices={invoicesFor(cost.id)}
-              period={period}
+              currentMonth={period}
               onEdit={() => { setEditing(cost); setFormOpen(true); }}
               onDelete={() => deleteCost(cost)}
               onInvoiceChanged={load}
