@@ -105,11 +105,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
     }
 
-    const { data: urlData } = supabase.storage
-      .from('voice-affidavits')
-      .getPublicUrl(uploadData.path);
+    // voice-affidavits 是「私有」桶,getPublicUrl 會存下打不開的死連結。改存儲存路徑;
+    // admin 端讀取時走 /api/admin/voice-id/signed-url 動態簽短效 URL
+    // (storagePathFromRef 同時吃裸路徑與舊的完整公開 URL,舊資料相容)。
+    const voiceFileRef = uploadData.path;
 
-    let signatureUrl: string | null = null;
+    let signatureRef: string | null = null;
     if (signatureDataUrl) {
       try {
         const base64Data = signatureDataUrl.replace(/^data:image\/png;base64,/, '');
@@ -121,10 +122,7 @@ export async function POST(request: NextRequest) {
           .upload(sigPath, sigBuffer, { contentType: 'image/png', upsert: false });
 
         if (!sigErr && sigUpload) {
-          const { data: sigUrlData } = supabase.storage
-            .from('voice-affidavits')
-            .getPublicUrl(sigUpload.path);
-          signatureUrl = sigUrlData.publicUrl;
+          signatureRef = sigUpload.path;
         }
       } catch (sigError) {
         console.error('[Voice ID Upload] Signature upload error:', sigError);
@@ -133,13 +131,13 @@ export async function POST(request: NextRequest) {
 
     const updatePayload: Record<string, unknown> = {
       voice_id_status: 'submitted',
-      voice_id_file_url: urlData.publicUrl,
+      voice_id_file_url: voiceFileRef,
       voice_id_submitted_at: new Date().toISOString(),
       voice_id_token: null,
       voice_id_token_expires: null,
     };
-    if (signatureUrl) {
-      updatePayload.voice_id_signature_url = signatureUrl;
+    if (signatureRef) {
+      updatePayload.voice_id_signature_url = signatureRef;
     }
     if (paymentMethod) {
       updatePayload.payment_method = paymentMethod;

@@ -183,28 +183,26 @@ function SlotEditor({
         .map((t) => t.trim())
         .filter(Boolean);
 
-      const payload = {
-        section: sectionKey,
-        slot_key: slotConfig.key,
-        audio_url: audioUrl || null,
-        label: label || null,
-        subtitle: subtitle || null,
-        description: description || null,
-        tags,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (showcase?.id) {
-        const { error } = await supabase
-          .from("audio_showcases")
-          .update(payload)
-          .eq("id", showcase.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("audio_showcases")
-          .upsert(payload, { onConflict: "section,slot_key" });
-        if (error) throw error;
+      // 走後端 service_role API(admin cookie 授權),不再用 anon client 直寫。
+      // 統一 upsert(依 section+slot_key),新建 / 更新一條路徑即可。
+      const res = await fetch("/api/admin/showcases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "upsert",
+          id: showcase?.id,
+          section: sectionKey,
+          slot_key: slotConfig.key,
+          audio_url: audioUrl || null,
+          label: label || null,
+          subtitle: subtitle || null,
+          description: description || null,
+          tags,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Request failed");
       }
 
       toast.success("Saved");

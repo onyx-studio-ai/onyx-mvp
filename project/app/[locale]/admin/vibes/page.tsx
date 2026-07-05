@@ -181,18 +181,21 @@ export default function AdminVibesPage() {
         audio_url: formData.audio_url,
       };
 
-      if (editingVibe) {
-        const { error } = await supabase
-          .from("vibes")
-          .update(payload)
-          .eq("id", editingVibe.id);
-        if (error) throw error;
-        toast.success("Vibe updated");
-      } else {
-        const { error } = await supabase.from("vibes").insert([payload]);
-        if (error) throw error;
-        toast.success("Vibe created");
+      // 走後端 service_role API(admin cookie 授權),不再用 anon client 直寫。
+      const res = await fetch("/api/admin/vibes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          editingVibe
+            ? { action: "update", id: editingVibe.id, ...payload }
+            : { action: "create", ...payload }
+        ),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Request failed");
       }
+      toast.success(editingVibe ? "Vibe updated" : "Vibe created");
 
       setDialogOpen(false);
       resetForm();
@@ -220,8 +223,15 @@ export default function AdminVibesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this vibe?")) return;
     try {
-      const { error } = await supabase.from("vibes").delete().eq("id", id);
-      if (error) throw error;
+      const res = await fetch("/api/admin/vibes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Request failed");
+      }
       toast.success("Vibe deleted");
       fetchVibes();
     } catch (err) {

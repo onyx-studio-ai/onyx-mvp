@@ -13,6 +13,27 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 */
 const CURRENCIES = ['USD', 'TWD'];
 
+// 只回試音者該看的欄位(白名單)。marketplace_briefs 的 select('*') 會帶出客戶底牌:
+// client_user_id / budget_currency / budget_unit / requested_talent(_id) / has_singing /
+// wants_* / gender_needs / local_studio_region / script_file_url…等,一律不外洩。
+// budget / budget_type 保留 —— 前台 GuestCasting 會以「客戶預算」顯示,是既有產品行為。
+// 客戶身分(client_email/name/company)不在名單內,連同一併排除(source label 另算)。
+const GUEST_BRIEF_FIELDS = [
+  'id', 'brief_number', 'kind', 'content_type', 'title', 'language', 'rate_note', 'status', 'created_at',
+  'budget', 'budget_type',
+  'brief', 'audition_script', 'audition_deadline', 'deadline', 'recording_start', 'recording_methods',
+  'reference_files', 'reference_links', 'roles', 'audition_cap', 'base_revisions', 'length',
+  'media_scope', 'territory', 'license_term', 'accent', 'voice_style', 'voice_age',
+] as const;
+
+function pickGuestBrief(brief: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of GUEST_BRIEF_FIELDS) if (k in brief) out[k] = brief[k];
+  // platform 案不收平台費、client 案收 20% —— 前台靠這個 label 判斷,不外洩客戶 email 本身。
+  out.source = brief.client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client';
+  return out;
+}
+
 // 試音是否已截止 = 案件非 open,或過了 audition_deadline||deadline(當天 23:59)。
 // 沒設截止日 / parse 失敗一律不算截止(與登入端 / briefs API 同一套規則)。
 function castingClosed(brief: { status?: string | null; audition_deadline?: string | null; deadline?: string | null }): boolean {
@@ -47,9 +68,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const { data } = await db.from('marketplace_quotes').select('id, brief_id, role_name, gross_amount, currency, status, sample_url').eq('brief_id', brief.id).eq('talent_id', invite.talent_id);
     myAuditions = data || [];
   }
-  // Strip client identity from the guest payload; expose only a source label.
-  const safeBrief = { ...brief, source: brief.client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client' } as Record<string, unknown>;
-  delete safeBrief.client_email; delete safeBrief.client_name; delete safeBrief.company;
+  // 白名單挑欄位 → 只回試音者該看的,客戶身分/預算幣別/指名配音員等底牌一律不外洩。
+  const safeBrief = pickGuestBrief(brief as Record<string, unknown>);
   return NextResponse.json({ brief: safeBrief, roleCounts, myAuditions, invite: { email: invite.email, name: invite.name }, closed: castingClosed(brief) });
 }
 
