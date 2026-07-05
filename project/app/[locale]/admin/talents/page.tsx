@@ -1336,10 +1336,10 @@ export default function AdminTalentsPage() {
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-300">
                       <SelectItem value="commission" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">
-                        💰 抽成（真人 20% · AI 25%）
+                        抽成（真人 20% · AI 25%）
                       </SelectItem>
                       <SelectItem value="buyout" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">
-                        🔒 買斷(一次付清)
+                        買斷(一次付清)
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -1576,11 +1576,11 @@ export default function AdminTalentsPage() {
                       <span className="font-medium text-gray-900">{talent.name || 'N/A'}</span>
                       {talent.compensation_model === 'buyout' ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 w-fit">
-                          🔒 Buyout
+                          買斷
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit" title="真人配音案件平台收 20% 服務費;AI 語音銷售配音員拿 25% 版稅">
-                          💰 真人20%·AI25%
+                          真人20%·AI25%
                         </span>
                       )}
                       {(() => {
