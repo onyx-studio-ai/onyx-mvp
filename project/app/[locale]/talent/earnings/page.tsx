@@ -191,7 +191,7 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
             ) : (
               <>
                 <div><label className={lbl}>PayPal Email *</label><input className={inputCls} value={usd.paypal_email || ''} onChange={(e) => setU('paypal_email', e.target.value)} placeholder="you@example.com" /></div>
-                <p className="sm:col-span-2 text-[11px] text-gray-300">{tx('PayPal 跨境約 5% 手續費由收款方負擔。', 'PayPal 跨境约 5% 手续费由收款方负担。', 'PayPal cross-border fee (~5%) is borne by the recipient.')}</p>
+                <p className="sm:col-span-2 text-[11px] text-gray-300">{tx('轉帳手續費由 Onyx 負擔;你那端收款機構若收中途費,由你負擔。', '转账手续费由 Onyx 负担;你那端收款机构若收中途费,由你负担。', 'Onyx covers the transfer fee; any mid-way fee your own bank/PayPal charges is on you.')}</p>
               </>
             )}
           </div>
@@ -271,8 +271,8 @@ function PayoutRequest({ tx, pending }: { tx: (a: string, b: string, c: string) 
       </div>
 
       {Number(amount) > 0 && feeInfo && (() => {
-        // 手續費由收款方負擔:USD 看收款方式(PayPal 5% / 電匯 US$20)、TWD 用台灣匯費 NT$30。
-        // 台灣稅只在「TWD 請款 + 台灣稅務」時試算(避免跨幣別門檻誤判);其餘只算手續費。
+        // 只試算「法定代扣後」的實收:所得稅 + 二代健保。手續費由我方吸收、不從配音員扣(Wing 2026-07-05)。
+        // 台灣稅只在「TWD 請款 + 台灣稅務」時算(避免跨幣別門檻誤判);其餘視為海外只全額付。
         const method = currency === 'USD' ? (feeInfo.usdMethod === 'paypal' ? 'paypal' : 'bank') : 'bank';
         const bankCountry = currency === 'TWD' ? 'TW' : 'X';
         const taxLocation = (currency === 'TWD' && feeInfo.taxLoc === 'TW') ? 'TW' : 'overseas';
@@ -280,13 +280,12 @@ function PayoutRequest({ tx, pending }: { tx: (a: string, b: string, c: string) 
         const c = currency; const n = (x: number) => x.toLocaleString('en-US', { maximumFractionDigits: 2 });
         return (
           <div className="text-xs text-gray-200 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 mb-3 space-y-1">
-            <p className="text-gray-300 pb-1">{tx('我們會全額支付您的請款金額;但收款機構可能收取中途手續費。', '我们会全额支付您的请款金额;但收款机构可能收取中途手续费。', 'We pay your full requested amount; the receiving institution may charge a fee along the way.')}</p>
+            <p className="text-gray-300 pb-1">{tx('我們會全額支付您的請款金額,轉帳手續費由我方負擔;僅依法代扣所得稅/二代健保(如適用)。', '我们会全额支付您的请款金额,转账手续费由我方负担;仅依法代扣所得税/二代健保(如适用)。', 'We pay your full requested amount and cover the transfer fee; only statutory tax/NHI is withheld where applicable.')}</p>
             <div className="flex justify-between"><span>{tx('請款金額', '请款金额', 'Requested')}</span><span>{c} {n(Number(amount))}</span></div>
             {dd.tax > 0 && <div className="flex justify-between text-gray-300"><span>{tx('代扣所得稅', '代扣所得税', 'Tax withheld')}</span><span>− {c} {n(dd.tax)}</span></div>}
             {dd.nhi > 0 && <div className="flex justify-between text-gray-300"><span>{tx('二代健保', '二代健保', 'NHI')}</span><span>− {c} {n(dd.nhi)}</span></div>}
-            <div className="flex justify-between text-gray-300"><span>{tx('預估手續費', '预估手续费', 'Est. fee')} <span className="text-gray-400">({dd.feeNote})</span></span><span>− {c} {n(dd.fee)}</span></div>
             <div className="flex justify-between font-semibold text-white pt-1 border-t border-white/10"><span>{tx('預估實收 ≈', '预估实收 ≈', 'Est. you receive ≈')}</span><span>{c} {n(dd.net)}</span></div>
-            <p className="text-gray-400 pt-0.5 leading-relaxed">{tx('僅為預估、非保證金額。各國 PayPal 費率不同、國際電匯中轉行費用不一、台灣匯費約 NT$30。實際到帳以您的收款機構入帳為準。', '仅为预估、非保证金额。各国 PayPal 费率不同、国际电汇中转行费用不一、台湾汇费约 NT$30。实际到账以您的收款机构入账为准。', 'Estimate only, not guaranteed. PayPal rates vary by region; intl-wire intermediary fees vary; TW wire ~NT$30. Final amount per your receiving institution.')}</p>
+            <p className="text-gray-400 pt-0.5 leading-relaxed">{tx('僅為預估、非保證金額;稅額以會計實際扣繳為準。轉帳手續費由我方吸收,但你那端收款銀行/PayPal 可能收中途費,非我方可預估。', '仅为预估、非保证金额;税额以会计实际扣缴为准。转账手续费由我方吸收,但你那端收款银行/PayPal 可能收中途费,非我方可预估。', 'Estimate only; final tax per finance. We absorb the transfer fee, but your own bank/PayPal may take a mid-way cut we cannot predict.')}</p>
           </div>
         );
       })()}

@@ -1866,3 +1866,151 @@ export function internalErrorEmail(p: { context: string; error: string }): { sub
     html: baseLayout(content),
   };
 }
+
+// ---------------------------------------------------------------------------
+// 開通邀請(核准後從沒點連結建帳號的人 → 補寄 onboarding 連結)
+// ---------------------------------------------------------------------------
+// 後台針對「已核准但未建帳號」(is_active=false 且 onboarded_at IS NULL)的配音員,
+// 由 admin 手動一鍵補寄的 onboarding 邀請信。連結指向 /onboard?t=<token>,對方點進去
+// 確認合作條款(同意合作)後才建帳號、進入 Draft。中英雙語(依配音員語系),對外署
+// Onyx Studios · Talent Team,不署個人名。與核准時寄的是同一套 token + /onboard 連結。
+export function onboardingInviteEmail(p: {
+  talentName?: string;
+  onboardUrl: string;
+  locale?: string;
+}): { subject: string; html: string } {
+  const L = p.locale === 'zh-CN' ? 'cn' : p.locale?.startsWith('zh') ? 'tw' : 'en';
+  const name = (p.talentName || '').trim();
+  const T = {
+    tw: {
+      subject: 'Onyx Studios — 確認合作、開通您的配音員帳號',
+      headline: '歡迎加入 Onyx Studios',
+      sub: '確認合作條款,即可開通帳號、進入人才庫。',
+      card: '開通您的配音員帳號',
+      intro: `${name ? name + ' 您好,' : '您好,'}您的報名已通過審核。只要點下方連結,確認合作條款、同意合作,我們即為您開通專屬後台帳號,您就能上傳 demo、完善檔案,並開始接到試音與案件邀約。`,
+      cta: '確認合作 · 開通帳號',
+      note: '此連結 30 天內有效。若已失效,或您有任何疑問,歡迎直接回信與我們聯繫。若您並未報名 Onyx Studios,請忽略此信。',
+      sign: 'Onyx Studios · Talent Team',
+    },
+    cn: {
+      subject: 'Onyx Studios — 确认合作、开通您的配音员账号',
+      headline: '欢迎加入 Onyx Studios',
+      sub: '确认合作条款,即可开通账号、进入人才库。',
+      card: '开通您的配音员账号',
+      intro: `${name ? name + ' 您好,' : '您好,'}您的报名已通过审核。只要点击下方链接,确认合作条款、同意合作,我们即为您开通专属后台账号,您就能上传 demo、完善资料,并开始接到试音与案件邀约。`,
+      cta: '确认合作 · 开通账号',
+      note: '此链接 30 天内有效。若已失效,或您有任何疑问,欢迎直接回信与我们联系。若您并未报名 Onyx Studios,请忽略此邮件。',
+      sign: 'Onyx Studios · Talent Team',
+    },
+    en: {
+      subject: 'Onyx Studios — confirm & activate your talent account',
+      headline: 'Welcome to Onyx Studios',
+      sub: 'Confirm the cooperation terms to activate your account and join the roster.',
+      card: 'Activate your talent account',
+      intro: `${name ? 'Hi ' + name + ', ' : ''}your application has been approved. Just click below to review the cooperation terms and confirm. We'll then activate your account so you can upload demos, complete your profile, and start receiving auditions and job invitations.`,
+      cta: 'Confirm & activate account',
+      note: 'This link is valid for 30 days. If it has expired, or you have any questions, simply reply to this email. If you did not apply to Onyx Studios, you can safely ignore this message.',
+      sign: 'The Onyx Studios Talent Team',
+    },
+  }[L];
+  const layoutLocale: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  const content = `
+    ${headlineBlock(T.headline, T.sub, BRAND_GREEN)}
+    ${bodyCard(T.card, `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 16px;">${T.intro}</p>
+      <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0 0 4px;">${T.note}</p>
+      <p style="color:#9ca3af;font-size:13px;margin:0;">${T.sign}</p>
+    `)}
+    ${ctaRow(T.cta, p.onboardUrl, 'linear-gradient(135deg,#16a34a 0%,#15803d 100%)')}`;
+
+  return { subject: T.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, layoutLocale) };
+}
+
+// ---------------------------------------------------------------------------
+// 撥款完成通知(配音員收款) Payout Paid Notice
+// ---------------------------------------------------------------------------
+// 在後台把請款單標「已撥款」時寄給配音員的收款通知。帶撥款證明碼、請款額、
+// 扣繳明細(所得稅 / 二代健保 / 手續費)、實付淨額、撥款日期、付款方式。
+// 中英雙語(依配音員語系)。金額已在呼叫端用 lib/payout-policy.computeDeductions 算好。
+// 對外署 Onyx Studios · Finance,不署個人名(符合公司對外信規範)。
+
+export interface PayoutPaidPayload {
+  talentName?: string;
+  certificateCode: string;   // 撥款證明碼 ONYX-PAY-...
+  invoiceNumber?: string;    // 對應請款單 / 發票編號
+  currency: string;
+  gross: number;             // 請款額
+  tax: number;               // 所得稅代扣(0 = 不顯示)
+  nhi: number;               // 二代健保補充保費(0 = 不顯示)
+  fee: number;               // 轉帳手續費(0 = 不顯示)
+  feeNote?: string;          // 手續費說明(例:PayPal 約 5%)
+  net: number;               // 實付淨額
+  paidAt: string;            // ISO 時間
+  methodLabel?: string;      // 付款方式(台幣電匯 / 外幣帳戶 / PayPal)
+  dashboardLink: string;
+  locale?: string;
+}
+
+export function payoutPaidEmail(p: PayoutPaidPayload): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  const tx = (tw: string, cn: string, en: string) => (L === 'cn' ? cn : L === 'tw' ? tw : en);
+  const cur = mpEsc(p.currency);
+  const amt = (n: number) => `${cur} ${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  const name = mpEsc((p.talentName || '').trim());
+  const paidDate = (() => {
+    try { return new Date(p.paidAt).toLocaleDateString(ll, { year: 'numeric', month: 'long', day: 'numeric' }); }
+    catch { return mpEsc(p.paidAt); }
+  })();
+
+  // 扣繳明細列(金額為 0 就不顯示,乾淨)。
+  const rows: { label: string; value: string }[] = [
+    { label: tx('撥款證明碼', '撥款证明码', 'Payout Reference'), value: mpEsc(p.certificateCode) },
+  ];
+  if (p.invoiceNumber) rows.push({ label: tx('請款 / 發票編號', '请款 / 发票编号', 'Invoice No.'), value: mpEsc(p.invoiceNumber) });
+  rows.push({ label: tx('請款金額', '请款金额', 'Gross Amount'), value: amt(p.gross) });
+  if (p.tax > 0) rows.push({ label: tx('代扣所得稅', '代扣所得税', 'Income Tax Withheld'), value: `- ${amt(p.tax)}` });
+  if (p.nhi > 0) rows.push({ label: tx('二代健保補充保費', '二代健保补充保费', 'NHI Supplement'), value: `- ${amt(p.nhi)}` });
+  // 手續費由我方吸收、不從配音員扣,通知信不列(Wing 2026-07-05);p.fee 仍保留供呼叫端相容。
+  rows.push({ label: tx('實付淨額', '实付净额', 'Net Paid'), value: amt(p.net) });
+  if (p.methodLabel) rows.push({ label: tx('付款方式', '付款方式', 'Payment Method'), value: mpEsc(p.methodLabel) });
+  rows.push({ label: tx('撥款日期', '拨款日期', 'Payment Date'), value: paidDate });
+
+  const greeting = name
+    ? tx(`${name} 您好,`, `${name} 您好,`, `Dear ${name},`)
+    : tx('您好,', '您好,', 'Hello,');
+
+  const intro = tx(
+    '您的款項已完成撥付。以下為本次撥款明細,請留存此撥款證明碼備查。若對金額或扣繳有疑問,歡迎回覆本信與我們的會計聯繫。',
+    '您的款项已完成拨付。以下为本次拨款明细,请留存此拨款证明码备查。若对金额或扣缴有疑问,欢迎回复本信与我们的会计联系。',
+    'Your payment has been sent. Below is the breakdown for this payout — please keep the payout reference for your records. If you have any questions about the amount or withholding, just reply to this email and our finance team will help.',
+  );
+
+  const disclaimer = tx(
+    '轉帳手續費由我方負擔;稅款依台灣現行法規、以會計實際扣繳為準,正式扣繳憑單(如適用)由會計另行提供。你那端收款機構若收中途費,非我方可預估。',
+    '转账手续费由我方负担;税款依台湾现行法规、以会计实际扣缴为准,正式扣缴凭单(如适用)由会计另行提供。你那端收款机构若收中途费,非我方可预估。',
+    'The transfer fee is on us; tax follows current Taiwan regulations and finance\'s actual withholding (an official statement will follow if applicable). Any mid-way fee your own bank/PayPal charges is beyond our estimate.',
+  );
+
+  const content = `
+    ${headlineBlock(tx('款項已撥付', '款项已拨付', 'Payment Sent'), tx('感謝您與 Onyx Studios 的合作。', '感谢您与 Onyx Studios 的合作。', 'Thank you for working with Onyx Studios.'), BRAND_GREEN)}
+    ${bodyCard(tx('收款通知', '收款通知', 'Payout Notice'), `
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 8px;">${greeting}</p>
+      <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${intro}</p>
+    `)}
+    ${infoCard(tx('撥款明細', '拨款明细', 'Payout Details'), rows)}
+    ${ctaRow(tx('查看我的收款紀錄', '查看我的收款记录', 'View My Earnings'), p.dashboardLink, BRAND_GREEN)}
+    <tr><td style="height:20px;"></td></tr>
+    <tr><td style="padding:0 4px;"><p style="color:#6b7280;font-size:12px;line-height:1.6;margin:0;">${disclaimer}</p></td></tr>
+    <tr><td style="height:8px;"></td></tr>
+    <tr><td style="padding:0 4px;"><p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">${tx('Onyx Studios · 會計部', 'Onyx Studios · 会计部', 'Onyx Studios · Finance')}</p></td></tr>`;
+
+  return {
+    subject: tx(
+      `Onyx Studios — 款項已撥付 ${p.certificateCode}`,
+      `Onyx Studios — 款项已拨付 ${p.certificateCode}`,
+      `Onyx Studios — Payment Sent · ${p.certificateCode}`,
+    ),
+    html: baseLayout(content, 'Studios', BRAND_GREEN, ll),
+  };
+}

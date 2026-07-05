@@ -5,13 +5,13 @@
   admin-role only(API 用 requireAdminOnly + cookie)。
 */
 import { useEffect, useState, useCallback } from 'react';
-import { Receipt, ExternalLink, CheckCircle, RotateCcw, Loader2, ChevronDown } from 'lucide-react';
+import { Receipt, ExternalLink, CheckCircle, RotateCcw, Loader2, ChevronDown, Download } from 'lucide-react';
 import PayoutDetails from '@/components/admin/PayoutDetails';
 
 type Req = {
   id: string; talent_id: string; invoice_number: string; amount: number; currency: string;
   note: string | null; invoice_type: string; invoice_url: string | null; consent_at: string | null;
-  status: string; admin_note: string | null; paid_at: string | null; created_at: string;
+  status: string; admin_note: string | null; paid_at: string | null; certificate_code: string | null; created_at: string;
   talents: { name: string | null; email: string | null } | null;
 };
 
@@ -29,6 +29,11 @@ export default function PayoutRequestsPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'invoice_uploaded' | 'paid'>('all');
   const [busy, setBusy] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  // 會計對帳匯出:預設今年;月份空 = 整年。
+  const thisYear = String(new Date().getFullYear());
+  const [expYear, setExpYear] = useState(thisYear);
+  const [expMonth, setExpMonth] = useState(''); // '' = 整年,'01'..'12' = 該月
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,7 +47,7 @@ export default function PayoutRequestsPage() {
   useEffect(() => { load(); }, [load]);
 
   async function setStatus(id: string, status: string) {
-    if (status === 'paid' && !confirm('確認這筆已撥款?')) return;
+    if (status === 'paid' && !confirm('確認這筆已撥款?系統會給配音員寄一封收款通知信。')) return;
     if (status === 'rejected' && !confirm('確認退回這筆請款?')) return;
     setBusy(id);
     try {
@@ -50,8 +55,32 @@ export default function PayoutRequestsPage() {
         method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
       });
-      if (res.ok) await load();
+      if (res.ok) {
+        const j = await res.json().catch(() => ({}));
+        // 撥款已完成,但通知信寄送有狀況 → 提醒老闆(撥款本身照樣成功)。
+        if (j.warning) alert(`撥款已完成,但通知信有狀況:\n${j.warning}`);
+        await load();
+      }
     } finally { setBusy(null); }
+  }
+
+  async function exportCsv() {
+    setExporting(true);
+    try {
+      const period = expMonth ? `${expYear}-${expMonth}` : expYear;
+      const res = await fetch(`/api/admin/payout-requests/export?period=${encodeURIComponent(period)}`, { credentials: 'include' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error || '匯出失敗');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `Onyx_撥款對帳_${period}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch { alert('匯出失敗,請稍後再試'); } finally { setExporting(false); }
   }
 
   const money = (n: number, c: string) => `${c} ${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -64,6 +93,22 @@ export default function PayoutRequestsPage() {
       <div className="max-w-5xl">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-1"><Receipt className="w-6 h-6 text-violet-600" /> 請款單</h1>
         <p className="text-sm text-gray-500 mb-6">配音員發起的請款。看發票、確認同意,撥款後按「已撥款」結案。款項每月結算、核准後約 30–45 天撥付。</p>
+
+        {/* 會計對帳匯出:選整年或某月,匯出該期間已撥款的對帳 CSV(不含收款帳號個資)。 */}
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-700"><Download className="w-4 h-4 text-gray-500" /> 撥款對帳匯出</div>
+          <select value={expYear} onChange={(e) => setExpYear(e.target.value)} className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white">
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => <option key={y} value={String(y)}>{y} 年</option>)}
+          </select>
+          <select value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white">
+            <option value="">整年</option>
+            {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((m) => <option key={m} value={m}>{m} 月</option>)}
+          </select>
+          <button onClick={exportCsv} disabled={exporting} className="text-sm px-3 py-1.5 rounded-md bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 inline-flex items-center gap-1.5">
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} 匯出 CSV
+          </button>
+          <span className="text-xs text-gray-400">僅含已撥款、以撥款日分期;不含銀行帳號等收款個資。</span>
+        </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
           {([['待處理', 'pending'], ['已上傳發票', 'invoice_uploaded'], ['已撥款', 'paid']] as const).map(([label, key]) => (
@@ -98,6 +143,9 @@ export default function PayoutRequestsPage() {
                     <div className="text-lg font-bold text-gray-900 mt-1">{money(r.amount, r.currency)}</div>
                     {r.note && <div className="text-xs text-gray-500 mt-0.5">備註:{r.note}</div>}
                     <div className="text-[11px] text-gray-400 mt-1">請款 {fmt(r.created_at)} · 同意 {fmt(r.consent_at)}{r.paid_at ? ` · 撥款 ${fmt(r.paid_at)}` : ''}</div>
+                    {r.certificate_code && (
+                      <div className="text-[11px] text-emerald-700 mt-1">撥款證明碼:<span className="font-mono select-all">{r.certificate_code}</span></div>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {r.invoice_url

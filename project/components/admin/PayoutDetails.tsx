@@ -104,7 +104,7 @@ export default function PayoutDetails({ talentId, gross, currency }: { talentId:
         </div>
       )}
       <div className="border-t border-violet-200 mt-1.5 pt-1.5">
-        <Row k="稅務" v={taxLocation === 'TW' ? (twRes ? '台灣居住者(≥2萬才扣10%+2.11%)' : '台灣非居住者(扣20%)') : '海外(不扣台灣稅)'} />
+        <Row k="稅務" v={taxLocation === 'TW' ? (twRes ? '台灣居住者(稅逾2萬10%·健保達2萬2.11%)' : '台灣非居住者(扣20%)') : '海外(不扣台灣稅)'} />
         {taxLocation === 'TW' && <Row k="身分/居留證" v={t0.national_id as string} />}
         {taxLocation === 'TW' && <Row k="地址" v={t0.tax_address as string} />}
       </div>
@@ -114,12 +114,12 @@ export default function PayoutDetails({ talentId, gross, currency }: { talentId:
           <Row k="請款額" v={`${curLabel ? curLabel + ' ' : ''}${gross}`} />
           {dd.tax > 0 && <Row k={twRes ? '扣繳稅 10%' : '扣繳稅 20%'} v={`-${dd.tax}`} />}
           {dd.nhi > 0 && <Row k="二代健保 2.11%" v={`-${dd.nhi}`} />}
-          {dd.fee > 0 && <Row k={`手續費(${dd.feeNote})`} v={`-${dd.fee}`} />}
           <div className="flex gap-2 pt-1 mt-1 border-t border-violet-200/60">
             <span className="text-gray-500 w-24 shrink-0 font-medium">實付淨額</span>
             <span className="text-emerald-700 font-mono font-semibold select-all">{curLabel ? curLabel + ' ' : ''}{dd.net}</span>
           </div>
-          <p className="text-[10px] text-gray-500 pt-1">稅/手續費供參、以會計與收款機構實際入帳為準。</p>
+          {dd.fee > 0 && <Row k="我方匯出成本" v={`${dd.feeNote}(不從配音員扣)`} />}
+          <p className="text-[10px] text-gray-500 pt-1">實付淨額 = 請款 − 稅/健保;手續費為我方匯出成本、配音員全額收款。以會計實際扣繳為準。</p>
         </div>
       )}
     </div>

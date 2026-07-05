@@ -520,6 +520,7 @@ export default function AdminTalentsPage() {
   const [sendingLiveness, setSendingLiveness] = useState<string | null>(null);
   const [reviewingLiveness, setReviewingLiveness] = useState<string | null>(null);
   const [nudging, setNudging] = useState<string | null>(null);
+  const [sendingOnboarding, setSendingOnboarding] = useState<string | null>(null);
 
   const headshotRef = useRef<HTMLInputElement>(null);
   const demoRef = useRef<HTMLInputElement>(null);
@@ -634,6 +635,23 @@ export default function AdminTalentsPage() {
       else toast.error(data.error || '寄送失敗');
     } catch { toast.error('寄送失敗'); }
     finally { setNudging(null); }
+  };
+
+  // Send an onboarding (activation) link to an Inactive talent — approved but who
+  // never clicked the link to build their account. One-click 補寄; they land on
+  // /onboard, 同意合作, and their account is created (→ Draft). Admin-triggered only.
+  const handleSendOnboarding = async (talentId: string) => {
+    setSendingOnboarding(talentId);
+    try {
+      const res = await fetch('/api/admin/talents/send-onboarding', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: talentId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) toast.success(`已寄「開通帳號」邀請 → ${data.to}`);
+      else toast.error(data.error || '寄送失敗');
+    } catch { toast.error('寄送失敗'); }
+    finally { setSendingOnboarding(null); }
   };
 
   // --- Publish: promote the talent's draft into the public snapshot ---
@@ -1772,7 +1790,15 @@ export default function AdminTalentsPage() {
                         </button>
                       </div>
                     );
-                    return <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>;
+                    // Inactive = 核准了但從沒點連結建帳號。補寄 onboarding 連結請他進來同意合作。
+                    return (
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>
+                        <button type="button" onClick={() => handleSendOnboarding(talent.id)} disabled={sendingOnboarding === talent.id} title="補寄開通連結,請他點進來確認合作、同意合作即建帳號" className="text-[11px] text-emerald-700 hover:text-emerald-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
+                          {sendingOnboarding === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 寄激活連結
+                        </button>
+                      </div>
+                    );
                   })()}
                 </TableCell>
                 <TableCell>
