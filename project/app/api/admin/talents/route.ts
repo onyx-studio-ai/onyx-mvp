@@ -31,10 +31,24 @@ export async function GET(request: NextRequest) {
       else earningsMap[e.talent_id].pending += amount;
     }
 
-    const enriched = (talents || []).map((t: any) => ({
-      ...t,
-      earnings_summary: earningsMap[t.id] || null,
-    }));
+    // Strip columns that are purely secret machinery — one-time signing tokens
+    // and internal linkage the admin UI never renders. This page is for viewing
+    // a talent's *profile* (voice conditions / demos / credits), not their
+    // secrets. Encrypted bank details already live in the separate restricted
+    // talent_payout_details table + /admin/payout-details (on-demand decrypt);
+    // the legacy plaintext payment_details/payment_method on this row stay
+    // available for the existing Edit form but are never shown in the new
+    // profile card.
+    const STRIP = [
+      'voice_id_token', 'voice_id_token_expires',
+      'telegram_link_token', 'telegram_chat_id',
+      'auth_user_id',
+    ] as const;
+    const enriched = (talents || []).map((t: any) => {
+      const clean = { ...t } as Record<string, unknown>;
+      for (const k of STRIP) delete clean[k];
+      return { ...clean, earnings_summary: earningsMap[t.id] || null };
+    });
 
     return NextResponse.json(enriched);
   } catch (err) {

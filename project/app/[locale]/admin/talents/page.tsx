@@ -33,7 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Edit, Trash2, Upload, X, Send, CheckCircle, Clock,
   Shield, Loader2, ExternalLink, ImagePlus, Music, User, Search,
-  FileText, DollarSign, ArrowUpRight,
+  FileText, DollarSign, ArrowUpRight, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale } from "next-intl";
@@ -315,6 +315,151 @@ function SearchableSelect({
   );
 }
 
+// Shape of the profile fields a talent fills on /talent ("我的檔案"). These are
+// the row's MAIN columns — i.e. the talent's live draft, including edits still
+// awaiting review — so the admin sees exactly what was submitted, even before
+// approval (no blind reviewing). Sensitive/payout fields are intentionally
+// absent here;收款 lives in /admin/payout-details (on-demand decrypt).
+type TalentProfile = Talent & {
+  english_name?: string; location?: string; gender?: string;
+  voice_traits?: string[]; specialties?: string[]; voice_ages?: string[];
+  native_languages?: string[]; years_experience?: number | null;
+  special_skills?: string; turnaround?: string;
+  demos?: Array<{ category: string; name: string; url: string; language?: string; seconds?: number }>;
+  clients?: string; awards?: string; notable_works?: string;
+  availability_note?: string; equipment?: string; studio_partner?: string;
+  liveness_status?: string; pending_review?: boolean; onboarded_at?: string;
+  coop_open_buyout?: boolean; coop_ai_clone?: boolean; coop_ai_training?: boolean;
+  coop_proofread?: boolean; coop_voice_director?: boolean; low_price_data_optin?: boolean;
+  coop_accept_jobs?: boolean;
+};
+
+// Read-only full-profile view — everything the talent filled in on /talent,
+// shown to the admin in the backend (no need to open the public site or the
+// front portal). Works for draft / pending / active alike: it reads the row's
+// main columns, so drafts and unpublished edits are visible pre-approval.
+function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) {
+  const demos = Array.isArray(t.demos) ? t.demos : [];
+  const byCat = USE_CASES.map((c) => ({ c, items: demos.filter((d) => d.category === c.key) })).filter((g) => g.items.length > 0);
+  const avail = (t.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const coop = [
+    t.coop_open_buyout && '願意買斷',
+    t.coop_ai_clone && '願做 AI 克隆',
+    t.coop_ai_training && '提供 AI 訓練素材',
+    t.coop_proofread && '可校稿',
+    t.coop_voice_director && '可配音指導',
+    t.low_price_data_optin && '接低價資料案',
+  ].filter(Boolean) as string[];
+  const Chip = ({ children }: { children: React.ReactNode }) => (
+    <span className="inline-block text-[11px] bg-gray-100 border border-gray-300 text-gray-700 rounded-full px-2 py-0.5">{children}</span>
+  );
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div><p className="text-[11px] text-gray-500 mb-1">{title}</p>{children}</div>
+  );
+  const hasCredits = !!(t.clients || t.notable_works || t.awards);
+  const hasWorkInfo = avail.length > 0 || t.equipment || t.studio_partner || t.turnaround || t.portfolio_url;
+
+  return (
+    <div className="space-y-4">
+      {/* Header — identity + completeness at a glance */}
+      <div className="flex items-center gap-3">
+        {t.headshot_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={t.headshot_url} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+        ) : (
+          <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">{(t.name || '?').charAt(0)}</div>
+        )}
+        <div className="min-w-0">
+          <p className="font-semibold text-gray-900">{t.name}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}</p>
+          <p className="text-xs text-gray-500">{[t.gender, t.location ? countryLabel(t.location, locale) : '', typeof t.years_experience === 'number' ? `${t.years_experience} 年經驗` : ''].filter(Boolean).join(' · ') || '—'}</p>
+          {t.email && <p className="text-xs text-gray-500 truncate">聯絡:<a href={`mailto:${t.email}`} className="text-blue-600 hover:underline">{t.email}</a></p>}
+        </div>
+        <div className="ml-auto flex flex-col items-end gap-1 shrink-0">
+          {t.pending_review && <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">待審 · 顯示為草稿內容</span>}
+          {!t.pending_review && !t.is_active && t.onboarded_at && <span className="text-[11px] text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">草稿中 · 尚未送審</span>}
+          {t.liveness_status === 'verified' && <span className="text-[11px] text-emerald-700 font-medium">真人 ✓</span>}
+        </div>
+      </div>
+
+      {/* Completeness checklist — spot gaps before approving */}
+      <div className="flex flex-wrap gap-1.5">
+        {[
+          { k: '大頭照', ok: !!t.headshot_url },
+          { k: '語言', ok: (t.languages || []).length > 0 },
+          { k: '聲線', ok: (t.voice_traits || []).length > 0 },
+          { k: '專長', ok: (t.specialties || []).length > 0 },
+          { k: 'Demo', ok: demos.length > 0 },
+          { k: '簡介', ok: !!t.bio },
+          { k: '真人驗證', ok: t.liveness_status === 'verified' },
+        ].map((c) => (
+          <span key={c.k} className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border ${c.ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+            {c.ok ? '✓' : '✗'} {c.k}
+          </span>
+        ))}
+      </div>
+
+      {t.bio && <Section title="簡介"><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(t.bio)}</p></Section>}
+
+      {(t.languages || []).length > 0 && (
+        <Section title="語言">
+          <div className="flex flex-wrap gap-1">{t.languages!.map((l) => (
+            <Chip key={l}>{formatLangEntry(l, locale)}{(t.native_languages || []).includes(l) ? ' · 母語' : ''}</Chip>
+          ))}</div>
+        </Section>
+      )}
+      {(t.voice_traits || []).length > 0 && <Section title="聲線特質"><div className="flex flex-wrap gap-1">{t.voice_traits!.map((k) => <Chip key={k}>{traitLabel(k, locale)}</Chip>)}</div></Section>}
+      {(t.specialties || []).length > 0 && <Section title="專長 / 用途"><div className="flex flex-wrap gap-1">{t.specialties!.map((k) => <Chip key={k}>{useCaseLabel(k, locale)}</Chip>)}</div></Section>}
+      {(t.voice_ages || []).length > 0 && <Section title="聲音年齡"><div className="flex flex-wrap gap-1">{t.voice_ages!.map((k) => <Chip key={k}>{voiceAgeLabel(k, locale)}</Chip>)}</div></Section>}
+      {t.special_skills && <Section title="特殊技能"><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(t.special_skills)}</p></Section>}
+
+      {byCat.length > 0 && (
+        <Section title="Demo(點開試聽)">
+          <div className="space-y-2">{byCat.map(({ c, items }) => (
+            <div key={c.key}>
+              <p className="text-xs text-gray-600 mb-1">{useCaseLabel(c.key, locale)}</p>
+              {items.map((d) => (
+                <div key={d.url} className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-gray-700 w-32 truncate shrink-0">{cjkSpace(d.name)}{d.language ? ` · ${formatLangEntry(d.language, locale)}` : ''}</span>
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <audio controls src={d.url} className="h-7 flex-1" />
+                </div>
+              ))}
+            </div>
+          ))}</div>
+        </Section>
+      )}
+
+      {hasCredits && (
+        <Section title="經歷 / 代表作">
+          <div className="grid gap-1 text-sm text-gray-700">
+            {t.clients && <p><span className="text-gray-500 text-xs">合作品牌:</span> {cjkSpace(t.clients)}</p>}
+            {t.notable_works && <p className="whitespace-pre-line"><span className="text-gray-500 text-xs">代表作:</span> {cjkSpace(t.notable_works)}</p>}
+            {t.awards && <p><span className="text-gray-500 text-xs">獎項:</span> {cjkSpace(t.awards)}</p>}
+          </div>
+        </Section>
+      )}
+
+      {hasWorkInfo && (
+        <Section title="工作條件 / 設備">
+          <div className="text-xs text-gray-600 space-y-0.5">
+            {t.turnaround && <p>交期:{cjkSpace(t.turnaround)}</p>}
+            {avail.length > 0 && <p>可工作時段:{avail.map((k) => availabilityLabel(k, locale)).join('、')}</p>}
+            {t.equipment && <p>錄音器材:{cjkSpace(t.equipment)}</p>}
+            {t.studio_partner && <p>合作錄音室:{cjkSpace(t.studio_partner)}</p>}
+            {t.portfolio_url && <p>作品集連結(內部參考):<a href={t.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{t.portfolio_url}</a></p>}
+          </div>
+        </Section>
+      )}
+
+      {coop.length > 0 && (
+        <Section title="合作意願(配音員自選 · 內部)">
+          <div className="flex flex-wrap gap-1">{coop.map((c) => <Chip key={c}>{c}</Chip>)}</div>
+        </Section>
+      )}
+    </div>
+  );
+}
+
 export default function AdminTalentsPage() {
   const locale = useLocale();
   const [talents, setTalents] = useState<Talent[]>([]);
@@ -325,6 +470,8 @@ export default function AdminTalentsPage() {
   const [sourceFilter, setSourceFilter] = useState<'all' | 'application' | 'manual'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTalent, setEditingTalent] = useState<Talent | null>(null);
+  // Read-only "完整檔案" viewer — what the talent filled on /talent, incl. drafts.
+  const [profileTarget, setProfileTarget] = useState<Talent | null>(null);
   // Publish (draft → public snapshot). Bio is a single source the admin can
   // tweak; 简体/English are auto-translated at publish time (DeepL).
   const [publishTarget, setPublishTarget] = useState<Talent | null>(null);
@@ -809,8 +956,25 @@ export default function AdminTalentsPage() {
     if (sourceFilter === 'manual' && hasApp(t)) return false;
     if (search) {
       const q = search.toLowerCase();
-      const en = ((t as Talent & { english_name?: string }).english_name || '').toLowerCase();
-      return (t.name || '').toLowerCase().includes(q) || en.includes(q) || (t.email || '').toLowerCase().includes(q);
+      // Search the whole profile the talent filled — name/email plus bio,
+      // languages, accent, voice traits, specialties, equipment, credits, etc.
+      // Both raw keys (e.g. "commercial") and their localized labels (e.g. 廣告)
+      // are matched, so Wing can type in Chinese or English. Tokens are joined
+      // into one lowercased haystack per row.
+      const p = t as TalentProfile;
+      const parts: (string | undefined | null)[] = [
+        p.name, p.english_name, p.email, p.bio, p.accent,
+        p.special_skills, p.equipment, p.studio_partner, p.turnaround,
+        p.clients, p.awards, p.notable_works, p.location,
+      ];
+      const arr = (v?: string[]) => (Array.isArray(v) ? v : []);
+      for (const l of arr(p.languages)) { parts.push(l, formatLangEntry(l, locale)); }
+      for (const k of arr(p.voice_traits)) { parts.push(k, traitLabel(k, locale)); }
+      for (const k of arr(p.specialties)) { parts.push(k, useCaseLabel(k, locale)); }
+      for (const k of arr(p.voice_ages)) { parts.push(k, voiceAgeLabel(k, locale)); }
+      if (p.location) parts.push(countryLabel(p.location, locale));
+      const hay = parts.filter(Boolean).join('  ').toLowerCase();
+      return hay.includes(q);
     }
     return true;
   });
@@ -1315,7 +1479,7 @@ export default function AdminTalentsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or email..."
+            placeholder="搜尋姓名 / email / 簡介 / 語言 / 口音 / 專長 / 設備…"
             className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-400 focus:outline-none"
           />
         </div>
@@ -1612,7 +1776,12 @@ export default function AdminTalentsPage() {
                   })()}
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {/* Always available — see the full profile the talent filled
+                        (incl. unpublished draft), no need to open the front portal. */}
+                    <Button variant="outline" size="sm" onClick={() => setProfileTarget(talent)} className="h-8 px-3 border-gray-300 text-gray-700 hover:bg-gray-100">
+                      <Eye className="w-3.5 h-3.5 mr-1" /> 完整檔案
+                    </Button>
                     {(() => {
                       const tt = talent as Talent & { onboarded_at?: string; pending_review?: boolean };
                       // Pending submission → review (approve / send back).
@@ -1644,8 +1813,8 @@ export default function AdminTalentsPage() {
                       }
                       return null;
                     })()}
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} className="h-8 px-3 border-gray-400 text-gray-200 hover:bg-gray-200 hover:text-gray-900">
-                      <Edit className="w-3.5 h-3.5 mr-1" /> Edit
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} title="後台管理欄位:類型 / 分類 / 內部成本 / 標籤 / 大頭照 / demo / 收款 / 買斷。配音員自填的聲線·專長·經歷等請用「完整檔案」查看" className="h-8 px-3 border-gray-400 text-gray-700 hover:bg-gray-200 hover:text-gray-900">
+                      <Edit className="w-3.5 h-3.5 mr-1" /> 後台編輯
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handleDelete(talent.id)} className="h-8 px-3 bg-red-50 hover:bg-red-50 border-red-200 text-red-700">
                       <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
@@ -1678,75 +1847,13 @@ export default function AdminTalentsPage() {
             <DialogTitle className="text-gray-900 text-lg">審核並發布 — {publishTarget?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Read-only review of exactly what the talent submitted */}
-            {(() => {
-              const r = publishTarget as (Talent & {
-                headshot_url?: string; languages?: string[]; gender?: string; location?: string;
-                voice_traits?: string[]; specialties?: string[]; voice_ages?: string[]; special_skills?: string;
-                demos?: Array<{ category: string; name: string; url: string; language?: string }>;
-                clients?: string; awards?: string; notable_works?: string;
-                availability_note?: string; equipment?: string; studio_partner?: string; liveness_status?: string;
-              }) | null;
-              if (!r) return null;
-              const demos = Array.isArray(r.demos) ? r.demos : [];
-              const byCat = USE_CASES.map((c) => ({ c, items: demos.filter((d) => d.category === c.key) })).filter((g) => g.items.length > 0);
-              const avail = (r.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
-              const Chip = ({ children }: { children: React.ReactNode }) => <span className="inline-block text-[11px] bg-gray-100 border border-gray-300 text-gray-700 rounded-full px-2 py-0.5">{children}</span>;
-              return (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    {r.headshot_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.headshot_url} alt="" className="w-14 h-14 rounded-lg object-cover" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center text-gray-500 font-semibold">{(r.name || '?').charAt(0)}</div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-gray-900">{r.name}</p>
-                      <p className="text-xs text-gray-500">{[r.gender, r.location ? countryLabel(r.location, locale) : ''].filter(Boolean).join(' · ')}</p>
-                    </div>
-                    {r.liveness_status === 'verified' && <span className="ml-auto text-xs text-emerald-700 font-medium">真人 ✓</span>}
-                  </div>
-                  {/* 完成度檢查 — 一眼看資料齊不齊(紅=缺) */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { k: '大頭照', ok: !!r.headshot_url },
-                      { k: '語言', ok: (r.languages || []).length > 0 },
-                      { k: '聲線', ok: (r.voice_traits || []).length > 0 },
-                      { k: '專長', ok: (r.specialties || []).length > 0 },
-                      { k: 'Demo', ok: demos.length > 0 },
-                      { k: '真人驗證', ok: r.liveness_status === 'verified' },
-                    ].map((c) => (
-                      <span key={c.k} className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border ${c.ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                        {c.ok ? '✓' : '✗'} {c.k}
-                      </span>
-                    ))}
-                  </div>
-                  {(r as { email?: string }).email && <p className="text-xs text-gray-500">聯絡:<a href={`mailto:${(r as { email?: string }).email}`} className="text-blue-600 hover:underline">{(r as { email?: string }).email}</a></p>}
-                  {(r.languages || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">語言</p><div className="flex flex-wrap gap-1">{r.languages!.map((l) => <Chip key={l}>{formatLangEntry(l, locale)}</Chip>)}</div></div>}
-                  {(r.voice_traits || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">聲線</p><div className="flex flex-wrap gap-1">{r.voice_traits!.map((k) => <Chip key={k}>{traitLabel(k, locale)}</Chip>)}</div></div>}
-                  {(r.specialties || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">專長</p><div className="flex flex-wrap gap-1">{r.specialties!.map((k) => <Chip key={k}>{useCaseLabel(k, locale)}</Chip>)}</div></div>}
-                  {(r.voice_ages || []).length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">聲音年齡</p><div className="flex flex-wrap gap-1">{r.voice_ages!.map((k) => <Chip key={k}>{voiceAgeLabel(k, locale)}</Chip>)}</div></div>}
-                  {r.special_skills && <div><p className="text-[11px] text-gray-500 mb-1">特殊技能</p><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(r.special_skills)}</p></div>}
-                  {byCat.length > 0 && <div><p className="text-[11px] text-gray-500 mb-1">Demo(點開試聽)</p><div className="space-y-2">{byCat.map(({ c, items }) => (
-                    <div key={c.key}>
-                      <p className="text-xs text-gray-600 mb-1">{useCaseLabel(c.key, locale)}</p>
-                      {items.map((d) => (<div key={d.url} className="flex items-center gap-2 mb-1"><span className="text-xs text-gray-700 w-28 truncate shrink-0">{cjkSpace(d.name)}</span><audio controls src={d.url} className="h-7 flex-1" /></div>))}
-                    </div>
-                  ))}</div></div>}
-                  {(r.clients || r.notable_works || r.awards) && <div className="grid gap-1 text-sm text-gray-700">
-                    {r.clients && <p><span className="text-gray-500 text-xs">合作品牌:</span> {cjkSpace(r.clients)}</p>}
-                    {r.notable_works && <p className="whitespace-pre-line"><span className="text-gray-500 text-xs">代表作:</span> {cjkSpace(r.notable_works)}</p>}
-                    {r.awards && <p><span className="text-gray-500 text-xs">獎項:</span> {cjkSpace(r.awards)}</p>}
-                  </div>}
-                  {(avail.length > 0 || r.equipment || r.studio_partner) && <div className="text-xs text-gray-600 space-y-0.5">
-                    {avail.length > 0 && <p>可工作時段:{avail.map((k) => availabilityLabel(k, locale)).join('、')}</p>}
-                    {r.equipment && <p>器材:{r.equipment}</p>}
-                    {r.studio_partner && <p>錄音室:{r.studio_partner}</p>}
-                  </div>}
-                </div>
-              );
-            })()}
+            {/* Read-only review of exactly what the talent submitted — same
+                component as the standalone 完整檔案 viewer (single source). */}
+            {publishTarget && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <TalentProfileCard t={publishTarget as TalentProfile} locale={locale} />
+              </div>
+            )}
             <p className="text-sm text-gray-600">
               聽過 demo、確認資料 OK 後發布。簡介可在此微調(原文);
               <span className="text-gray-400"> 簡體與英文會在發布時自動翻譯,前台依客戶語言顯示。</span>
@@ -1762,6 +1869,29 @@ export default function AdminTalentsPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 完整檔案 — read-only view of everything the talent filled on /talent,
+          including unpublished drafts, so Wing never has to open the front portal.
+          Payout/bank details are NOT shown here (they live encrypted in
+          /admin/payout-details); this is profile content only. */}
+      <Dialog open={!!profileTarget} onOpenChange={(o) => !o && setProfileTarget(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 text-lg">完整檔案 — {profileTarget?.name}</DialogTitle>
+          </DialogHeader>
+          {profileTarget && (
+            <>
+              <TalentProfileCard t={profileTarget as TalentProfile} locale={locale} />
+              <div className="flex justify-end gap-2 pt-4 mt-2 border-t border-gray-200">
+                <Button variant="outline" onClick={() => { const t = profileTarget; setProfileTarget(null); if (t) handleEdit(t); }} className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <Edit className="w-4 h-4 mr-1" /> 後台編輯
+                </Button>
+                <Button variant="outline" onClick={() => setProfileTarget(null)} className="border-gray-300 text-gray-700">關閉</Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
