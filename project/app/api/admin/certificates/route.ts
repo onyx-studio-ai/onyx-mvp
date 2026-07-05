@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { generateCertificatePdf } from '@/lib/certificate-pdf';
@@ -107,7 +108,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const licenseId = `ONYX-${orderNumber}`;
+    // 編號加 8 碼高熵亂碼尾巴,防從 ONYX-1 往上枚舉整批撈客戶名/配音員真名/PDF(M4)。
+    // 舊憑證(無尾碼)仍相容:verify 用完整 license_id 查 DB,新舊各自存自己的編號。
+    const licenseId = `ONYX-${orderNumber}-${randomBytes(4).toString('hex').toUpperCase()}`;
     const verifyUrl = `${SITE_URL}/verify/${licenseId}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, {
