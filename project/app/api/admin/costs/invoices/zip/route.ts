@@ -27,20 +27,29 @@ export async function GET(request: NextRequest) {
   if (!PERIOD_RE.test(period)) return NextResponse.json({ error: '月份格式需為 YYYY-MM' }, { status: 400 });
 
   const db = getSupabaseServiceClient();
+  // 同 GET:不走 PostgREST 內嵌 join(避免外鍵缺失時整支查詢報錯),改成先撈發票、
+  // 再單獨撈工具名在程式端併起來當 zip 檔名。
   const { data: invoices, error } = await db
     .from('platform_cost_invoices')
-    .select('invoice_url, file_name, platform_costs:cost_id(name)')
+    .select('invoice_url, file_name, cost_id')
     .eq('period', period)
     .order('uploaded_at', { ascending: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!invoices || !invoices.length) return NextResponse.json({ error: `${period} 沒有已上傳的發票` }, { status: 404 });
+
+  const costIds = [...new Set(invoices.map((i) => i.cost_id).filter(Boolean))];
+  const nameById: Record<string, string> = {};
+  if (costIds.length) {
+    const { data: costs } = await db.from('platform_costs').select('id, name').in('id', costIds);
+    for (const c of costs || []) nameById[c.id] = c.name;
+  }
 
   const zip = new JSZip();
   const used = new Set<string>();
   let added = 0;
   for (const inv of invoices) {
     const url = String(inv.invoice_url);
-    const tool = clean(String((inv.platform_costs as { name?: string } | null)?.name || '工具'));
+    const tool = clean(String((inv.cost_id && nameById[inv.cost_id]) || '工具'));
     const original = String(inv.file_name || '');
     const ext = extOf(original || url);
     let name = `${tool}_${clean(original.replace(/\.[a-z0-9]+$/i, '') || '發票')}.${ext}`;

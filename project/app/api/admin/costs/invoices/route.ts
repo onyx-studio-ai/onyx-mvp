@@ -38,14 +38,30 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period');
     const db = getSupabaseServiceClient();
+    // 不用 PostgREST 內嵌 join(platform_cost_invoices→platform_costs 曾缺外鍵,
+    // 內嵌會整支查詢報錯 → 前端收不到發票 → badge/清單永遠空)。改成:先撈發票,
+    // 再單獨撈工具名在程式端併起來,不依賴外鍵也一定拿得到資料。
     let q = db
       .from('platform_cost_invoices')
-      .select('*, platform_costs:cost_id(name)')
+      .select('*')
       .order('uploaded_at', { ascending: false });
     if (period && PERIOD_RE.test(period)) q = q.eq('period', period);
-    const { data, error } = await q;
+    const { data: invoices, error } = await q;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data || []);
+    const rows = invoices || [];
+
+    // 併上工具名(給前端顯示 / zip 命名用),查不到就留 null。
+    const costIds = [...new Set(rows.map((r) => r.cost_id).filter(Boolean))];
+    let nameById: Record<string, string> = {};
+    if (costIds.length) {
+      const { data: costs } = await db.from('platform_costs').select('id, name').in('id', costIds);
+      nameById = Object.fromEntries((costs || []).map((c) => [c.id, c.name]));
+    }
+    const withNames = rows.map((r) => ({
+      ...r,
+      platform_costs: r.cost_id && nameById[r.cost_id] ? { name: nameById[r.cost_id] } : null,
+    }));
+    return NextResponse.json(withNames);
   } catch (err) {
     return supabaseErrorResponse(err, 'admin/costs/invoices GET');
   }

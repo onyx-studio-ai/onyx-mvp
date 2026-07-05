@@ -172,11 +172,25 @@ function CostForm({ cost, onClose, onSaved }: { cost: Cost | null; onClose: () =
   );
 }
 
-function CostCard({ cost, invoice, period, onEdit, onDelete, onInvoiceChanged }: {
-  cost: Cost; invoice: Invoice | null; period: string;
+// 透過簽名 URL route 開發票(不管 casting bucket 是公開還是被鎖成私有都打得開)。
+async function openInvoice(invoice: Invoice) {
+  try {
+    const res = await fetch(`/api/admin/costs/invoices/signed-url?u=${encodeURIComponent(invoice.invoice_url)}`);
+    const j = await res.json().catch(() => ({}));
+    if (res.ok && j.url) { window.open(j.url, '_blank', 'noopener,noreferrer'); return; }
+    // 拿不到簽名 URL(例如舊路徑),退回直接開原網址,別讓使用者完全點不動。
+    window.open(invoice.invoice_url, '_blank', 'noopener,noreferrer');
+  } catch {
+    window.open(invoice.invoice_url, '_blank', 'noopener,noreferrer');
+  }
+}
+
+function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }: {
+  cost: Cost; invoices: Invoice[]; period: string;
   onEdit: () => void; onDelete: () => void; onInvoiceChanged: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const uploaded = invoices.length > 0;
 
   const uploadInvoice = async (file: File) => {
     setUploading(true);
@@ -186,17 +200,18 @@ function CostCard({ cost, invoice, period, onEdit, onDelete, onInvoiceChanged }:
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cost_id: cost.id, period, fileName: file.name }),
       });
-      const pj = await prep.json();
+      const pj = await prep.json().catch(() => ({}));
       if (!prep.ok) throw new Error(pj.error || '準備上傳失敗');
       // 步驟 2:上傳到 casting bucket(同專案發票上傳模式)
       const { error } = await supabase.storage.from('casting').uploadToSignedUrl(pj.path, pj.token, file);
-      if (error) throw new Error(error.message);
-      // 步驟 3:記一筆發票
+      if (error) throw new Error(`檔案上傳失敗:${error.message}`);
+      // 步驟 3:記一筆發票。存 storage path(pj.path)而非公開網址 —— 之後一律用
+      // 簽名 URL route 來開,bucket 是公開或私有都不影響。
       const rec = await fetch('/api/admin/costs/invoices', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ record: true, cost_id: cost.id, period, invoice_url: pj.publicUrl, file_name: file.name }),
+        body: JSON.stringify({ record: true, cost_id: cost.id, period, invoice_url: pj.path, file_name: file.name }),
       });
-      const rj = await rec.json();
+      const rj = await rec.json().catch(() => ({}));
       if (!rec.ok) throw new Error(rj.error || '記錄發票失敗');
       toast.success(`已上傳 ${cost.name} 的 ${period} 發票`);
       onInvoiceChanged();
@@ -207,11 +222,13 @@ function CostCard({ cost, invoice, period, onEdit, onDelete, onInvoiceChanged }:
     }
   };
 
-  const removeInvoice = async () => {
-    if (!invoice) return;
-    if (!window.confirm(`移除 ${cost.name} 的 ${period} 發票?`)) return;
+  const removeInvoice = async (invoice: Invoice) => {
+    if (!window.confirm(`移除 ${cost.name} 的 ${period} 發票「${invoice.file_name || '發票'}」?`)) return;
     const res = await fetch(`/api/admin/costs/invoices?id=${invoice.id}`, { method: 'DELETE' });
-    if (!res.ok) { toast.error('移除失敗'); return; }
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      toast.error(j.error || '移除失敗'); return;
+    }
     toast.success('已移除發票');
     onInvoiceChanged();
   };
@@ -254,27 +271,21 @@ function CostCard({ cost, invoice, period, onEdit, onDelete, onInvoiceChanged }:
 
       <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          {/* 本月發票狀態 */}
-          {invoice ? (
-            <a href={invoice.invoice_url} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors">
-              <Check className="w-3.5 h-3.5" /> 本月發票已上傳
-            </a>
+          {/* 本月發票狀態 badge:清單非空即為已上傳 */}
+          {uploaded ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+              <Check className="w-3.5 h-3.5" /> 本月發票已上傳{invoices.length > 1 ? ` (${invoices.length})` : ''}
+            </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
               <FileText className="w-3.5 h-3.5" /> 本月發票未上傳
             </span>
           )}
           <label className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-            <Upload className="w-3.5 h-3.5" /> {uploading ? '上傳中…' : (invoice ? '重新上傳' : '上傳發票')}
+            <Upload className="w-3.5 h-3.5" /> {uploading ? '上傳中…' : (uploaded ? '再上傳一張' : '上傳發票')}
             <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden"
               onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadInvoice(file); e.target.value = ''; }} />
           </label>
-          {invoice && (
-            <button onClick={removeInvoice} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="移除本月發票">
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
         <div className="flex items-center gap-1">
           {cost.url && (
@@ -291,6 +302,26 @@ function CostCard({ cost, invoice, period, onEdit, onDelete, onInvoiceChanged }:
           </button>
         </div>
       </div>
+
+      {/* 本月已上傳發票清單:檔名 + 看發票(簽名 URL 開新分頁)+ 刪除 */}
+      {uploaded && (
+        <ul className="mt-3 space-y-1.5">
+          {invoices.map((inv) => (
+            <li key={inv.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+              <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-xs text-gray-700 truncate flex-1" title={inv.file_name || undefined}>{inv.file_name || '發票'}</span>
+              <button onClick={() => openInvoice(inv)}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors shrink-0">
+                <ExternalLink className="w-3.5 h-3.5" /> 看發票
+              </button>
+              <button onClick={() => removeInvoice(inv)}
+                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0" title="移除這張發票">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -329,7 +360,7 @@ export default function AdminCostsPage() {
     load();
   };
 
-  const invoiceFor = (costId: string) => invoices.find((i) => i.cost_id === costId) || null;
+  const invoicesFor = (costId: string) => invoices.filter((i) => i.cost_id === costId);
 
   // 每月固定支出:只加 billing='monthly' 且 monthly_cost 有值的。USD / TWD 分開加總。
   const monthlyUSD = costs.filter((c) => c.billing_cycle === 'monthly' && c.currency === 'USD' && c.monthly_cost != null)
@@ -337,7 +368,8 @@ export default function AdminCostsPage() {
   const monthlyTWD = costs.filter((c) => c.billing_cycle === 'monthly' && c.currency === 'TWD' && c.monthly_cost != null)
     .reduce((s, c) => s + (c.monthly_cost || 0), 0);
   const reviewCount = costs.filter((c) => c.status === 'review').length;
-  const uploadedCount = invoices.length;
+  const uploadedCount = invoices.length; // 本月發票總張數(打包用)
+  const toolsWithInvoice = new Set(invoices.map((i) => i.cost_id)).size; // 本月已有發票的工具數
 
   const fixedLabel = [
     monthlyUSD > 0 ? `US$${monthlyUSD.toLocaleString()}` : null,
@@ -370,7 +402,7 @@ export default function AdminCostsPage() {
         { label: '每月固定支出', value: fixedLabel },
         { label: '工具總數', value: costs.length },
         { label: '待評估升級', value: reviewCount, color: reviewCount > 0 ? 'text-amber-700' : undefined },
-        { label: `本月發票 (${period})`, value: `${uploadedCount}/${costs.length}`, color: 'text-green-700' },
+        { label: `本月發票 (${period})`, value: `${toolsWithInvoice}/${costs.length}`, color: 'text-green-700' },
       ]} />
 
       {/* 月結:打包本月發票給會計 */}
@@ -404,7 +436,7 @@ export default function AdminCostsPage() {
             <CostCard
               key={cost.id}
               cost={cost}
-              invoice={invoiceFor(cost.id)}
+              invoices={invoicesFor(cost.id)}
               period={period}
               onEdit={() => { setEditing(cost); setFormOpen(true); }}
               onDelete={() => deleteCost(cost)}

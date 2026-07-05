@@ -37,7 +37,7 @@ export function taxNotice(p: TaxProfile, locale?: string): string {
     return { tw: '你的工作在台灣境外完成,不扣台灣稅,僅收轉帳手續費。', cn: '你的工作在台湾境外完成,不扣台湾税,仅收转账手续费。', en: 'Your work is performed outside Taiwan — no Taiwan tax is withheld, only the transfer fee.' }[L];
   }
   if (p.twResident) {
-    return { tw: '台灣居住者:單筆超過 NT$20,000 才代扣 10% 所得稅 + 2.11% 二代健保;未超過則免。(另加手續費)', cn: '台湾居住者:单笔超过 NT$20,000 才代扣 10% 所得税 + 2.11% 二代健保;未超过则免。(另加手续费)', en: 'Taiwan tax resident: single payments above NT$20,000 have 10% income tax + 2.11% NHI premium withheld; at or below that, neither. (Plus the transfer fee.)' }[L];
+    return { tw: '台灣居住者:所得稅單筆「超過」NT$20,000 才代扣 10%;二代健保單筆「達」NT$20,000(含)代扣 2.11%。(另加手續費)', cn: '台湾居住者:所得税单笔「超过」NT$20,000 才代扣 10%;二代健保单笔「达」NT$20,000(含)代扣 2.11%。(另加手续费)', en: 'Taiwan tax resident: 10% income tax applies above NT$20,000; 2.11% NHI premium applies at or above NT$20,000. (Plus the transfer fee.)' }[L];
   }
   return { tw: '台灣來源所得 · 非居住者:依法代扣 20% 稅。(另加手續費)', cn: '台湾来源所得 · 非居住者:依法代扣 20% 税。(另加手续费)', en: 'Taiwan-source income, non-resident: 20% withholding tax applies. (Plus the transfer fee.)' }[L];
 }
@@ -56,9 +56,12 @@ export function computeDeductions(args: {
   if (args.taxLocation === 'TW') {
     if (!args.twResident) {
       tax = round2(g * TAX.nonResidentRate);
-    } else if (g > TAX.twThreshold) {   // 超過 2 萬才扣(單筆 20,000 剛好不扣);Wing 2026-07-05 確認
-      tax = round2(g * TAX.residentRate);
-      nhi = round2(g * TAX.nhiRate);
+    } else {
+      // 2026-07-05 查證(財政部 + 會計師事務所):所得稅與二代健保門檻「不同」!
+      //   所得稅(執行業務所得):每次應扣稅額不超過 2,000 免扣 → 給付「超過」2 萬才扣(20,000 免)。
+      if (g > TAX.twThreshold) tax = round2(g * TAX.residentRate);
+      //   二代健保補充保費:單次給付「達」2 萬(≥,含 20,000)就扣 2.11%。
+      if (g >= TAX.twThreshold) nhi = round2(g * TAX.nhiRate);
     }
   }
   let fee = 0, feeNote = '';
