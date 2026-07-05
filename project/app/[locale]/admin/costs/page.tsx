@@ -192,34 +192,40 @@ function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }
   const [uploading, setUploading] = useState(false);
   const uploaded = invoices.length > 0;
 
-  const uploadInvoice = async (file: File) => {
+  // 上傳單一發票檔(不碰 UI/toast,失敗就 throw);批量由 uploadInvoices 統一收斂。
+  const uploadOne = async (file: File): Promise<void> => {
+    // 步驟 1:拿 signed upload URL
+    const prep = await fetch('/api/admin/costs/invoices', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cost_id: cost.id, period, fileName: file.name }),
+    });
+    const pj = await prep.json().catch(() => ({}));
+    if (!prep.ok) throw new Error(pj.error || '準備上傳失敗');
+    // 步驟 2:上傳到 casting bucket(同專案發票上傳模式)
+    const { error } = await supabase.storage.from('casting').uploadToSignedUrl(pj.path, pj.token, file);
+    if (error) throw new Error(`檔案上傳失敗:${error.message}`);
+    // 步驟 3:記一筆發票。存 storage path(pj.path)而非公開網址 —— 之後一律用
+    // 簽名 URL route 來開,bucket 是公開或私有都不影響。
+    const rec = await fetch('/api/admin/costs/invoices', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ record: true, cost_id: cost.id, period, invoice_url: pj.path, file_name: file.name }),
+    });
+    const rj = await rec.json().catch(() => ({}));
+    if (!rec.ok) throw new Error(rj.error || '記錄發票失敗');
+  };
+
+  // 批量上傳:序列跑(避免併發簽名 URL 撞在一起),最後一次總結 + 刷新;單檔多檔都走這。
+  const uploadInvoices = async (files: File[]) => {
+    if (!files.length) return;
     setUploading(true);
-    try {
-      // 步驟 1:拿 signed upload URL
-      const prep = await fetch('/api/admin/costs/invoices', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cost_id: cost.id, period, fileName: file.name }),
-      });
-      const pj = await prep.json().catch(() => ({}));
-      if (!prep.ok) throw new Error(pj.error || '準備上傳失敗');
-      // 步驟 2:上傳到 casting bucket(同專案發票上傳模式)
-      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(pj.path, pj.token, file);
-      if (error) throw new Error(`檔案上傳失敗:${error.message}`);
-      // 步驟 3:記一筆發票。存 storage path(pj.path)而非公開網址 —— 之後一律用
-      // 簽名 URL route 來開,bucket 是公開或私有都不影響。
-      const rec = await fetch('/api/admin/costs/invoices', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ record: true, cost_id: cost.id, period, invoice_url: pj.path, file_name: file.name }),
-      });
-      const rj = await rec.json().catch(() => ({}));
-      if (!rec.ok) throw new Error(rj.error || '記錄發票失敗');
-      toast.success(`已上傳 ${cost.name} 的 ${period} 發票`);
-      onInvoiceChanged();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : '上傳失敗');
-    } finally {
-      setUploading(false);
+    let ok = 0; const fails: string[] = [];
+    for (const file of files) {
+      try { await uploadOne(file); ok++; }
+      catch (e) { fails.push(`${file.name}:${e instanceof Error ? e.message : '失敗'}`); }
     }
+    setUploading(false);
+    if (ok > 0) { toast.success(`已上傳 ${ok} 張發票${fails.length ? `,${fails.length} 張失敗` : ''}`); onInvoiceChanged(); }
+    if (fails.length) toast.error(fails.slice(0, 3).join('\n') + (fails.length > 3 ? `\n…共 ${fails.length} 張失敗` : ''));
   };
 
   const removeInvoice = async (invoice: Invoice) => {
@@ -282,9 +288,9 @@ function CostCard({ cost, invoices, period, onEdit, onDelete, onInvoiceChanged }
             </span>
           )}
           <label className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-            <Upload className="w-3.5 h-3.5" /> {uploading ? '上傳中…' : (uploaded ? '再上傳一張' : '上傳發票')}
-            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden"
-              onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadInvoice(file); e.target.value = ''; }} />
+            <Upload className="w-3.5 h-3.5" /> {uploading ? '上傳中…' : (uploaded ? '再上傳(可多張)' : '上傳發票(可多張)')}
+            <input type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden"
+              onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length) uploadInvoices(files); e.target.value = ''; }} />
           </label>
         </div>
         <div className="flex items-center gap-1">
