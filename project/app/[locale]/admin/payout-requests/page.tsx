@@ -5,7 +5,8 @@
   admin-role only(API 用 requireAdminOnly + cookie)。
 */
 import { useEffect, useState, useCallback } from 'react';
-import { Receipt, ExternalLink, CheckCircle, RotateCcw, Loader2 } from 'lucide-react';
+import { Receipt, ExternalLink, CheckCircle, RotateCcw, Loader2, ChevronDown } from 'lucide-react';
+import PayoutDetails from '@/components/admin/PayoutDetails';
 
 type Req = {
   id: string; talent_id: string; invoice_number: string; amount: number; currency: string;
@@ -27,6 +28,7 @@ export default function PayoutRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'invoice_uploaded' | 'paid'>('all');
   const [busy, setBusy] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -101,6 +103,9 @@ export default function PayoutRequestsPage() {
                     {r.invoice_url
                       ? <a href={r.invoice_url} target="_blank" rel="noreferrer" className="text-xs text-violet-700 hover:underline inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" /> 看發票</a>
                       : <span className="text-xs text-gray-400">尚未上傳發票</span>}
+                    <button onClick={() => setExpanded(expanded === r.id ? null : r.id)} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 inline-flex items-center gap-1">
+                      收款資料 <ChevronDown className={`w-3 h-3 transition-transform ${expanded === r.id ? 'rotate-180' : ''}`} />
+                    </button>
                     {r.status !== 'paid' && (
                       <div className="flex gap-2">
                         <button onClick={() => setStatus(r.id, 'paid')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 inline-flex items-center gap-1">{busy === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} 已撥款</button>
@@ -109,6 +114,12 @@ export default function PayoutRequestsPage() {
                     )}
                   </div>
                 </div>
+                {expanded === r.id && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">收款資料 · 扣繳試算(此筆 {r.currency})</p>
+                    <PayoutDetails talentId={r.talent_id} gross={Number(r.amount) || 0} currency={r.currency} />
+                  </div>
+                )}
               </div>
             ))}
           </div>

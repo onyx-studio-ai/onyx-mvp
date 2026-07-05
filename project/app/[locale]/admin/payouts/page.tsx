@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { DollarSign, Download, CheckCircle, Clock, Filter, RefreshCw, User, ChevronRight, CreditCard, ArrowLeft, Calendar, Wallet, Plus, X, Folder, ChevronDown } from 'lucide-react';
-import { computeDeductions, MIN_PAYOUT_USD_INTL } from '@/lib/payout-policy';
+import PayoutDetails from '@/components/admin/PayoutDetails';
 
 const CHECKLIST_FIELDS = ['contract_filed', 'invoice_sent', 'payment_received', 'talent_paid', 'delivered'] as const;
 type ChecklistField = typeof CHECKLIST_FIELDS[number];
@@ -95,95 +95,6 @@ function PaymentBadge({ method, details }: { method?: string | null; details?: R
     );
   }
   return <span className="text-xs text-gray-500">{method}</span>;
-}
-
-// Decrypted payout details, fetched ON DEMAND (click to reveal) from the restricted
-// table so the national ID / bank account is only materialised when Wing actually
-// needs to pay. Admin-role only; never bulk-loaded.
-function PayoutDetails({ talentId, gross }: { talentId: string; gross: number }) {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'none' | 'error'>('idle');
-  const [d, setD] = useState<{ region: string; payout_method: string; details: Record<string, string>; updated_at?: string } | null>(null);
-  const [err, setErr] = useState('');
-
-  async function load() {
-    setStatus('loading'); setErr('');
-    try {
-      const r = await fetch(`/api/admin/payout-details?talent_id=${encodeURIComponent(talentId)}`);
-      const j = await r.json();
-      if (!r.ok) { setErr(j.error === 'payout_enc_unconfigured' ? '加密金鑰未設定 (Vercel env: PAYOUT_ENC_KEY)' : j.error === 'decrypt_failed' ? '解密失敗(金鑰不符?)' : (j.error || '讀取失敗')); setStatus('error'); return; }
-      if (!j.found) { setStatus('none'); return; }
-      setD({ region: j.region, payout_method: j.payout_method, details: j.details || {}, updated_at: j.updated_at });
-      setStatus('done');
-    } catch { setErr('讀取失敗'); setStatus('error'); }
-  }
-
-  const Row = ({ k, v }: { k: string; v?: string }) => v ? (
-    <div className="flex gap-2"><span className="text-gray-500 w-24 shrink-0">{k}</span><span className="text-gray-800 font-mono break-all select-all">{v}</span></div>
-  ) : null;
-
-  if (status === 'idle') {
-    return <button onClick={load} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors">查看收款資料</button>;
-  }
-  if (status === 'loading') return <span className="text-xs text-gray-500">讀取中…</span>;
-  if (status === 'error') return <span className="text-xs text-red-600">{err}</span>;
-  if (status === 'none') return <span className="text-xs text-gray-500">配音員尚未填寫收款資料。</span>;
-
-  const x = d!.details as Record<string, unknown>;
-  const twd = x.twd && typeof x.twd === 'object' ? x.twd as Record<string, string> : null;
-  const usd = x.usd && typeof x.usd === 'object' ? x.usd as Record<string, string> : null;
-  const t0 = (x.tax && typeof x.tax === 'object' ? x.tax : {}) as Record<string, unknown>;
-  const taxLocation = t0.tax_location === 'TW' ? 'TW' : 'overseas';
-  const twRes = t0.tw_resident === true;
-  const dd = gross > 0 && taxLocation === 'TW' ? computeDeductions({ gross, method: 'bank', bankCountry: 'X', taxLocation: 'TW', twResident: twRes }) : null;
-  void MIN_PAYOUT_USD_INTL;
-  return (
-    <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3 text-xs space-y-1 max-w-md">
-      {twd && (
-        <div>
-          <div className="font-medium text-violet-800 mb-0.5">台幣收款</div>
-          <Row k="戶名" v={twd.account_holder} />
-          <Row k="銀行" v={[twd.bank_name, twd.bank_branch].filter(Boolean).join(' ')} />
-          <Row k="代碼" v={twd.bank_code} />
-          <Row k="帳號" v={twd.account_number} />
-        </div>
-      )}
-      {usd && (
-        <div className={twd ? 'border-t border-violet-200 mt-1.5 pt-1.5' : ''}>
-          <div className="font-medium text-violet-800 mb-0.5">美金收款 · {usd.method === 'paypal' ? 'PayPal' : '外幣帳戶'}</div>
-          {usd.method === 'paypal' ? (
-            <>
-              <Row k="姓名/公司" v={usd.account_holder} />
-              <Row k="PayPal" v={usd.paypal_email} />
-              <p className="text-[11px] text-amber-700">付款前請向配音員索取 invoice。</p>
-            </>
-          ) : (
-            <>
-              <Row k="戶名" v={usd.account_holder} />
-              <Row k="銀行" v={usd.bank_name} />
-              <Row k="銀行地址" v={usd.bank_address} />
-              <Row k="帳號" v={usd.account_number} />
-              <Row k="SWIFT/BIC" v={usd.swift} />
-              <Row k="IBAN" v={usd.iban} />
-            </>
-          )}
-        </div>
-      )}
-      <div className="border-t border-violet-200 mt-1.5 pt-1.5">
-        <Row k="稅務" v={taxLocation === 'TW' ? (twRes ? '台灣居住者(≥2萬才扣10%+2.11%)' : '台灣非居住者(扣20%)') : '海外(不扣台灣稅)'} />
-        {taxLocation === 'TW' && <Row k="身分/居留證" v={t0.national_id as string} />}
-        {taxLocation === 'TW' && <Row k="地址" v={t0.tax_address as string} />}
-      </div>
-      {dd && (
-        <div className="border-t border-violet-200 mt-1.5 pt-1.5">
-          <div className="text-violet-800 font-medium mb-0.5">扣繳試算(供參)</div>
-          <Row k="請款額" v={String(gross)} />
-          {dd.tax > 0 && <Row k={twRes ? '扣繳稅 10%' : '扣繳稅 20%'} v={`-${dd.tax}`} />}
-          {dd.nhi > 0 && <Row k="二代健保 2.11%" v={`-${dd.nhi}`} />}
-          <p className="text-[10px] text-gray-500 pt-1">稅供參、以會計為準;另收轉帳手續費(台幣 NT$30 / 國際 US$20 / PayPal ~5%)。</p>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function PayoutsPage() {
