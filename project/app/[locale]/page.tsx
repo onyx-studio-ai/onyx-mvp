@@ -28,9 +28,6 @@ import {
 import { motion } from 'framer-motion';
 import Footer from '@/components/landing/Footer';
 import ContactModal from '@/components/ContactModal';
-import FeaturedVoices from '@/components/home/FeaturedVoices';
-import TrustBadges from '@/components/home/TrustBadges';
-import CompactPricing from '@/components/home/CompactPricing';
 
 export default function LobbyPage() {
   const t = useTranslations('lobby');
@@ -167,13 +164,13 @@ export default function LobbyPage() {
 
           {/* PRIMARY CTA — 試聽優先(聲音服務訪客第一個想「聽」),再取得報價 */}
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="#voices"
+            <Link
+              href="/voices"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white text-black px-8 py-4 font-semibold hover:bg-gray-100 transition-colors"
             >
               <Play className="w-5 h-5" aria-hidden="true" />
               {tx('試聽聲音', '试听声音', 'Hear the voices')}
-            </a>
+            </Link>
             <button
               onClick={() => setIsContactOpen(true)}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white px-8 py-4 font-semibold transition-colors"
@@ -218,14 +215,6 @@ export default function LobbyPage() {
         </motion.div>
       </section>
 
-      {/* CONVERSION — 試聽 / 信任 / 定價
-          複用 /voice 旗艦頁的現成元件,搬一份到首頁提升轉換。
-          FeaturedVoices 讀 audio_showcases,無音檔時自動 return null(不留空區塊);
-          其 section id="voices" 對應 Hero 的「試聽聲音」錨點。
-          BrandMarquee(logo 牆)目前無授權內容,先不放以免留空白。 */}
-      <FeaturedVoices />
-      <TrustBadges />
-      <CompactPricing />
 
       {/* SERVICES */}
       <section className="px-4 sm:px-6 lg:px-8 py-16">

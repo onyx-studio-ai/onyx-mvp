@@ -39,16 +39,6 @@ export type Order = {
   user_id: string | null;
 };
 
-export type Vibe = {
-  id: string;
-  title: string;
-  genre: string;
-  description: string;
-  image_url: string;
-  audio_url: string;
-  created_at: string;
-};
-
 export type AudioShowcase = {
   id: string;
   section: string;
@@ -57,6 +47,8 @@ export type AudioShowcase = {
   label: string | null;
   subtitle: string | null;
   description: string | null;
+  // 封面圖 URL。固定 slot 區塊用不到(留 null);music_library 清單用它存曲目封面。
+  image_url: string | null;
   tags: string[];
   sort_order: number;
   updated_at: string;
