@@ -1,8 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
 import { getAllPosts } from '@/lib/blog/posts';
+import { getSupabaseServiceClient } from '@/lib/supabase-server';
 
-// Revalidate hourly so scheduled blog posts enter the sitemap on their date.
+// Revalidate hourly so scheduled blog posts (and newly-published talents) enter
+// the sitemap on their date.
 export const revalidate = 3600;
 
 const BASE_URL = 'https://www.onyxstudios.ai';
@@ -36,7 +38,37 @@ function toLocalePath(locale: string, route: string) {
   return route === '/' ? `/${locale}` : `/${locale}${route}`;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Public, published human voice talents → /talents/[id] long-tail landing pages.
+// Mirrors the EXACT filter of the public /api/talents/roster endpoint so the
+// sitemap and the browsable gallery stay in lockstep: active, real humans
+// (VO / voice_actor with an application_id, never the manually-created AI
+// catalogue), and only those with an admin-approved published_snapshot. We
+// select id + updated_at ONLY — never the snapshot itself — so no PII is read
+// here by construction. Fails soft: a DB hiccup must not blank the whole
+// sitemap, so we drop talent rows and still emit static + blog entries.
+async function getPublishedTalents(): Promise<{ id: string; updated_at: string | null }[]> {
+  try {
+    const db = getSupabaseServiceClient();
+    const { data, error } = await db
+      .from('talents')
+      .select('id, updated_at')
+      .eq('is_active', true)
+      .in('type', ['VO', 'voice_actor'])
+      .not('application_id', 'is', null)
+      .not('published_snapshot', 'is', null)
+      .order('sort_order', { ascending: true });
+    if (error) {
+      console.error('[sitemap] talents query failed:', error.message);
+      return [];
+    }
+    return data ?? [];
+  } catch (err) {
+    console.error('[sitemap] talents query threw:', err);
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (PRELAUNCH_MODE) {
     return [];
   }
@@ -61,5 +93,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   );
 
-  return [...staticEntries, ...blogEntries];
+  // ~1,500 talents × 3 locales ≈ 4,500 URLs — comfortably under Google's
+  // 50k-per-file cap, so a single sitemap is fine. One entry per locale,
+  // matching how static/blog routes are emitted (no hreflang groups yet).
+  const talentEntries = (await getPublishedTalents()).flatMap((t) =>
+    routing.locales.map((locale) => ({
+      url: `${BASE_URL}${toLocalePath(locale, `/talents/${t.id}`)}`,
+      lastModified: t.updated_at ? new Date(t.updated_at) : now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+  );
+
+  return [...staticEntries, ...blogEntries, ...talentEntries];
 }
