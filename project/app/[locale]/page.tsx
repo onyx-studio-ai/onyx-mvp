@@ -1,4 +1,5 @@
 'use client';
+// 2026-07-06 強制重新部署 — 確保 production promote 到「移除首頁堆疊」的乾淨版
 
 /**
  * Homepage / lobby — Onyx Studios landing page.
