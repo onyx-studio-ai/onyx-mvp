@@ -7,7 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Loader2, Upload, Play, Pause, Save, ChevronDown, ChevronRight, Music, Volume2,
+  Plus, Edit, Trash2, X, ImagePlus, ArrowUp, ArrowDown, ListMusic,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -318,6 +322,549 @@ function SlotEditor({
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 音樂庫(music_library)—— 清單型管理
+//
+// 有別於上面的固定 slot 區塊,前台 /music/catalog 的音樂庫是「不定數量的一首首
+// 曲目」。這裡提供新增 / 編輯 / 刪除 / 排序,每首欄位對齊前台需要的:
+//   slot_key    對外唯一鍵(也決定 fallback 封面路徑、導向 create/brief 的 ?track=)
+//   label       曲名
+//   subtitle    分類(genre),前台當分類標題
+//   description 風格描述
+//   image_url   封面(後台上傳到 showcases 桶存完整 URL;前台優先用它)
+//   tags        必含 instrumental 或 vocal 決定分頁;其餘 tag 自由
+//   audio_url   試聽音檔
+//   sort_order  排序
+// 全部走 /api/admin/showcases(action:upsert / delete,service_role + requireAdmin)。
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MUSIC_LIBRARY_SECTION = "music_library";
+
+// slot_key 只允許小寫英數與 -,對齊既有曲目命名(brand-sting-1、pop-ballad-en…)
+function sanitizeSlotKey(s: string): string {
+  return s.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
+
+type TrackForm = {
+  slot_key: string;
+  label: string;
+  subtitle: string;
+  description: string;
+  image_url: string;
+  audio_url: string;
+  view: "instrumental" | "vocal";
+  extraTags: string; // 逗號分隔的額外 tag(instrumental/vocal 之外)
+  sort_order: number;
+};
+
+const EMPTY_TRACK: TrackForm = {
+  slot_key: "",
+  label: "",
+  subtitle: "",
+  description: "",
+  image_url: "",
+  audio_url: "",
+  view: "instrumental",
+  extraTags: "",
+  sort_order: 0,
+};
+
+function trackToForm(t: AudioShowcase): TrackForm {
+  const tags = Array.isArray(t.tags) ? t.tags : [];
+  const view: "instrumental" | "vocal" = tags.includes("vocal") ? "vocal" : "instrumental";
+  const extra = tags.filter((x) => x !== "instrumental" && x !== "vocal");
+  return {
+    slot_key: t.slot_key,
+    label: t.label || "",
+    subtitle: t.subtitle || "",
+    description: t.description || "",
+    image_url: t.image_url || "",
+    audio_url: t.audio_url || "",
+    view,
+    extraTags: extra.join(", "),
+    sort_order: typeof t.sort_order === "number" ? t.sort_order : 0,
+  };
+}
+
+function MusicLibraryManager({
+  tracks,
+  onChanged,
+}: {
+  tracks: AudioShowcase[];
+  onChanged: () => void;
+}) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<TrackForm>(EMPTY_TRACK);
+  const [saving, setSaving] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const audioFileRef = useRef<HTMLInputElement>(null);
+  const imageFileRef = useRef<HTMLInputElement>(null);
+
+  // 依 sort_order 排,sort_order 相同再依曲名穩定排序。
+  const sorted = [...tracks].sort(
+    (a, b) => (a.sort_order - b.sort_order) || (a.label || "").localeCompare(b.label || "")
+  );
+
+  const openNew = () => {
+    setEditingId(null);
+    // 新曲 sort_order 預設接在最後
+    const nextOrder = sorted.length ? Math.max(...sorted.map((t) => t.sort_order)) + 1 : 0;
+    setForm({ ...EMPTY_TRACK, sort_order: nextOrder });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (t: AudioShowcase) => {
+    setEditingId(t.id);
+    setForm(trackToForm(t));
+    setDialogOpen(true);
+  };
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("音檔須小於 50 MB");
+      return;
+    }
+    setUploadingAudio(true);
+    try {
+      const key = sanitizeSlotKey(form.slot_key) || "track";
+      const path = `${MUSIC_LIBRARY_SECTION}/${key}/${Date.now()}-${sanitizeFileName(file.name)}`;
+      const url = await uploadToStorage(path, file);
+      setForm((f) => ({ ...f, audio_url: url }));
+      toast.success("音檔已上傳");
+    } catch (err) {
+      console.error("Audio upload error:", err);
+      toast.error("音檔上傳失敗");
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!file.type.startsWith("image/")) {
+      toast.error("請選擇圖片檔");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("封面須小於 10 MB");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const key = sanitizeSlotKey(form.slot_key) || "track";
+      const path = `${MUSIC_LIBRARY_SECTION}/${key}/cover-${Date.now()}-${sanitizeFileName(file.name)}`;
+      const url = await uploadToStorage(path, file);
+      setForm((f) => ({ ...f, image_url: url }));
+      toast.success("封面已上傳");
+    } catch (err) {
+      console.error("Image upload error:", err);
+      toast.error("封面上傳失敗");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const saveTrack = async (payload: Record<string, unknown>, id?: string) => {
+    const res = await fetch("/api/admin/showcases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "upsert", id, section: MUSIC_LIBRARY_SECTION, ...payload }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error || "Request failed");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const slot_key = sanitizeSlotKey(form.slot_key);
+    if (!slot_key) {
+      toast.error("Slot Key 必填(小寫英數與 -,例:brand-sting-1)");
+      return;
+    }
+    if (!form.label.trim()) {
+      toast.error("曲名必填");
+      return;
+    }
+    // slot_key 不可撞其他曲目(編輯自己那筆除外)
+    const clash = tracks.find((t) => t.slot_key === slot_key && t.id !== editingId);
+    if (clash) {
+      toast.error(`Slot Key「${slot_key}」已被其他曲目使用`);
+      return;
+    }
+    const tags = [
+      form.view,
+      ...form.extraTags.split(",").map((t) => t.trim()).filter(Boolean),
+    ];
+    setSaving(true);
+    try {
+      await saveTrack(
+        {
+          slot_key,
+          label: form.label.trim(),
+          subtitle: form.subtitle.trim() || null,
+          description: form.description.trim() || null,
+          image_url: form.image_url.trim() || null,
+          audio_url: form.audio_url.trim() || null,
+          tags,
+          sort_order: Number(form.sort_order) || 0,
+        },
+        editingId || undefined
+      );
+      toast.success(editingId ? "已更新" : "已新增");
+      setDialogOpen(false);
+      setForm(EMPTY_TRACK);
+      setEditingId(null);
+      onChanged();
+    } catch (err) {
+      console.error("Save track error:", err);
+      toast.error(err instanceof Error ? err.message : "儲存失敗");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (t: AudioShowcase) => {
+    if (!confirm(`確定刪除「${t.label || t.slot_key}」?`)) return;
+    setBusyId(t.id);
+    try {
+      const res = await fetch("/api/admin/showcases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id: t.id }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Request failed");
+      }
+      toast.success("已刪除");
+      onChanged();
+    } catch (err) {
+      console.error("Delete track error:", err);
+      toast.error("刪除失敗");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // 上 / 下移:與相鄰曲目對調 sort_order,兩筆各 upsert 一次。
+  const move = async (index: number, dir: -1 | 1) => {
+    const target = sorted[index];
+    const swap = sorted[index + dir];
+    if (!target || !swap) return;
+    setBusyId(target.id);
+    try {
+      const toPayload = (t: AudioShowcase, order: number) => ({
+        slot_key: t.slot_key,
+        label: t.label,
+        subtitle: t.subtitle,
+        description: t.description,
+        image_url: t.image_url,
+        audio_url: t.audio_url,
+        tags: Array.isArray(t.tags) ? t.tags : [],
+        sort_order: order,
+      });
+      // 對調兩者的 sort_order
+      await saveTrack(toPayload(target, swap.sort_order), target.id);
+      await saveTrack(toPayload(swap, target.sort_order), swap.id);
+      onChanged();
+    } catch (err) {
+      console.error("Reorder error:", err);
+      toast.error("排序失敗");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const filledCount = sorted.filter((t) => t.audio_url).length;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white/50 overflow-hidden">
+      <div className="px-6 py-4 flex items-center justify-between border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <ListMusic className="w-5 h-5 text-cyan-700" />
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Music Library 音樂庫</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              前台 /music/catalog 的曲目清單(可增刪、排序)。分類靠 tags 的 instrumental / vocal。
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 text-gray-600 border border-gray-300">
+            {filledCount}/{sorted.length} 有音檔
+          </span>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 h-8">
+                <Plus className="w-4 h-4" /> 新增曲目
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200">
+              <DialogHeader>
+                <DialogTitle className="text-gray-900 text-lg">
+                  {editingId ? "編輯曲目" : "新增曲目"}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-gray-700 text-xs">Slot Key *</Label>
+                    <Input
+                      value={form.slot_key}
+                      onChange={(e) => setForm({ ...form, slot_key: e.target.value })}
+                      placeholder="brand-sting-1"
+                      disabled={!!editingId}
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm disabled:opacity-60"
+                    />
+                    <p className="text-[11px] text-gray-500">
+                      唯一鍵,小寫英數與 -。{editingId ? "建立後不可改。" : "留意別跟現有曲目重複。"}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-gray-700 text-xs">分頁</Label>
+                    <select
+                      value={form.view}
+                      onChange={(e) => setForm({ ...form, view: e.target.value as "instrumental" | "vocal" })}
+                      className="w-full bg-white border border-gray-300 rounded-md text-gray-900 h-9 text-sm px-2"
+                    >
+                      <option value="instrumental">配音底音 Instrumental</option>
+                      <option value="vocal">POP 帶人聲 Vocal</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-gray-700 text-xs">曲名 *</Label>
+                    <Input
+                      value={form.label}
+                      onChange={(e) => setForm({ ...form, label: e.target.value })}
+                      placeholder="Spark Up"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-gray-700 text-xs">分類(genre)</Label>
+                    <Input
+                      value={form.subtitle}
+                      onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
+                      placeholder="廣告 / 品牌"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-gray-700 text-xs">排序(數字小的在前)</Label>
+                    <Input
+                      type="number"
+                      value={form.sort_order}
+                      onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
+                      className="bg-white border-gray-300 text-gray-900 h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-gray-700 text-xs">額外 tags(逗號分隔,選填)</Label>
+                    <Input
+                      value={form.extraTags}
+                      onChange={(e) => setForm({ ...form, extraTags: e.target.value })}
+                      placeholder="例:featured"
+                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-gray-700 text-xs">風格描述</Label>
+                  <Textarea
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    rows={2}
+                    placeholder="簡短有力的廣告片頭,適合 5-10 秒品牌標識"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm resize-none"
+                  />
+                </div>
+
+                {/* 封面 */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700 text-xs">封面圖</Label>
+                  <div className="flex items-start gap-4">
+                    {form.image_url ? (
+                      <div className="relative group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={form.image_url} alt="封面" className="w-20 h-20 object-cover rounded-lg border border-gray-300" />
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-white">
+                        <ImagePlus className="w-7 h-7 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <input ref={imageFileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => imageFileRef.current?.click()}
+                        disabled={uploadingImage}
+                        className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 gap-2"
+                      >
+                        {uploadingImage
+                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 上傳中...</>
+                          : <><ImagePlus className="w-3.5 h-3.5" /> 上傳封面</>}
+                      </Button>
+                      <p className="text-[11px] text-gray-500">
+                        JPG / PNG / WebP,≤ 10 MB。留空則前台沿用 music-samples/covers/{"{slot_key}"}.jpg。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 音檔 */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700 text-xs">試聽音檔</Label>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {form.audio_url && <AudioPreview url={form.audio_url} />}
+                    <input ref={audioFileRef} type="file" accept=".mp3,.wav,.aiff,.flac,audio/*" onChange={handleAudioUpload} className="hidden" />
+                    <Button
+                      type="button" variant="outline" size="sm"
+                      onClick={() => audioFileRef.current?.click()}
+                      disabled={uploadingAudio}
+                      className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 gap-2"
+                    >
+                      {uploadingAudio
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 上傳中...</>
+                        : <><Upload className="w-3.5 h-3.5" /> {form.audio_url ? "更換音檔" : "上傳音檔"}</>}
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-gray-500">MP3 / WAV / AIFF / FLAC,≤ 50 MB。</p>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button
+                    type="button" variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                    className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+                  >
+                    取消
+                  </Button>
+                  <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 min-w-[110px]">
+                    {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> 儲存中...</> : "儲存曲目"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="px-6 py-4">
+        {sorted.length === 0 ? (
+          <p className="text-sm text-gray-500 py-8 text-center">
+            尚無曲目。點「新增曲目」開始建立音樂庫。
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {sorted.map((t, i) => {
+              const tags = Array.isArray(t.tags) ? t.tags : [];
+              const view = tags.includes("vocal") ? "Vocal" : "Instrumental";
+              const rowBusy = busyId === t.id;
+              return (
+                <div
+                  key={t.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-white"
+                >
+                  {/* 上下移 */}
+                  <div className="flex flex-col">
+                    <button
+                      type="button"
+                      onClick={() => move(i, -1)}
+                      disabled={i === 0 || rowBusy}
+                      className="text-gray-400 hover:text-gray-800 disabled:opacity-30"
+                      title="上移"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(i, 1)}
+                      disabled={i === sorted.length - 1 || rowBusy}
+                      className="text-gray-400 hover:text-gray-800 disabled:opacity-30"
+                      title="下移"
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* 封面縮圖(有 image_url 才顯示,避免打 404) */}
+                  {t.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.image_url} alt={t.label || t.slot_key} className="w-11 h-11 rounded-md object-cover border border-gray-200 shrink-0" />
+                  ) : (
+                    <div className="w-11 h-11 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
+                      <Music className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
+
+                  {/* 主資訊 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{t.label || "(未命名)"}</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 shrink-0">{view}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 truncate">
+                      <span className="font-mono">{t.slot_key}</span>
+                      {t.subtitle ? ` · ${t.subtitle}` : ""}
+                      {` · #${t.sort_order}`}
+                    </p>
+                  </div>
+
+                  {/* 音檔試聽 */}
+                  {t.audio_url ? (
+                    <AudioPreview url={t.audio_url} />
+                  ) : (
+                    <span className="text-[11px] text-amber-600">無音檔</span>
+                  )}
+
+                  {/* 動作 */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {rowBusy && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+                    <Button
+                      type="button" variant="ghost" size="sm"
+                      onClick={() => openEdit(t)}
+                      className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-8 w-8 p-0"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button" variant="ghost" size="sm"
+                      onClick={() => handleDelete(t)}
+                      disabled={rowBusy}
+                      className="text-gray-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const FETCH_TIMEOUT_MS = 20_000;
 
 export default function AdminShowcasesPage() {
@@ -495,6 +1042,12 @@ export default function AdminShowcasesPage() {
             </div>
           );
         })}
+
+        {/* 音樂庫(不定數量清單型,獨立於上面固定 slot 區塊) */}
+        <MusicLibraryManager
+          tracks={showcases.filter((s) => s.section === "music_library")}
+          onChanged={fetchShowcases}
+        />
       </div>
     </div>
   );

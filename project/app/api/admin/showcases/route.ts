@@ -25,7 +25,9 @@ type UpsertBody = {
   label?: string | null;
   subtitle?: string | null;
   description?: string | null;
+  image_url?: string | null;
   tags?: string[];
+  sort_order?: number;
 };
 
 export async function POST(request: NextRequest) {
@@ -58,16 +60,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'section and slot_key are required' }, { status: 400 });
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       section,
       slot_key: slotKey,
       audio_url: body.audio_url || null,
       label: body.label || null,
       subtitle: body.subtitle || null,
       description: body.description || null,
+      image_url: body.image_url || null,
       tags: Array.isArray(body.tags) ? body.tags.map((t) => String(t)).filter(Boolean) : [],
       updated_at: new Date().toISOString(),
     };
+    // sort_order:只有明確帶數字才寫(music_library 清單需要排序;
+    // 固定 slot 區塊不傳,交給 DB 預設/既有值)。
+    if (typeof body.sort_order === 'number' && Number.isFinite(body.sort_order)) {
+      payload.sort_order = body.sort_order;
+    }
 
     const { data, error } = await db
       .from('audio_showcases')

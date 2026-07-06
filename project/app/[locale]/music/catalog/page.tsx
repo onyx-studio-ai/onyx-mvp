@@ -33,6 +33,7 @@ type Row = {
   label: string;
   subtitle: string;
   description: string;
+  image_url: string | null;
   tags: string[];
   sort_order: number;
 };
@@ -109,11 +110,21 @@ export default function MusicCatalogPage() {
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
   const isZhCN = locale === 'zh-CN';
-  // Pick the right localized field from a TrackMeta record.
-  const pickCat = (m: TrackMeta | undefined, fallback: string) =>
-    !m ? fallback : isZhCN ? m.zhCNCat : isZh ? m.zhCat : m.enCat;
-  const pickDesc = (m: TrackMeta | undefined, fallback: string) =>
-    !m ? fallback : isZhCN ? m.zhCNDesc : isZh ? m.zhDesc : m.enDesc;
+  // 分類 / 描述來源優先序:DB 欄位(後台可改)優先 → 沒填才回退到寫死的 META。
+  // 這樣後台在 /admin/showcases 改了曲目文字,前台立刻反映;而尚未遷移到 DB 的
+  // 舊曲目(DB 欄位空)仍沿用 META,遷移期間不會空掉。
+  //   dbVal    = audio_showcases 的 subtitle(分類)/ description(描述),可能為空
+  //   m        = 寫死的 META(依 slot_key 對應),可能不存在
+  const pickCat = (dbVal: string, m: TrackMeta | undefined) => {
+    if (dbVal && dbVal.trim()) return dbVal;
+    if (m) return isZhCN ? m.zhCNCat : isZh ? m.zhCat : m.enCat;
+    return dbVal;
+  };
+  const pickDesc = (dbVal: string, m: TrackMeta | undefined) => {
+    if (dbVal && dbVal.trim()) return dbVal;
+    if (m) return isZhCN ? m.zhCNDesc : isZh ? m.zhDesc : m.enDesc;
+    return dbVal;
+  };
   // Per-locale UI string helper. Order: [zh-TW, zh-CN, en]
   const tx = (tw: string, cn: string, en: string) =>
     isZhCN ? cn : isZh ? tw : en;
@@ -152,7 +163,7 @@ export default function MusicCatalogPage() {
     const byCat: Record<string, Row[]> = {};
     for (const r of filtered) {
       const meta = META[r.slot_key];
-      const cat = pickCat(meta, r.subtitle);
+      const cat = pickCat(r.subtitle, meta);
       if (!byCat[cat]) byCat[cat] = [];
       byCat[cat].push(r);
     }
@@ -240,10 +251,15 @@ export default function MusicCatalogPage() {
                 {items.map(row => {
                   const meta = META[row.slot_key];
                   const gradient = meta?.gradient ?? 'from-gray-600 to-gray-800';
-                  // Suno-generated title; same across locales (it's the song's actual name)
-                  const title = meta?.title ?? row.label;
-                  const desc = pickDesc(meta, row.description);
-                  const catLabel = pickCat(meta, row.subtitle);
+                  // 曲名 / 描述 / 分類:DB 值(後台可改)優先,沒填才回退 META。
+                  const title = (row.label && row.label.trim()) ? row.label : (meta?.title ?? row.label);
+                  const desc = pickDesc(row.description, meta);
+                  const catLabel = pickCat(row.subtitle, meta);
+                  // 封面:後台上傳的 image_url 優先;沒填才回退到寫死約定路徑
+                  // (music-samples/covers/{slot_key}.jpg),涵蓋尚未遷移的舊曲目。
+                  const coverUrl = (row.image_url && row.image_url.trim())
+                    ? row.image_url
+                    : `https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers/${row.slot_key}.jpg`;
                   const playing = playingId === row.id;
                   const lyricsOpen = openLyrics.has(row.id);
                   const lyrics = MUSIC_LYRICS[row.slot_key];
@@ -264,7 +280,7 @@ export default function MusicCatalogPage() {
                         {/* Thumbnail */}
                         <div className={`relative shrink-0 w-[88px] h-[88px] rounded-lg overflow-hidden bg-gradient-to-br ${gradient}`}>
                           <img
-                            src={`https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/music-samples/covers/${row.slot_key}.jpg`}
+                            src={coverUrl}
                             alt={title}
                             loading="lazy"
                             className="absolute inset-0 w-full h-full object-cover"
