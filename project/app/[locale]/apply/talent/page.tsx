@@ -12,11 +12,10 @@
   coop_voice_director added in migration 20260623120000.
 */
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Check, X, Plus, ArrowRight, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { track } from '@/lib/track';
 
 const STEPS = [
   { tw: '基本資料', cn: '基本资料', en: 'Basics' },
@@ -183,9 +182,6 @@ export default function TalentApply() {
   const [lowData, setLowData] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
-  // 上傳成功後快取結果(綁定當下的 File 物件);送出失敗重試時若檔案沒換就重用,
-  // 避免每次重試都 mint 新的帶時間戳 path、把上一個變成 storage 孤兒檔。
-  const uploadedRef = useRef<{ file: File; path: string; name: string; size: number } | null>(null);
   const [agreeOwn, setAgreeOwn] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -257,10 +253,10 @@ export default function TalentApply() {
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; setFileError('');
-    uploadedRef.current = null; // 換檔就作廢舊快取,強制重傳
     if (!f) { setFile(null); return; }
-    const ok = ['wav', 'wave', 'mp3', 'm4a', 'aac', 'ogg', 'flac'].some((x) => f.name.toLowerCase().endsWith('.' + x));
-    if (!ok) { setFileError(tx('請上傳音檔(wav / mp3 / m4a / aac / ogg / flac)', '请上传音档(wav / mp3 / m4a / aac / ogg / flac)', 'Please upload an audio file (wav / mp3 / m4a / aac / ogg / flac)')); setFile(null); return; }
+    // 只收專業音檔,擋 m4a(iPhone/Mac 錄音預設)等,當業餘過濾器(Wing 2026-07-06)。
+    const ok = ['wav', 'wave', 'mp3', 'aac', 'flac'].some((x) => f.name.toLowerCase().endsWith('.' + x));
+    if (!ok) { setFileError(tx('只接受 WAV / MP3 / AAC / FLAC 專業音檔;不收手機錄音(m4a)。請以專業設備錄製,或轉檔後再上傳。', '只接受 WAV / MP3 / AAC / FLAC 专业音档;不收手机录音(m4a)。请以专业设备录制,或转档后再上传。', 'Only professional audio (WAV / MP3 / AAC / FLAC) is accepted — phone recordings (m4a) are not. Please use professional equipment, or convert the file first.')); setFile(null); return; }
     if (f.size > 50 * 1024 * 1024) { setFileError(tx('檔案請小於 50MB', '档案请小于 50MB', 'File must be under 50 MB')); setFile(null); return; }
     setFile(f);
   };
@@ -273,25 +269,19 @@ export default function TalentApply() {
     try {
       let fileUrl = '', fileName = '', fileSize = 0;
       if (file) {
-        // 重試且檔案沒換 → 重用上次成功上傳的結果,不再重傳(避免孤兒檔)。
-        if (uploadedRef.current && uploadedRef.current.file === file) {
-          fileUrl = uploadedRef.current.path; fileName = uploadedRef.current.name; fileSize = uploadedRef.current.size;
-        } else {
-          const safe = (form.display_name || form.full_name).replace(/\s+/g, '');
-          fileName = `${safe || 'talent'}_demo.${file.name.split('.').pop()}`;
-          const urlRes = await fetch('/api/apply/upload-url', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileName, role: 'Voice' }),
-          });
-          const urlJson = await urlRes.json();
-          if (!urlRes.ok) throw new Error(urlJson.error || tx('上傳準備失敗,請重試', '上传准备失败,请重试', 'Upload prep failed — please try again'));
-          const { error: upErr } = await supabase.storage
-            .from('talent-submissions')
-            .uploadToSignedUrl(urlJson.path, urlJson.token, file);
-          if (upErr) throw new Error(`${tx('上傳失敗', '上传失败', 'Upload failed')}: ${upErr.message}`);
-          fileUrl = urlJson.path as string; fileSize = file.size;
-          uploadedRef.current = { file, path: fileUrl, name: fileName, size: fileSize }; // 快取成功結果供重試重用
-        }
+        const safe = (form.display_name || form.full_name).replace(/\s+/g, '');
+        fileName = `${safe || 'talent'}_demo.${file.name.split('.').pop()}`;
+        const urlRes = await fetch('/api/apply/upload-url', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName, role: 'Voice' }),
+        });
+        const urlJson = await urlRes.json();
+        if (!urlRes.ok) throw new Error(urlJson.error || tx('上傳準備失敗,請重試', '上传准备失败,请重试', 'Upload prep failed — please try again'));
+        const { error: upErr } = await supabase.storage
+          .from('talent-submissions')
+          .uploadToSignedUrl(urlJson.path, urlJson.token, file);
+        if (upErr) throw new Error(`${tx('上傳失敗', '上传失败', 'Upload failed')}: ${upErr.message}`);
+        fileUrl = urlJson.path as string; fileSize = file.size;
       }
 
       const payload = {
@@ -340,7 +330,6 @@ export default function TalentApply() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || tx('送出失敗,請重試', '送出失败,请重试', 'Submission failed — please try again'));
-      track('apply_submit'); // 配音員申請送出成功 → 流量埋點
       setDoneNo(data.application_number || tx('已送出', '已送出', 'Submitted'));
     } catch (e) {
       setError(e instanceof Error ? e.message : tx('發生錯誤,請重試', '发生错误,请重试', 'Something went wrong — please try again'));
@@ -546,10 +535,10 @@ export default function TalentApply() {
 
           {step === 4 && (
             <div>
-              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('請上傳一段個人配音 demo,供我們了解您的錄音品質。建議優先提供以專業設備、於專業環境錄製的純人聲樣本(無需配樂或其他效果);如需保護權益,可自行加註浮水印。若暫無上述錄音條件,提供一般 demo 亦可。檔案支援 wav / mp3 / m4a / aac / ogg / flac,單檔請勿超過 50MB。', '请上传一段个人配音 demo,供我们了解您的录音品质。建议优先提供以专业设备、于专业环境录制的纯人声样本(无需配乐或其他效果);如需保护权益,可自行加注浮水印。若暂无上述录音条件,提供一般 demo 亦可。档案支援 wav / mp3 / m4a / aac / ogg / flac,单档请勿超过 50MB。', 'Please upload a voiceover demo so we can assess your recording quality. A clean, voice-only sample recorded with professional equipment in a professional setting is preferred (no background music or effects); you may add a watermark to protect your work if you wish. If such a setup is not currently available, a standard demo is also acceptable. Supported formats: wav / mp3 / m4a / aac / ogg / flac, up to 50MB per file.')}</p>
+              <p className="text-xs text-gray-400 leading-relaxed mb-4">{tx('請上傳一段個人配音 demo,供我們了解您的錄音品質。建議優先提供以專業設備、於專業環境錄製的純人聲樣本(無需配樂或其他效果);如需保護權益,可自行加註浮水印。若暫無上述錄音條件,提供一般 demo 亦可。僅接受 WAV / MP3 / AAC / FLAC 專業音檔 —— 不接受手機錄音(m4a),請以專業設備錄製或轉檔後上傳。單檔請勿超過 50MB。', '请上传一段个人配音 demo,供我们了解您的录音品质。建议优先提供以专业设备、于专业环境录制的纯人声样本(无需配乐或其他效果);如需保护权益,可自行加注浮水印。若暂无上述录音条件,提供一般 demo 亦可。仅接受 WAV / MP3 / AAC / FLAC 专业音档 —— 不接受手机录音(m4a),请以专业设备录制或转档后上传。单档请勿超过 50MB。', 'Please upload a voiceover demo so we can assess your recording quality. A clean, voice-only sample recorded with professional equipment in a professional setting is preferred (no background music or effects); you may add a watermark to protect your work if you wish. If such a setup is not currently available, a standard demo is also acceptable. Professional audio only — WAV / MP3 / AAC / FLAC (no phone m4a recordings; use pro gear or convert first). Up to 50MB per file.')}</p>
               <label className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-zinc-600 text-sm text-gray-300 cursor-pointer hover:border-amber-500 w-fit">
                 <Upload className="w-4 h-4" /> {file ? tx('更換檔案', '更换档案', 'Replace file') : tx('選擇 demo 檔案', '选择 demo 档案', 'Choose a demo file')}
-                <input type="file" accept=".wav,.wave,.mp3,.m4a,.aac,.ogg,.flac,audio/*" className="hidden" onChange={handleFile} />
+                <input type="file" accept=".wav,.wave,.mp3,.aac,.flac,audio/wav,audio/x-wav,audio/mpeg,audio/aac,audio/flac" className="hidden" onChange={handleFile} />
               </label>
               {file && <p className="text-xs text-amber-300 mt-2">{tx('已選:', '已选:', 'Selected: ')}{file.name}（{Math.round(file.size / 1024)} KB）</p>}
               {fileError && <p className="text-xs text-red-400 mt-2">{fileError}</p>}
