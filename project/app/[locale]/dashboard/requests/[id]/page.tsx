@@ -416,17 +416,19 @@ export default function ClientRequestDetail() {
                       ) : (
                         <button onClick={() => { setReauditTarget(a.id); setReauditNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget || !!moreTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{tx('請他再錄一次', '请他再录一次', 'Ask for another take')}</button>
                       )}
-                      {a.more_demos_requested ? (
-                        <span className="text-xs text-violet-300">🎬 {tx('已請多給 demo · 等對方上傳', '已请多给 demo · 等对方上传', 'More demos requested')}</span>
+                      {/* 已收到追加 demo 就顯示數量(上方會列出可試聽),仍可再請一輪;
+                          尚未收到但已請求則顯示等待中。以 extra_samples 為準,避免配音員
+                          上傳後客戶端還一直卡在「等對方上傳」。 */}
+                      {(a.extra_samples || []).length > 0 && (
+                        <span className="text-xs text-violet-300">{tx('已收到', '已收到', 'Received')} {(a.extra_samples || []).length} {tx('段追加 demo', '段追加 demo', 'more demos')}</span>
+                      )}
+                      {a.more_demos_requested && !((a.extra_samples || []).length) ? (
+                        <span className="text-xs text-violet-300">{tx('已請多給 demo · 等對方上傳', '已请多给 demo · 等对方上传', 'More demos requested')}</span>
                       ) : (
-                        <button onClick={() => { setMoreTarget(a.id); setMoreNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget || !!moreTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{tx('請他多給 demo', '请他多给 demo', 'Ask for more demos')}</button>
+                        <button onClick={() => { setMoreTarget(a.id); setMoreNote(''); setMsg(''); }} disabled={!!selected || !!reauditTarget || !!moreTarget} className="text-sm bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-lg px-4 py-1.5">{(a.extra_samples || []).length ? tx('再請他多給 demo', '再请他多给 demo', 'Ask for more') : tx('請他多給 demo', '请他多给 demo', 'Ask for more demos')}</button>
                       )}
                     </div>
-                  ) : (
-                    // 案件已非 open(已選定/製作中/結案),這張試音無可操作按鈕 —— 給一句說明,
-                    // 避免客戶困惑「按鈕怎麼不見了」。
-                    <p className="text-xs text-gray-500">{tx('此需求已進入下一階段,試音選擇已結束。如需異動請於下方與 Onyx 聯繫。', '此需求已进入下一阶段,试音选择已结束。如需异动请于下方与 Onyx 联系。', 'This request has moved to the next stage — audition selection is closed. To make changes, message Onyx below.')}</p>
-                  )}
+                  ) : null}
                 </div>
               );
             })}

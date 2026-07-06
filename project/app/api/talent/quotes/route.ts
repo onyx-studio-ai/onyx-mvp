@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
-import { quoteReceivedEmail, deliveryUploadedEmail, castingDeliveryClientEmail } from '@/lib/mail-templates';
+import { quoteReceivedEmail, deliveryUploadedEmail, castingDeliveryClientEmail, extraDemoUploadedEmail } from '@/lib/mail-templates';
 import { sanitizeMessage } from '@/lib/message-filter';
 
 const SITE = 'https://www.onyxstudios.ai';
@@ -125,24 +125,40 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Add an EXTRA demo (other tones / characters) the client/Onyx asked for.
-    // APPENDS to extra_samples (does NOT replace the audition) + clears the request
-    // flag. Only their own quote.
+    // APPENDS to extra_samples (does NOT replace the audition). Only their own quote.
+    // NOTE: we deliberately KEEP more_demos_requested_at set so the talent can keep
+    // adding MORE clips — clearing it made the whole card vanish after one upload
+    // (配音員回報「上傳一段就消失」). Onyx sees "N received" via extra_samples length
+    // + the new marketplace badge, and is emailed on each upload so nothing is missed.
     if (body.add_extra_sample) {
       if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
       const url = String(body.add_extra_sample).slice(0, 1000);
       if (!/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'invalid url' }, { status: 400 });
       const label = String(body.label || '').slice(0, 80).trim();
-      const { data: cur } = await r.db.from('marketplace_quotes').select('extra_samples').eq('id', id).eq('talent_id', talent.id).maybeSingle();
+      const { data: cur } = await r.db.from('marketplace_quotes').select('extra_samples, brief_id').eq('id', id).eq('talent_id', talent.id).maybeSingle();
       if (!cur) return NextResponse.json({ error: '找不到這個試音' }, { status: 400 });
       const arr = Array.isArray((cur as { extra_samples?: unknown[] }).extra_samples) ? (cur as { extra_samples: unknown[] }).extra_samples : [];
       arr.push({ url, label: label || null, created_at: new Date().toISOString() });
       const { data, error } = await r.db
         .from('marketplace_quotes')
-        .update({ extra_samples: arr.slice(0, 12), more_demos_requested_at: null, updated_at: new Date().toISOString() })
+        .update({ extra_samples: arr.slice(0, 12), extra_samples_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq('id', id).eq('talent_id', talent.id)
         .select('id, extra_samples')
         .maybeSingle();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // Notify Onyx production on EVERY upload (best-effort) so the boss knows a
+      // talent responded — previously this path sent nothing at all.
+      try {
+        const briefId = (cur as { brief_id?: string }).brief_id;
+        const { data: brief } = briefId
+          ? await r.db.from('marketplace_briefs').select('brief_number, title, content_type').eq('id', briefId).maybeSingle()
+          : { data: null };
+        const title = (brief?.title as string) || (brief?.content_type as string) || (brief?.brief_number as string) || '配音案件';
+        const m = extraDemoUploadedEmail({ talentName: talent.name, title, count: arr.length, url: `${SITE}/admin/marketplace` });
+        sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: m.subject, html: m.html }).catch(() => {});
+      } catch { /* notification is best-effort — never block the upload */ }
+
       return NextResponse.json({ quote: data });
     }
 

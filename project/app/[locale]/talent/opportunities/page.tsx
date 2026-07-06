@@ -330,7 +330,9 @@ function AddExtraDemos({ quote, tx, onDone }: { quote: Quote; tx: (a: string, b:
       const p = await authedFetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: quote.id, add_extra_sample: uj.publicUrl }) });
       const pj = await p.json().catch(() => ({}));
       if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
-      onDone({ ...quote, extra_samples: (pj.quote?.extra_samples as Quote['extra_samples']) || [...samples, { url: uj.publicUrl }], more_demos_requested_at: null });
+      // Keep more_demos_requested_at set — the card must stay so the talent can
+      // add MORE clips (fixes "上傳一段就消失"); only the appended list grows.
+      onDone({ ...quote, extra_samples: (pj.quote?.extra_samples as Quote['extra_samples']) || [...samples, { url: uj.publicUrl }] });
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
   }
   return (
@@ -346,10 +348,14 @@ function AddExtraDemos({ quote, tx, onDone }: { quote: Quote; tx: (a: string, b:
         </div>
       )}
       <label className="inline-flex items-center gap-1.5 text-xs bg-violet-500/15 border border-violet-500/40 text-violet-300 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-violet-500/25 transition">
-        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳一段 demo', '上传一段 demo', 'Add a demo')}
+        {busy
+          ? tx('上傳中…', '上传中…', 'Uploading…')
+          : samples.length
+            ? tx('再上傳一段 demo', '再上传一段 demo', 'Add another demo')
+            : tx('上傳一段 demo', '上传一段 demo', 'Add a demo')}
         <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
       </label>
-      <p className="text-[11px] text-gray-300 mt-1">{tx('可上傳多段(不同語氣 / 角色);不會取代原試音。', '可上传多段(不同语气 / 角色);不会取代原试音。', 'Add several (different tones / characters); won’t replace your audition.')}</p>
+      <p className="text-[11px] text-gray-300 mt-1">{tx('可一段一段上傳多段(不同語氣 / 角色);每傳一段都會加到上面清單,想傳幾段都行,不會取代原試音。', '可一段一段上传多段(不同语气 / 角色);每传一段都会加到上面清单,想传几段都行,不会取代原试音。', 'Upload clips one at a time (different tones / characters); each is added to the list above — add as many as you like. It won’t replace your audition.')}</p>
       {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
     </div>
   );

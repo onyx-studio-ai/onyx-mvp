@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     const inquiriesSince = searchParams.get('inquiries_since');
     const applicationsSince = searchParams.get('applications_since');
     const requestsSince = searchParams.get('requests_since');
+    const demosSince = searchParams.get('demos_since');
 
     let voiceQuery = supabase
       .from('voice_orders')
@@ -59,6 +60,15 @@ export async function GET(request: NextRequest) {
       .neq('client_email', 'casting@onyxstudios.ai');
     if (requestsSince) requestsQuery = requestsQuery.gt('created_at', requestsSince);
 
+    // New "extra demos" a talent uploaded in response to a 想聽更多 demo request.
+    // extra_samples_updated_at is stamped on each upload, so this counts quotes
+    // that got a new clip since the boss last opened 案件 · 發案.
+    let demosQuery = supabase
+      .from('marketplace_quotes')
+      .select('*', { count: 'exact', head: true })
+      .not('extra_samples_updated_at', 'is', null);
+    if (demosSince) demosQuery = demosQuery.gt('extra_samples_updated_at', demosSince);
+
     let orchestraUrl = `${SUPABASE_URL}/rest/v1/orchestra_orders?status=eq.paid&select=id`;
     if (ordersSince) orchestraUrl += `&created_at=gt.${ordersSince}`;
 
@@ -68,6 +78,7 @@ export async function GET(request: NextRequest) {
       { count: newInquiries },
       { count: pendingApps },
       { count: pendingRequests },
+      { count: newDemos },
       orchestraRes,
     ] = await Promise.all([
       voiceQuery,
@@ -75,6 +86,7 @@ export async function GET(request: NextRequest) {
       inquiriesQuery,
       appsQuery,
       requestsQuery,
+      demosQuery,
       fetch(orchestraUrl, {
         headers: {
           apikey: SERVICE_ROLE_KEY,
@@ -90,9 +102,10 @@ export async function GET(request: NextRequest) {
       inquiries: newInquiries || 0,
       applications: pendingApps || 0,
       requests: pendingRequests || 0,
+      demos: newDemos || 0,
     });
   } catch (err) {
     console.error('[Admin Badges] Error:', err);
-    return NextResponse.json({ inquiries: 0, orders: 0, applications: 0, requests: 0 });
+    return NextResponse.json({ inquiries: 0, orders: 0, applications: 0, requests: 0, demos: 0 });
   }
 }

@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Music, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Activity } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'payouts' | 'casting';
+type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos';
 
 type NavItem = { href: string; labelKey: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey };
 type NavGroup = { titleKey: string; items: NavItem[] };
@@ -19,7 +19,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/orders', labelKey: 'orders', icon: ShoppingCart, badgeKey: 'orders' },
       { href: '/admin/requests', labelKey: 'requests', icon: Inbox, badgeKey: 'requests' },
       { href: '/admin/inquiries', labelKey: 'inquiries', icon: MessageSquare, badgeKey: 'inquiries' },
-      { href: '/admin/marketplace', labelKey: 'marketplace', icon: Megaphone, badgeKey: 'casting' },
+      { href: '/admin/marketplace', labelKey: 'marketplace', icon: Megaphone, badgeKey: 'demos' },
     ],
   },
   {
@@ -30,10 +30,9 @@ const navGroups: NavGroup[] = [
       { href: '/admin/talents', labelKey: 'talentManagement', icon: Mic },
       { href: '/admin/finance', labelKey: 'finance', icon: TrendingUp },
       { href: '/admin/payouts', labelKey: 'talentPayouts', icon: DollarSign },
-      { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt, badgeKey: 'payouts' },
+      { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt },
       { href: '/admin/costs', labelKey: 'costs', icon: Wallet },
       { href: '/admin/pockets', labelKey: 'pockets', icon: Wallet },
-      { href: '/admin/analytics', labelKey: 'analytics', icon: Activity },
     ],
   },
   {
@@ -42,7 +41,6 @@ const navGroups: NavGroup[] = [
       { href: '/admin/certificates', labelKey: 'certificates', icon: Award },
       { href: '/admin/promos', labelKey: 'promos', icon: Tag },
       { href: '/admin/showcases', labelKey: 'audioShowcases', icon: Volume2 },
-      { href: '/admin/vibes', labelKey: 'vibes', icon: Music },
       { href: '/admin/voices', labelKey: 'voiceLibrary', icon: Waves },
       { href: '/admin/sovits', labelKey: 'sovits', icon: Wand2 },
     ],
@@ -63,17 +61,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     applications: '申請資料',
     users: '使用者',
     talentManagement: '人才管理',
-    finance: '財務總覽',
+    finance: '📊 財務總覽',
     talentPayouts: '人才分潤',
     payoutRequests: '請款單',
     costs: '營運成本',
-    pockets: '口袋',
-    analytics: '流量',
+    pockets: '💰 口袋',
     content: '內容',
     certificates: '授權證書',
     promos: '優惠碼',
     audioShowcases: '音訊作品',
-    vibes: '音樂風格',
     voiceLibrary: 'AI Voice 庫',
     sovits: 'GPT-SoVITS / RVC',
     invalidAdminCode: '管理員代碼無效',
@@ -99,17 +95,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     applications: 'Applications',
     users: 'Users',
     talentManagement: 'Talent Management',
-    finance: 'Finance',
+    finance: '📊 Finance',
     talentPayouts: 'Talent Payouts',
     payoutRequests: 'Payout Requests',
     costs: 'Operating Costs',
-    pockets: 'Pockets',
-    analytics: 'Analytics',
+    pockets: '💰 Pockets',
     content: 'Content',
     certificates: 'Certificates',
     promos: 'Promos',
     audioShowcases: 'Audio Showcases',
-    vibes: 'Vibes',
     voiceLibrary: 'AI Voice Library',
     sovits: 'GPT-SoVITS / RVC',
     invalidAdminCode: 'Invalid admin code',
@@ -133,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(true);
-  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0, payouts: 0, casting: 0 });
+  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0, demos: 0 });
 
   // Admin panel uses a light theme — explicitly ensure dark class is not set
   // (it may linger from public dark pages on client-side navigation).
@@ -171,19 +165,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const fetchBadges = async () => {
       try {
         const params = new URLSearchParams();
-        (['orders', 'inquiries', 'applications', 'requests', 'payouts', 'casting'] as BadgeKey[]).forEach((key) => {
+        (['orders', 'inquiries', 'applications', 'requests', 'demos'] as BadgeKey[]).forEach((key) => {
           const seen = localStorage.getItem(`admin_badge_seen_${key}`);
           if (seen) params.set(`${key}_since`, seen);
         });
-        const res = await fetch(`/api/admin/nav-counts?${params}`);
+        const res = await fetch(`/api/admin/badges?${params}`);
         const data = await res.json();
         setBadges({
           orders: data.orders || 0,
           inquiries: data.inquiries || 0,
           applications: data.applications || 0,
           requests: data.requests || 0,
-          payouts: data.payouts || 0,
-          casting: data.casting || 0,
+          demos: data.demos || 0,
         });
       } catch { /* ignore */ }
     };
@@ -334,7 +327,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Navigation — filtered by role.
             Production role only sees orders + inquiries (no /admin/dashboard
             revenue stats), applications, and talents (no payouts, users,
-            promos, certificates, showcases, vibes, voices, sovits). */}
+            promos, certificates, showcases, voices, sovits). */}
         <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
           {navGroups
             .map((group) => {
@@ -381,8 +374,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           item.badgeKey === 'orders' ? 'bg-amber-600' :
                           item.badgeKey === 'applications' ? 'bg-yellow-600' :
                           item.badgeKey === 'requests' ? 'bg-emerald-600' :
-                          item.badgeKey === 'payouts' ? 'bg-rose-600' :
-                          item.badgeKey === 'casting' ? 'bg-violet-600' :
+                          item.badgeKey === 'demos' ? 'bg-violet-600' :
                           'bg-blue-600'
                         )}>
                           {badgeCount > 99 ? '99+' : badgeCount}

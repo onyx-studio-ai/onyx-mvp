@@ -1200,6 +1200,21 @@ export function castingMoreDemosEmail(p: { talentName?: string; title: string; n
   return { subject: C.subject, html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
 }
 
+/** Internal (produce@): a talent uploaded an extra demo the client/Onyx asked for. */
+export function extraDemoUploadedEmail(p: { talentName?: string; title: string; count: number; url: string }): { subject: string; html: string } {
+  const t = mpEsc(p.title); const name = mpEsc((p.talentName || '').trim()) || '配音員';
+  const rows = [
+    { label: '案件 Case', value: t || '—' },
+    { label: '配音員 Talent', value: name },
+    { label: '目前追加 demo 數', value: `${p.count} 段` },
+  ];
+  const content = `
+    ${headlineBlock('配音員上傳了追加 demo', '有配音員回應了「想聽更多 demo」的請求,請到後台試聽。', BRAND_GREEN)}
+    ${infoCard('追加 demo', rows)}
+    ${ctaRow('後台試聽 · 案件 · 發案', p.url, BRAND_GREEN)}`;
+  return { subject: `[追加 demo] ${name} 上傳了追加 demo · ${t}(共 ${p.count} 段)`, html: baseLayout(content) };
+}
+
 /** Client: the talent delivered the recording — ready to review. */
 export function castingDeliveryClientEmail(p: { clientName?: string; title?: string; orderNumber: string; url: string; locale?: string }): { subject: string; html: string } {
   const L = mpLocale(p.locale);

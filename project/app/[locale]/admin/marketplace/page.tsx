@@ -409,9 +409,12 @@ export default function AdminMarketplace() {
 
                     {/* 追加 demo:請這位再多提供 demo(其他語氣/角色)+ 已上傳的追加 demo(後台下載乾淨檔) */}
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
-                      <button onClick={() => requestMoreDemos(q.id)} className="text-xs bg-violet-100 hover:bg-violet-200 text-violet-700 rounded px-2 py-0.5" title="通知配音員上傳更多 demo(其他語氣/角色)">🎬 請多給 demo</button>
+                      <button onClick={() => requestMoreDemos(q.id)} className="text-xs bg-violet-100 hover:bg-violet-200 text-violet-700 rounded px-2 py-0.5" title="通知配音員上傳更多 demo(其他語氣/角色)">請多給 demo</button>
                       {q.more_demos_requested_at && !((q.extra_samples || []).length) && (
-                        <span className="text-xs text-amber-600" title={q.more_demos_note || ''}>⏳ 已請求,待上傳</span>
+                        <span className="text-xs text-amber-600" title={q.more_demos_note || ''}>已請求,待上傳</span>
+                      )}
+                      {q.more_demos_requested_at && ((q.extra_samples || []).length) > 0 && (
+                        <span className="text-xs text-violet-700" title={q.more_demos_note || ''}>已收到 {(q.extra_samples || []).length} 段(配音員可能持續追加)</span>
                       )}
                     </div>
                     {(q.extra_samples || []).length > 0 && (
