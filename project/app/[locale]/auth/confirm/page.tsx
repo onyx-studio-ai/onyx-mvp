@@ -16,6 +16,20 @@ export default function ConfirmPage() {
   const router = useRouter();
   const [pageState, setPageState] = useState<PageState>('loading');
 
+  // 依登入者身分決定登入後首頁:純配音員(有 talent 檔、非客戶)→ /talent,
+  // 其餘(純客戶 / 雙重身分 / 查不出)→ /dashboard。查詢失敗一律 fail-safe 回
+  // /dashboard(客戶後台雙重身分也進得去,不會把人擋在外面)。
+  const resolveHome = async (accessToken: string): Promise<'/talent' | '/dashboard'> => {
+    try {
+      const meRes = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (meRes.ok) {
+        const { isClient } = await meRes.json().catch(() => ({ isClient: false }));
+        return isClient ? '/dashboard' : '/talent'; // 純配音員才進 /talent
+      }
+    } catch { /* 查不出身分 → 用預設 */ }
+    return '/dashboard';
+  };
+
   useEffect(() => {
     const handleConfirm = async () => {
       const hash = window.location.hash;
@@ -36,7 +50,9 @@ export default function ConfirmPage() {
             setPageState('invalid');
           } else {
             setPageState('success');
-            setTimeout(() => router.push('/dashboard'), 2500);
+            // session 就緒即刻依身分導向(純配音員→/talent,其餘→/dashboard),
+            // 不再硬等 2.5 秒空轉。
+            router.replace(await resolveHome(accessToken));
           }
           return;
         }
@@ -45,7 +61,7 @@ export default function ConfirmPage() {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         setPageState('success');
-        setTimeout(() => router.push('/dashboard'), 2500);
+        router.replace(await resolveHome(data.session.access_token));
         return;
       }
 

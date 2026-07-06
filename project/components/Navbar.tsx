@@ -20,16 +20,45 @@ export default function Navbar() {
   const isZh = locale.startsWith('zh');
   const ntx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
 
+  // 「控制台」按鈕該去哪:純配音員→/talent,純客戶/雙重身分/未知→/dashboard。
+  // 預設 /dashboard,避免身分查出來前先閃到別處(客戶/雙重身分本來就進 /dashboard)。
+  const [dashboardHref, setDashboardHref] = useState<'/talent' | '/dashboard'>('/dashboard');
+
   useEffect(() => {
+    let active = true;
+
+    // 依登入身分解析「控制台」目的地:只有「有 talent 檔且非客戶」的純配音員
+    // 導去 /talent;查不出(未登入 / 非配音員 / 網路問題)一律留在預設 /dashboard。
+    const resolveDashboardHref = async (token: string) => {
+      try {
+        const meRes = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${token}` } });
+        if (!active) return;
+        if (meRes.ok) {
+          const { isClient } = await meRes.json().catch(() => ({ isClient: false }));
+          setDashboardHref(isClient ? '/dashboard' : '/talent');
+        } else {
+          setDashboardHref('/dashboard'); // 非配音員(404)→ 純客戶,進 /dashboard
+        }
+      } catch { /* 網路問題 → 維持預設 /dashboard */ }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
       setUser(session?.user ?? null);
+      const tok = session?.access_token;
+      if (tok) resolveDashboardHref(tok);
+      else setDashboardHref('/dashboard');
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
       setUser(session?.user ?? null);
+      const tok = session?.access_token;
+      if (tok) resolveDashboardHref(tok);
+      else setDashboardHref('/dashboard'); // 登出後重置
     });
 
-    return () => subscription.unsubscribe();
+    return () => { active = false; subscription.unsubscribe(); };
   }, []);
 
   const handleSignOut = async () => {
@@ -257,9 +286,9 @@ export default function Navbar() {
               {user ? (
                 <div className="flex items-center gap-3 ml-2">
                   <Link
-                    href="/dashboard"
+                    href={dashboardHref}
                     className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
-                      pathname === '/dashboard'
+                      pathname === dashboardHref
                         ? 'bg-blue-600 text-white'
                         : 'bg-white/10 text-white hover:bg-white/15'
                     }`}
@@ -418,7 +447,7 @@ export default function Navbar() {
             {user ? (
               <div className="flex flex-col gap-3">
                 <Link
-                  href="/dashboard"
+                  href={dashboardHref}
                   onClick={closeMobileMenu}
                   className="text-lg font-medium text-white hover:text-blue-400 transition-colors"
                 >

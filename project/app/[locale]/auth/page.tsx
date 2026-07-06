@@ -60,13 +60,18 @@ export default function AuthPage() {
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (email.toLowerCase() === 'admin@onyxstudios.ai') { router.push('/admin/dashboard'); return; }
-        // Route talents to their own dashboard, clients to the orders dashboard.
+        // 依身分分流:純配音員(有配音員檔、非客戶)→ /talent;純客戶 / 雙重身分 /
+        // 查不出 → /dashboard。雙重身分刻意送 /dashboard(客戶後台),避免「我是
+        // 客戶卻被丟到配音員頁」的錯位感;那邊本來就有切到配音員後台的入口。
         let dest = '/dashboard';
         try {
           const token = signInData.session?.access_token;
           if (token) {
             const meRes = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${token}` } });
-            if (meRes.ok) dest = '/talent';
+            if (meRes.ok) {
+              const { isClient } = await meRes.json().catch(() => ({ isClient: false }));
+              dest = isClient ? '/dashboard' : '/talent';
+            }
           }
         } catch { /* default to /dashboard */ }
         router.push(dest);

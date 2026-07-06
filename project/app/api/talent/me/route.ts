@@ -63,7 +63,9 @@ async function resolveTalent(request: NextRequest) {
   }
   if (!talent) return { error: 'No talent profile is linked to this account', status: 404 as const };
 
-  return { db, talent };
+  // 帶回登入帳號本身(id + email),讓 isClient 判斷能對應「同一登入帳號」的
+  // 下單/發案紀錄,而非只認 talents 表登記的那個 email。
+  return { db, talent, userId: user.id, userEmail: user.email || '' };
 }
 
 // Validate a URL points inside one of OUR public storage buckets — blocks
@@ -84,24 +86,61 @@ export async function GET(request: NextRequest) {
     // Dual-role: is this account ALSO a client (placed any order)? Drives access
     // to the client dashboard + the cross-portal switcher. Check every order
     // type — a talent who only bought music/orchestra is still a client.
+    //
+    // 放寬(2026-07):不再只認 talents 表登記的那個 email。同一個「登入帳號」
+    // 只要下過單/發過案就算客戶,涵蓋兩種被漏判的情況:
+    //   (a) 用不同 email 下單 → 也比對登入帳號的 email(user.email);
+    //   (b) 帳號直接綁在紀錄上 → orchestra_orders.user_id / briefs.client_user_id
+    //       直接對 auth 使用者 id。
+    // 仍然是「這個帳號真的下過單/發過案」才算客戶,沒下過單的人不會被誤放。
     let isClient = false;
-    const email = r.talent.email || '';
-    if (email) {
+    // 候選 email:talents 表 email + 登入帳號 email。去重(大小寫不敏感去重,
+    // 但保留原始大小寫做精確 .eq 比對 —— 不用 ilike,避免 email local part 內
+    // 的底線 `_` 在 LIKE 中變成萬用字元造成誤放)。
+    const seen = new Set<string>();
+    const emails: string[] = [];
+    for (const raw of [r.talent.email || '', r.userEmail]) {
+      const e = raw.trim();
+      const key = e.toLowerCase();
+      if (e && !seen.has(key)) { seen.add(key); emails.push(e); }
+    }
+
+    // (1) 依 email 比對三種訂單表(voice/music/orchestra 都只有 email 欄位可比)。
+    for (const email of emails) {
+      if (isClient) break;
       for (const table of ['voice_orders', 'music_orders', 'orchestra_orders'] as const) {
         try {
           const { data: ord } = await r.db.from(table).select('id').eq('email', email).limit(1).maybeSingle();
           if (ord) { isClient = true; break; }
         } catch { /* non-fatal — table/RLS quirk shouldn't block the profile load */ }
       }
-      // Also a client if they've POSTED a voiceover request via /hire (no paid
-      // order yet) — they still need the client area to track its status.
-      if (!isClient) {
+    }
+
+    // (2) orchestra_orders 另有 user_id,直接對登入帳號 id(涵蓋以不同 email 下單)。
+    if (!isClient) {
+      try {
+        const { data: ord } = await r.db.from('orchestra_orders').select('id').eq('user_id', r.userId).limit(1).maybeSingle();
+        if (ord) isClient = true;
+      } catch { /* non-fatal */ }
+    }
+
+    // (3) 透過 /hire 發過配音需求(可能還沒付款成單)也算客戶 —— 需要客戶後台
+    //     追蹤狀態。比對 client_email(候選 email)+ client_user_id(登入帳號 id)。
+    if (!isClient) {
+      for (const email of emails) {
         try {
-          const { data: brief } = await r.db.from('marketplace_briefs').select('id').ilike('client_email', email).limit(1).maybeSingle();
-          if (brief) isClient = true;
+          const { data: brief } = await r.db.from('marketplace_briefs').select('id').eq('client_email', email).limit(1).maybeSingle();
+          if (brief) { isClient = true; break; }
         } catch { /* non-fatal */ }
       }
     }
+    if (!isClient) {
+      try {
+        const { data: brief } = await r.db.from('marketplace_briefs').select('id').eq('client_user_id', r.userId).limit(1).maybeSingle();
+        if (brief) isClient = true;
+      } catch { /* non-fatal */ }
+    }
+
     return NextResponse.json({ talent: r.talent, isClient });
   } catch (err) {
     return supabaseErrorResponse(err, 'api/talent/me:GET');

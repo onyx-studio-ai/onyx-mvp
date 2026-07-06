@@ -2,10 +2,9 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { useRouter as useLocaleRouter } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt, ClipboardList, User, Briefcase, DollarSign, MessageSquare } from 'lucide-react';
+import { FileAudio, Settings, LogOut, Receipt, ClipboardList, User, Briefcase, DollarSign, MessageSquare, Info, ArrowRight } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
 
@@ -185,27 +184,40 @@ function MobileNav({ showTalentLink }: { showTalentLink: boolean }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router = useLocaleRouter();
-  // Role-based access to the client dashboard:
-  //   pure talent  (talent, no orders)      → bounced to /talent
-  //   pure client  (orders, no profile)     → stays, no talent link
-  //   dual role    (talent who also ordered) → stays, talent-portal switcher shown
-  // /api/talent/me returns { talent, isClient }: ok ⇒ has a talent profile.
+  const locale = useLocale();
+  const isZhCN = locale === 'zh-CN';
+  const isZh = locale.startsWith('zh');
+  const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
+
+  // 進客戶後台的三種身分:
+  //   純客戶(有下單、沒配音檔)          → 留下,不顯示配音員切換
+  //   雙重身分(既是配音員又下過單)      → 留下,顯示「配音員 ⇄ 客戶」切換
+  //   純配音員(有配音檔、從沒下過單)    → 留下(不再強制踢走),頂部顯示溫和引導條
+  // 關鍵:客戶後台對任何登入者都「進得去」,絕不 router.replace 把人鎖在外面
+  // ——即使 /api/talent/me 因網路/RLS 偶發誤判,也只是少顯示一個提示條,不影響存取。
+  // /api/talent/me 回 { talent, isClient }:ok ⇒ 有配音員檔;isClient ⇒ 也是客戶。
   const [showTalentLink, setShowTalentLink] = useState(false);
+  const [pureTalent, setPureTalent] = useState(false); // 有配音員檔但從沒下過單
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const tok = session?.access_token;
         if (!tok) return;
         const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
-        if (!r.ok) return; // not a talent → pure client, stays put
+        if (!r.ok) return; // 非配音員(404)→ 純客戶,留下、不顯示切換
         const { isClient } = await r.json().catch(() => ({ isClient: false }));
-        if (!isClient) { router.replace('/talent'); return; } // pure talent → wrong backend
-        setShowTalentLink(true); // dual role → allow, surface the switcher
-      } catch { /* network hiccup → fail open (stay on dashboard) */ }
+        if (!active) return;
+        if (isClient) {
+          setShowTalentLink(true); // 雙重身分 → 顯示切換
+        } else {
+          setPureTalent(true); // 純配音員 → 留下,顯示溫和引導條(不自動跳)
+        }
+      } catch { /* 網路問題 → 什麼都不做,留在客戶後台 */ }
     })();
-  }, [router]);
+    return () => { active = false; };
+  }, []);
 
   return (
     <DashboardProvider>
@@ -214,6 +226,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar showTalentLink={showTalentLink} />
         <div className="md:ml-56 pt-16 min-h-screen">
           <MobileNav showTalentLink={showTalentLink} />
+          {pureTalent && (
+            // 純配音員誤入客戶後台:溫和提示 + 一鍵前往配音員後台,但不強制導向,
+            // 讓他仍可留在這裡(例如他正想以客戶身分下第一筆單)。
+            <div className="px-4 pt-4 md:px-6">
+              <div className="max-w-3xl rounded-xl border border-amber-500/30 bg-amber-500/[0.07] px-4 py-3 flex items-center gap-3 text-sm">
+                <Info className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                <span className="text-gray-200 flex-1">
+                  {tx('這是客戶後台。你的配音員後台在另一邊。', '这是客户后台。你的配音员后台在另一边。', 'This is the client dashboard. Your talent dashboard is on the other side.')}
+                </span>
+                <Link
+                  href="/talent"
+                  className="inline-flex items-center gap-1 text-amber-300 hover:text-amber-200 font-medium whitespace-nowrap"
+                >
+                  {tx('前往配音員後台', '前往配音员后台', 'Go to talent dashboard')}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          )}
           {children}
         </div>
       </div>
