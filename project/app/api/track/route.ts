@@ -1,42 +1,114 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 
-/*
-  自建輕量流量埋點 —— 公開、輕量、絕不擋使用者。
+/**
+ * 流量埋點寫入端 — 前台每次頁面瀏覽由 <PageViewTracker> beacon 打這支。
+ *
+ * 設計原則:
+ *   - Node runtime(預設):要用 service_role client 寫入受 RLS 鎖定的 page_views 表,
+ *     不走 Edge(Edge 用 node supabase-js 不穩)。
+ *   - 隱私最小化:只存 path / country(2 碼) / referrer host / locale。
+ *     不碰 IP、不碰任何 PII。
+ *   - 非阻塞 / 永不擋頁面:任何錯誤都吞掉回 204,絕不讓埋點失敗影響使用者。
+ *   - 伺服器端二次過濾:即使前端漏擋,這裡也擋掉 /api、/admin、靜態資源、明顯 bot。
+ */
 
-  - POST 收 { path, locale, event?, visitorId }
-  - 國家碼從 Vercel 自動帶的 header `x-vercel-ip-country` 取;隱私:只存國家、不存完整 IP。
-  - 用 service client insert 一筆 page_views。任何錯誤一律吞掉(analytics 掛掉不能影響前台),永遠回 { ok: true }。
-  - sanitize:所有欄位限長;event 只收白名單,其餘視為 pageview(避免前端亂塞髒事件名)。
-*/
+export const runtime = 'nodejs';
 
-// 允許的事件名。非白名單 → 一律當 pageview。
-const ALLOWED_EVENTS = new Set(['pageview', 'hire_submit', 'quote_submit', 'apply_submit']);
+// 這些前綴不算「訪客流量」:後台自己、API、驗證 / 結帳中繼、靜態資源。
+const EXCLUDED_PREFIXES = [
+  '/admin',
+  '/api',
+  '/_next',
+  '/auth',
+  '/checkout',
+  '/paddle-checkout',
+  '/verify',
+  '/verify-voice',
+  '/voice-id',
+];
 
-// 取字串 + 去空白 + 限長;拿不到就回 null。
-function clip(v: unknown, max: number): string | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  return s ? s.slice(0, max) : null;
+// 明顯的 bot / 爬蟲 / 監控 UA(小寫比對子字串)。抓不完但擋掉大宗雜訊。
+const BOT_UA = [
+  'bot', 'crawler', 'spider', 'crawl', 'slurp', 'mediapartners',
+  'headless', 'phantom', 'puppeteer', 'playwright', 'lighthouse',
+  'pingdom', 'uptime', 'monitor', 'curl', 'wget', 'python-requests',
+  'axios', 'go-http', 'facebookexternalhit', 'preview',
+];
+
+function isBot(ua: string): boolean {
+  const lower = ua.toLowerCase();
+  return BOT_UA.some((sig) => lower.includes(sig));
+}
+
+function isExcludedPath(path: string): boolean {
+  return EXCLUDED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
+/** 只取來源網域 host(不留 query / path),截斷防過長。空 / 站內來源回 null。 */
+function refererHost(referrer: string | null, selfHost: string): string | null {
+  if (!referrer) return null;
+  try {
+    const host = new URL(referrer).hostname;
+    if (!host || host === selfHost) return null; // 站內導覽不算「來源」
+    return host.slice(0, 128);
+  } catch {
+    return null;
+  }
+}
+
+/** 只允許已知語系,其餘正規化成預設 en(避免存進髒值)。 */
+function normalizeLocale(locale: unknown): string {
+  return locale === 'zh-TW' || locale === 'zh-CN' ? locale : 'en';
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const ua = request.headers.get('user-agent') || '';
+    if (isBot(ua)) return new NextResponse(null, { status: 204 });
 
-    const path = clip(body.path, 300);
-    const locale = clip(body.locale, 16);
-    const visitorId = clip(body.visitorId, 64);
-    const rawEvent = clip(body.event, 32);
-    const event = rawEvent && ALLOWED_EVENTS.has(rawEvent) ? rawEvent : 'pageview';
+    let body: { path?: unknown; locale?: unknown; referrer?: unknown } = {};
+    try {
+      body = await request.json();
+    } catch {
+      return new NextResponse(null, { status: 204 });
+    }
 
-    // Vercel edge 自動帶的地理 header;本地/非 Vercel 環境會是 null → 存 null 即可。
-    const country = clip(request.headers.get('x-vercel-ip-country'), 8);
+    const rawPath = typeof body.path === 'string' ? body.path : '';
+    // 只留 path 部分(去掉可能夾帶的 query / hash),截斷防過長。
+    const path = rawPath.split('?')[0].split('#')[0].slice(0, 512);
+    if (!path || !path.startsWith('/') || isExcludedPath(path)) {
+      return new NextResponse(null, { status: 204 });
+    }
 
-    const db = getSupabaseServiceClient();
-    await db.from('page_views').insert([{ path, locale, country, visitor_id: visitorId, event }]);
+    // 國家碼由 Vercel 邊緣注入(非我們解析 IP)。本機開發時不存在 → null。
+    const country =
+      request.headers.get('x-vercel-ip-country')?.slice(0, 2).toUpperCase() || null;
+
+    const selfHost = (() => {
+      try {
+        return new URL(request.url).hostname;
+      } catch {
+        return 'www.onyxstudios.ai';
+      }
+    })();
+    const referrer = refererHost(
+      typeof body.referrer === 'string' ? body.referrer : null,
+      selfHost,
+    );
+
+    const supabase = getSupabaseServiceClient();
+    // fire-and-forget:不 await 的話 serverless 可能提前結束,所以 await 但吞錯。
+    await supabase.from('page_views').insert({
+      path,
+      country,
+      referrer,
+      locale: normalizeLocale(body.locale),
+    });
+
+    return new NextResponse(null, { status: 204 });
   } catch {
-    // 刻意吞掉:analytics 失敗不可影響使用者體驗。
+    // 埋點永遠不能拖垮任何東西 — 靜默成功。
+    return new NextResponse(null, { status: 204 });
   }
-  return NextResponse.json({ ok: true });
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from '@/i18n/navigation';
 import { DollarSign, ShoppingCart, Music, Mic, ArrowRight, RefreshCw } from 'lucide-react';
 import { TrafficChart, VoiceBarChart, SectionHeader } from './components';
+import TrafficSection from './TrafficSection';
 import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.config';
 
 interface DashboardStats {
@@ -252,6 +253,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </section>
+
+        {/* 真實訪客流量(純新增,獨立取數,不影響上方訂單卡) */}
+        <TrafficSection />
 
         <section>
           <SectionHeader title="Last 7 Days" />

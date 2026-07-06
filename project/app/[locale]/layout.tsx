@@ -1,7 +1,7 @@
 import { Toaster } from '@/components/ui/sonner';
 import Navbar from '@/components/Navbar';
 import RecoveryRedirect from '@/components/RecoveryRedirect';
-import TrackPageView from '@/components/TrackPageView';
+import PageViewTracker from '@/components/PageViewTracker';
 import { SelectionProvider } from '@/contexts/SelectionContext';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
@@ -119,7 +119,7 @@ export default async function LocaleLayout({
       <NextIntlClientProvider messages={messages}>
         <SelectionProvider>
           <RecoveryRedirect />
-          <TrackPageView />
+          <PageViewTracker />
           <Navbar />
           {children}
           <Toaster />
