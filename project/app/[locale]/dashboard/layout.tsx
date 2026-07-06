@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt, ClipboardList, User, Briefcase, DollarSign, MessageSquare, Info, ArrowRight } from 'lucide-react';
+import { FileAudio, Settings, LogOut, Receipt, ClipboardList, User, Briefcase, DollarSign, MessageSquare, Info, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
 
@@ -77,10 +77,14 @@ function DashboardHeader() {
   );
 }
 
-function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
+function Sidebar({ showTalentLink, headshot }: { showTalentLink: boolean; headshot: string }) {
   const pathname = usePathname();
   const safePathname = pathname || '';
   const user = useDashboardUser();
+  const locale = useLocale();
+  const isZhCN = locale === 'zh-CN';
+  const isZh = locale.startsWith('zh');
+  const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
   const t = useTranslations('dashboard');
   const tr = (key: string, fallback: string) => {
     const value = t(key as any);
@@ -111,7 +115,26 @@ function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
 
   return (
     <aside className="hidden md:flex w-56 flex-col fixed top-16 bottom-0 border-r border-white/10 bg-zinc-950 z-30">
-      <nav className="flex-1 p-4 space-y-1 pt-6 overflow-y-auto">
+      {/* 身分區 — 與配音員後台側邊欄頂部共用同一套結構(頭像 / 名字 / 當前後台)。
+          雙重身分時,底部再放一顆明確的「前往配音員後台」切換鈕,切換時視覺連貫。 */}
+      <div className="px-4 pt-4 pb-2">
+        <p className="text-[10px] tracking-[0.25em] text-amber-300 mb-2 px-2">ONYX</p>
+        <div className="flex items-center gap-2.5 px-2">
+          {headshot
+            ? <img src={headshot} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+            : <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0"><User className="w-4 h-4 text-gray-400" /></span>}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate">{displayName}</p>
+            <p className="text-[11px] text-gray-500">{tx('客戶後台', '客户后台', 'Client dashboard')}</p>
+          </div>
+        </div>
+        {showTalentLink && (
+          <Link href="/talent" className="mt-3 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-gray-300 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">
+            <ArrowLeftRight className="w-3.5 h-3.5" /> {tx('前往配音員後台', '前往配音员后台', 'Switch to talent')}
+          </Link>
+        )}
+      </div>
+      <nav className="flex-1 p-4 space-y-1 pt-2 overflow-y-auto">
         {showTalentLink && (
           <>
             <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tr('groupTalent', '配音員')}</p>
@@ -129,11 +152,8 @@ function Sidebar({ showTalentLink }: { showTalentLink: boolean }) {
       </nav>
 
       <div className="p-4 border-t border-white/10">
-        <Link href="/dashboard/settings" className={`${itemCls(isActive('/dashboard/settings'))} mb-2`}><Settings className="w-4 h-4" />{tr('navSettings', '設定')}</Link>
-        <div className="px-1">
-          <p className="text-xs text-gray-300 font-medium truncate">{displayName}</p>
-          <p className="text-[11px] text-gray-500 truncate mt-0.5">{user.email}</p>
-        </div>
+        {/* 登出走全站頂部 header,這裡只放設定,避免同頁兩顆登出鈕。 */}
+        <Link href="/dashboard/settings" className={itemCls(isActive('/dashboard/settings'))}><Settings className="w-4 h-4" />{tr('navSettings', '設定')}</Link>
       </div>
     </aside>
   );
@@ -198,6 +218,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // /api/talent/me 回 { talent, isClient }:ok ⇒ 有配音員檔;isClient ⇒ 也是客戶。
   const [showTalentLink, setShowTalentLink] = useState(false);
   const [pureTalent, setPureTalent] = useState(false); // 有配音員檔但從沒下過單
+  const [headshot, setHeadshot] = useState(''); // 有配音員檔時,頂部身分區用的頭像
   useEffect(() => {
     let active = true;
     (async () => {
@@ -207,8 +228,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         if (!tok) return;
         const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${tok}` } });
         if (!r.ok) return; // 非配音員(404)→ 純客戶,留下、不顯示切換
-        const { isClient } = await r.json().catch(() => ({ isClient: false }));
+        const { isClient, talent } = await r.json().catch(() => ({ isClient: false, talent: null }));
         if (!active) return;
+        if (talent?.headshot_url) setHeadshot(talent.headshot_url);
         if (isClient) {
           setShowTalentLink(true); // 雙重身分 → 顯示切換
         } else {
@@ -223,7 +245,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <DashboardProvider>
       <div className="min-h-screen bg-[#050505]">
         <DashboardHeader />
-        <Sidebar showTalentLink={showTalentLink} />
+        <Sidebar showTalentLink={showTalentLink} headshot={headshot} />
         <div className="md:ml-56 pt-16 min-h-screen">
           <MobileNav showTalentLink={showTalentLink} />
           {pureTalent && (

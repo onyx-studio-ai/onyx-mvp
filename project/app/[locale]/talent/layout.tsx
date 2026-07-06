@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
-import { User, Briefcase, MessageSquare, DollarSign, LogOut, Bell, ClipboardList, FileAudio, Receipt, Settings } from 'lucide-react';
+import { User, Briefcase, MessageSquare, DollarSign, LogOut, Bell, ClipboardList, FileAudio, Receipt, Settings, ArrowLeftRight } from 'lucide-react';
 
 export default function TalentLayout({ children }: { children: React.ReactNode }) {
   const locale = useLocale();
@@ -30,6 +30,7 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
 
   const [name, setName] = useState('');
+  const [headshot, setHeadshot] = useState('');
   const [isClient, setIsClient] = useState(false);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null); // null = still checking
   const [notTalent, setNotTalent] = useState(false);
@@ -52,7 +53,7 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
         if (r.status === 404) { if (!cancelled) setNotTalent(true); return; }
         if (r.ok) {
           const j = await r.json();
-          if (!cancelled) { setName(j.talent?.name || ''); setIsClient(!!j.isClient); }
+          if (!cancelled) { setName(j.talent?.name || ''); setHeadshot(j.talent?.headshot_url || ''); setIsClient(!!j.isClient); }
           // Derive notifications from the briefs feed (real data, no extra table).
           try {
             const br = await fetch('/api/talent/briefs', { headers: { Authorization: `Bearer ${token}` } });
@@ -97,10 +98,24 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
     <div className="min-h-screen bg-black text-white pt-24">
       {/* Desktop sidebar — starts below the fixed global navbar (h-24) */}
       <aside className="hidden md:flex md:flex-col md:fixed md:top-24 md:bottom-0 md:left-0 md:w-56 border-r border-white/10 bg-zinc-950 p-4 z-30">
+        {/* 身分區 — 與客戶後台側邊欄頂部共用同一套結構(頭像 / 名字 / 當前後台)。
+            雙重身分時,底部再放一顆明確的「前往客戶後台」切換鈕,切換時視覺連貫。 */}
         <div className="px-2 py-3 mb-2">
-          <p className="text-[11px] tracking-[0.25em] text-amber-300">ONYX</p>
-          <p className="text-sm font-semibold mt-1 truncate">{name || tx('配音員', '配音员', 'Talent')}</p>
-          <p className="text-[11px] text-gray-500">{tx('配音員後台', '配音员后台', 'Talent dashboard')}</p>
+          <p className="text-[10px] tracking-[0.25em] text-amber-300 mb-2">ONYX</p>
+          <div className="flex items-center gap-2.5">
+            {headshot
+              ? <img src={headshot} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+              : <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0"><User className="w-4 h-4 text-gray-400" /></span>}
+            <div className="min-w-0">
+              <p className="text-sm font-semibold truncate">{name || tx('配音員', '配音员', 'Talent')}</p>
+              <p className="text-[11px] text-gray-500">{tx('配音員後台', '配音员后台', 'Talent dashboard')}</p>
+            </div>
+          </div>
+          {isClient && (
+            <Link href="/dashboard" className="mt-3 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-gray-300 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">
+              <ArrowLeftRight className="w-3.5 h-3.5" /> {tx('前往客戶後台', '前往客户后台', 'Switch to client')}
+            </Link>
+          )}
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto">
           <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tx('配音員', '配音员', 'Talent')}</p>
