@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { FileAudio, Settings, LogOut, Receipt, ClipboardList, User, Briefcase, DollarSign, MessageSquare, Info, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { FileAudio, Settings, LogOut, Receipt, ClipboardList, User, MessageSquare, Info, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import { DashboardProvider, useDashboardUser } from '@/contexts/DashboardContext';
 import { supabase } from '@/lib/supabase';
 
@@ -91,15 +91,8 @@ function Sidebar({ showTalentLink, headshot }: { showTalentLink: boolean; headsh
     return value === `dashboard.${key}` ? fallback : value;
   };
 
-  // Unified sidebar: same two groups as the talent dashboard, so switching between
-  // /talent/* and /dashboard/* keeps the SAME sidebar (no "jumped to another page"
-  // feeling). 配音員 group shows only for dual-role accounts.
-  const talentNav = [
-    { href: '/talent', label: tr('navTalentProfile', '我的檔案'), icon: User },
-    { href: '/talent/opportunities', label: tr('navTalentOpps', '案件機會'), icon: Briefcase },
-    { href: '/talent/earnings', label: tr('navTalentEarnings', '收款'), icon: DollarSign },
-    { href: '/talent/messages', label: tr('navTalentMessages', '訊息'), icon: MessageSquare },
-  ];
+  // 方案 A:客戶後台側邊欄只列「客戶」自己的功能。配音員導覽移到配音員後台,
+  // 要過去走頂部切換鈕(不再於此重複列出配音員群組)。
   const clientNav = [
     { href: '/dashboard', label: tr('navProjects', '專案'), icon: FileAudio },
     { href: '/dashboard/requests', label: tr('navRequests', '配音需求'), icon: ClipboardList },
@@ -108,8 +101,7 @@ function Sidebar({ showTalentLink, headshot }: { showTalentLink: boolean; headsh
   ];
   const isActive = (href: string) =>
     href === '/dashboard' ? (safePathname === '/dashboard' || safePathname.startsWith('/dashboard/orders'))
-      : href === '/talent' ? safePathname === '/talent'
-        : safePathname === href || safePathname.startsWith(href + '/');
+      : safePathname === href || safePathname.startsWith(href + '/');
   const itemCls = (active: boolean) => `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${active ? 'bg-amber-500/15 text-amber-200' : 'text-gray-400 hover:text-white hover:bg-white/5'}`;
   const displayName = user.user_metadata?.full_name || user.email;
 
@@ -134,21 +126,12 @@ function Sidebar({ showTalentLink, headshot }: { showTalentLink: boolean; headsh
           </Link>
         )}
       </div>
+      {/* 方案 A:客戶後台只列「客戶」自己的功能;要看配音員後台走頂部切換鈕。
+          只剩一組時群組小標多餘,已省略。 */}
       <nav className="flex-1 p-4 space-y-1 pt-2 overflow-y-auto">
-        {showTalentLink && (
-          <>
-            <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tr('groupTalent', '配音員')}</p>
-            {talentNav.map(({ href, label, icon: Icon }) => (
-              <Link key={href} href={href} className={itemCls(isActive(href))}><Icon className="w-4 h-4" />{label}</Link>
-            ))}
-          </>
-        )}
-        <div className={showTalentLink ? 'pt-3 mt-3 border-t border-white/10' : ''}>
-          <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tr('groupClient', '客戶')}</p>
-          {clientNav.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={itemCls(isActive(href))}><Icon className="w-4 h-4" />{label}</Link>
-          ))}
-        </div>
+        {clientNav.map(({ href, label, icon: Icon }) => (
+          <Link key={href} href={href} className={itemCls(isActive(href))}><Icon className="w-4 h-4" />{label}</Link>
+        ))}
       </nav>
 
       <div className="p-4 border-t border-white/10">
@@ -167,13 +150,9 @@ function MobileNav({ showTalentLink }: { showTalentLink: boolean }) {
     const value = t(key as any);
     return value === `dashboard.${key}` ? fallback : value;
   };
+  // 方案 A:手機版也只列「客戶」自己的功能。雙重身分時,最前面放一顆
+  // 「配音員後台」切換 pill(對齊桌機頂部切換鈕),要看另一邊點它過去。
   const nav = [
-    ...(showTalentLink ? [
-      { href: '/talent', label: tr('navTalentProfile', '我的檔案') },
-      { href: '/talent/opportunities', label: tr('navTalentOpps', '案件機會') },
-      { href: '/talent/earnings', label: tr('navTalentEarnings', '收款') },
-      { href: '/talent/messages', label: tr('navTalentMessages', '訊息') },
-    ] : []),
     { href: '/dashboard', label: tr('navProjects', '專案') },
     { href: '/dashboard/requests', label: tr('navRequests', '配音需求') },
     { href: '/dashboard/invoices', label: tr('navInvoices', '發票') },
@@ -182,6 +161,11 @@ function MobileNav({ showTalentLink }: { showTalentLink: boolean }) {
 
   return (
     <div className="md:hidden flex items-center gap-1 px-4 py-2.5 border-b border-white/[0.06] bg-[#080808] overflow-x-auto whitespace-nowrap">
+      {showTalentLink && (
+        <Link href="/talent" className="px-3 py-1.5 rounded-md text-xs font-medium text-gray-300 bg-white/5 hover:text-white inline-flex items-center gap-1">
+          <ArrowLeftRight className="w-3 h-3" />{tr('navTalentDashboard', '配音員後台')}
+        </Link>
+      )}
       {nav.map(({ href, label }) => {
         const active =
           href === '/dashboard'

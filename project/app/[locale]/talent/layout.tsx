@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
-import { User, Briefcase, MessageSquare, DollarSign, LogOut, Bell, ClipboardList, FileAudio, Receipt, Settings, ArrowLeftRight } from 'lucide-react';
+import { User, Briefcase, MessageSquare, DollarSign, LogOut, Bell, ArrowLeftRight } from 'lucide-react';
 
 export default function TalentLayout({ children }: { children: React.ReactNode }) {
   const locale = useLocale();
@@ -81,13 +81,8 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
     { href: '/talent/earnings', label: tx('收款', '收款', 'Earnings'), icon: DollarSign, badge: 0 },
     { href: '/talent/messages', label: tx('訊息', '消息', 'Messages'), icon: MessageSquare, badge: 0 },
   ];
-  // Client (dual-role) group — links into the existing /dashboard client area.
-  const clientNav = [
-    { href: '/dashboard/requests', label: tx('配音需求', '配音需求', 'Requests'), icon: ClipboardList },
-    { href: '/dashboard', label: tx('專案訂單', '项目订单', 'Projects'), icon: FileAudio },
-    { href: '/dashboard/invoices', label: tx('發票', '发票', 'Invoices'), icon: Receipt },
-    { href: '/dashboard/messages', label: tx('訊息', '消息', 'Messages'), icon: MessageSquare },
-  ];
+  // 方案 A:配音員後台側邊欄只列「配音員」自己的功能。客戶導覽在客戶後台,
+  // 要過去走頂部/手機列的「客戶後台」切換鈕(不再於此重複列出客戶群組)。
   const active = (href: string, exact?: boolean) => (exact ? pathname === href : pathname.startsWith(href));
   const signOut = async () => { await supabase.auth.signOut(); router.push('/auth'); };
 
@@ -117,8 +112,9 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
             </Link>
           )}
         </div>
+        {/* 方案 A:配音員後台只列「配音員」自己的功能;要看客戶後台走頂部切換鈕。
+            只剩一組時群組小標多餘,已省略。 */}
         <nav className="flex-1 space-y-1 overflow-y-auto">
-          <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tx('配音員', '配音员', 'Talent')}</p>
           {nav.map((n) => {
             const A = active(n.href, n.exact); const I = n.icon;
             return (
@@ -127,26 +123,8 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
-          {isClient && (
-            <div className="pt-3 mt-3 border-t border-white/10">
-              <p className="px-3 pb-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">{tx('客戶', '客户', 'Client')}</p>
-              {clientNav.map((n) => {
-                const I = n.icon;
-                return (
-                  <Link key={n.href} href={n.href} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                    <I className="w-4 h-4" /> {n.label}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </nav>
         <div className="space-y-1 pt-2 border-t border-white/10">
-          {isClient && (
-            <Link href="/dashboard/settings" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-              <Settings className="w-4 h-4" /> {tx('設定', '设置', 'Settings')}
-            </Link>
-          )}
           <button onClick={signOut} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5">
             <LogOut className="w-4 h-4" /> {tx('登出', '登出', 'Sign out')}
           </button>
@@ -156,6 +134,11 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
       {/* Mobile top nav — sits just below the fixed global navbar */}
       <div className="md:hidden sticky top-24 z-30 bg-zinc-950 border-b border-white/10 overflow-x-auto">
         <div className="flex items-center gap-1.5 px-3 py-2 whitespace-nowrap">
+          {isClient && (
+            <Link href="/dashboard" className="px-3 py-1.5 rounded-full text-xs bg-white/5 text-gray-300 inline-flex items-center gap-1">
+              <ArrowLeftRight className="w-3 h-3" />{tx('客戶後台', '客户后台', 'Client')}
+            </Link>
+          )}
           {nav.map((n) => {
             const A = active(n.href, n.exact);
             return (
@@ -164,7 +147,6 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
               </Link>
             );
           })}
-          {isClient && <Link href="/dashboard" className="px-3 py-1.5 rounded-full text-xs bg-white/5 text-gray-300">{tx('客戶', '客户', 'Client')}</Link>}
           <button onClick={signOut} className="px-3 py-1.5 rounded-full text-xs bg-white/5 text-gray-300">{tx('登出', '登出', 'Sign out')}</button>
         </div>
       </div>
