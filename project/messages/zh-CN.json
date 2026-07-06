@@ -1395,7 +1395,6 @@
       "buttonDownload": "下载",
       "invoiceCount": "共 {count} 份发票",
       "totalPaidLabel": "已付款总额",
-      "downloadFailed": "无法生成发票,请稍后再试。",
       "footerNote": "所有已付款订单都会自动生成发票。每份发票包含订单编号、账务信息、明细与付款确认。如需正式税务发票，请联系支持团队。"
     },
     "orderDetail": {
@@ -1484,9 +1483,7 @@
       "sessionInProduction": "录制进行中",
       "sessionInProductionDesc": "我们的音乐学院演奏家正在录制您的作品。文件准备就绪时，您将收到电子邮件通知。",
       "unsupportedFileType": "不支持的文件类型。接受格式：MIDI、PDF、MusicXML、Sibelius、Finale、MuseScore、Dorico、WAV、MP3、AAC、FLAC。",
-      "fileSizeExceeded": "文件大小超过 50MB 限制。",
-      "acceptFailed": "无法接受交付,请稍后再试。",
-      "sendMessageFailed": "消息发送失败,请再试一次。"
+      "fileSizeExceeded": "文件大小超过 50MB 限制。"
     },
     "voiceDetail": {
       "productionProgress": "制作进度",
@@ -1926,7 +1923,12 @@
     "messagePlaceholder": "请描述您的项目...",
     "sendInquiry": "发送咨询",
     "successSent": "咨询已发送成功！",
-    "errorFillAllFields": "请填写所有字段。"
+    "errorFillAllFields": "请填写所有字段。",
+    "thankYou": "{name}，感谢您！",
+    "receivedRouted": "您的咨询已收到，并已转交给我们的团队。",
+    "referenceNumber": "查询编号",
+    "confirmationSent": "确认邮件已发送至您的邮箱。我们通常会在 24 个工作小时内回复。",
+    "close": "关闭"
   },
   "orderWizard": {
     "steps": {

@@ -87,28 +87,27 @@ export default function ContactModal({
           <div className="py-8 text-center space-y-4">
             <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto" />
             <div>
-              <p className="text-lg font-semibold text-white mb-2">Thank you, {name}!</p>
+              <p className="text-lg font-semibold text-white mb-2">{t('thankYou', { name })}</p>
               <p className="text-gray-400 text-sm mb-4">
-                Your inquiry has been received and routed to our team.
+                {t('receivedRouted')}
               </p>
             </div>
             {inquiryNumber && (
               <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
-                <p className="text-xs text-gray-500 mb-1">Reference Number</p>
+                <p className="text-xs text-gray-500 mb-1">{t('referenceNumber')}</p>
                 <p className="text-emerald-400 text-lg font-mono font-bold tracking-wider">
                   {inquiryNumber}
                 </p>
               </div>
             )}
             <p className="text-gray-500 text-xs">
-              A confirmation email has been sent to your inbox.
-              <br />We typically respond within 24 business hours.
+              {t('confirmationSent')}
             </p>
             <Button
               onClick={handleClose}
               className="mt-4 bg-white/10 hover:bg-white/15 text-white"
             >
-              Close
+              {t('close')}
             </Button>
           </div>
         ) : (

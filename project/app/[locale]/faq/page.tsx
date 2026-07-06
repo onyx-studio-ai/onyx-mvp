@@ -255,6 +255,47 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
       ],
     },
     {
+      category: tx('服務保障與客服', '服务保障与客服', 'Service Guarantee & Support'),
+      items: [
+        {
+          q: tx(
+            '如果交付逾期了怎麼辦？',
+            '如果交付逾期了怎么办？',
+            'What happens if my delivery is late?'
+          ),
+          a: tx(
+            '我們對交期非常認真。若因我方原因導致交付逾期，我們會主動通知您新的交付時間，並優先加速處理您的訂單。對於加急方案，若我方無法在承諾時間內交付，將退還加急費用。大型或客製專案的交期會在需求確認階段明確約定，任何調整都會事先與您溝通，不會讓您在無預期的情況下等待。',
+            '我们对交期非常认真。若因我方原因导致交付逾期，我们会主动通知您新的交付时间，并优先加速处理您的订单。对于加急方案，若我方无法在承诺时间内交付，将退还加急费用。大型或定制项目的交期会在需求确认阶段明确约定，任何调整都会事先与您沟通，不会让您在无预期的情况下等待。',
+            'We take deadlines seriously. If a delivery is late due to reasons on our side, we proactively notify you of a revised delivery time and prioritize your order. For rush plans, if we cannot deliver within the promised window, we refund the rush fee. Timelines for large or custom projects are agreed at the briefing stage, and any change is communicated to you in advance — you will never be left waiting without notice.'
+          ),
+        },
+        {
+          q: tx(
+            '客服多久會回覆？遇到問題可以找誰？',
+            '客服多久会回复？遇到问题可以找谁？',
+            'How quickly does support respond? Who do I contact if something goes wrong?'
+          ),
+          a: tx(
+            '我們通常在一個工作日內回覆所有詢問，多數在數小時內即有回應。有任何問題——訂單狀態、交付內容、修改需求或帳務——都可以直接來信 support@onyxstudios.ai，或使用網站上的聯繫表單。每個進行中的專案都有專責製作人員對接，您不會被轉來轉去或找不到人。',
+            '我们通常在一个工作日内回复所有咨询，多数在数小时内即有回应。有任何问题——订单状态、交付内容、修改需求或账务——都可以直接来信 support@onyxstudios.ai，或使用网站上的联系表单。每个进行中的项目都有专责制作人员对接，您不会被转来转去或找不到人。',
+            'We respond to all inquiries within one business day, and most within a few hours. For any issue — order status, deliverables, revisions, or billing — email support@onyxstudios.ai or use the contact form on the site. Every active project has a dedicated production contact, so you are never bounced around or left without an answer.'
+          ),
+        },
+        {
+          q: tx(
+            '如果交付有錯誤，需要付費重做嗎？',
+            '如果交付有错误，需要付费重做吗？',
+            'If a delivery has an error, do I have to pay to have it redone?'
+          ),
+          a: tx(
+            '不需要。若交付物存在客觀錯誤——例如發音有誤、漏讀或讀錯台詞、技術品質問題（雜訊、破音、規格不符）——我們免費重做，且不計入方案的修改次數。這與「因您改變主意或需求變更而產生的修改」不同，後者依方案的修改政策計算。已完成且無客觀錯誤的交付不提供退款，因此我們建議在製作前於需求單中盡量把方向、語氣與規格說明清楚，確保成品一次到位。',
+            '不需要。若交付物存在客观错误——例如发音有误、漏读或读错台词、技术质量问题（杂讯、破音、规格不符）——我们免费重做，且不计入方案的修改次数。这与「因您改变主意或需求变更而产生的修改」不同，后者依方案的修改政策计算。已完成且无客观错误的交付不提供退款，因此我们建议在制作前于需求单中尽量把方向、语气与规格说明清楚，确保成品一次到位。',
+            'No. If a delivery contains an objective error — a mispronunciation, a missing or misread line, or a technical quality issue (noise, clipping, wrong spec) — we redo it at no charge, and it does not count against your plan\'s revision allowance. This is separate from revisions requested because your requirements changed, which follow each plan\'s revision policy. Completed deliveries without objective errors are non-refundable, so we recommend describing your direction, tone, and specs clearly in the brief before production to get it right the first time.'
+          ),
+        },
+      ],
+    },
+    {
       category: tx('企業合作與版權', '企业合作与版权', 'Enterprise & Legal'),
       items: [
         {

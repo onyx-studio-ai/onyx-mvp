@@ -1395,7 +1395,6 @@
       "buttonDownload": "下載",
       "invoiceCount": "共 {count} 份發票",
       "totalPaidLabel": "已付款總額",
-      "downloadFailed": "無法產生發票,請稍後再試。",
       "footerNote": "所有已付款訂單都會自動產生發票。每份發票包含訂單編號、帳務資訊、項目明細與付款確認。如需正式稅務發票，請聯絡客服。"
     },
     "orderDetail": {
@@ -1484,9 +1483,7 @@
       "sessionInProduction": "錄製進行中",
       "sessionInProductionDesc": "我們的音樂學院演奏家正在錄製您的作品。檔案準備就緒時，您將收到電子郵件通知。",
       "unsupportedFileType": "不支援的檔案類型。接受格式：MIDI、PDF、MusicXML、Sibelius、Finale、MuseScore、Dorico、WAV、MP3、AAC、FLAC。",
-      "fileSizeExceeded": "檔案大小超過 50MB 限制。",
-      "acceptFailed": "無法接受交付,請稍後再試。",
-      "sendMessageFailed": "訊息傳送失敗,請再試一次。"
+      "fileSizeExceeded": "檔案大小超過 50MB 限制。"
     },
     "voiceDetail": {
       "productionProgress": "製作進度",
@@ -1926,7 +1923,12 @@
     "messagePlaceholder": "請告訴我們您的專案需求...",
     "sendInquiry": "送出詢問",
     "successSent": "詢問已成功送出！",
-    "errorFillAllFields": "請填寫所有欄位。"
+    "errorFillAllFields": "請填寫所有欄位。",
+    "thankYou": "{name}，感謝您！",
+    "receivedRouted": "您的詢問已收到，並已轉交給我們的團隊。",
+    "referenceNumber": "查詢編號",
+    "confirmationSent": "確認信已寄至您的信箱。我們通常會在 24 個工作小時內回覆。",
+    "close": "關閉"
   },
   "orderWizard": {
     "steps": {

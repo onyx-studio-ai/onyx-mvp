@@ -1395,7 +1395,6 @@
       "buttonDownload": "Download",
       "invoiceCount": "{count, plural, one {# invoice total} other {# invoices total}}",
       "totalPaidLabel": "Total paid",
-      "downloadFailed": "Could not generate the invoice. Please try again.",
       "footerNote": "Invoices are generated automatically for all paid orders. Each invoice includes your order number, billing details, line items, and payment confirmation. Contact support if you need a formal tax invoice."
     },
     "orderDetail": {
@@ -1484,9 +1483,7 @@
       "sessionInProduction": "Session In Production",
       "sessionInProductionDesc": "Our conservatory musicians are recording your piece. You will receive an email notification when your files are ready.",
       "unsupportedFileType": "Unsupported file type. Accepted: MIDI, PDF, MusicXML, Sibelius, Finale, MuseScore, Dorico, WAV, MP3, AAC, FLAC.",
-      "fileSizeExceeded": "File size exceeds 50MB limit.",
-      "acceptFailed": "Could not accept the delivery. Please try again.",
-      "sendMessageFailed": "Message could not be sent. Please try again."
+      "fileSizeExceeded": "File size exceeds 50MB limit."
     },
     "voiceDetail": {
       "productionProgress": "Production Progress",
@@ -1926,7 +1923,12 @@
     "messagePlaceholder": "Tell us about your project...",
     "sendInquiry": "Send Inquiry",
     "successSent": "Inquiry sent successfully!",
-    "errorFillAllFields": "Please fill in all fields."
+    "errorFillAllFields": "Please fill in all fields.",
+    "thankYou": "Thank you, {name}!",
+    "receivedRouted": "Your inquiry has been received and routed to our team.",
+    "referenceNumber": "Reference Number",
+    "confirmationSent": "A confirmation email has been sent to your inbox. We typically respond within 24 business hours.",
+    "close": "Close"
   },
   "orderWizard": {
     "steps": {
