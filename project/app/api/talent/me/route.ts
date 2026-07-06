@@ -94,6 +94,12 @@ export async function GET(request: NextRequest) {
     //       直接對 auth 使用者 id。
     // 仍然是「這個帳號真的下過單/發過案」才算客戶,沒下過單的人不會被誤放。
     let isClient = false;
+    // (0) admin 手動標記「也是客戶」—— 給「本身也是客戶」或內部/測試帳號用,不靠訂單、
+    //     只有被標記 true 的才算(不誤放外人)。欄位可能還沒建 → try/catch 兜底,不 crash。
+    try {
+      const { data: flag } = await r.db.from('talents').select('is_also_client').eq('id', r.talent.id).maybeSingle();
+      if (flag && (flag as Record<string, unknown>).is_also_client === true) isClient = true;
+    } catch { /* 欄位未建 / RLS quirk — 不阻擋檔案載入 */ }
     // 候選 email:talents 表 email + 登入帳號 email。去重(大小寫不敏感去重,
     // 但保留原始大小寫做精確 .eq 比對 —— 不用 ilike,避免 email local part 內
     // 的底線 `_` 在 LIKE 中變成萬用字元造成誤放)。
