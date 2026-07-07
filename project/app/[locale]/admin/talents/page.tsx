@@ -36,7 +36,7 @@ import {
   FileText, DollarSign, ArrowUpRight, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { formatLangEntry, traitLabel, useCaseLabel, availabilityLabel, countryLabel, voiceAgeLabel, USE_CASES } from "@/lib/talent-taxonomy";
 import { cjkSpace } from "@/lib/cjk-space";
 import { AdminStats } from "@/components/admin/list-ui";
@@ -158,6 +158,7 @@ function SearchableMultiSelect({
   onChange: (val: string[]) => void;
   placeholder?: string;
 }) {
+  const t = useTranslations('admin.talents');
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -204,7 +205,7 @@ function SearchableMultiSelect({
         {open && (
           <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg bg-white border border-gray-300 shadow-xl">
             {filtered.length === 0 ? (
-              <p className="text-sm text-gray-500 p-3">No results</p>
+              <p className="text-sm text-gray-500 p-3">{t('multiSelectNoResults')}</p>
             ) : (
               filtered.map(item => {
                 const isSelected = selected.includes(item);
@@ -249,6 +250,7 @@ function SearchableSelect({
   onChange: (val: string) => void;
   placeholder?: string;
 }) {
+  const t = useTranslations('admin.talents');
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -293,7 +295,7 @@ function SearchableSelect({
         {open && (
           <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg bg-white border border-gray-300 shadow-xl">
             {filtered.length === 0 ? (
-              <p className="text-sm text-gray-500 p-3">No results</p>
+              <p className="text-sm text-gray-500 p-3">{t('multiSelectNoResults')}</p>
             ) : (
               filtered.map(item => (
                 <button
@@ -339,16 +341,17 @@ type TalentProfile = Talent & {
 // front portal). Works for draft / pending / active alike: it reads the row's
 // main columns, so drafts and unpublished edits are visible pre-approval.
 function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) {
+  const tr = useTranslations('admin.talents');
   const demos = Array.isArray(t.demos) ? t.demos : [];
   const byCat = USE_CASES.map((c) => ({ c, items: demos.filter((d) => d.category === c.key) })).filter((g) => g.items.length > 0);
   const avail = (t.availability_note || '').split(',').map((s) => s.trim()).filter(Boolean);
   const coop = [
-    t.coop_open_buyout && '願意買斷',
-    t.coop_ai_clone && '願做 AI 克隆',
-    t.coop_ai_training && '提供 AI 訓練素材',
-    t.coop_proofread && '可校稿',
-    t.coop_voice_director && '可配音指導',
-    t.low_price_data_optin && '接低價資料案',
+    t.coop_open_buyout && tr('coopWantBuyout'),
+    t.coop_ai_clone && tr('coopWantAiClone'),
+    t.coop_ai_training && tr('coopWantAiTraining'),
+    t.coop_proofread && tr('coopWantProofread'),
+    t.coop_voice_director && tr('coopWantVoiceDirector'),
+    t.low_price_data_optin && tr('coopWantLowPriceData'),
   ].filter(Boolean) as string[];
   const Chip = ({ children }: { children: React.ReactNode }) => (
     <span className="inline-block text-[11px] bg-gray-100 border border-gray-300 text-gray-700 rounded-full px-2 py-0.5">{children}</span>
@@ -371,49 +374,49 @@ function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) 
         )}
         <div className="min-w-0">
           <p className="font-semibold text-gray-900">{t.name}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}</p>
-          <p className="text-xs text-gray-500">{[t.gender, t.location ? countryLabel(t.location, locale) : '', typeof t.years_experience === 'number' ? `${t.years_experience} 年經驗` : ''].filter(Boolean).join(' · ') || '—'}</p>
-          {t.email && <p className="text-xs text-gray-500 truncate">聯絡:<a href={`mailto:${t.email}`} className="text-blue-600 hover:underline">{t.email}</a></p>}
+          <p className="text-xs text-gray-500">{[t.gender, t.location ? countryLabel(t.location, locale) : '', typeof t.years_experience === 'number' ? tr('cardYearsExperience', { years: t.years_experience }) : ''].filter(Boolean).join(' · ') || '—'}</p>
+          {t.email && <p className="text-xs text-gray-500 truncate">{tr('cardContact')}<a href={`mailto:${t.email}`} className="text-blue-600 hover:underline">{t.email}</a></p>}
         </div>
         <div className="ml-auto flex flex-col items-end gap-1 shrink-0">
-          {t.pending_review && <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">待審 · 顯示為草稿內容</span>}
-          {!t.pending_review && !t.is_active && t.onboarded_at && <span className="text-[11px] text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">草稿中 · 尚未送審</span>}
-          {t.liveness_status === 'verified' && <span className="text-[11px] text-emerald-700 font-medium">真人 ✓</span>}
+          {t.pending_review && <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">{tr('cardPendingDraft')}</span>}
+          {!t.pending_review && !t.is_active && t.onboarded_at && <span className="text-[11px] text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">{tr('cardDraftNotSubmitted')}</span>}
+          {t.liveness_status === 'verified' && <span className="text-[11px] text-emerald-700 font-medium">{tr('cardVerifiedPerson')}</span>}
         </div>
       </div>
 
       {/* Completeness checklist — spot gaps before approving */}
       <div className="flex flex-wrap gap-1.5">
         {[
-          { k: '大頭照', ok: !!t.headshot_url },
-          { k: '語言', ok: (t.languages || []).length > 0 },
-          { k: '聲線', ok: (t.voice_traits || []).length > 0 },
-          { k: '專長', ok: (t.specialties || []).length > 0 },
-          { k: 'Demo', ok: demos.length > 0 },
-          { k: '簡介', ok: !!t.bio },
-          { k: '真人驗證', ok: t.liveness_status === 'verified' },
+          { id: 'headshot', k: tr('checkHeadshot'), ok: !!t.headshot_url },
+          { id: 'language', k: tr('checkLanguage'), ok: (t.languages || []).length > 0 },
+          { id: 'voiceTraits', k: tr('checkVoiceTraits'), ok: (t.voice_traits || []).length > 0 },
+          { id: 'specialties', k: tr('checkSpecialties'), ok: (t.specialties || []).length > 0 },
+          { id: 'demo', k: tr('checkDemo'), ok: demos.length > 0 },
+          { id: 'bio', k: tr('checkBio'), ok: !!t.bio },
+          { id: 'liveness', k: tr('checkLiveness'), ok: t.liveness_status === 'verified' },
         ].map((c) => (
-          <span key={c.k} className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border ${c.ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+          <span key={c.id} className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 border ${c.ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
             {c.ok ? '✓' : '✗'} {c.k}
           </span>
         ))}
       </div>
 
-      {t.bio && <Section title="簡介"><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(t.bio)}</p></Section>}
+      {t.bio && <Section title={tr('secBio')}><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(t.bio)}</p></Section>}
 
       {(t.languages || []).length > 0 && (
-        <Section title="語言">
+        <Section title={tr('secLanguages')}>
           <div className="flex flex-wrap gap-1">{t.languages!.map((l) => (
-            <Chip key={l}>{formatLangEntry(l, locale)}{(t.native_languages || []).includes(l) ? ' · 母語' : ''}</Chip>
+            <Chip key={l}>{formatLangEntry(l, locale)}{(t.native_languages || []).includes(l) ? ` · ${tr('secNative')}` : ''}</Chip>
           ))}</div>
         </Section>
       )}
-      {(t.voice_traits || []).length > 0 && <Section title="聲線特質"><div className="flex flex-wrap gap-1">{t.voice_traits!.map((k) => <Chip key={k}>{traitLabel(k, locale)}</Chip>)}</div></Section>}
-      {(t.specialties || []).length > 0 && <Section title="專長 / 用途"><div className="flex flex-wrap gap-1">{t.specialties!.map((k) => <Chip key={k}>{useCaseLabel(k, locale)}</Chip>)}</div></Section>}
-      {(t.voice_ages || []).length > 0 && <Section title="聲音年齡"><div className="flex flex-wrap gap-1">{t.voice_ages!.map((k) => <Chip key={k}>{voiceAgeLabel(k, locale)}</Chip>)}</div></Section>}
-      {t.special_skills && <Section title="特殊技能"><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(t.special_skills)}</p></Section>}
+      {(t.voice_traits || []).length > 0 && <Section title={tr('secVoiceTraits')}><div className="flex flex-wrap gap-1">{t.voice_traits!.map((k) => <Chip key={k}>{traitLabel(k, locale)}</Chip>)}</div></Section>}
+      {(t.specialties || []).length > 0 && <Section title={tr('secSpecialties')}><div className="flex flex-wrap gap-1">{t.specialties!.map((k) => <Chip key={k}>{useCaseLabel(k, locale)}</Chip>)}</div></Section>}
+      {(t.voice_ages || []).length > 0 && <Section title={tr('secVoiceAge')}><div className="flex flex-wrap gap-1">{t.voice_ages!.map((k) => <Chip key={k}>{voiceAgeLabel(k, locale)}</Chip>)}</div></Section>}
+      {t.special_skills && <Section title={tr('secSpecialSkills')}><p className="text-sm text-gray-700 whitespace-pre-line">{cjkSpace(t.special_skills)}</p></Section>}
 
       {byCat.length > 0 && (
-        <Section title="Demo(點開試聽)">
+        <Section title={tr('secDemos')}>
           <div className="space-y-2">{byCat.map(({ c, items }) => (
             <div key={c.key}>
               <p className="text-xs text-gray-600 mb-1">{useCaseLabel(c.key, locale)}</p>
@@ -430,29 +433,29 @@ function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) 
       )}
 
       {hasCredits && (
-        <Section title="經歷 / 代表作">
+        <Section title={tr('secCredits')}>
           <div className="grid gap-1 text-sm text-gray-700">
-            {t.clients && <p><span className="text-gray-500 text-xs">合作品牌:</span> {cjkSpace(t.clients)}</p>}
-            {t.notable_works && <p className="whitespace-pre-line"><span className="text-gray-500 text-xs">代表作:</span> {cjkSpace(t.notable_works)}</p>}
-            {t.awards && <p><span className="text-gray-500 text-xs">獎項:</span> {cjkSpace(t.awards)}</p>}
+            {t.clients && <p><span className="text-gray-500 text-xs">{tr('creditBrands')}</span> {cjkSpace(t.clients)}</p>}
+            {t.notable_works && <p className="whitespace-pre-line"><span className="text-gray-500 text-xs">{tr('creditNotableWorks')}</span> {cjkSpace(t.notable_works)}</p>}
+            {t.awards && <p><span className="text-gray-500 text-xs">{tr('creditAwards')}</span> {cjkSpace(t.awards)}</p>}
           </div>
         </Section>
       )}
 
       {hasWorkInfo && (
-        <Section title="工作條件 / 設備">
+        <Section title={tr('secWorkInfo')}>
           <div className="text-xs text-gray-600 space-y-0.5">
-            {t.turnaround && <p>交期:{cjkSpace(t.turnaround)}</p>}
-            {avail.length > 0 && <p>可工作時段:{avail.map((k) => availabilityLabel(k, locale)).join('、')}</p>}
-            {t.equipment && <p>錄音器材:{cjkSpace(t.equipment)}</p>}
-            {t.studio_partner && <p>合作錄音室:{cjkSpace(t.studio_partner)}</p>}
-            {t.portfolio_url && <p>作品集連結(內部參考):<a href={t.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{t.portfolio_url}</a></p>}
+            {t.turnaround && <p>{tr('workTurnaround')}{cjkSpace(t.turnaround)}</p>}
+            {avail.length > 0 && <p>{tr('workAvailability')}{avail.map((k) => availabilityLabel(k, locale)).join('、')}</p>}
+            {t.equipment && <p>{tr('workEquipment')}{cjkSpace(t.equipment)}</p>}
+            {t.studio_partner && <p>{tr('workStudio')}{cjkSpace(t.studio_partner)}</p>}
+            {t.portfolio_url && <p>{tr('workPortfolio')}<a href={t.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{t.portfolio_url}</a></p>}
           </div>
         </Section>
       )}
 
       {coop.length > 0 && (
-        <Section title="合作意願(配音員自選 · 內部)">
+        <Section title={tr('secCoop')}>
           <div className="flex flex-wrap gap-1">{coop.map((c) => <Chip key={c}>{c}</Chip>)}</div>
         </Section>
       )}
@@ -462,6 +465,7 @@ function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) 
 
 export default function AdminTalentsPage() {
   const locale = useLocale();
+  const t = useTranslations('admin.talents');
   const [talents, setTalents] = useState<Talent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -535,10 +539,10 @@ export default function AdminTalentsPage() {
       if (res.ok && data.url) {
         window.open(data.url, '_blank', 'noopener,noreferrer');
       } else {
-        toast.error(data.error || 'Could not open file');
+        toast.error(data.error || t('toastCannotOpenFile'));
       }
     } catch {
-      toast.error('Could not open file');
+      toast.error(t('toastCannotOpenFile'));
     }
   };
 
@@ -551,10 +555,10 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ id: talentId, voice_id_status: 'verified' }),
       });
       if (!res.ok) throw new Error('Failed');
-      toast.success('Voice ID verified successfully');
+      toast.success(t('toastVidVerifiedOk'));
       fetchTalents();
     } catch {
-      toast.error('Failed to verify Voice ID');
+      toast.error(t('toastVidVerifyFail'));
     } finally {
       setVerifyingVoiceId(null);
     }
@@ -570,13 +574,13 @@ export default function AdminTalentsPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(`Voice ID request sent (${data.vidNumber})`);
+        toast.success(t('toastVidSent', { num: data.vidNumber }));
         fetchTalents();
       } else {
-        toast.error(data.error || 'Failed to send request');
+        toast.error(data.error || t('toastVidRequestFail'));
       }
     } catch {
-      toast.error('Failed to send Voice ID request');
+      toast.error(t('toastVidSendFail'));
     } finally {
       setSendingVoiceId(null);
     }
@@ -590,8 +594,8 @@ export default function AdminTalentsPage() {
       const res = await fetch(`/api/admin/liveness/signed-url?path=${encodeURIComponent(path)}`);
       const data = await res.json();
       if (res.ok && data.url) window.open(data.url, '_blank', 'noopener,noreferrer');
-      else toast.error(data.error || 'Could not open recording');
-    } catch { toast.error('Could not open recording'); }
+      else toast.error(data.error || t('toastCannotOpenRecording'));
+    } catch { toast.error(t('toastCannotOpenRecording')); }
   };
 
   const handleSendLiveness = async (talentId: string) => {
@@ -602,9 +606,9 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ talentId }),
       });
       const data = await res.json();
-      if (res.ok && data.success) { toast.success('真人驗證已寄出'); fetchTalents(); }
-      else toast.error(data.error || 'Failed to send verification');
-    } catch { toast.error('Failed to send verification'); }
+      if (res.ok && data.success) { toast.success(t('toastLiveSent')); fetchTalents(); }
+      else toast.error(data.error || t('toastLiveSendFail'));
+    } catch { toast.error(t('toastLiveSendFail')); }
     finally { setSendingLiveness(null); }
   };
 
@@ -616,9 +620,9 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ id: talentId, liveness_status: status, liveness_reviewed_at: new Date().toISOString() }),
       });
       if (!res.ok) throw new Error('Failed');
-      toast.success(status === 'verified' ? '已標記真人驗證 ✓' : '已退回');
+      toast.success(status === 'verified' ? t('toastLiveVerified') : t('toastLiveReturned'));
       fetchTalents();
-    } catch { toast.error('Update failed'); }
+    } catch { toast.error(t('toastLiveUpdateFail')); }
     finally { setReviewingLiveness(null); }
   };
 
@@ -631,9 +635,9 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ id: talentId }),
       });
       const data = await res.json();
-      if (res.ok && data.ok) toast.success(`已寄「完成檔案」通知 → ${data.to}`);
-      else toast.error(data.error || '寄送失敗');
-    } catch { toast.error('寄送失敗'); }
+      if (res.ok && data.ok) toast.success(t('toastNudgeSent', { to: data.to }));
+      else toast.error(data.error || t('toastSendFail'));
+    } catch { toast.error(t('toastSendFail')); }
     finally { setNudging(null); }
   };
 
@@ -648,9 +652,9 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ id: talentId }),
       });
       const data = await res.json();
-      if (res.ok && data.ok) toast.success(`已寄「開通帳號」邀請 → ${data.to}`);
-      else toast.error(data.error || '寄送失敗');
-    } catch { toast.error('寄送失敗'); }
+      if (res.ok && data.ok) toast.success(t('toastOnboardingSent', { to: data.to }));
+      else toast.error(data.error || t('toastSendFail'));
+    } catch { toast.error(t('toastSendFail')); }
     finally { setSendingOnboarding(null); }
   };
 
@@ -671,9 +675,9 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ talentId: publishTarget.id, bio: pubBio }),
       });
       const data = await res.json();
-      if (res.ok && data.success) { toast.success('已發布到公開頁面 ✓'); setPublishTarget(null); fetchTalents(); }
-      else toast.error(data.error || 'Publish failed');
-    } catch { toast.error('Publish failed'); }
+      if (res.ok && data.success) { toast.success(t('toastPublished')); setPublishTarget(null); fetchTalents(); }
+      else toast.error(data.error || t('toastPublishFail'));
+    } catch { toast.error(t('toastPublishFail')); }
     finally { setPublishing(false); }
   };
 
@@ -686,9 +690,9 @@ export default function AdminTalentsPage() {
         body: JSON.stringify({ talentId: rejectTarget.id, reason: rejectReason }),
       });
       const data = await res.json();
-      if (res.ok && data.success) { toast.success('已退回並寄出通知 ✓ 已移出待審,等對方重新送出'); setRejectTarget(null); setRejectReason(''); fetchTalents(); }
-      else toast.error(data.error || 'Send failed');
-    } catch { toast.error('Send failed'); }
+      if (res.ok && data.success) { toast.success(t('toastRejected')); setRejectTarget(null); setRejectReason(''); fetchTalents(); }
+      else toast.error(data.error || t('toastRejectFail'));
+    } catch { toast.error(t('toastRejectFail')); }
     finally { setRejecting(false); }
   };
 
@@ -704,7 +708,7 @@ export default function AdminTalentsPage() {
       setTalents(data || []);
     } catch (error) {
       console.error("Error fetching talents:", error);
-      toast.error("Failed to load talents");
+      toast.error(t('toastTalentLoadFail'));
     } finally {
       setLoading(false);
     }
@@ -716,11 +720,11 @@ export default function AdminTalentsPage() {
     e.target.value = '';
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('toastHeadshotSelectImage'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5 MB');
+      toast.error(t('toastHeadshotTooLarge'));
       return;
     }
 
@@ -730,10 +734,10 @@ export default function AdminTalentsPage() {
       const path = `headshots/${Date.now()}-${safeName}`;
       const url = await uploadToStorage('talent-assets', path, file);
       setFormData(prev => ({ ...prev, headshot_url: url }));
-      toast.success('Headshot uploaded');
+      toast.success(t('toastHeadshotUploaded'));
     } catch (err) {
       console.error('Headshot upload error:', err);
-      toast.error('Failed to upload headshot');
+      toast.error(t('toastHeadshotUploadFail'));
     } finally {
       setUploadingHeadshot(false);
     }
@@ -746,11 +750,11 @@ export default function AdminTalentsPage() {
 
     const validTypes = ['audio/mpeg', 'audio/wav', 'audio/aiff', 'audio/flac', 'audio/mp3', 'audio/x-wav'];
     if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|aiff|flac)$/i)) {
-      toast.error('Please select an audio file (MP3, WAV, AIFF, FLAC)');
+      toast.error(t('toastDemoSelectAudio'));
       return;
     }
     if (file.size > 20 * 1024 * 1024) {
-      toast.error('Audio file must be under 20 MB');
+      toast.error(t('toastDemoTooLarge'));
       return;
     }
 
@@ -765,10 +769,10 @@ export default function AdminTalentsPage() {
         demo_urls: [...prev.demo_urls, { name: label, url }],
       }));
       setNewDemoName('');
-      toast.success('Demo uploaded');
+      toast.success(t('toastDemoUploaded'));
     } catch (err) {
       console.error('Demo upload error:', err);
-      toast.error('Failed to upload demo');
+      toast.error(t('toastDemoUploadFail'));
     } finally {
       setUploadingDemo(false);
     }
@@ -808,9 +812,9 @@ export default function AdminTalentsPage() {
         });
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(err.error || 'Failed to update');
+          throw new Error(err.error || t('toastTalentSaveFail'));
         }
-        toast.success("Talent updated successfully");
+        toast.success(t('toastTalentUpdated'));
       } else {
         const res = await fetch('/api/admin/talents', {
           method: 'POST',
@@ -819,9 +823,9 @@ export default function AdminTalentsPage() {
         });
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(err.error || 'Failed to create');
+          throw new Error(err.error || t('toastTalentSaveFail'));
         }
-        toast.success("Talent created successfully");
+        toast.success(t('toastTalentCreated'));
       }
 
       setDialogOpen(false);
@@ -829,7 +833,7 @@ export default function AdminTalentsPage() {
       fetchTalents();
     } catch (error) {
       console.error("Error saving talent:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to save talent");
+      toast.error(error instanceof Error ? error.message : t('toastTalentSaveFail'));
     } finally {
       setSaving(false);
     }
@@ -876,30 +880,30 @@ export default function AdminTalentsPage() {
   // Send an already-published talent back to review (e.g. wrong language tags):
   // marks pending_review + takes them off the public site until re-published.
   const handleRevertToReview = async (talent: Talent) => {
-    if (!confirm(`將「${talent.name}」退回待審?資料會從公開頁下架,等你重新審核後再發布。`)) return;
+    if (!confirm(t('confirmRevertReview', { name: talent.name }))) return;
     try {
       const res = await fetch('/api/admin/talents', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: talent.id, pending_review: true, is_active: false }),
       });
       if (!res.ok) throw new Error('Failed');
-      toast.success('已退回待審 ✓ 已從公開頁下架');
+      toast.success(t('toastRevertReview'));
       fetchTalents();
     } catch {
-      toast.error('退回失敗');
+      toast.error(t('toastRevertFail'));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this talent?")) return;
+    if (!confirm(t('confirmDelete'))) return;
     try {
       const res = await fetch(`/api/admin/talents?id=${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
-      toast.success("Talent deleted successfully");
+      toast.success(t('toastTalentDeleted'));
       fetchTalents();
     } catch (error) {
       console.error("Error deleting talent:", error);
-      toast.error("Failed to delete talent");
+      toast.error(t('toastTalentDeleteFail'));
     }
   };
 
@@ -1027,27 +1031,27 @@ export default function AdminTalentsPage() {
     <div className="p-6 lg:p-8 text-gray-900">
       <div className="flex justify-between items-start gap-3 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Talent Management</h1>
-          <p className="text-gray-600 text-sm">{talents.length} talents registered</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">{t('title')}</h1>
+          <p className="text-gray-600 text-sm">{t('subtitleCount', { count: talents.length })}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
               <Plus className="w-4 h-4" />
-              Add Talent
+              {t('addTalent')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
             <DialogHeader>
               <DialogTitle className="text-gray-900 text-lg">
-                {editingTalent ? "Edit Talent" : "Add New Talent"}
+                {editingTalent ? t('formEditTitle') : t('formAddTitle')}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Row 1: Type, Name, Email */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Type *</Label>
+                  <Label className="text-gray-700">{t('formType')}</Label>
                   <Select
                     value={formData.type}
                     onValueChange={v => setFormData({ ...formData, type: v })}
@@ -1056,29 +1060,29 @@ export default function AdminTalentsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-300 text-gray-900">
-                      <SelectItem value="VO" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Voice Actor (VO)</SelectItem>
-                      <SelectItem value="Singer" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Singer</SelectItem>
+                      <SelectItem value="VO" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formTypeVO')}</SelectItem>
+                      <SelectItem value="Singer" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formTypeSinger')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Name *</Label>
+                  <Label className="text-gray-700">{t('formName')}</Label>
                   <Input
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     required
-                    placeholder="e.g. Alex Chen"
+                    placeholder={t('formNamePlaceholder')}
                     className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                   />
                   <Input
                     value={formData.english_name}
                     onChange={e => setFormData({ ...formData, english_name: e.target.value })}
-                    placeholder="English / Romanized name (optional)"
+                    placeholder={t('formEnglishNamePlaceholder')}
                     className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Email *</Label>
+                  <Label className="text-gray-700">{t('formEmail')}</Label>
                   <Input
                     type="email"
                     value={formData.email}
@@ -1087,30 +1091,30 @@ export default function AdminTalentsPage() {
                     placeholder="talent@email.com"
                     className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
                   />
-                  <p className="text-[11px] text-gray-500">Required for Voice ID & contract</p>
+                  <p className="text-[11px] text-gray-500">{t('formEmailHint')}</p>
                 </div>
               </div>
 
               {/* Row 2: Gender, Category */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Gender *</Label>
+                  <Label className="text-gray-700">{t('formGender')}</Label>
                   <Select
                     value={formData.gender}
                     onValueChange={v => setFormData({ ...formData, gender: v })}
                   >
                     <SelectTrigger className="bg-white border-gray-300 text-gray-900">
-                      <SelectValue placeholder="Select gender" />
+                      <SelectValue placeholder={t('formGenderPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-300 text-gray-900">
-                      <SelectItem value="Male" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Male</SelectItem>
-                      <SelectItem value="Female" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Female</SelectItem>
-                      <SelectItem value="Non-binary" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Non-binary</SelectItem>
+                      <SelectItem value="Male" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formGenderMale')}</SelectItem>
+                      <SelectItem value="Female" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formGenderFemale')}</SelectItem>
+                      <SelectItem value="Non-binary" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formGenderNonBinary')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Category</Label>
+                  <Label className="text-gray-700">{t('formCategory')}</Label>
                   <Select
                     value={formData.category}
                     onValueChange={v => setFormData({ ...formData, category: v })}
@@ -1119,13 +1123,13 @@ export default function AdminTalentsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-300 text-gray-900">
-                      <SelectItem value="in_house" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">In-house</SelectItem>
-                      <SelectItem value="featured" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Featured</SelectItem>
+                      <SelectItem value="in_house" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formCategoryInHouse')}</SelectItem>
+                      <SelectItem value="featured" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formCategoryFeatured')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Internal Cost (USD)</Label>
+                  <Label className="text-gray-700">{t('formInternalCost')}</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -1134,14 +1138,14 @@ export default function AdminTalentsPage() {
                     onChange={e => setFormData({ ...formData, internal_cost: parseFloat(e.target.value) || 0 })}
                     className="bg-white border-gray-300 text-gray-900"
                   />
-                  <p className="text-[11px] text-gray-500">Client sees: flat $499</p>
+                  <p className="text-[11px] text-gray-500">{t('formInternalCostHint')}</p>
                 </div>
               </div>
 
               {/* Sort Order */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Sort Order</Label>
+                  <Label className="text-gray-700">{t('formSortOrder')}</Label>
                   <Input
                     type="number"
                     value={formData.sort_order}
@@ -1153,7 +1157,7 @@ export default function AdminTalentsPage() {
 
               {/* Headshot Upload */}
               <div className="space-y-2">
-                <Label className="text-gray-700">Headshot Photo</Label>
+                <Label className="text-gray-700">{t('formHeadshot')}</Label>
                 <div className="flex items-start gap-4">
                   {formData.headshot_url ? (
                     <div className="relative group">
@@ -1192,37 +1196,37 @@ export default function AdminTalentsPage() {
                       className="border-gray-300 text-gray-700 hover:bg-gray-100 gap-2"
                     >
                       {uploadingHeadshot ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...</>
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('formUploading')}</>
                       ) : (
-                        <><ImagePlus className="w-3.5 h-3.5" /> Upload Photo</>
+                        <><ImagePlus className="w-3.5 h-3.5" /> {t('formUploadPhoto')}</>
                       )}
                     </Button>
-                    <p className="text-[11px] text-gray-500">JPG, PNG, WebP. Max 5 MB.</p>
+                    <p className="text-[11px] text-gray-500">{t('formHeadshotHint')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Languages (searchable multi-select) */}
               <SearchableMultiSelect
-                label="Languages"
+                label={t('formLanguages')}
                 options={ALL_LANGUAGES}
                 selected={formData.languages}
                 onChange={langs => setFormData(prev => ({ ...prev, languages: langs }))}
-                placeholder="Search languages..."
+                placeholder={t('formLanguagesSearch')}
               />
 
               {/* Accent (searchable single-select) */}
               <SearchableSelect
-                label="Accent / Dialect"
+                label={t('formAccent')}
                 options={ALL_ACCENTS}
                 value={formData.accent}
                 onChange={val => setFormData(prev => ({ ...prev, accent: val }))}
-                placeholder="Search accents..."
+                placeholder={t('formAccentSearch')}
               />
 
               {/* Tags */}
               <div className="space-y-2">
-                <Label className="text-gray-700">Tags & Characteristics</Label>
+                <Label className="text-gray-700">{t('formTags')}</Label>
                 <div className="grid grid-cols-4 gap-x-4 gap-y-2 p-3 rounded-lg bg-white border border-gray-200">
                   {AVAILABLE_TAGS.map(tag => (
                     <div key={tag} className="flex items-center space-x-2">
@@ -1239,19 +1243,19 @@ export default function AdminTalentsPage() {
 
               {/* Biography */}
               <div className="space-y-2">
-                <Label className="text-gray-700">Biography</Label>
+                <Label className="text-gray-700">{t('formBio')}</Label>
                 <Textarea
                   value={formData.bio}
                   onChange={e => setFormData({ ...formData, bio: e.target.value })}
                   rows={3}
-                  placeholder="Short bio or description of the talent..."
+                  placeholder={t('formBioPlaceholder')}
                   className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 resize-y"
                 />
               </div>
 
               {/* 網站 / 作品集連結 — 內部參考,不公開給客戶 */}
               <div className="space-y-2">
-                <Label className="text-gray-700">網站 / 作品集連結 <span className="text-gray-400 font-normal">· 內部參考,不公開</span></Label>
+                <Label className="text-gray-700">{t('formPortfolio')} <span className="text-gray-400 font-normal">{t('formPortfolioNote')}</span></Label>
                 <input
                   type="url"
                   value={formData.portfolio_url}
@@ -1263,7 +1267,7 @@ export default function AdminTalentsPage() {
 
               {/* Audio Demos */}
               <div className="space-y-3">
-                <Label className="text-gray-700">Audio Demos</Label>
+                <Label className="text-gray-700">{t('formDemos')}</Label>
 
                 {formData.demo_urls.length > 0 && (
                   <div className="space-y-2">
@@ -1275,7 +1279,7 @@ export default function AdminTalentsPage() {
                           <p className="text-[11px] text-gray-500 truncate">{demo.url}</p>
                         </div>
                         <a href={demo.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 hover:text-blue-700 flex-shrink-0">
-                          Preview
+                          {t('formDemoPreview')}
                         </a>
                         <button type="button" onClick={() => removeDemo(index)} className="text-gray-500 hover:text-red-700 p-1 flex-shrink-0">
                           <X className="w-3.5 h-3.5" />
@@ -1287,12 +1291,12 @@ export default function AdminTalentsPage() {
 
                 <div className="flex items-end gap-3">
                   <div className="flex-1 space-y-1">
-                    <label className="text-[11px] text-gray-500">Demo Label (optional)</label>
+                    <label className="text-[11px] text-gray-500">{t('formDemoLabel')}</label>
                     <Input
                       type="text"
                       value={newDemoName}
                       onChange={e => setNewDemoName(e.target.value)}
-                      placeholder="e.g. Pop Demo, Corporate Reel"
+                      placeholder={t('formDemoLabelPlaceholder')}
                       className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
                     />
                   </div>
@@ -1313,19 +1317,19 @@ export default function AdminTalentsPage() {
                       className="border-gray-300 text-gray-700 hover:bg-gray-100 gap-2 h-9"
                     >
                       {uploadingDemo ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...</>
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('formUploading')}</>
                       ) : (
-                        <><Upload className="w-3.5 h-3.5" /> Upload Audio</>
+                        <><Upload className="w-3.5 h-3.5" /> {t('formUploadAudio')}</>
                       )}
                     </Button>
                   </div>
                 </div>
-                <p className="text-[11px] text-gray-500">MP3, WAV, AIFF, FLAC. Max 20 MB per file.</p>
+                <p className="text-[11px] text-gray-500">{t('formDemoHint')}</p>
               </div>
 
               {/* Compensation Model */}
               <div className="space-y-3 pt-3 border-t border-gray-200">
-                <Label className="text-gray-700 font-semibold text-sm">Compensation Model</Label>
+                <Label className="text-gray-700 font-semibold text-sm">{t('formCompensation')}</Label>
                 <div className="space-y-2">
                   <Select
                     value={formData.compensation_model}
@@ -1336,26 +1340,26 @@ export default function AdminTalentsPage() {
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-300">
                       <SelectItem value="commission" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">
-                        抽成（真人 20% · AI 25%）
+                        {t('formCompCommission')}
                       </SelectItem>
                       <SelectItem value="buyout" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">
-                        買斷(一次付清)
+                        {t('formCompBuyout')}
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-[11px] text-gray-500">
                     {formData.compensation_model === "commission"
-                      ? "平台預設,依案件性質計:真人配音案件平台收 20% 服務費;AI 語音銷售配音員拿 25% 版稅。月結。"
-                      : "Wing 一次付清買斷聲音。後續平台收入 Wing 拿 100%,配音員沒分潤。"}
+                      ? t('formCompCommissionHint')
+                      : t('formCompBuyoutHint')}
                   </p>
                 </div>
               </div>
 
               {/* Payment Info */}
               <div className="space-y-3 pt-3 border-t border-gray-200">
-                <Label className="text-gray-700 font-semibold text-sm">Payment Information</Label>
+                <Label className="text-gray-700 font-semibold text-sm">{t('formPayment')}</Label>
                 <div className="space-y-2">
-                  <Label className="text-gray-600 text-xs">Payment Method</Label>
+                  <Label className="text-gray-600 text-xs">{t('formPaymentMethod')}</Label>
                   <Select
                     value={formData.payment_method || "none"}
                     onValueChange={v => setFormData({ ...formData, payment_method: v === "none" ? "" : v })}
@@ -1364,16 +1368,16 @@ export default function AdminTalentsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-300">
-                      <SelectItem value="none" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Not Set</SelectItem>
-                      <SelectItem value="paypal" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">PayPal</SelectItem>
-                      <SelectItem value="bank_transfer" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">Bank Transfer</SelectItem>
+                      <SelectItem value="none" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formPaymentNotSet')}</SelectItem>
+                      <SelectItem value="paypal" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formPaymentPaypal')}</SelectItem>
+                      <SelectItem value="bank_transfer" className="text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900">{t('formPaymentBank')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {formData.payment_method === "paypal" && (
                   <div className="space-y-2">
-                    <Label className="text-gray-600 text-xs">PayPal Email</Label>
+                    <Label className="text-gray-600 text-xs">{t('formPaypalEmail')}</Label>
                     <Input
                       type="email"
                       placeholder="talent@example.com"
@@ -1388,18 +1392,18 @@ export default function AdminTalentsPage() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">Bank Name</Label>
+                        <Label className="text-gray-600 text-xs">{t('formBankName')}</Label>
                         <Input
-                          placeholder="e.g. 中國信託、HSBC"
+                          placeholder={t('formBankNamePlaceholder')}
                           value={formData.payment_details.bank_name}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, bank_name: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">Routing / Sort / Branch Code</Label>
+                        <Label className="text-gray-600 text-xs">{t('formBankCode')}</Label>
                         <Input
-                          placeholder="US ABA / UK sort / branch"
+                          placeholder={t('formBankCodePlaceholder')}
                           value={formData.payment_details.bank_code}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, bank_code: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
@@ -1408,18 +1412,18 @@ export default function AdminTalentsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">Account Name</Label>
+                        <Label className="text-gray-600 text-xs">{t('formAccountName')}</Label>
                         <Input
-                          placeholder="Account holder name"
+                          placeholder={t('formAccountNamePlaceholder')}
                           value={formData.payment_details.account_name}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, account_name: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">Account Number / IBAN</Label>
+                        <Label className="text-gray-600 text-xs">{t('formAccountNumber')}</Label>
                         <Input
-                          placeholder="Account number or IBAN"
+                          placeholder={t('formAccountNumberPlaceholder')}
                           value={formData.payment_details.account_number}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, account_number: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
@@ -1428,18 +1432,18 @@ export default function AdminTalentsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">SWIFT / BIC (international)</Label>
+                        <Label className="text-gray-600 text-xs">{t('formSwift')}</Label>
                         <Input
-                          placeholder="e.g. CHASUS33, HBUKGB4B"
+                          placeholder={t('formSwiftPlaceholder')}
                           value={formData.payment_details.swift_code}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, swift_code: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-gray-600 text-xs">Bank Country</Label>
+                        <Label className="text-gray-600 text-xs">{t('formBankCountry')}</Label>
                         <Input
-                          placeholder="e.g. United Kingdom"
+                          placeholder={t('formBankCountryPlaceholder')}
                           value={formData.payment_details.bank_country}
                           onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, bank_country: e.target.value } })}
                           className="bg-white border-gray-300 text-gray-900"
@@ -1451,9 +1455,9 @@ export default function AdminTalentsPage() {
 
                 {formData.payment_method && (
                   <div className="space-y-1">
-                    <Label className="text-gray-600 text-xs">Notes</Label>
+                    <Label className="text-gray-600 text-xs">{t('formNotes')}</Label>
                     <Input
-                      placeholder="Any special instructions..."
+                      placeholder={t('formNotesPlaceholder')}
                       value={formData.payment_details.notes}
                       onChange={e => setFormData({ ...formData, payment_details: { ...formData.payment_details, notes: e.target.value } })}
                       className="bg-white border-gray-300 text-gray-900"
@@ -1469,16 +1473,16 @@ export default function AdminTalentsPage() {
                   onCheckedChange={checked => setFormData({ ...formData, is_active: checked as boolean })}
                   className="border-gray-400 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                 />
-                <Label className="text-gray-700">Active — visible in talent catalog</Label>
+                <Label className="text-gray-700">{t('formActive')}</Label>
               </div>
 
               {/* Submit */}
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-gray-300 text-gray-700 hover:bg-gray-100">
-                  Cancel
+                  {t('formCancel')}
                 </Button>
                 <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 min-w-[120px]">
-                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Talent'}
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('formSaving')}</> : t('formSaveTalent')}
                 </Button>
               </div>
             </form>
@@ -1488,26 +1492,26 @@ export default function AdminTalentsPage() {
 
       {/* Stats — shared admin module (matches Orders / Applications) */}
       <AdminStats items={[
-        { label: 'Total', value: counts.total },
-        { label: 'Active', value: counts.active, color: 'text-emerald-700' },
-        { label: '待審核', value: counts.pending, color: 'text-amber-700' },
-        { label: '草稿', value: counts.draft, color: 'text-sky-700' },
+        { label: t('statTotal'), value: counts.total },
+        { label: t('statActive'), value: counts.active, color: 'text-emerald-700' },
+        { label: t('statPending'), value: counts.pending, color: 'text-amber-700' },
+        { label: t('statDraft'), value: counts.draft, color: 'text-sky-700' },
         {
           // Inactive 混了三種來源;標明其中有幾個是「試音邀請帳號」(不該催激活),
           // 老闆一眼就分得清,數字本身仍是完整 Inactive 總數不變。
           label: (
             <span className="inline-flex flex-col">
-              <span>Inactive</span>
+              <span>{t('statInactive')}</span>
               {counts.inactiveCasting > 0 && (
-                <span className="text-[11px] text-gray-400 font-normal">含 {counts.inactiveCasting} 試音邀請</span>
+                <span className="text-[11px] text-gray-400 font-normal">{t('statInactiveCasting', { count: counts.inactiveCasting })}</span>
               )}
             </span>
           ),
           value: counts.inactive,
           color: 'text-gray-500',
         },
-        { label: '真人驗證', value: counts.liveness, color: 'text-emerald-700' },
-        { label: 'Voice ID', value: counts.voiceId, color: 'text-cyan-700' },
+        { label: t('statLiveness'), value: counts.liveness, color: 'text-emerald-700' },
+        { label: t('statVoiceId'), value: counts.voiceId, color: 'text-cyan-700' },
       ]} />
 
       {/* Filters — search + type / status / source */}
@@ -1518,28 +1522,28 @@ export default function AdminTalentsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜尋姓名 / email / 簡介 / 語言 / 口音 / 專長 / 設備…"
+            placeholder={t('searchPlaceholder')}
             className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-400 focus:outline-none"
           />
         </div>
         <div className="flex gap-2">
           <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none">
-            <option value="all">All Types</option>
-            <option value="VO">Voice Actors</option>
-            <option value="Singer">Singers</option>
+            <option value="all">{t('filterAllTypes')}</option>
+            <option value="VO">{t('filterVoiceActors')}</option>
+            <option value="Singer">{t('filterSingers')}</option>
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none">
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="pending">待審核</option>
-            <option value="draft">草稿</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{t('filterAllStatus')}</option>
+            <option value="active">{t('filterActive')}</option>
+            <option value="pending">{t('filterPending')}</option>
+            <option value="draft">{t('filterDraft')}</option>
+            <option value="inactive">{t('filterInactive')}</option>
           </select>
           <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value as typeof sourceFilter)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none">
-            <option value="all">所有來源</option>
-            <option value="application">申請表 (Application)</option>
-            <option value="casting">試音邀請 (Casting)</option>
-            <option value="manual">手動加入 (Manual)</option>
+            <option value="all">{t('filterAllSources')}</option>
+            <option value="application">{t('filterSourceApplication')}</option>
+            <option value="casting">{t('filterSourceCasting')}</option>
+            <option value="manual">{t('filterSourceManual')}</option>
           </select>
         </div>
       </div>
@@ -1548,16 +1552,16 @@ export default function AdminTalentsPage() {
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200 hover:bg-transparent">
-              <TableHead className="text-gray-600 font-semibold">Name</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Type</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Source</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Languages</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Price</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Earnings</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Voice ID</TableHead>
-              <TableHead className="text-gray-600 font-semibold">真人驗證</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Status</TableHead>
-              <TableHead className="text-gray-600 font-semibold">Actions</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colName')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colType')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colSource')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colLanguages')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colPrice')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colEarnings')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colVoiceId')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colLiveness')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colStatus')}</TableHead>
+              <TableHead className="text-gray-600 font-semibold">{t('colActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1576,11 +1580,11 @@ export default function AdminTalentsPage() {
                       <span className="font-medium text-gray-900">{talent.name || 'N/A'}</span>
                       {talent.compensation_model === 'buyout' ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 w-fit">
-                          買斷
+                          {t('badgeBuyout')}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit" title="真人配音案件平台收 20% 服務費;AI 語音銷售配音員拿 25% 版稅">
-                          真人20%·AI25%
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit" title={t('badgeCommissionTip')}>
+                          {t('badgeCommission')}
                         </span>
                       )}
                       {(() => {
@@ -1590,16 +1594,16 @@ export default function AdminTalentsPage() {
                         // low-price data before assigning that kind of work.
                         const c = talent as unknown as Record<string, boolean>;
                         const flags = [
-                          c.coop_open_buyout && { t: '買斷', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
-                          c.coop_ai_clone && { t: '做AI', cls: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
-                          c.coop_ai_training && { t: 'AI素材', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
-                          c.low_price_data_optin && { t: '低價資料', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-                          c.coop_proofread && { t: '校稿', cls: 'bg-teal-50 text-teal-700 border-teal-200' },
-                          c.coop_voice_director && { t: '配音指導', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                          c.coop_open_buyout && { t: t('coopBuyout'), cls: 'bg-purple-50 text-purple-700 border-purple-200' },
+                          c.coop_ai_clone && { t: t('coopAiClone'), cls: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
+                          c.coop_ai_training && { t: t('coopAiTraining'), cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+                          c.low_price_data_optin && { t: t('coopLowPriceData'), cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+                          c.coop_proofread && { t: t('coopProofread'), cls: 'bg-teal-50 text-teal-700 border-teal-200' },
+                          c.coop_voice_director && { t: t('coopVoiceDirector'), cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
                         ].filter(Boolean) as { t: string; cls: string }[];
                         if (!flags.length) return null;
                         return (
-                          <div className="flex flex-wrap gap-1 mt-0.5" title="配音員自選的合作意願">
+                          <div className="flex flex-wrap gap-1 mt-0.5" title={t('coopTip')}>
                             {flags.map((f) => (
                               <span key={f.t} className={`inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium border w-fit ${f.cls}`}>{f.t}</span>
                             ))}
@@ -1610,7 +1614,7 @@ export default function AdminTalentsPage() {
                   </div>
                 </TableCell>
                 <TableCell className="capitalize text-gray-700">
-                  {talent.type === 'Singer' || talent.type === 'singer' ? 'Singer' : talent.type === 'VO' || talent.type === 'voice_actor' ? 'Voice Actor' : talent.type?.replace("_", " ") || 'N/A'}
+                  {talent.type === 'Singer' || talent.type === 'singer' ? t('typeSinger') : talent.type === 'VO' || talent.type === 'voice_actor' ? t('typeVoiceActor') : talent.type?.replace("_", " ") || 'N/A'}
                 </TableCell>
                 <TableCell>
                   {/* 三態來源:申請表 / 試音邀請 / 手動加入 —— 老闆一眼分清 Inactive 是誰。 */}
@@ -1620,19 +1624,19 @@ export default function AdminTalentsPage() {
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
                     >
                       <FileText className="w-3 h-3" />
-                      申請表
+                      {t('sourceApplication')}
                       <ArrowUpRight className="w-2.5 h-2.5" />
                     </a>
                   ) : sourceOf(talent) === 'casting' ? (
                     <span
-                      title="發試音案時用 email 自動建的輕量帳號(magic link 免註冊試音),非申請者,不需寄激活連結"
+                      title={t('sourceCastingTip')}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-50 text-sky-700 border border-sky-200"
                     >
-                      試音邀請
+                      {t('sourceCasting')}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-200/50 text-gray-600 border border-gray-400/50">
-                      手動加入
+                      {t('sourceManual')}
                     </span>
                   )}
                 </TableCell>
@@ -1655,7 +1659,7 @@ export default function AdminTalentsPage() {
                 <TableCell>
                   {/* 人才管理 = real-person roster → always quote-based (Wing 2026-06-28).
                       The flat $499 is the AI-voice product price and lives elsewhere. */}
-                  <span className="text-gray-600 text-sm">報價制</span>
+                  <span className="text-gray-600 text-sm">{t('priceQuoteBased')}</span>
                 </TableCell>
                 <TableCell>
                   {(() => {
@@ -1665,15 +1669,15 @@ export default function AdminTalentsPage() {
                       <a href={`/admin/payouts?talent=${talent.id}`} className="group space-y-0.5">
                         <div className="text-xs">
                           <span className="text-green-700 font-medium">US${es.paid.toFixed(0)}</span>
-                          <span className="text-gray-500"> paid</span>
+                          <span className="text-gray-500"> {t('earningsPaid')}</span>
                         </div>
                         {es.pending > 0 && (
                           <div className="text-xs">
                             <span className="text-amber-700 font-medium">US${es.pending.toFixed(0)}</span>
-                            <span className="text-gray-500"> pending</span>
+                            <span className="text-gray-500"> {t('earningsPending')}</span>
                           </div>
                         )}
-                        <span className="text-[10px] text-gray-600 group-hover:text-gray-600">{es.count} orders</span>
+                        <span className="text-[10px] text-gray-600 group-hover:text-gray-600">{t('earningsOrders', { count: es.count })}</span>
                       </a>
                     );
                   })()}
@@ -1691,12 +1695,12 @@ export default function AdminTalentsPage() {
                         <div className="flex items-center gap-2">
                           {vid.voice_id_file_url && (
                             <button type="button" onClick={() => openSigned(vid.voice_id_file_url)} className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
-                              <Music className="w-3 h-3" /> Play
+                              <Music className="w-3 h-3" /> {t('vidPlay')}
                             </button>
                           )}
                           {vid.voice_id_signature_url && (
                             <button type="button" onClick={() => openSigned(vid.voice_id_signature_url)} className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
-                              <ExternalLink className="w-3 h-3" /> Signature
+                              <ExternalLink className="w-3 h-3" /> {t('vidSignature')}
                             </button>
                           )}
                         </div>
@@ -1706,17 +1710,17 @@ export default function AdminTalentsPage() {
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5">
                           <Shield className="w-3.5 h-3.5 text-blue-700" />
-                          <span className="text-blue-700 text-xs font-medium">Submitted — Review</span>
+                          <span className="text-blue-700 text-xs font-medium">{t('vidSubmittedReview')}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           {vid.voice_id_file_url && (
                             <button type="button" onClick={() => openSigned(vid.voice_id_file_url)} className="inline-flex items-center gap-1 text-[11px] text-blue-700 hover:text-blue-700 bg-blue-50 hover:bg-blue-50 rounded px-2 py-0.5">
-                              <Music className="w-3 h-3" /> Play
+                              <Music className="w-3 h-3" /> {t('vidPlay')}
                             </button>
                           )}
                           {vid.voice_id_signature_url && (
                             <button type="button" onClick={() => openSigned(vid.voice_id_signature_url)} className="inline-flex items-center gap-1 text-[11px] text-purple-700 hover:text-purple-700 bg-purple-50 hover:bg-purple-50 rounded px-2 py-0.5">
-                              <ExternalLink className="w-3 h-3" /> Signature
+                              <ExternalLink className="w-3 h-3" /> {t('vidSignature')}
                             </button>
                           )}
                           <Button
@@ -1731,14 +1735,14 @@ export default function AdminTalentsPage() {
                             ) : (
                               <CheckCircle className="w-3 h-3 mr-1" />
                             )}
-                            Verify
+                            {t('vidVerify')}
                           </Button>
                         </div>
                       </div>
                     );
                     if (status === 'requested') return (
                       <Button variant="ghost" size="sm" onClick={() => handleSendVoiceIdRequest(talent.id)} disabled={sendingVoiceId === talent.id} className="text-amber-700 hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs">
-                        {sendingVoiceId === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} Requested · 重發
+                        {sendingVoiceId === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} {t('vidRequestedResend')}
                       </Button>
                     );
                     return (
@@ -1754,7 +1758,7 @@ export default function AdminTalentsPage() {
                         ) : (
                           <Send className="w-3 h-3 mr-1" />
                         )}
-                        Send Request
+                        {t('vidSendRequest')}
                       </Button>
                     );
                   })()}
@@ -1766,38 +1770,38 @@ export default function AdminTalentsPage() {
                     if (s === 'verified') return (
                       <div className="flex items-center gap-1.5">
                         <CheckCircle className="w-3.5 h-3.5 text-green-700" />
-                        <span className="text-green-700 text-xs font-medium">真人 ✓</span>
+                        <span className="text-green-700 text-xs font-medium">{t('livePerson')}</span>
                       </div>
                     );
                     if (s === 'submitted') return (
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5">
                           <Shield className="w-3.5 h-3.5 text-blue-700" />
-                          <span className="text-blue-700 text-xs font-medium">待複審</span>
+                          <span className="text-blue-700 text-xs font-medium">{t('livePendingReview')}</span>
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {lv.liveness_recording_path && (
                             <button type="button" onClick={() => playLiveness(lv.liveness_recording_path)} className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 rounded px-2 py-0.5">
-                              <Music className="w-3 h-3" /> 聽
+                              <Music className="w-3 h-3" /> {t('liveListen')}
                             </button>
                           )}
                           <Button variant="ghost" size="sm" onClick={() => handleReviewLiveness(talent.id, 'verified')} disabled={reviewingLiveness === talent.id} className="text-green-700 hover:text-green-700 hover:bg-green-50 h-6 px-2 text-[11px]">
-                            {reviewingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle className="w-3 h-3 mr-1" />} 真人
+                            {reviewingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle className="w-3 h-3 mr-1" />} {t('liveMarkPerson')}
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleReviewLiveness(talent.id, 'rejected')} disabled={reviewingLiveness === talent.id} className="text-red-700 hover:text-red-700 hover:bg-red-50 h-6 px-2 text-[11px]">
-                            <X className="w-3 h-3 mr-1" /> 退回
+                            <X className="w-3 h-3 mr-1" /> {t('liveReject')}
                           </Button>
                         </div>
                       </div>
                     );
                     if (s === 'sent') return (
                       <Button variant="ghost" size="sm" onClick={() => handleSendLiveness(talent.id)} disabled={sendingLiveness === talent.id} className="text-amber-700 hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs">
-                        {sendingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} 已寄出 · 重發
+                        {sendingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} {t('liveSentResend')}
                       </Button>
                     );
                     return (
                       <Button variant="ghost" size="sm" onClick={() => handleSendLiveness(talent.id)} disabled={sendingLiveness === talent.id} className={`hover:text-green-700 hover:bg-green-50 h-7 px-2 text-xs ${s === 'rejected' ? 'text-red-600' : 'text-gray-500'}`}>
-                        {sendingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} {s === 'rejected' ? '退回·重發' : '發送驗證'}
+                        {sendingLiveness === talent.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Send className="w-3 h-3 mr-1" />} {s === 'rejected' ? t('liveRejectedResend') : t('liveSendVerify')}
                       </Button>
                     );
                   })()}
@@ -1808,15 +1812,15 @@ export default function AdminTalentsPage() {
                     const onboarded = !!tt.onboarded_at;
                     if (talent.is_active) {
                       return tt.pending_review
-                        ? <Badge className="bg-amber-50 text-amber-700 border border-amber-300">修改待審</Badge>
-                        : <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>;
+                        ? <Badge className="bg-amber-50 text-amber-700 border border-amber-300">{t('statusEditPending')}</Badge>
+                        : <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">{t('statusActive')}</Badge>;
                     }
-                    if (tt.pending_review) return <Badge className="bg-amber-50 text-amber-700 border border-amber-300">待審核</Badge>;
+                    if (tt.pending_review) return <Badge className="bg-amber-50 text-amber-700 border border-amber-300">{t('statusPending')}</Badge>;
                     if (onboarded) return (
                       <div className="flex flex-col items-start gap-1">
-                        <Badge className="bg-sky-50 text-sky-700 border border-sky-200">草稿中</Badge>
-                        <button type="button" onClick={() => handleNudgeComplete(talent.id)} disabled={nudging === talent.id} title="寄信請他登入補完 demo / 聲線 / 專長,才能上前台" className="text-[11px] text-amber-700 hover:text-amber-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
-                          {nudging === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 催填資料
+                        <Badge className="bg-sky-50 text-sky-700 border border-sky-200">{t('statusDraft')}</Badge>
+                        <button type="button" onClick={() => handleNudgeComplete(talent.id)} disabled={nudging === talent.id} title={t('statusNudgeTip')} className="text-[11px] text-amber-700 hover:text-amber-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
+                          {nudging === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} {t('statusNudge')}
                         </button>
                       </div>
                     );
@@ -1826,14 +1830,14 @@ export default function AdminTalentsPage() {
                     // 改標一行說明來源,老闆知道這不是待催的申請者。
                     return (
                       <div className="flex flex-col items-start gap-1">
-                        <Badge className="bg-gray-200 text-gray-600 border border-gray-400">Inactive</Badge>
+                        <Badge className="bg-gray-200 text-gray-600 border border-gray-400">{t('statusInactive')}</Badge>
                         {hasApp(talent) ? (
-                          <button type="button" onClick={() => handleSendOnboarding(talent.id)} disabled={sendingOnboarding === talent.id} title="補寄開通連結,請他點進來確認合作、同意合作即建帳號" className="text-[11px] text-emerald-700 hover:text-emerald-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
-                            {sendingOnboarding === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 寄激活連結
+                          <button type="button" onClick={() => handleSendOnboarding(talent.id)} disabled={sendingOnboarding === talent.id} title={t('statusSendActivationTip')} className="text-[11px] text-emerald-700 hover:text-emerald-800 hover:underline disabled:opacity-50 inline-flex items-center gap-1">
+                            {sendingOnboarding === talent.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} {t('statusSendActivation')}
                           </button>
                         ) : (
-                          <span className="text-[11px] text-gray-400" title={isCastingInvite(talent) ? '發試音案時自動建的輕量帳號,走試音流程,非申請者' : '手動建立、無報名紀錄'}>
-                            {isCastingInvite(talent) ? '試音邀請帳號' : '手動加入'}
+                          <span className="text-[11px] text-gray-400" title={isCastingInvite(talent) ? t('statusCastingAccountTip') : t('statusManualAccountTip')}>
+                            {isCastingInvite(talent) ? t('statusCastingAccount') : t('statusManualAccount')}
                           </span>
                         )}
                       </div>
@@ -1845,7 +1849,7 @@ export default function AdminTalentsPage() {
                     {/* Always available — see the full profile the talent filled
                         (incl. unpublished draft), no need to open the front portal. */}
                     <Button variant="outline" size="sm" onClick={() => setProfileTarget(talent)} className="h-8 px-3 border-gray-300 text-gray-700 hover:bg-gray-100">
-                      <Eye className="w-3.5 h-3.5 mr-1" /> 完整檔案
+                      <Eye className="w-3.5 h-3.5 mr-1" /> {t('actionFullProfile')}
                     </Button>
                     {(() => {
                       const tt = talent as Talent & { onboarded_at?: string; pending_review?: boolean };
@@ -1854,10 +1858,10 @@ export default function AdminTalentsPage() {
                         return (
                           <>
                             <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700">
-                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> 審核
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> {t('actionReview')}
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => { setRejectTarget(talent); setRejectReason(''); }} className="h-8 px-3 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-700">
-                              <Send className="w-3.5 h-3.5 mr-1" /> 退回
+                              <Send className="w-3.5 h-3.5 mr-1" /> {t('actionSendBack')}
                             </Button>
                           </>
                         );
@@ -1868,21 +1872,21 @@ export default function AdminTalentsPage() {
                         return (
                           <>
                             <Button variant="outline" size="sm" onClick={() => openPublish(talent)} className="h-8 px-3 border-gray-300 text-gray-600 hover:bg-gray-100">
-                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> 重新發布
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" /> {t('actionRepublish')}
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => handleRevertToReview(talent)} className="h-8 px-3 bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-700">
-                              <Clock className="w-3.5 h-3.5 mr-1" /> 退回審核
+                              <Clock className="w-3.5 h-3.5 mr-1" /> {t('actionRevertReview')}
                             </Button>
                           </>
                         );
                       }
                       return null;
                     })()}
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} title="後台管理欄位:類型 / 分類 / 內部成本 / 標籤 / 大頭照 / demo / 收款 / 買斷。配音員自填的聲線·專長·經歷等請用「完整檔案」查看" className="h-8 px-3 border-gray-400 text-gray-700 hover:bg-gray-200 hover:text-gray-900">
-                      <Edit className="w-3.5 h-3.5 mr-1" /> 後台編輯
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(talent)} title={t('actionBackendEditTip')} className="h-8 px-3 border-gray-400 text-gray-700 hover:bg-gray-200 hover:text-gray-900">
+                      <Edit className="w-3.5 h-3.5 mr-1" /> {t('actionBackendEdit')}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handleDelete(talent.id)} className="h-8 px-3 bg-red-50 hover:bg-red-50 border-red-200 text-red-700">
-                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> {t('actionDelete')}
                     </Button>
                   </div>
                 </TableCell>
@@ -1909,7 +1913,7 @@ export default function AdminTalentsPage() {
       <Dialog open={!!publishTarget} onOpenChange={(o) => !o && setPublishTarget(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 text-lg">審核並發布 — {publishTarget?.name}</DialogTitle>
+            <DialogTitle className="text-gray-900 text-lg">{t('publishTitle', { name: publishTarget?.name ?? '' })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {/* Read-only review of exactly what the talent submitted — same
@@ -1920,17 +1924,17 @@ export default function AdminTalentsPage() {
               </div>
             )}
             <p className="text-sm text-gray-600">
-              聽過 demo、確認資料 OK 後發布。簡介可在此微調(原文);
-              <span className="text-gray-400"> 簡體與英文會在發布時自動翻譯,前台依客戶語言顯示。</span>
+              {t('publishHint')}
+              <span className="text-gray-400">{t('publishHintTranslate')}</span>
             </p>
             <div>
-              <Label className="text-gray-700">簡介(原文)</Label>
-              <Textarea value={pubBio} onChange={(e) => setPubBio(e.target.value)} className="min-h-[100px] mt-1" placeholder="配音員填寫的簡介;發布時自動翻成簡體 / 英文" />
+              <Label className="text-gray-700">{t('publishBioLabel')}</Label>
+              <Textarea value={pubBio} onChange={(e) => setPubBio(e.target.value)} className="min-h-[100px] mt-1" placeholder={t('publishBioPlaceholder')} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setPublishTarget(null)} className="border-gray-300 text-gray-700">取消</Button>
+              <Button variant="outline" onClick={() => setPublishTarget(null)} className="border-gray-300 text-gray-700">{t('publishCancel')}</Button>
               <Button onClick={handlePublish} disabled={publishing} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />} 確認發布
+                {publishing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />} {t('publishConfirm')}
               </Button>
             </div>
           </div>
@@ -1944,16 +1948,16 @@ export default function AdminTalentsPage() {
       <Dialog open={!!profileTarget} onOpenChange={(o) => !o && setProfileTarget(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 text-lg">完整檔案 — {profileTarget?.name}</DialogTitle>
+            <DialogTitle className="text-gray-900 text-lg">{t('profileTitle', { name: profileTarget?.name ?? '' })}</DialogTitle>
           </DialogHeader>
           {profileTarget && (
             <>
               <TalentProfileCard t={profileTarget as TalentProfile} locale={locale} />
               <div className="flex justify-end gap-2 pt-4 mt-2 border-t border-gray-200">
-                <Button variant="outline" onClick={() => { const t = profileTarget; setProfileTarget(null); if (t) handleEdit(t); }} className="border-gray-300 text-gray-700 hover:bg-gray-100">
-                  <Edit className="w-4 h-4 mr-1" /> 後台編輯
+                <Button variant="outline" onClick={() => { const pt = profileTarget; setProfileTarget(null); if (pt) handleEdit(pt); }} className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <Edit className="w-4 h-4 mr-1" /> {t('profileBackendEdit')}
                 </Button>
-                <Button variant="outline" onClick={() => setProfileTarget(null)} className="border-gray-300 text-gray-700">關閉</Button>
+                <Button variant="outline" onClick={() => setProfileTarget(null)} className="border-gray-300 text-gray-700">{t('profileClose')}</Button>
               </div>
             </>
           )}
@@ -1964,10 +1968,10 @@ export default function AdminTalentsPage() {
       <Dialog open={!!rejectTarget} onOpenChange={(o) => !o && setRejectTarget(null)}>
         <DialogContent className="max-w-lg bg-white border-gray-200 text-gray-900">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 text-lg">退回給配音員 — {rejectTarget?.name}</DialogTitle>
+            <DialogTitle className="text-gray-900 text-lg">{t('rejectTitle', { name: rejectTarget?.name ?? '' })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">點下面常見原因自動帶入(用對方語言),也可以自己改。會 email 通知他(不會公開、不會動到他目前的前台版本)。</p>
+            <p className="text-sm text-gray-600">{t('rejectHint')}</p>
             {(() => {
               const langs = (rejectTarget as (Talent & { languages?: string[] }) | null)?.languages || [];
               const rejLang: 'tw' | 'en' = langs.length === 0 || langs.some((l) => /chinese|中文|mandarin|cantonese|taiwan|粵|普通/i.test(l)) ? 'tw' : 'en';
@@ -1995,11 +1999,11 @@ export default function AdminTalentsPage() {
                 </div>
               );
             })()}
-            <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="min-h-[120px]" placeholder="例如:廣告 demo 有背景雜音請重錄;粵語語言請補一段該語言的 demo…" />
+            <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} className="min-h-[120px]" placeholder={t('rejectPlaceholder')} />
             <div className="flex justify-end gap-2 pt-1">
-              <Button variant="outline" onClick={() => setRejectTarget(null)} className="border-gray-300 text-gray-700">取消</Button>
+              <Button variant="outline" onClick={() => setRejectTarget(null)} className="border-gray-300 text-gray-700">{t('rejectCancel')}</Button>
               <Button onClick={handleReject} disabled={rejecting || !rejectReason.trim()} className="bg-amber-600 hover:bg-amber-700 text-white">
-                {rejecting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />} 寄出通知
+                {rejecting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />} {t('rejectSend')}
               </Button>
             </div>
           </div>
