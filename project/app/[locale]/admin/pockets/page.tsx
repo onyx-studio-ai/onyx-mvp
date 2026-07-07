@@ -238,24 +238,24 @@ export default function PocketsPage() {
                       <p className="text-xs text-gray-500 text-center py-4">No transactions yet</p>
                     ) : (
                       <ul className="space-y-2">
-                        {txns.map((t) => {
-                          const lbl = txnLabel(t.type);
-                          const amt = Number(t.amount);
+                        {txns.map((tx) => {
+                          const lbl = txnLabel(tx.type);
+                          const amt = Number(tx.amount);
                           return (
                             <li
-                              key={t.id}
+                              key={tx.id}
                               className="bg-white border border-gray-200 rounded p-2 text-xs"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <p className={`font-medium ${lbl.color}`}>{lbl.label}</p>
-                                  {t.description && (
-                                    <p className="text-gray-600 truncate" title={t.description}>
-                                      {t.description}
+                                  <p className={`font-medium ${lbl.color}`}>{['income_allocation', 'spend', 'buyout_outflow', 'adjustment'].includes(tx.type) ? t(`txn_${tx.type}`) : lbl.label}</p>
+                                  {tx.description && (
+                                    <p className="text-gray-600 truncate" title={tx.description}>
+                                      {tx.description}
                                     </p>
                                   )}
                                   <p className="text-[10px] text-gray-400">
-                                    {new Date(t.occurred_at).toLocaleString()}
+                                    {new Date(tx.occurred_at).toLocaleString()}
                                   </p>
                                 </div>
                                 <p

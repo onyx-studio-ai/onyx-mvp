@@ -3161,7 +3161,14 @@
       "packageInvoicesZip": "打包本月发票 (zip)",
       "loading": "加载中…",
       "noCostsTitle": "还没有工具费用",
-      "noCostsHint": "点右上角「新增工具」开始记录"
+      "noCostsHint": "点右上角「新增工具」开始记录",
+      "status_active": "使用中",
+      "status_review": "待评估",
+      "status_inactive": "已停用",
+      "billing_monthly": "每月",
+      "billing_yearly": "年费",
+      "billing_usage": "按量",
+      "billing_free": "免费"
     },
     "payouts": {
       "updateFailed": "更新失败",
@@ -3203,7 +3210,15 @@
       "folderHint": "你拖合同/发票/水单到这个文件夹,然后上面 5 个 checkbox 自己勾。空白会用自动建议。",
       "cancel": "取消",
       "creating": "创建中...",
-      "createPayoutRecord": "创建分润记录"
+      "createPayoutRecord": "创建分润记录",
+      "checklist_contract_filed": "合约已归档",
+      "checklist_invoice_sent": "发票已寄出",
+      "checklist_payment_received": "已收款",
+      "checklist_talent_paid": "已付配音员",
+      "checklist_delivered": "已交付客户",
+      "margin_healthy": "健康",
+      "margin_low": "偏低，可接受",
+      "margin_toolow": "太低，亏本边缘"
     },
     "pockets": {
       "pageTitle": "Profit First 口袋",
@@ -3231,7 +3246,11 @@
       "adjustSubtitle": "正数加钱进口袋,负数扣钱。用于开户 seed / 修正错误。",
       "adjustAmountPlaceholder": "正数 = 加钱 / 负数 = 扣钱",
       "adjustPurposePlaceholder": "e.g. 开户 seed / 修正 5/1 重复记账",
-      "confirmAdjust": "确认调整"
+      "confirmAdjust": "确认调整",
+      "txn_income_allocation": "收入分配",
+      "txn_spend": "支出",
+      "txn_buyout_outflow": "买断支出",
+      "txn_adjustment": "手动调整"
     },
     "payoutRequests": {
       "confirmPaid": "确认这笔已拨款?系统会给配音员寄一封收款通知信。",
@@ -3265,7 +3284,11 @@
       "payoutDetails": "收款资料",
       "markPaid": "已拨款",
       "reject": "退回",
-      "payoutDetailsWithholding": "收款资料 · 扣缴试算(此笔 {currency})"
+      "payoutDetailsWithholding": "收款资料 · 扣缴试算(此笔 {currency})",
+      "prStatus_pending": "待处理",
+      "prStatus_invoice_uploaded": "已上传发票",
+      "prStatus_paid": "已拨款",
+      "prStatus_rejected": "已退回"
     },
     "finance": {
       "loadFailed": "加载失败,请稍后再试",

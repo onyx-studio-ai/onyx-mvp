@@ -3161,7 +3161,14 @@
       "packageInvoicesZip": "Package This Month's Invoices (zip)",
       "loading": "Loading…",
       "noCostsTitle": "No tool costs yet",
-      "noCostsHint": "Click \"Add Tool\" in the top-right to start recording"
+      "noCostsHint": "Click \"Add Tool\" in the top-right to start recording",
+      "status_active": "Active",
+      "status_review": "Under Review",
+      "status_inactive": "Inactive",
+      "billing_monthly": "Monthly",
+      "billing_yearly": "Yearly",
+      "billing_usage": "Usage-based",
+      "billing_free": "Free"
     },
     "payouts": {
       "updateFailed": "Update failed",
@@ -3203,7 +3210,15 @@
       "folderHint": "Drag contracts/invoices/receipts into this folder, then tick the 5 checkboxes above. Blank uses the auto-suggestion.",
       "cancel": "Cancel",
       "creating": "Creating…",
-      "createPayoutRecord": "Create Payout Record"
+      "createPayoutRecord": "Create Payout Record",
+      "checklist_contract_filed": "Contract filed",
+      "checklist_invoice_sent": "Invoice sent",
+      "checklist_payment_received": "Payment received",
+      "checklist_talent_paid": "Talent paid",
+      "checklist_delivered": "Delivered",
+      "margin_healthy": "Healthy",
+      "margin_low": "Low but acceptable",
+      "margin_toolow": "Too low, near loss"
     },
     "pockets": {
       "pageTitle": "Profit First Pockets",
@@ -3231,7 +3246,11 @@
       "adjustSubtitle": "Positive adds to the pocket, negative deducts. Use for account seeding / fixing errors.",
       "adjustAmountPlaceholder": "Positive = add / Negative = deduct",
       "adjustPurposePlaceholder": "e.g. Account seed / fix duplicate entry on 5/1",
-      "confirmAdjust": "Confirm Adjust"
+      "confirmAdjust": "Confirm Adjust",
+      "txn_income_allocation": "Income allocation",
+      "txn_spend": "Spend",
+      "txn_buyout_outflow": "Buyout outflow",
+      "txn_adjustment": "Adjustment"
     },
     "payoutRequests": {
       "confirmPaid": "Confirm this is paid? The system will email the talent a payment notification.",
@@ -3265,7 +3284,11 @@
       "payoutDetails": "Payout Details",
       "markPaid": "Paid",
       "reject": "Reject",
-      "payoutDetailsWithholding": "Payout Details · Withholding Estimate (this request {currency})"
+      "payoutDetailsWithholding": "Payout Details · Withholding Estimate (this request {currency})",
+      "prStatus_pending": "Pending",
+      "prStatus_invoice_uploaded": "Invoice uploaded",
+      "prStatus_paid": "Paid",
+      "prStatus_rejected": "Rejected"
     },
     "finance": {
       "loadFailed": "Load failed, please try again later",

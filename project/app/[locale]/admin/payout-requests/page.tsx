@@ -152,7 +152,7 @@ export default function PayoutRequestsPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-gray-900">{r.talents?.name || '—'}</span>
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full border ${STATUS_CLS[r.status] || 'bg-gray-100 text-gray-600 border-gray-300'}`}>{STATUS_LABEL[r.status] || r.status}</span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full border ${STATUS_CLS[r.status] || 'bg-gray-100 text-gray-600 border-gray-300'}`}>{STATUS_LABEL[r.status] ? t(`prStatus_${r.status}`) : r.status}</span>
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">{r.talents?.email} · {r.invoice_number} · {r.invoice_type === 'own' ? t('invoiceTypeOwn') : t('invoiceTypeSystem')}</div>
                     <div className="text-lg font-bold text-gray-900 mt-1">{money(r.amount, r.currency)}</div>

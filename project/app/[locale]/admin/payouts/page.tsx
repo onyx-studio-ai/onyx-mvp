@@ -480,7 +480,7 @@ export default function PayoutsPage() {
                                   />
                                   <div className="text-xs leading-tight">
                                     <div className={checked ? 'text-emerald-800 font-medium' : 'text-gray-700'}>
-                                      {CHECKLIST_LABELS[field]}
+                                      {t(`checklist_${field}`)}
                                     </div>
                                     {checked && stamp && (
                                       <div className="text-[10px] text-emerald-600 mt-0.5">
@@ -1096,7 +1096,7 @@ function ManualEntryModal({
               <div className="flex justify-between items-baseline">
                 <span className="text-xs text-gray-600">Margin %:</span>
                 <span className={`text-sm font-semibold ${marginColor.text}`}>
-                  {marginPct.toFixed(1)}%  {marginColor.label}
+                  {marginPct.toFixed(1)}%  {marginPct >= 50 ? t('margin_healthy') : marginPct >= 30 ? t('margin_low') : t('margin_toolow')}
                 </span>
               </div>
               <p className="text-[10px] text-gray-500 pt-1">

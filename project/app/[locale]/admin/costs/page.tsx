@@ -89,8 +89,9 @@ const CATEGORIES = ['資料庫·儲存', '部署', 'Email', 'GPU 運算', '網�
 const INPUT = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none transition-colors';
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useTranslations('admin.costs');
   const cfg = STATUS_CFG[status] || STATUS_CFG.active;
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.cls}`}>{cfg.label}</span>;
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.cls}`}>{STATUS_CFG[status] ? t(`status_${status}`) : t('status_active')}</span>;
 }
 
 /** 新增 / 編輯表單(modal)。cost=null 為新增。 */
@@ -303,7 +304,7 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
               {cost.category && <span>{cost.category}</span>}
               {cost.plan && <><span>·</span><span>{t('plan')} {cost.plan}</span></>}
               <span>·</span>
-              <span>{BILLING_LABEL[cost.billing_cycle] || cost.billing_cycle}</span>
+              <span>{BILLING_LABEL[cost.billing_cycle] ? t(`billing_${cost.billing_cycle}`) : cost.billing_cycle}</span>
               {cost.renewal_date && <><span>·</span><span>{t('renewal')} {cost.renewal_date}</span></>}
             </div>
           </div>
@@ -315,7 +316,7 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
             ) : (
               <p className="text-sm text-gray-400">{t('tbd')}</p>
             )}
-            <p className="text-[11px] text-gray-500">/ {BILLING_LABEL[cost.billing_cycle] || cost.billing_cycle}</p>
+            <p className="text-[11px] text-gray-500">/ {BILLING_LABEL[cost.billing_cycle] ? t(`billing_${cost.billing_cycle}`) : cost.billing_cycle}</p>
           </div>
         </div>
       </div>
