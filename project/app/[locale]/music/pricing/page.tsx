@@ -16,6 +16,8 @@ import {
 import Footer from '@/components/landing/Footer';
 import ContactModal from '@/components/ContactModal';
 import { MUSIC_TIERS } from '@/lib/config/pricing.config';
+// DISPLAY-ONLY approx local currency for zh viewers; music is billed in USD.
+import { approxLocalPrice, hasApproxLocalPrice } from '@/lib/currency';
 
 function buildMusicFaqs(t: ReturnType<typeof useTranslations>, onContact: () => void): { question: string; answer: React.ReactNode }[] {
   const richTags = {
@@ -347,6 +349,9 @@ export default function MusicPricingPage() {
                     <div className="mb-6">
                       <span className="text-5xl font-bold text-white">{tier.price}</span>
                       <span className="text-gray-500 ml-2">{tier.priceDetail}</span>
+                      {approxLocalPrice(configById[tier.id]?.price ?? 0, locale) && (
+                        <p className="text-sm text-gray-500 mt-1">{approxLocalPrice(configById[tier.id]?.price ?? 0, locale)}</p>
+                      )}
                     </div>
 
                     <p className="text-gray-400 mb-8 leading-relaxed">{tier.description}</p>
@@ -439,6 +444,14 @@ export default function MusicPricingPage() {
               </motion.div>
             ))}
           </div>
+
+          {hasApproxLocalPrice(locale) && (
+            <p className="text-xs text-gray-500 mb-20 text-center">
+              {locale === 'zh-CN'
+                ? '价目以美元(US$)计价并结算;TWD / CNY 金额为约当参考,实际以美元收款。'
+                : '價目以美元(US$)計價並結算;TWD / CNY 金額為約當參考,實際以美元收款。'}
+            </p>
+          )}
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}

@@ -48,6 +48,26 @@ export function formatMoney(code: string | null | undefined, amount: number): st
   return `${currencySymbol(code)}${Number(amount || 0).toLocaleString()}`;
 }
 
+// DISPLAY-ONLY "approx local currency" label for USD-billed pricing pages.
+// Billing/checkout stays in USD; zh viewers just see an approximate TWD / CNY
+// figure next to the USD price. Returns '' for locales billed in their own
+// display currency already (en → USD), so callers can render conditionally.
+const APPROX_DISPLAY: Record<string, { code: string; symbol: string; word: string }> = {
+  "zh-TW": { code: "TWD", symbol: "NT$", word: "約" },
+  "zh-CN": { code: "CNY", symbol: "¥", word: "约" },
+};
+
+export function approxLocalPrice(usd: number, locale: string): string {
+  const cfg = APPROX_DISPLAY[locale];
+  if (!cfg) return "";
+  const converted = Math.round(usd * (EXCHANGE_RATES[cfg.code] ?? 1));
+  return `${cfg.word} ${cfg.symbol}${converted.toLocaleString()}`;
+}
+
+export function hasApproxLocalPrice(locale: string): boolean {
+  return locale in APPROX_DISPLAY;
+}
+
 export function formatPrice(amount: number, locale: string): string {
   const currencyCode = getCurrencyCode(locale);
   const rate = EXCHANGE_RATES[currencyCode] ?? 1;

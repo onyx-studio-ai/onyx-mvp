@@ -16,6 +16,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { PRICING_TIERS, VOICE_DURATION_PRICING } from '@/lib/config/pricing.config';
+// DISPLAY-ONLY: billing/checkout stays in USD (see /voice/create, which prices
+// off the same USD config); zh viewers just get an "approx" TWD / CNY figure.
+import { approxLocalPrice, hasApproxLocalPrice } from '@/lib/currency';
 import { Link } from '@/i18n/navigation';
 
 type TierValue = boolean | string;
@@ -237,6 +240,9 @@ export default function PricingPage() {
                     <div className="mb-6">
                       <span className="text-5xl font-bold text-white">{plan.price}</span>
                       {plan.unit && <span className="text-gray-500 ml-2">{plan.unit}</span>}
+                      {approxLocalPrice(plan.numericPrice, locale) && (
+                        <p className="text-sm text-gray-500 mt-1">{approxLocalPrice(plan.numericPrice, locale)}</p>
+                      )}
                     </div>
 
                     <p className="text-gray-400 mb-3 leading-relaxed">{plan.subtitle}</p>
@@ -364,6 +370,13 @@ export default function PricingPage() {
                 ))}
               </div>
             </div>
+            {hasApproxLocalPrice(locale) && (
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                {locale === 'zh-CN'
+                  ? '价目以美元(US$)计价并结算;表列 TWD / CNY 金额为约当参考,实际以美元收款。'
+                  : '價目以美元(US$)計價並結算;表列 TWD / CNY 金額為約當參考,實際以美元收款。'}
+              </p>
+            )}
           </motion.div>
 
           {/* Detailed Comparison */}
