@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Check } from "lucide-react";
+import { Play, Pause, Check, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type Talent } from "@/lib/supabase";
 import { VOCALIST_FLAT_PRICE } from "@/lib/config/pricing.config";
@@ -36,6 +37,14 @@ const getLanguageFlag = (language: string): string => {
 };
 
 export function TalentCard({ talent, selected, onSelect }: TalentCardProps) {
+  const locale = useLocale();
+  const isZhCN = locale === "zh-CN";
+  const isZh = locale.startsWith("zh");
+  const tx = (tw: string, cn: string, en: string) => (isZhCN ? cn : isZh ? tw : en);
+  // 「洽詢報價」直達 /hire 並帶入指定配音員(既有慣例:talent=顯示名、talentId=id)。
+  const localePath = (p: string) => (locale === "en" ? p : `/${locale}${p}`);
+  const enquireHref = localePath(`/hire?talent=${encodeURIComponent(talent.name)}&talentId=${talent.id}`);
+
   const [showBio, setShowBio] = useState(false);
   const [currentDemo, setCurrentDemo] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -192,6 +201,17 @@ export function TalentCard({ talent, selected, onSelect }: TalentCardProps) {
               )}
             </div>
           )}
+
+          {/* 洽詢報價 CTA — 直達 /hire 並指定這位配音員。stopPropagation
+              避免觸發整張卡片的選取 onClick(與 demo 按鈕同一模式)。 */}
+          <a
+            href={enquireHref}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-3 flex items-center justify-center gap-1.5 w-full py-2 rounded-lg border border-blue-500/40 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors"
+          >
+            <MessageSquare className="w-4 h-4" />
+            {tx("洽詢報價", "洽询报价", "Get a quote")}
+          </a>
         </div>
       </CardContent>
     </Card>

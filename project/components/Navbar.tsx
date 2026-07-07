@@ -74,6 +74,7 @@ export default function Navbar() {
   const isDubbingContext = pathname?.startsWith('/dubbing');
   const isDataContext = pathname?.startsWith('/data');
   const isPartnerContext = pathname?.startsWith('/apply');
+  const isHireContext = pathname?.startsWith('/hire');
   const isLobby = pathname === '/';
 
   // 4 service modules — mirrors the 4 service cards on the homepage so the
@@ -249,6 +250,23 @@ export default function Navbar() {
                 </>
               )}
 
+              {/* 發案 — client-facing direct action to the brief form (/hire).
+                  Sits ahead of Partner Network (supply-side) so the demand-side
+                  CTA reads first. */}
+              <Link
+                href="/hire"
+                className={`text-sm font-medium transition-colors relative ${
+                  isHireContext
+                    ? 'text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {ntx('發案', '发案', 'Post a brief')}
+                {isHireContext && (
+                  <div className="absolute -bottom-[37px] left-0 right-0 h-[2px] bg-blue-500" />
+                )}
+              </Link>
+
               {/* Partner Network — supply-side recruitment entry. Sits in
                   the secondary nav (right of the 4 service modules) because
                   it's not a service; it's where talents / studios / directors
@@ -411,6 +429,21 @@ export default function Navbar() {
             )}
 
             <div className="h-[1px] w-full bg-white/10 my-2" />
+
+            <Link
+              href="/hire"
+              onClick={() => closeMobileMenu()}
+              className={`text-lg font-medium transition-colors ${
+                isHireContext
+                  ? 'text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {ntx('發案', '发案', 'Post a brief')}
+              {isHireContext && (
+                <div className="mt-2 h-[2px] w-12 bg-blue-500" />
+              )}
+            </Link>
 
             <Link
               href="/apply"

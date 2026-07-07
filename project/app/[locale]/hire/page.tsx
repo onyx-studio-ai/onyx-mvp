@@ -18,7 +18,6 @@ import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { track } from '@/lib/track';
 
 type Opt = { v: string; tw: string; cn: string };
 type Opt3 = { v: string; tw: string; cn: string; en: string };
@@ -347,27 +346,18 @@ export default function Hire() {
 
   const submit = async () => {
     setError('');
+    // 快速發案:只強制 4 項(Email、案件類型、語言、一句話需求)。其餘欄位全部選填,
+    // 有填才驗格式、沒填就放行 —— 後端本來就對這些欄位 `|| null` 容忍空白。
     if (!form.email || !emailOk) return setError(tx('請填寫有效的 Email', '请填写有效的 Email', 'Please enter a valid email'));
-    if (!form.name.trim()) return setError(tx('請填寫您的稱呼', '请填写您的称呼', 'Please enter your name'));
-    if (!form.title.trim()) return setError(tx('請填寫案件標題', '请填写案件标题', 'Please enter a project title'));
     if (!contentType) return setError(tx('請選擇案件類型', '请选择案件类型', 'Please choose a project type'));
-    if (!media) return setError(tx('請選擇播放媒體', '请选择播放媒体', 'Please choose the media'));
-    if (!territory) return setError(tx('請選擇播放地區', '请选择播放地区', 'Please choose the territory'));
-    if (territory === 'Other' && !territoryOther.trim()) return setError(tx('請填寫播放地區', '请填写播放地区', 'Please specify the territory'));
-    if (!license) return setError(tx('請選擇授權期間', '请选择授权期间', 'Please choose the license term'));
-    if (license === 'Other' && !licenseOther.trim()) return setError(tx('請填寫授權期間', '请填写授权期间', 'Please specify the license term'));
     if (!language.trim()) return setError(tx('請選擇或輸入語言', '请选择或输入语言', 'Please choose or type a language'));
-    if (maleVoices === '0' && femaleVoices === '0') return setError(tx('請選擇需要幾位配音員(至少 1 位)', '请选择需要几位配音员(至少 1 位)', 'Please choose how many voices (at least 1)'));
-    const hasTime = lengthMode === 'time' && (Number(lenH) > 0 || Number(lenM) > 0 || Number(lenS) > 0);
-    const hasWords = lengthMode === 'words' && !!lenWords.trim();
-    if (!hasTime && !hasWords) return setError(tx('請填寫長度', '请填写长度', 'Please enter the length'));
-    if (wantsLocalStudio && !studioRegion) return setError(tx('請選擇當地錄音室地區', '请选择当地录音室地区', 'Please choose the local studio region'));
+    if (!form.brief.trim()) return setError(tx('請簡述您的需求', '请简述您的需求', 'Please describe your project'));
+    // 補充細節(選填):只在使用者有填時做一致性驗證,避免存到殘缺的「其他」值。
+    if (territory === 'Other' && !territoryOther.trim()) return setError(tx('請填寫播放地區', '请填写播放地区', 'Please specify the territory'));
+    if (license === 'Other' && !licenseOther.trim()) return setError(tx('請填寫授權期間', '请填写授权期间', 'Please specify the license term'));
     if (wantsLocalStudio && studioRegion === '__other__' && !studioRegionOther.trim()) return setError(tx('請填寫當地錄音室地區', '请填写当地录音室地区', 'Please specify the local studio region'));
-    if (!form.budget.trim()) return setError(tx('請填預算金額', '请填预算金额', 'Please enter a budget amount'));
-    if (!form.auditionDeadline) return setError(tx('請選擇試音截止日', '请选择试音截止日', 'Please choose an audition deadline'));
     if (!refUrlOk) return setError(tx('參考連結格式不正確,請貼完整網址(http(s)://…)或留空', '参考链接格式不正确,请贴完整网址(http(s)://…)或留空', 'Reference link must be a full URL (http(s)://…) or left blank'));
     if (scriptUploading) return setError(tx('稿件仍在上傳中,請稍候', '稿件仍在上传中,请稍候', 'Script is still uploading — please wait'));
-    if (!form.brief.trim()) return setError(tx('請簡述您的需求', '请简述您的需求', 'Please describe your project'));
 
     const resolvedLanguage = language.trim();
     const resolvedAccent = accent.trim();
@@ -407,8 +397,9 @@ export default function Hire() {
           length: resolvedLength,
           voices_needed: resolvedVoices,
           gender_needs: resolvedGender,
-          // budget carries its currency so the admin sees e.g. "Up to USD 500"
-          budget: `${budgetCurrency} ${form.budget.trim()}`,
+          // budget carries its currency so the admin sees e.g. "Up to USD 500".
+          // Optional now — send blank (not a bare "USD ") when no amount is entered.
+          budget: form.budget.trim() ? `${budgetCurrency} ${form.budget.trim()}` : '',
           budget_currency: budgetCurrency,
           budget_unit: budgetUnit,
           brief: requestedTalent ? `${tx('指定配音員', '指定配音员', 'Requested talent')}: ${requestedTalent}\n\n${form.brief}` : form.brief,
@@ -439,7 +430,6 @@ export default function Hire() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || tx('送出失敗,請重試', '送出失败,请重试', 'Submission failed — please try again'));
-      track('hire_submit'); // 詢價送出成功 → 流量埋點
       setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : tx('發生錯誤,請重試', '发生错误,请重试', 'Something went wrong'));
@@ -488,13 +478,13 @@ export default function Hire() {
         )}
 
         <div className="space-y-8">
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-semibold mb-2">{tx('您的稱呼', '您的称呼', 'Your name')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
-            <div><label className="block text-sm font-semibold mb-2">{tx('公司 / 品牌', '公司 / 品牌', 'Company / brand')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.company} onChange={(e) => set('company', e.target.value)} /></div>
+          {/* 第一段「快速發案」:只需 4 項就能送出 —— Email、案件類型、語言、一句話需求。 */}
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] px-4 py-2.5">
+            <p className="text-sm font-semibold text-amber-300">{tx('快速發案 · 30 秒送出', '快速发案 · 30 秒送出', 'Quick brief · send in 30 seconds')}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{tx('只需填以下 4 項就能送出,細節可稍後補;下方「補充細節」全部選填。', '只需填以下 4 项就能送出,细节可稍后补;下方「补充细节」全部选填。', 'Just these 4 to send — everything below is optional and can be added later.')}</p>
           </div>
-          <div><label className="block text-sm font-semibold mb-2">Email <span className="text-red-400">＊</span></label><input className={inputCls} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder={tx('我們會將報價回覆到這裡', '我们会将报价回复到这里', 'We’ll send the quote here')} /></div>
 
-          <div><label className="block text-sm font-semibold mb-2">{tx('案件標題', '案件标题', 'Project title')} <span className="text-red-400">＊</span></label><input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder={tx('例:手機遊戲角色配音', '例:手机游戏角色配音', 'e.g. Mobile game character voiceover')} /></div>
+          <div><label className="block text-sm font-semibold mb-2">Email <span className="text-red-400">＊</span></label><input className={inputCls} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder={tx('我們會將報價回覆到這裡', '我们会将报价回复到这里', 'We’ll send the quote here')} /></div>
 
           <div>
             <label className="block text-sm font-semibold mb-2">{tx('案件類型', '案件类型', 'Project type')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('單選', '单选', 'Choose one')}</span></label>
@@ -526,19 +516,7 @@ export default function Hire() {
             </div>
           ) : (
             <>
-              <div><label className="block text-sm font-semibold mb-2">{tx('播放媒體', '播放媒体', 'Media')} <span className="text-red-400">＊</span></label><Select value={media} onChange={setMedia} opts={MEDIA} /></div>
-              <div>
-                <label className="block text-sm font-semibold mb-2">{tx('播放地區', '播放地区', 'Territory')} <span className="text-red-400">＊</span></label>
-                <Select value={territory} onChange={setTerritory} opts={TERRITORY} />
-                {territory === 'Other' && <input className={`${inputCls} mt-2`} value={territoryOther} onChange={(e) => setTerritoryOther(e.target.value)} placeholder={tx('請填寫播放地區,例:東南亞、日本+韓國', '请填写播放地区,例:东南亚、日本+韩国', 'Specify the territory, e.g. SE Asia, Japan + Korea')} />}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2">{tx('授權期間', '授权期间', 'License term')} <span className="text-red-400">＊</span></label>
-                <Select value={license} onChange={setLicense} opts={LICENSE} />
-                {license === 'Other' && <input className={`${inputCls} mt-2`} value={licenseOther} onChange={(e) => setLicenseOther(e.target.value)} placeholder={tx('請填寫授權期間,例:兩年、活動期間', '请填写授权期间,例:两年、活动期间', 'Specify the term, e.g. 2 years, campaign period')} />}
-              </div>
-
-              {/* Language + accent — searchable combos (type to filter, or free-text) */}
+              {/* Language — required (1 of the 4 quick-brief fields). Accent optional. */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2">{tx('語言', '语言', 'Language')} <span className="text-red-400">＊</span></label>
@@ -548,6 +526,34 @@ export default function Hire() {
                   <label className="block text-sm font-semibold mb-2">{tx('口音', '口音', 'Accent')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
                   <Combo value={accent} onChange={setAccent} options={accentOpts} placeholder={tx('搜尋或輸入口音(可留空)', '搜索或输入口音(可留空)', 'Search or type an accent (optional)')} />
                 </div>
+              </div>
+
+              {/* Brief — required (1 of the 4). The rest of the fields below are optional. */}
+              <div><label className="block text-sm font-semibold mb-2">{tx('需求說明', '需求说明', 'Brief')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('一句話也行', '一句话也行', 'one line is fine')}</span></label><textarea className={`${inputCls} min-h-[100px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣風格、參考方向、其他想法… 越清楚我們越好媒合。(稿件請填在下方「稿件」欄)', '用途、语气风格、参考方向、其他想法… 越清楚我们越好媒合。(稿件请填在下方「稿件」栏)', 'Use case, tone & style, references, any other thoughts… the clearer, the better we can match. (Put the actual script in the “Script” field below.)')} /></div>
+
+              {/* ── 第二段「補充細節」:以下全部選填,可補可跳過。 ── */}
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-sm font-semibold text-gray-200">{tx('補充細節', '补充细节', 'More details')} <span className="text-xs font-normal text-gray-500">{tx('全部選填 · 可補可跳過', '全部选填 · 可补可跳过', 'all optional · add or skip')}</span></p>
+                <p className="text-xs text-gray-500 mt-0.5">{tx('填越多,我們的報價與媒合越精準;沒填也能先送出,我們會再與您確認。', '填越多,我们的报价与媒合越精准;没填也能先送出,我们会再与您确认。', 'The more you add, the more precise our quote and matching — or send now and we’ll confirm the rest with you.')}</p>
+              </div>
+
+              {/* Contact / project meta — now optional */}
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-semibold mb-2">{tx('您的稱呼', '您的称呼', 'Your name')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.name} onChange={(e) => set('name', e.target.value)} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('公司 / 品牌', '公司 / 品牌', 'Company / brand')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.company} onChange={(e) => set('company', e.target.value)} /></div>
+              </div>
+              <div><label className="block text-sm font-semibold mb-2">{tx('案件標題', '案件标题', 'Project title')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={inputCls} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder={tx('例:手機遊戲角色配音', '例:手机游戏角色配音', 'e.g. Mobile game character voiceover')} /></div>
+
+              <div><label className="block text-sm font-semibold mb-2">{tx('播放媒體', '播放媒体', 'Media')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><Select value={media} onChange={setMedia} opts={MEDIA} /></div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">{tx('播放地區', '播放地区', 'Territory')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
+                <Select value={territory} onChange={setTerritory} opts={TERRITORY} />
+                {territory === 'Other' && <input className={`${inputCls} mt-2`} value={territoryOther} onChange={(e) => setTerritoryOther(e.target.value)} placeholder={tx('請填寫播放地區,例:東南亞、日本+韓國', '请填写播放地区,例:东南亚、日本+韩国', 'Specify the territory, e.g. SE Asia, Japan + Korea')} />}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">{tx('授權期間', '授权期间', 'License term')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
+                <Select value={license} onChange={setLicense} opts={LICENSE} />
+                {license === 'Other' && <input className={`${inputCls} mt-2`} value={licenseOther} onChange={(e) => setLicenseOther(e.target.value)} placeholder={tx('請填寫授權期間,例:兩年、活動期間', '请填写授权期间,例:两年、活动期间', 'Specify the term, e.g. 2 years, campaign period')} />}
               </div>
 
               {/* Voice style + age — optional; help us match the right voice */}
@@ -564,7 +570,7 @@ export default function Hire() {
 
               {/* How many voices — by gender. 0 = none of that gender. */}
               <div>
-                <label className="block text-sm font-semibold mb-2">{tx('需要幾位配音員', '需要几位配音员', 'How many voices')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('各性別填人數,沒有就留 0', '各性别填人数,没有就留 0', 'count per gender, 0 if none')}</span></label>
+                <label className="block text-sm font-semibold mb-2">{tx('需要幾位配音員', '需要几位配音员', 'How many voices')} <span className="text-xs text-gray-500">{tx('選填 · 各性別填人數', '选填 · 各性别填人数', 'optional · count per gender')}</span></label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-300 w-12 shrink-0">{tx('男聲', '男声', 'Male')}</span>
@@ -583,7 +589,7 @@ export default function Hire() {
 
               {/* Length — by time (h/m/s, supports compound e.g. 1h30m22s) or by word count */}
               <div>
-                <label className="block text-sm font-semibold mb-2">{tx('長度', '长度', 'Length')} <span className="text-red-400">＊</span></label>
+                <label className="block text-sm font-semibold mb-2">{tx('長度', '长度', 'Length')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <button type="button" onClick={() => setLengthMode('time')} className={pill(lengthMode === 'time')}>{tx('依時間', '依时间', 'By time')}</button>
                   <button type="button" onClick={() => setLengthMode('words')} className={pill(lengthMode === 'words')}>{tx('依字數', '依字数', 'By words')}</button>
@@ -653,7 +659,7 @@ export default function Hire() {
 
               {/* Timeline — all optional estimates that give buffer */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div><label className="block text-sm font-semibold mb-2">{tx('試音截止日', '试音截止日', 'Audition deadline')} <span className="text-red-400">＊</span> <span className="text-xs text-gray-500">{tx('以您當地日期為準', '以您当地日期为准', 'your local date')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
+                <div><label className="block text-sm font-semibold mb-2">{tx('試音截止日', '试音截止日', 'Audition deadline')} <span className="text-xs text-gray-500">{tx('選填 · 以您當地日期為準', '选填 · 以您当地日期为准', 'optional · your local date')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.auditionDeadline} onChange={(e) => set('auditionDeadline', e.target.value)} /></div>
                 <div><label className="block text-sm font-semibold mb-2">{tx('預計開錄日', '预计开录日', 'Recording start')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.recordingStart} onChange={(e) => set('recordingStart', e.target.value)} /></div>
                 <div><label className="block text-sm font-semibold mb-2">{tx('預計完成日', '预计完成日', 'Estimated delivery date')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label><input className={`${inputCls} [color-scheme:dark]`} type="date" value={form.deadline} onChange={(e) => set('deadline', e.target.value)} /></div>
               </div>
@@ -693,7 +699,7 @@ export default function Hire() {
 
               {/* Budget */}
               <div>
-                <label className="block text-sm font-semibold mb-2">{tx('預算', '预算', 'Budget')} <span className="text-red-400">＊</span></label>
+                <label className="block text-sm font-semibold mb-2">{tx('預算', '预算', 'Budget')} <span className="text-xs text-gray-500">{tx('選填', '选填', 'Optional')}</span></label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {([{ v: 'Up to', tw: '預算上限', cn: '预算上限' }, { v: 'Fixed', tw: '固定預算', cn: '固定预算' }] as Opt[]).map((o) => (
                     <button key={o.v} type="button" onClick={() => setBudgetType(o.v)} className={pill(budgetType === o.v)}>{lbl(o)}</button>
@@ -724,8 +730,6 @@ export default function Hire() {
                 {!refUrlOk && <p className="text-xs text-red-400 mt-1">{tx('請貼完整連結(http(s)://…)', '请贴完整链接(http(s)://…)', 'Enter a full URL (http(s)://…)')}</p>}
                 {refUrls.length < 6 && <button type="button" onClick={() => setRefUrls((arr) => [...arr, ''])} className="text-xs text-amber-300 hover:underline mt-2">{tx('+ 再加一條連結', '+ 再加一条链接', '+ Add another link')}</button>}
               </div>
-
-              <div><label className="block text-sm font-semibold mb-2">{tx('需求說明', '需求说明', 'Brief')} <span className="text-red-400">＊</span></label><textarea className={`${inputCls} min-h-[120px] resize-y`} value={form.brief} onChange={(e) => set('brief', e.target.value)} placeholder={tx('用途、語氣風格、參考方向、其他想法… 越清楚我們越好媒合。(稿件請填在上方「稿件」欄)', '用途、语气风格、参考方向、其他想法… 越清楚我们越好媒合。(稿件请填在上方「稿件」栏)', 'Use case, tone & style, references, any other thoughts… the clearer, the better we can match. (Put the actual script in the “Script” field above.)')} /></div>
 
               {error && <p className="text-sm text-red-400">{error}</p>}
               <button type="button" disabled={submitting} onClick={submit} className="w-full py-3 rounded-xl bg-amber-500 text-black font-medium flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
