@@ -3074,7 +3074,11 @@
       "noApplications": "No applications found",
       "noApplicationsHint": "Applications will appear here once submitted via /apply",
       "adjustFilters": "Try adjusting your filters",
-      "showingCount": "Showing {shown} of {total} applications"
+      "showingCount": "Showing {shown} of {total} applications",
+      "status_pending": "Pending",
+      "status_under_review": "Under Review",
+      "status_approved": "Approved",
+      "status_rejected": "Rejected"
     }
   }
 }

@@ -3074,7 +3074,11 @@
       "noApplications": "找不到申請",
       "noApplicationsHint": "透過 /apply 送出申請後會顯示在這裡",
       "adjustFilters": "試著調整篩選條件",
-      "showingCount": "顯示 {total} 筆中的 {shown} 筆申請"
+      "showingCount": "顯示 {total} 筆中的 {shown} 筆申請",
+      "status_pending": "待審核",
+      "status_under_review": "審核中",
+      "status_approved": "已核准",
+      "status_rejected": "已退回"
     }
   }
 }

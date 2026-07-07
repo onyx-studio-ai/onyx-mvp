@@ -3074,7 +3074,11 @@
       "noApplications": "找不到申请",
       "noApplicationsHint": "通过 /apply 送出申请后会显示在这里",
       "adjustFilters": "试着调整筛选条件",
-      "showingCount": "显示 {total} 笔中的 {shown} 笔申请"
+      "showingCount": "显示 {total} 笔中的 {shown} 笔申请",
+      "status_pending": "待审核",
+      "status_under_review": "审核中",
+      "status_approved": "已核准",
+      "status_rejected": "已退回"
     }
   }
 }

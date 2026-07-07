@@ -77,10 +77,11 @@ const STATUS_CONFIG = {
 };
 
 function StatusBadge({ status }: { status: Application['status'] }) {
+  const t = useTranslations('admin.applications');
   const cfg = STATUS_CONFIG[status];
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.color}`}>
-      {cfg.label}
+      {t(`status_${status}`)}
     </span>
   );
 }
@@ -185,7 +186,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
         } else if (status === 'rejected') {
           toast.success(t('toastRejected', { email: app.email }));
         } else {
-          toast.success(t('toastStatusUpdated', { status: STATUS_CONFIG[status].label }));
+          toast.success(t('toastStatusUpdated', { status: t(`status_${status}`) }));
         }
         onStatusChange();
       }
@@ -515,7 +516,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                       }`}
                     >
                       {app.status === s && <Check className="inline w-3 h-3 mr-1" />}
-                      {STATUS_CONFIG[s].label}
+                      {t(`status_${s}`)}
                     </button>
                   ))}
                 </div>
