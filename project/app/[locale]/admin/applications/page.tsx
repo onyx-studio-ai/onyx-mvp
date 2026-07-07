@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Mic, Music, Search, Filter, RefreshCw, Play, Pause,
@@ -89,17 +90,19 @@ function formatFileSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function timeAgo(dateStr: string) {
+// 顯示文字走 i18n:t 由呼叫端傳入,只換文字不動時間計算。
+function timeAgo(dateStr: string, t: ReturnType<typeof useTranslations>) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t('timeJustNow');
+  if (mins < 60) return t('timeMinsAgo', { mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24) return t('timeHoursAgo', { hrs });
+  return t('timeDaysAgo', { days: Math.floor(hrs / 24) });
 }
 
 function AudioPlayer({ url, fileName }: { url: string; fileName: string }) {
+  const t = useTranslations('admin.applications');
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -141,7 +144,7 @@ function AudioPlayer({ url, fileName }: { url: string; fileName: string }) {
         href={url}
         download={fileName}
         className="flex-shrink-0 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
-        title="Download"
+        title={t('download')}
       >
         <Download className="w-4 h-4" />
       </a>
@@ -150,6 +153,7 @@ function AudioPlayer({ url, fileName }: { url: string; fileName: string }) {
 }
 
 function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusChange: () => void }) {
+  const t = useTranslations('admin.applications');
   const [expanded, setExpanded] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [notes, setNotes] = useState(app.admin_notes || '');
@@ -160,7 +164,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
   const updateStatus = async (status: Application['status'], reasons?: string[]) => {
     if (status === 'approved') {
       const ok = window.confirm(
-        `Approve ${app.full_name}?\n\nThis will:\n• Send approval email to ${app.email}\n• Create a talent record in the system\n• The email will include next-step instructions (contract signing + Voice ID recording)`
+        t('approveConfirm', { name: app.full_name, email: app.email })
       );
       if (!ok) return;
     }
@@ -174,19 +178,19 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Failed to update status');
+        toast.error(data.error || t('toastUpdateFail'));
       } else {
         if (status === 'approved') {
-          toast.success(`Approved! Onboarding email sent to ${app.email}`);
+          toast.success(t('toastApproved', { email: app.email }));
         } else if (status === 'rejected') {
-          toast.success(`Rejected. Notification sent to ${app.email}`);
+          toast.success(t('toastRejected', { email: app.email }));
         } else {
-          toast.success(`Status updated to ${STATUS_CONFIG[status].label}`);
+          toast.success(t('toastStatusUpdated', { status: STATUS_CONFIG[status].label }));
         }
         onStatusChange();
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('toastNetworkError'));
     }
     setUpdating(false);
   };
@@ -198,14 +202,14 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: app.id, admin_notes: notes }),
     });
-    if (!res.ok) toast.error('Failed to save notes');
-    else toast.success('Notes saved');
+    if (!res.ok) toast.error(t('toastNotesFail'));
+    else toast.success(t('toastNotesSaved'));
     setSavingNotes(false);
   };
 
   const deleteApplication = async () => {
     const ok = window.confirm(
-      `Delete this application — ${app.full_name || ''} (${app.application_number || app.id})?\n\nThis permanently removes the application record. It cannot be undone.`
+      t('deleteConfirm', { name: app.full_name || '', number: app.application_number || app.id })
     );
     if (!ok) return;
     setUpdating(true);
@@ -213,13 +217,13 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
       const res = await fetch(`/api/admin/applications?id=${app.id}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || 'Failed to delete application');
+        toast.error(data.error || t('toastDeleteFail'));
       } else {
-        toast.success('Application deleted');
+        toast.success(t('toastDeleted'));
         onStatusChange();
       }
     } catch {
-      toast.error('Network error');
+      toast.error(t('toastNetworkError'));
     }
     setUpdating(false);
   };
@@ -245,7 +249,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-gray-900">{app.full_name}</p>
             <span className="text-xs text-gray-500 font-mono">{app.application_number}</span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${app.locale ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>{app.locale ? '配音員報名' : 'AI / 語音'}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${app.locale ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>{app.locale ? t('sourceTalent') : t('sourceAiVoice')}</span>
           </div>
           <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-600 flex-wrap">
             <span>{app.email}</span>
@@ -262,10 +266,10 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               href={`/admin/talents?highlight=${app.talents.id}`}
               onClick={e => e.stopPropagation()}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-cyan-50 text-cyan-700 border border-cyan-500/25 hover:bg-cyan-500/25 transition-colors"
-              title={`Voice ID: ${app.talents.voice_id_status || 'none'} | Active: ${app.talents.is_active ? 'Yes' : 'No'}`}
+              title={t('talentTooltip', { voiceId: app.talents.voice_id_status || 'none', active: app.talents.is_active ? t('yes') : t('no') })}
             >
               <Eye className="w-3 h-3" />
-              Talent
+              {t('talentBadge')}
               {app.talents.is_active ? (
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
               ) : (
@@ -273,7 +277,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               )}
             </a>
           )}
-          <span className="text-xs text-gray-500 hidden sm:block">{timeAgo(app.created_at)}</span>
+          <span className="text-xs text-gray-500 hidden sm:block">{timeAgo(app.created_at, t)}</span>
           {expanded ? <ChevronUp className="w-4 h-4 text-gray-600" /> : <ChevronDown className="w-4 h-4 text-gray-600" />}
         </div>
       </div>
@@ -288,7 +292,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               {/* Basic Info */}
               <div>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5" /> Basic Info
+                  <User className="w-3.5 h-3.5" /> {t('sectionBasicInfo')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-gray-700">
@@ -303,7 +307,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   )}
                   <div className="flex items-center gap-2 text-gray-700">
                     <Globe className="w-4 h-4 text-gray-500" />
-                    {app.country} · {app.gender} · Age {app.age_range}
+                    {app.country} · {app.gender} · {t('ageLabel')} {app.age_range}
                   </div>
                   <div className="flex items-center gap-2 text-gray-700">
                     <Calendar className="w-4 h-4 text-gray-500" />
@@ -315,34 +319,34 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               {/* Voice Profile */}
               <div>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <Mic className="w-3.5 h-3.5" /> Voice Profile
+                  <Mic className="w-3.5 h-3.5" /> {t('sectionVoiceProfile')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-gray-500">Languages: </span>
+                    <span className="text-gray-500">{t('fieldLanguages')} </span>
                     <span className="text-gray-900">{app.languages.join(', ')}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Voice Types: </span>
+                    <span className="text-gray-500">{t('fieldVoiceTypes')} </span>
                     <span className="text-gray-900">{app.voice_types.join(', ')}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Specialties: </span>
+                    <span className="text-gray-500">{t('fieldSpecialties')} </span>
                     <span className="text-gray-900">{app.specialties.join(', ')}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Experience: </span>
+                    <span className="text-gray-500">{t('fieldExperience')} </span>
                     <span className="text-gray-900">{app.experience_years}</span>
                   </div>
                   {app.notable_clients && (
                     <div>
-                      <span className="text-gray-500">Notable Clients: </span>
+                      <span className="text-gray-500">{t('fieldNotableClients')} </span>
                       <span className="text-gray-900">{app.notable_clients}</span>
                     </div>
                   )}
                   {app.bio && (
                     <div>
-                      <span className="text-gray-500 block mb-1">Bio:</span>
+                      <span className="text-gray-500 block mb-1">{t('fieldBio')}</span>
                       <p className="text-gray-700 text-xs leading-relaxed">{app.bio}</p>
                     </div>
                   )}
@@ -352,7 +356,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               {/* Technical */}
               <div>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <Settings className="w-3.5 h-3.5" /> Technical Setup
+                  <Settings className="w-3.5 h-3.5" /> {t('sectionTechnical')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   {/* Home Studio / Dry Audio are only asked on the old /apply/voice form.
@@ -361,22 +365,22 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   {!app.locale && (
                     <>
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-500">Home Studio:</span>
+                        <span className="text-gray-500">{t('fieldHomeStudio')}</span>
                         <span className={app.has_home_studio ? 'text-green-700' : 'text-red-700'}>
-                          {app.has_home_studio ? 'Yes' : 'No'}
+                          {app.has_home_studio ? t('yes') : t('no')}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-500">Dry Audio:</span>
+                        <span className="text-gray-500">{t('fieldDryAudio')}</span>
                         <span className={app.can_deliver_dry_audio ? 'text-green-700' : 'text-red-700'}>
-                          {app.can_deliver_dry_audio ? 'Yes' : 'No'}
+                          {app.can_deliver_dry_audio ? t('yes') : t('no')}
                         </span>
                       </div>
                     </>
                   )}
-                  {app.microphone_model && <div><span className="text-gray-500">Mic: </span><span className="text-gray-900">{app.microphone_model}</span></div>}
-                  {app.daw_software && <div><span className="text-gray-500">DAW: </span><span className="text-gray-900">{app.daw_software}</span></div>}
-                  <div><span className="text-gray-500">Environment: </span><span className="text-gray-900">{app.recording_environment}</span></div>
+                  {app.microphone_model && <div><span className="text-gray-500">{t('fieldMic')} </span><span className="text-gray-900">{app.microphone_model}</span></div>}
+                  {app.daw_software && <div><span className="text-gray-500">{t('fieldDaw')} </span><span className="text-gray-900">{app.daw_software}</span></div>}
+                  <div><span className="text-gray-500">{t('fieldEnvironment')} </span><span className="text-gray-900">{app.recording_environment}</span></div>
                 </div>
               </div>
 
@@ -384,17 +388,17 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               {app.locale && (
                 <div>
                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" /> 配音員報名表（新)
+                    <User className="w-3.5 h-3.5" /> {t('sectionTalentForm')}
                   </h4>
                   <div className="space-y-2 text-sm">
-                    {app.display_name && <div><span className="text-gray-500">顯示名稱(公開): </span><span className="text-gray-900">{app.display_name}</span></div>}
+                    {app.display_name && <div><span className="text-gray-500">{t('fieldDisplayName')} </span><span className="text-gray-900">{app.display_name}</span></div>}
                     {app.messaging_contacts && (app.messaging_contacts.line || app.messaging_contacts.whatsapp || app.messaging_contacts.telegram) && (
-                      <div><span className="text-gray-500">通訊軟體: </span><span className="text-gray-900">{[app.messaging_contacts.line && `Line: ${app.messaging_contacts.line}`, app.messaging_contacts.whatsapp && `WhatsApp: ${app.messaging_contacts.whatsapp}`, app.messaging_contacts.telegram && `Telegram: ${app.messaging_contacts.telegram}`].filter(Boolean).join(' · ')}</span></div>
+                      <div><span className="text-gray-500">{t('fieldMessaging')} </span><span className="text-gray-900">{[app.messaging_contacts.line && `Line: ${app.messaging_contacts.line}`, app.messaging_contacts.whatsapp && `WhatsApp: ${app.messaging_contacts.whatsapp}`, app.messaging_contacts.telegram && `Telegram: ${app.messaging_contacts.telegram}`].filter(Boolean).join(' · ')}</span></div>
                     )}
-                    <div><span className="text-gray-500">合作意願: </span><span className="text-gray-900">{[app.coop_accept_jobs && '接案配音', app.coop_open_buyout && '開放買斷', app.coop_ai_clone && 'AI複製(會用聲音)', app.coop_ai_training && 'AI訓練(不用聲音)', app.coop_proofread && '語音校對', app.coop_voice_director && '聲音導演'].filter(Boolean).join('、') || '—'}</span></div>
-                    <div><span className="text-gray-500">低價數據採集案: </span><span className="text-gray-900">{app.low_price_data_optin ? '願意收資訊' : '否'}</span></div>
-                    {app.excluded_countries && app.excluded_countries.length > 0 && <div><span className="text-gray-500">不接案國家: </span><span className="text-gray-900">{app.excluded_countries.join('、')}</span></div>}
-                    <div><span className="text-gray-500">表單語言: </span><span className="text-gray-900">{app.locale}</span></div>
+                    <div><span className="text-gray-500">{t('fieldCoop')} </span><span className="text-gray-900">{[app.coop_accept_jobs && t('coopAcceptJobs'), app.coop_open_buyout && t('coopOpenBuyout'), app.coop_ai_clone && t('coopAiClone'), app.coop_ai_training && t('coopAiTraining'), app.coop_proofread && t('coopProofread'), app.coop_voice_director && t('coopVoiceDirector')].filter(Boolean).join(t('listSeparator')) || t('dash')}</span></div>
+                    <div><span className="text-gray-500">{t('fieldLowPriceData')} </span><span className="text-gray-900">{app.low_price_data_optin ? t('lowPriceYes') : t('lowPriceNo')}</span></div>
+                    {app.excluded_countries && app.excluded_countries.length > 0 && <div><span className="text-gray-500">{t('fieldExcludedCountries')} </span><span className="text-gray-900">{app.excluded_countries.join(t('listSeparator'))}</span></div>}
+                    <div><span className="text-gray-500">{t('fieldFormLocale')} </span><span className="text-gray-900">{app.locale}</span></div>
                   </div>
                 </div>
               )}
@@ -405,7 +409,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               {/* Demo Audio */}
               <div>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <FileAudio className="w-3.5 h-3.5" /> Demo Audio
+                  <FileAudio className="w-3.5 h-3.5" /> {t('sectionDemoAudio')}
                 </h4>
                 {app.demo_file_url ? (
                   <div className="space-y-2">
@@ -416,24 +420,24 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No file uploaded</p>
+                  <p className="text-sm text-gray-500">{t('noFileUploaded')}</p>
                 )}
               </div>
 
               {/* Rates */}
               <div>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5" /> Expected Rates
+                  <DollarSign className="w-3.5 h-3.5" /> {t('sectionExpectedRates')}
                 </h4>
                 <div className="space-y-1.5 text-sm">
                   {(app.rate_lead_vocal || app.expected_rate_voice) && (
-                    <div><span className="text-gray-500">Lead Vocal (Full Buyout): </span><span className="text-gray-900">US${(app.rate_lead_vocal ?? app.expected_rate_voice)?.toLocaleString()}</span></div>
+                    <div><span className="text-gray-500">{t('rateLeadVocal')} </span><span className="text-gray-900">US${(app.rate_lead_vocal ?? app.expected_rate_voice)?.toLocaleString()}</span></div>
                   )}
                   {(app.rate_hook_chorus || app.expected_rate_music) && (
-                    <div><span className="text-gray-500">Hook / Chorus (Buyout): </span><span className="text-gray-900">US${(app.rate_hook_chorus ?? app.expected_rate_music)?.toLocaleString()}</span></div>
+                    <div><span className="text-gray-500">{t('rateHookChorus')} </span><span className="text-gray-900">US${(app.rate_hook_chorus ?? app.expected_rate_music)?.toLocaleString()}</span></div>
                   )}
                   {!app.rate_lead_vocal && !app.expected_rate_voice && !app.rate_hook_chorus && !app.expected_rate_music && (
-                    <p className="text-gray-500">Not specified</p>
+                    <p className="text-gray-500">{t('notSpecified')}</p>
                   )}
                   {app.rate_notes && <p className="text-gray-700 text-xs mt-1">{app.rate_notes}</p>}
                 </div>
@@ -441,12 +445,12 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
 
               {/* Admin Notes */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Admin Notes</h4>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">{t('sectionAdminNotes')}</h4>
                 <textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   rows={3}
-                  placeholder="Internal notes about this applicant..."
+                  placeholder={t('notesPlaceholder')}
                   className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none transition-colors resize-none"
                 />
                 <button
@@ -454,7 +458,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   disabled={savingNotes}
                   className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {savingNotes ? 'Saving...' : 'Save Notes'}
+                  {savingNotes ? t('saving') : t('saveNotes')}
                 </button>
               </div>
 
@@ -462,34 +466,34 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
               {app.talents && (
                 <div>
                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" /> Linked Talent
+                    <User className="w-3.5 h-3.5" /> {t('sectionLinkedTalent')}
                   </h4>
                   <div className="p-3 bg-white rounded-lg border border-gray-300 space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Name</span>
+                      <span className="text-gray-600">{t('linkedName')}</span>
                       <span className="text-gray-900 font-medium">{app.talents.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Active</span>
+                      <span className="text-gray-600">{t('linkedActive')}</span>
                       <span className={app.talents.is_active ? 'text-green-700' : 'text-gray-500'}>
-                        {app.talents.is_active ? 'Yes' : 'No'}
+                        {app.talents.is_active ? t('yes') : t('no')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Voice ID</span>
+                      <span className="text-gray-600">{t('linkedVoiceId')}</span>
                       <span className={
                         app.talents.voice_id_status === 'verified' ? 'text-green-700' :
                         app.talents.voice_id_status === 'submitted' ? 'text-blue-700' :
                         app.talents.voice_id_status === 'requested' ? 'text-amber-700' : 'text-gray-500'
                       }>
-                        {app.talents.voice_id_status || 'None'}
+                        {app.talents.voice_id_status || t('linkedVoiceIdNone')}
                       </span>
                     </div>
                     <a
                       href={`/admin/talents?highlight=${app.talents.id}`}
                       className="block mt-2 text-center text-xs text-cyan-700 hover:text-cyan-700 bg-cyan-50 hover:bg-cyan-50 rounded-lg py-2 transition-colors"
                     >
-                      View in Talent Management →
+                      {t('viewInTalentMgmt')}
                     </a>
                   </div>
                 </div>
@@ -497,7 +501,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
 
               {/* Status Actions */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Update Status</h4>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">{t('sectionUpdateStatus')}</h4>
                 <div className="flex flex-wrap gap-2">
                   {(Object.keys(STATUS_CONFIG) as Application['status'][]).map(s => (
                     <button
@@ -517,18 +521,18 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                 </div>
                 {rejectOpen && (
                   <div className="mt-3 rounded-lg border border-red-200 bg-red-50/50 p-3">
-                    <p className="text-xs font-semibold text-gray-700 mb-2">拒絕原因(勾選,會寫進拒絕信):</p>
-                    {([['audio', 'Demo 音質太差(雜訊 / 回音 / 清晰度)'], ['gear', '非專業設備(手機錄音等)'], ['proof', '無法證明專業配音經驗']] as [string, string][]).map(([code, label]) => (
+                    <p className="text-xs font-semibold text-gray-700 mb-2">{t('rejectTitle')}</p>
+                    {([['audio', t('rejectAudio')], ['gear', t('rejectGear')], ['proof', t('rejectProof')]] as [string, string][]).map(([code, label]) => (
                       <label key={code} className="flex items-center gap-2 text-xs text-gray-700 mb-1.5">
                         <input type="checkbox" checked={rejReasons.includes(code)} onChange={(e) => setRejReasons((prev) => e.target.checked ? [...prev, code] : prev.filter((x) => x !== code))} />
                         {label}
                       </label>
                     ))}
                     <div className="flex gap-2 mt-2">
-                      <button onClick={() => { updateStatus('rejected', rejReasons); setRejectOpen(false); }} disabled={updating} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">確認拒絕並寄信</button>
-                      <button onClick={() => setRejectOpen(false)} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-600">取消</button>
+                      <button onClick={() => { updateStatus('rejected', rejReasons); setRejectOpen(false); }} disabled={updating} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">{t('rejectConfirm')}</button>
+                      <button onClick={() => setRejectOpen(false)} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-600">{t('cancel')}</button>
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-1.5">不勾也可以寄(用通用版拒絕信);外國申請人自動寄英文版。</p>
+                    <p className="text-[10px] text-gray-500 mt-1.5">{t('rejectHint')}</p>
                   </div>
                 )}
               </div>
@@ -540,7 +544,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
                   disabled={updating}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Delete application
+                  <Trash2 className="w-3.5 h-3.5" /> {t('deleteApplication')}
                 </button>
               </div>
             </div>
@@ -552,6 +556,7 @@ function ApplicationRow({ app, onStatusChange }: { app: Application; onStatusCha
 }
 
 export default function AdminApplicationsPage() {
+  const t = useTranslations('admin.applications');
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -563,7 +568,7 @@ export default function AdminApplicationsPage() {
     setLoading(true);
     const res = await fetch('/api/admin/applications');
     if (!res.ok) {
-      toast.error('Failed to load applications');
+      toast.error(t('toastLoadFail'));
     } else {
       const data = await res.json();
       setApplications(data || []);
@@ -598,27 +603,27 @@ export default function AdminApplicationsPage() {
   return (
     <div className="p-6 lg:p-8">
       <AdminHeader
-        title="Talent Applications"
-        subtitle="Review and manage incoming talent submissions"
+        title={t('title')}
+        subtitle={t('subtitle')}
         action={(
           <button
             onClick={fetchApplications}
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('refresh')}
           </button>
         )}
       />
 
       <AdminStats items={[
-        { label: 'Total', value: counts.total },
-        { label: 'Pending', value: counts.pending, color: 'text-yellow-700' },
-        { label: 'Reviewing', value: counts.under_review, color: 'text-blue-700' },
-        { label: 'Approved', value: counts.approved, color: 'text-green-700' },
-        { label: 'Rejected', value: counts.rejected, color: 'text-red-700' },
-        { label: 'Singers', value: counts.singers, color: 'text-blue-700' },
-        { label: 'Voice Actors', value: counts.vo, color: 'text-amber-700' },
+        { label: t('statTotal'), value: counts.total },
+        { label: t('statPending'), value: counts.pending, color: 'text-yellow-700' },
+        { label: t('statReviewing'), value: counts.under_review, color: 'text-blue-700' },
+        { label: t('statApproved'), value: counts.approved, color: 'text-green-700' },
+        { label: t('statRejected'), value: counts.rejected, color: 'text-red-700' },
+        { label: t('statSingers'), value: counts.singers, color: 'text-blue-700' },
+        { label: t('statVoiceActors'), value: counts.vo, color: 'text-amber-700' },
       ]} />
 
       {/* Filters */}
@@ -629,7 +634,7 @@ export default function AdminApplicationsPage() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, email, or application number..."
+            placeholder={t('searchPlaceholder')}
             className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none"
           />
         </div>
@@ -639,29 +644,29 @@ export default function AdminApplicationsPage() {
             onChange={e => setRoleFilter(e.target.value as typeof roleFilter)}
             className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-300 focus:outline-none"
           >
-            <option value="all">All Roles</option>
-            <option value="VO">Voice Actors</option>
-            <option value="Singer">Singers</option>
+            <option value="all">{t('roleAll')}</option>
+            <option value="VO">{t('roleVO')}</option>
+            <option value="Singer">{t('roleSinger')}</option>
           </select>
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
             className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-300 focus:outline-none"
           >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="under_review">Under Review</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+            <option value="all">{t('statusAll')}</option>
+            <option value="pending">{t('statusPending')}</option>
+            <option value="under_review">{t('statusUnderReview')}</option>
+            <option value="approved">{t('statusApproved')}</option>
+            <option value="rejected">{t('statusRejected')}</option>
           </select>
           <select
             value={sourceFilter}
             onChange={e => setSourceFilter(e.target.value as typeof sourceFilter)}
             className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-amber-300 focus:outline-none"
           >
-            <option value="all">所有來源</option>
-            <option value="talent">配音員報名(新)</option>
-            <option value="voice">AI / 語音(舊)</option>
+            <option value="all">{t('sourceAll')}</option>
+            <option value="talent">{t('sourceTalentNew')}</option>
+            <option value="voice">{t('sourceVoiceOld')}</option>
           </select>
         </div>
       </div>
@@ -670,16 +675,16 @@ export default function AdminApplicationsPage() {
       {loading ? (
         <div className="text-center py-16">
           <RefreshCw className="w-8 h-8 text-gray-600 animate-spin mx-auto mb-3" />
-          <p className="text-gray-500">Loading applications...</p>
+          <p className="text-gray-500">{t('loadingApplications')}</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 border border-gray-200 rounded-xl">
           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mx-auto mb-4">
             <Filter className="w-8 h-8 text-gray-600" />
           </div>
-          <p className="text-gray-600 font-medium">No applications found</p>
+          <p className="text-gray-600 font-medium">{t('noApplications')}</p>
           <p className="text-gray-600 text-sm mt-1">
-            {applications.length === 0 ? 'Applications will appear here once submitted via /apply' : 'Try adjusting your filters'}
+            {applications.length === 0 ? t('noApplicationsHint') : t('adjustFilters')}
           </p>
         </div>
       ) : (
@@ -692,7 +697,7 @@ export default function AdminApplicationsPage() {
 
       {filtered.length > 0 && (
         <p className="text-center text-xs text-gray-600 mt-6">
-          Showing {filtered.length} of {applications.length} applications
+          {t('showingCount', { shown: filtered.length, total: applications.length })}
         </p>
       )}
     </div>

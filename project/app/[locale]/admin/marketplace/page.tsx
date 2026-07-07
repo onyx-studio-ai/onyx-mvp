@@ -8,6 +8,7 @@
 */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
 import { caseCode } from '@/lib/casting';
@@ -75,12 +76,15 @@ const BRIEF_NEXT: Record<string, string[]> = {
   closed: ['reviewing', 'open'],     // 弄回來:送回待審(客戶案=回客戶請求收件匣)或直接重開徵選
   cancelled: ['reviewing', 'open'],
 };
-// friendly labels for the status-transition buttons (raw status reads cryptic)
-const STATUS_ACTION: Record<string, string> = {
-  reviewing: '待審', open: '開放徵選', closed: '關閉', cancelled: '取消',
-};
+// friendly labels for the status-transition buttons (raw status reads cryptic).
+// 顯示文字走 i18n:label 在元件內用 t() 建 map,只換文字不動 raw status key。
 
 export default function AdminMarketplace() {
+  const t = useTranslations('admin.marketplace');
+  // raw status → 友善按鈕文字(只換顯示,狀態 key 不動)
+  const STATUS_ACTION: Record<string, string> = {
+    reviewing: t('actionReviewing'), open: t('actionOpen'), closed: t('actionClosed'), cancelled: t('actionCancelled'),
+  };
   const [briefs, setBriefs] = useState<Brief[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [phase, setPhase] = useState<'loading' | 'unauth' | 'ready'>('loading');
@@ -121,14 +125,14 @@ export default function AdminMarketplace() {
         body: JSON.stringify({ id: b.id, send: false }),
       }).then((r) => r.json());
       const n = pre.notified || 0;
-      if (!n) { toast.error('沒有符合語言的配音員可通知(檢查案件語言是否中文/英文)。'); return; }
-      if (!confirm(`「${b.title || caseCode(b)}」符合 ${n} 位配音員。\n確定現在寄出試音通知信?`)) return;
+      if (!n) { toast.error(t('notifyNoMatch')); return; }
+      if (!confirm(t('notifyConfirm', { name: b.title || caseCode(b), count: n }))) return;
       const res = await fetch('/api/admin/casting', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ id: b.id, send: true }),
       }).then((r) => r.json());
-      if (res.sent) toast.success(`已寄出 ${res.notified} 封通知信`); else toast.error('寄送失敗,請稍後再試');
-    } catch { toast.error('寄送失敗,請稍後再試'); } finally { setNotifying(null); }
+      if (res.sent) toast.success(t('notifySent', { count: res.notified })); else toast.error(t('notifyFail'));
+    } catch { toast.error(t('notifyFail')); } finally { setNotifying(null); }
   }
 
   async function toOrder(b: Brief) {
@@ -137,36 +141,36 @@ export default function AdminMarketplace() {
     // email so the production order has a billing/delivery contact.
     let clientEmail = '';
     if (isPlatform) {
-      clientEmail = (window.prompt('平台發案：請輸入這筆訂單的客戶 email（用於帳務與交付通知）：') || '').trim();
+      clientEmail = (window.prompt(t('toOrderPrompt')) || '').trim();
       if (!clientEmail) return;
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) { toast.error('email 格式不正確'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) { toast.error(t('emailInvalid')); return; }
     }
-    if (!confirm(`將「${b.title || caseCode(b)}」轉成製作單?\n會進入「訂單」系統管理製作與交付,此試音案隨之結案。`)) return;
+    if (!confirm(t('toOrderConfirm', { name: b.title || caseCode(b) }))) return;
     try {
       const res = await fetch('/api/admin/casting/to-order', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ briefId: b.id, clientEmail: clientEmail || undefined }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(j.error || '建單失敗'); return; }
-      toast.success(`已建立製作單 ${j.order_number} —— 請到「訂單」管理製作與交付`);
+      if (!res.ok) { toast.error(j.error || t('toOrderFail')); return; }
+      toast.success(t('toOrderSuccess', { orderNumber: j.order_number }));
       load();
-    } catch { toast.error('建單失敗,請稍後再試'); }
+    } catch { toast.error(t('toOrderFailRetry')); }
   }
 
   // Duplicate a case as a fresh reviewing draft (client re-scope → re-audition).
   async function cloneCase(b: Brief) {
-    if (!confirm(`複製「${b.title || caseCode(b)}」成一個新案?\n新案會回到「客戶請求」待審(可重新編輯再發);原案與原試音都保留不動。`)) return;
+    if (!confirm(t('cloneConfirm', { name: b.title || caseCode(b) }))) return;
     try {
       const res = await fetch('/api/admin/casting/clone', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ briefId: b.id }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(j.error || '複製失敗'); return; }
-      toast.success(j.toInbox ? '已複製 —— 新案在「客戶請求」待審,可重新編輯再發' : '已複製 —— 新案在此頁待審(平台案)');
+      if (!res.ok) { toast.error(j.error || t('cloneFail')); return; }
+      toast.success(j.toInbox ? t('cloneSuccessInbox') : t('cloneSuccessPlatform'));
       load();
-    } catch { toast.error('複製失敗,請稍後再試'); }
+    } catch { toast.error(t('cloneFailRetry')); }
   }
 
   async function saveRate(id: string, val: string) {
@@ -191,18 +195,18 @@ export default function AdminMarketplace() {
   // Ask this auditioner to upload MORE demos (other tones / characters) — notifies
   // the talent; they upload under 「追加 demo」 in their opportunities page.
   async function requestMoreDemos(quoteId: string) {
-    const note = window.prompt('想聽的方向?(例:不同語氣、其他遊戲角色 —— 會轉達給配音員)', '');
+    const note = window.prompt(t('moreDemosPrompt'), '');
     if (note === null) return;
     const res = await fetch('/api/admin/marketplace/request-demos', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ quote_id: quoteId, note }),
     });
-    if (res.ok) { alert('已通知配音員上傳更多 demo。'); load(); }
-    else { const j = await res.json().catch(() => ({})); alert(j.error || '失敗'); }
+    if (res.ok) { alert(t('moreDemosNotified')); load(); }
+    else { const j = await res.json().catch(() => ({})); alert(j.error || t('genericFail')); }
   }
 
-  if (phase === 'loading') return <div className="p-8 text-gray-500 text-sm">載入中…</div>;
-  if (phase === 'unauth') return <div className="p-8 text-gray-500 text-sm">請先登入後台。</div>;
+  if (phase === 'loading') return <div className="p-8 text-gray-500 text-sm">{t('loading')}</div>;
+  if (phase === 'unauth') return <div className="p-8 text-gray-500 text-sm">{t('unauth')}</div>;
 
   const quotesFor = (briefId: string) => quotes.filter((q) => q.brief_id === briefId);
 
@@ -212,34 +216,34 @@ export default function AdminMarketplace() {
       .some((v) => (v || '').toString().toLowerCase().includes(q)));
 
   const stats = [
-    { label: '案件總數', value: briefs.length },
-    { label: '徵選中', value: briefs.filter((b) => b.status === 'open').length, color: 'text-green-700' },
-    { label: '已選定', value: briefs.filter((b) => b.status === 'awarded').length, color: 'text-blue-700' },
-    { label: '已結束', value: briefs.filter((b) => b.status === 'closed').length, color: 'text-gray-500' },
+    { label: t('statTotal'), value: briefs.length },
+    { label: t('statOpen'), value: briefs.filter((b) => b.status === 'open').length, color: 'text-green-700' },
+    { label: t('statAwarded'), value: briefs.filter((b) => b.status === 'awarded').length, color: 'text-blue-700' },
+    { label: t('statClosed'), value: briefs.filter((b) => b.status === 'closed').length, color: 'text-gray-500' },
   ];
 
   return (
     <div className="p-6 lg:p-8 text-gray-900">
       <AdminHeader
-        title="案件 · 報價"
-        subtitle="Onyx 發的試音案 + 配音員報價。客戶送來的需求請看「客戶請求」頁。點任一案展開細節。"
-        action={<a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-2">+ 發案(試音案)</a>}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        action={<a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-2">{t('newCasting')}</a>}
       />
       <AdminStats items={stats} />
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜尋案件、客戶、案號或語言…"
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('searchPlaceholder')}
           className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-green-400 focus:outline-none" />
       </div>
 
       {unavailable && (
         <div className="mb-4 text-amber-800 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">
-          ⚠️ marketplace 資料表尚未建立 —— 請先跑 migration <code>20260620120000_marketplace_briefs_quotes.sql</code>。
+          {t('unavailablePrefix')}<code>20260620120000_marketplace_briefs_quotes.sql</code>{t('unavailableSuffix')}
         </div>
       )}
 
-      {filtered.length === 0 && !unavailable && <p className="text-gray-500 text-sm">{briefs.length === 0 ? '目前沒有案件。' : '沒有符合搜尋的案件。'}</p>}
+      {filtered.length === 0 && !unavailable && <p className="text-gray-500 text-sm">{briefs.length === 0 ? t('emptyNoCases') : t('emptyNoMatch')}</p>}
 
       <div className="space-y-3">
         {filtered.map((b) => (
@@ -251,16 +255,16 @@ export default function AdminMarketplace() {
                   <div className="flex flex-wrap items-center gap-1.5 mb-1">
                     <span className="font-mono text-xs text-gray-500">{b.kind === 'casting' ? caseCode(b) : b.brief_number}</span>
                     <span className={`text-[11px] px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : b.status === 'reviewing' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{b.status}</span>
-                    {b.kind === 'casting' && <span className="text-[11px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">試音案</span>}
-                    {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">客戶請求</span>}
+                    {b.kind === 'casting' && <span className="text-[11px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{t('tagCasting')}</span>}
+                    {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{t('tagClientRequest')}</span>}
                   </div>
-                  <p className="text-sm font-medium text-gray-900 truncate">{b.title || b.client_name || b.client_email || '—'}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{b.title || b.client_name || b.client_email || t('dash')}</p>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-500">
                     {b.language && <span>{b.language}</span>}
                     {b.rate_note && <span className="text-amber-700">{b.rate_note}</span>}
-                    {b.kind === 'casting' && (b.roles || []).length > 0 && <span>{(b.roles || []).length} 角</span>}
-                    <span>{quotesFor(b.id).length} 報價</span>
-                    {(b.audition_deadline || b.deadline) && <span>截止 {b.audition_deadline || b.deadline}</span>}
+                    {b.kind === 'casting' && (b.roles || []).length > 0 && <span>{t('rolesCount', { count: (b.roles || []).length })}</span>}
+                    <span>{t('quotesCount', { count: quotesFor(b.id).length })}</span>
+                    {(b.audition_deadline || b.deadline) && <span>{t('deadlineLabel')} {b.audition_deadline || b.deadline}</span>}
                   </div>
                 </div>
                 <span className={`text-gray-400 text-xs pt-1 transition-transform ${isOpen(b.id) ? 'rotate-180' : ''}`}>▾</span>
@@ -273,10 +277,10 @@ export default function AdminMarketplace() {
               <div className="mb-2">
                 {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (
                   <div className="mb-1.5">
-                    <p className="text-xs text-gray-600">📥 {b.client_name || '—'}{b.company ? ` · ${b.company}` : ''} · {b.client_email}{b.budget ? ` · 客戶預算 ${b.budget_type || ''} ${b.budget}` : ''}</p>
+                    <p className="text-xs text-gray-600">📥 {b.client_name || t('dash')}{b.company ? ` · ${b.company}` : ''} · {b.client_email}{b.budget ? ` · ${t('clientBudget')} ${b.budget_type || ''} ${b.budget}` : ''}</p>
                     {b.status === 'reviewing' && (
                       <a href={`/admin/casting/new?from=${b.id}`} className="inline-block mt-1.5 text-xs bg-amber-500 hover:bg-amber-400 text-white font-semibold rounded-lg px-3 py-1.5">
-                        ✏️ 補角色 + 定價並發佈 →
+                        {t('addRolesPublish')}
                       </a>
                     )}
                   </div>
@@ -286,13 +290,13 @@ export default function AdminMarketplace() {
                   <input readOnly value={`${SITE}/casting/join/${b.id}`} onFocus={(e) => e.target.select()}
                     className="flex-1 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 font-mono" />
                   <a href={`/casting/preview/${b.id}`} target="_blank" rel="noopener noreferrer"
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded px-2.5 py-1 whitespace-nowrap" title="以配音員視角預覽前台(唯讀)">👁 預覽前台</a>
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded px-2.5 py-1 whitespace-nowrap" title={t('previewFrontTitle')}>{t('previewFront')}</a>
                   <button onClick={() => { navigator.clipboard?.writeText(`${SITE}/casting/join/${b.id}`); setCopiedId(b.id); setTimeout(() => setCopiedId(null), 1500); }}
-                    className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded px-2.5 py-1 whitespace-nowrap">{copiedId === b.id ? '已複製 ✓' : '🔗 複製試音連結'}</button>
+                    className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded px-2.5 py-1 whitespace-nowrap">{copiedId === b.id ? t('copied') : t('copyCastingLink')}</button>
                   {b.status === 'open' && (
                     <button onClick={() => notifyCasting(b)} disabled={notifying === b.id}
-                      className="text-xs bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white rounded px-2.5 py-1 whitespace-nowrap" title="寄試音通知信給符合語言的配音員">
-                      {notifying === b.id ? '處理中…' : '📣 通知配音員'}
+                      className="text-xs bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-white rounded px-2.5 py-1 whitespace-nowrap" title={t('notifyTalentTitle')}>
+                      {notifying === b.id ? t('processing') : t('notifyTalent')}
                     </button>
                   )}
                   {quotesFor(b.id).some((q) => q.sample_url) && (
@@ -301,20 +305,20 @@ export default function AdminMarketplace() {
                 </div>
                 {/* inline 報酬 edit + full case edit */}
                 <div className="flex items-center gap-2 mt-2 text-sm">
-                  <span className="text-gray-500 text-xs">報酬</span>
+                  <span className="text-gray-500 text-xs">{t('rateLabel')}</span>
                   {editRate?.id === b.id ? (
                     <>
                       <input value={editRate.val} onChange={(e) => setEditRate({ id: b.id, val: e.target.value })} autoFocus
                         onKeyDown={(e) => { if (e.key === 'Enter') saveRate(b.id, editRate.val); if (e.key === 'Escape') setEditRate(null); }}
-                        placeholder="例:NT$150 / 句" className="bg-white border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 w-44" />
-                      <button onClick={() => saveRate(b.id, editRate.val)} className="text-xs bg-green-600 hover:bg-green-500 text-white rounded px-2.5 py-1">儲存</button>
-                      <button onClick={() => setEditRate(null)} className="text-xs text-gray-500 hover:text-gray-700">取消</button>
+                        placeholder={t('ratePlaceholder')} className="bg-white border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 w-44" />
+                      <button onClick={() => saveRate(b.id, editRate.val)} className="text-xs bg-green-600 hover:bg-green-500 text-white rounded px-2.5 py-1">{t('save')}</button>
+                      <button onClick={() => setEditRate(null)} className="text-xs text-gray-500 hover:text-gray-700">{t('cancel')}</button>
                     </>
                   ) : (
                     <>
-                      <span className="text-gray-900 font-medium">{b.rate_note || '—'}</span>
-                      <button onClick={() => setEditRate({ id: b.id, val: b.rate_note || '' })} className="text-xs text-blue-600 hover:underline">編輯</button>
-                      <a href={`/admin/casting/${b.id}/edit`} className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded px-2.5 py-1 ml-auto">✏️ 編輯整個案件(角色/台詞)</a>
+                      <span className="text-gray-900 font-medium">{b.rate_note || t('dash')}</span>
+                      <button onClick={() => setEditRate({ id: b.id, val: b.rate_note || '' })} className="text-xs text-blue-600 hover:underline">{t('edit')}</button>
+                      <a href={`/admin/casting/${b.id}/edit`} className="text-xs bg-gray-900 hover:bg-gray-700 text-white rounded px-2.5 py-1 ml-auto">{t('editWholeCase')}</a>
                     </>
                   )}
                 </div>
@@ -324,9 +328,9 @@ export default function AdminMarketplace() {
             )}
             <div className="flex flex-wrap gap-1.5 my-2">
               {b.content_type && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{b.content_type}</span>}
-              {b.has_singing && <span className="text-xs bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full">含唱歌</span>}
-              {b.wants_live_session && <span className="text-xs bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">線上同步錄音{b.live_session_tool ? ` · ${b.live_session_tool}` : ''}</span>}
-              {b.wants_director && <span className="text-xs bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">聲音導演</span>}
+              {b.has_singing && <span className="text-xs bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full">{t('flagHasSinging')}</span>}
+              {b.wants_live_session && <span className="text-xs bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">{t('flagLiveRecording')}{b.live_session_tool ? ` · ${b.live_session_tool}` : ''}</span>}
+              {b.wants_director && <span className="text-xs bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">{t('flagDirector')}</span>}
               {!b.content_type && (b.categories || []).map((c, i) => (
                 <span key={i} className="text-xs bg-gray-100 border border-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{c}</span>
               ))}
@@ -334,14 +338,14 @@ export default function AdminMarketplace() {
             </div>
             <p className="text-sm text-gray-800 whitespace-pre-wrap mb-2">{b.brief}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
-              {b.media_scope && <span>媒體 {b.media_scope}</span>}
-              {b.territory && <span>地區 {b.territory}</span>}
-              {b.license_term && <span>授權 {b.license_term}</span>}
-              {b.length && <span>長度 {b.length}</span>}
-              {b.budget && <span>預算 {b.budget_type ? `${b.budget_type} ` : ''}{b.budget}</span>}
-              {b.audition_deadline && <span>試音截止 {b.audition_deadline}</span>}
-              {b.deadline && <span>交付截止 {b.deadline}</span>}
-              {b.script_status && <span>稿件 {b.script_status}</span>}
+              {b.media_scope && <span>{t('metaMedia')} {b.media_scope}</span>}
+              {b.territory && <span>{t('metaTerritory')} {b.territory}</span>}
+              {b.license_term && <span>{t('metaLicense')} {b.license_term}</span>}
+              {b.length && <span>{t('metaLength')} {b.length}</span>}
+              {b.budget && <span>{t('metaBudget')} {b.budget_type ? `${b.budget_type} ` : ''}{b.budget}</span>}
+              {b.audition_deadline && <span>{t('metaAuditionDeadline')} {b.audition_deadline}</span>}
+              {b.deadline && <span>{t('metaDeliveryDeadline')} {b.deadline}</span>}
+              {b.script_status && <span>{t('metaScript')} {b.script_status}</span>}
             </div>
 
             {/* awarded → create the production order. Client cases bill the client on
@@ -349,10 +353,10 @@ export default function AdminMarketplace() {
             {b.status === 'awarded' && (
               <div className="mb-3 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                 <span className="text-xs text-blue-800">
-                  已採用配音員 —— 接著建立製作單,進訂單系統管理錄製與交付。
-                  {(!b.client_email || b.client_email === 'casting@onyxstudios.ai') && '(平台發案:建單時會請你輸入客戶 email)'}
+                  {t('awardedNote')}
+                  {(!b.client_email || b.client_email === 'casting@onyxstudios.ai') && t('awardedPlatformHint')}
                 </span>
-                <button onClick={() => toOrder(b)} className="ml-auto text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg px-3 py-1.5 whitespace-nowrap">→ 建立製作單</button>
+                <button onClick={() => toOrder(b)} className="ml-auto text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg px-3 py-1.5 whitespace-nowrap">{t('createOrder')}</button>
               </div>
             )}
 
@@ -367,12 +371,12 @@ export default function AdminMarketplace() {
                     → {STATUS_ACTION[s] || s}
                   </button>
                 ))}
-              <button onClick={() => cloneCase(b)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1 transition" title="複製成新案,回到客戶請求重新編輯再發(原案+試音保留)">⧉ 複製案子</button>
+              <button onClick={() => cloneCase(b)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1 transition" title={t('cloneCaseTitle')}>{t('cloneCase')}</button>
             </div>
 
             {/* quotes */}
             <div className="border-t border-gray-200 pt-3 space-y-2">
-              {quotesFor(b.id).length === 0 && <p className="text-xs text-gray-400">尚無報價</p>}
+              {quotesFor(b.id).length === 0 && <p className="text-xs text-gray-400">{t('noQuotes')}</p>}
               {quotesFor(b.id).map((q) => {
                 const tkey = `${b.id}:${q.talent_id}`;
                 return (
@@ -380,58 +384,58 @@ export default function AdminMarketplace() {
                     <div className="bg-gray-50 rounded-lg px-3 py-2">
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <div className="min-w-0">
-                        <span className="text-gray-800">{q.talents?.name || '配音員'}</span>
+                        <span className="text-gray-800">{q.talents?.name || t('talentFallback')}</span>
                         {q.role_name && <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{q.role_name}</span>}
                         {q.commission_rate > 0 ? (
                           <span className="text-gray-500 ml-2">
-                            客戶付 {q.currency} {q.gross_amount} · 配音員淨得 {q.currency} {q.net_amount}{' '}
-                            <span className="text-gray-400">(抽 {Math.round(q.commission_rate * 100)}%)</span>
+                            {t('quoteClientPays', { currency: q.currency, gross: q.gross_amount })} · {t('quoteTalentNets', { currency: q.currency, net: q.net_amount })}{' '}
+                            <span className="text-gray-400">{t('quoteCommission', { pct: Math.round(q.commission_rate * 100) })}</span>
                           </span>
                         ) : (
-                          <span className="text-gray-500 ml-2">報價 {q.currency} {q.gross_amount} <span className="text-gray-400">(平台不抽成)</span></span>
+                          <span className="text-gray-500 ml-2">{t('quoteAmount', { currency: q.currency, gross: q.gross_amount })} <span className="text-gray-400">{t('quoteNoCommission')}</span></span>
                         )}
                         {q.message && <p className="text-xs text-gray-500 truncate">{q.message}</p>}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <button onClick={() => setOpenThread(openThread === tkey ? null : tkey)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded px-2 py-0.5" title="訊息">💬</button>
+                        <button onClick={() => setOpenThread(openThread === tkey ? null : tkey)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded px-2 py-0.5" title={t('messageTitle')}>💬</button>
                         <span className={`text-xs ${q.status === 'accepted' ? 'text-blue-700' : q.status === 'rejected' || q.status === 'withdrawn' ? 'text-gray-400' : 'text-green-700'}`}>{q.status}</span>
                         {['submitted', 'shortlisted'].includes(q.status) && (
                           <>
-                            <button onClick={() => patch('quote', q.id, 'accepted')} className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded px-2 py-0.5">採用</button>
-                            <button onClick={() => patch('quote', q.id, 'rejected')} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded px-2 py-0.5">婉拒</button>
+                            <button onClick={() => patch('quote', q.id, 'accepted')} className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded px-2 py-0.5">{t('accept')}</button>
+                            <button onClick={() => patch('quote', q.id, 'rejected')} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded px-2 py-0.5">{t('decline')}</button>
                           </>
                         )}
                       </div>
                     </div>
                     {q.sample_url
                       ? <audio controls src={q.sample_url} className="w-full h-9 mt-2" />
-                      : <p className="text-xs text-gray-400 mt-1">(無試音音檔)</p>}
+                      : <p className="text-xs text-gray-400 mt-1">{t('noSampleAudio')}</p>}
 
                     {/* 追加 demo:請這位再多提供 demo(其他語氣/角色)+ 已上傳的追加 demo(後台下載乾淨檔) */}
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
-                      <button onClick={() => requestMoreDemos(q.id)} className="text-xs bg-violet-100 hover:bg-violet-200 text-violet-700 rounded px-2 py-0.5" title="通知配音員上傳更多 demo(其他語氣/角色)">請多給 demo</button>
+                      <button onClick={() => requestMoreDemos(q.id)} className="text-xs bg-violet-100 hover:bg-violet-200 text-violet-700 rounded px-2 py-0.5" title={t('moreDemosBtnTitle')}>{t('moreDemosBtn')}</button>
                       {q.more_demos_requested_at && !((q.extra_samples || []).length) && (
-                        <span className="text-xs text-amber-600" title={q.more_demos_note || ''}>已請求,待上傳</span>
+                        <span className="text-xs text-amber-600" title={q.more_demos_note || ''}>{t('moreDemosPending')}</span>
                       )}
                       {q.more_demos_requested_at && ((q.extra_samples || []).length) > 0 && (
-                        <span className="text-xs text-violet-700" title={q.more_demos_note || ''}>已收到 {(q.extra_samples || []).length} 段(配音員可能持續追加)</span>
+                        <span className="text-xs text-violet-700" title={q.more_demos_note || ''}>{t('moreDemosReceived', { count: (q.extra_samples || []).length })}</span>
                       )}
                     </div>
                     {(q.extra_samples || []).length > 0 && (
                       <div className="mt-2 space-y-1.5 rounded-lg bg-violet-50 border border-violet-200 px-2.5 py-2">
-                        <p className="text-xs font-medium text-violet-700">追加 demo({(q.extra_samples || []).length})</p>
+                        <p className="text-xs font-medium text-violet-700">{t('extraDemosTitle', { count: (q.extra_samples || []).length })}</p>
                         {(q.extra_samples || []).map((s, i) => (
                           <div key={i} className="flex items-center gap-2">
                             <audio controls src={s.url} className="h-8 flex-1 min-w-0" />
-                            <a href={s.url} target="_blank" rel="noreferrer" download className="text-xs text-violet-700 underline whitespace-nowrap">下載</a>
+                            <a href={s.url} target="_blank" rel="noreferrer" download className="text-xs text-violet-700 underline whitespace-nowrap">{t('download')}</a>
                           </div>
                         ))}
                       </div>
                     )}
                     {q.delivery_url && (
                       <div className="mt-2 flex items-center gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg px-2.5 py-1.5">
-                        <span className="text-blue-700 font-medium">✓ 完成交付</span>
-                        <a href={q.delivery_url} target="_blank" rel="noreferrer" download className="text-blue-600 underline">下載</a>
+                        <span className="text-blue-700 font-medium">{t('deliveryComplete')}</span>
+                        <a href={q.delivery_url} target="_blank" rel="noreferrer" download className="text-blue-600 underline">{t('download')}</a>
                         {q.delivery_uploaded_at && <span className="text-gray-400">{new Date(q.delivery_uploaded_at).toLocaleString('zh-TW')}</span>}
                       </div>
                     )}
@@ -454,6 +458,7 @@ export default function AdminMarketplace() {
 // progress. Avoids the server-side zip endpoint that 504'd on many files, and —
 // unlike the old plain <a> link — actually shows whether it's working / failed.
 function DownloadAllAuditions({ briefId, quotes, label }: { briefId: string; quotes: Quote[]; label: string }) {
+  const t = useTranslations('admin.marketplace');
   const [busy, setBusy] = useState(false);
   const [prog, setProg] = useState({ done: 0, total: 0, fail: 0 });
   const storeKey = `onyx_dl_auditions_${briefId}`;
@@ -478,7 +483,7 @@ function DownloadAllAuditions({ briefId, quotes, label }: { briefId: string; quo
         if (!res.ok) throw new Error('fetch failed');
         const blob = await res.blob();
         const ext = ((q.sample_url as string).split('?')[0].split('.').pop() || 'mp3').toLowerCase().slice(0, 4);
-        let base = `${clean(q.role_name || '試音')}_${clean(q.talents?.name || '配音員')}`;
+        let base = `${clean(q.role_name || t('fileAudition'))}_${clean(q.talents?.name || t('talentFallback'))}`;
         used[base] = (used[base] || 0) + 1;
         if (used[base] > 1) base += `_${used[base]}`;
         zip.file(`${base}.${ext}`, blob);
@@ -489,34 +494,35 @@ function DownloadAllAuditions({ briefId, quotes, label }: { briefId: string; quo
     try {
       const out = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(out);
-      const a = document.createElement('a'); a.href = url; a.download = `${clean(label) || 'casting'}_試音${suffix}.zip`; a.click();
+      const a = document.createElement('a'); a.href = url; a.download = `${clean(label) || 'casting'}_${t('fileAudition')}${suffix}.zip`; a.click();
       URL.revokeObjectURL(url);
       const next = new Set(downloaded); got.forEach((u) => next.add(u)); setDownloaded(next);
       try { window.localStorage.setItem(storeKey, JSON.stringify([...next])); } catch { /* quota / private mode */ }
-      if (fail) alert(`完成,但有 ${fail} 個檔下載失敗(可能連結失效),其餘已打包。`);
-    } catch { alert('打包失敗,請重試。'); }
+      if (fail) alert(t('zipPartialFail', { count: fail }));
+    } catch { alert(t('zipFail')); }
     setBusy(false);
   };
 
   if (busy) {
-    return <button disabled className="text-xs bg-blue-600 disabled:opacity-60 text-white rounded px-2.5 py-1 whitespace-nowrap">{`下載中 ${prog.done}/${prog.total}${prog.fail ? ` · ${prog.fail} 失敗` : ''}…`}</button>;
+    return <button disabled className="text-xs bg-blue-600 disabled:opacity-60 text-white rounded px-2.5 py-1 whitespace-nowrap">{t('downloading', { done: prog.done, total: prog.total, failSuffix: prog.fail ? ` · ${prog.fail} ${t('failWord')}` : '' })}</button>;
   }
   const hasNew = newItems.length > 0 && newItems.length < items.length; // some already downloaded
   return (
     <span className="inline-flex items-center gap-1.5">
       {hasNew && (
-        <button onClick={() => run(newItems, '_新')} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title="只下載你還沒下載過的試音(本機記錄)">
-          ⬇️ 下載新的 ({newItems.length})
+        <button onClick={() => run(newItems, t('fileSuffixNew'))} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title={t('downloadNewTitle')}>
+          {t('downloadNew', { count: newItems.length })}
         </button>
       )}
-      <button onClick={() => run(items, '')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title="逐檔在瀏覽器打包下載(檔名:角色_配音員)">
-        {hasNew ? `全部 (${items.length})` : newItems.length === 0 && items.length > 0 ? `⬇️ 重新下載全部 (${items.length})` : `⬇️ 下載全部試音 (${items.length})`}
+      <button onClick={() => run(items, '')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title={t('downloadAllTitle')}>
+        {hasNew ? t('downloadAllShort', { count: items.length }) : newItems.length === 0 && items.length > 0 ? t('redownloadAll', { count: items.length }) : t('downloadAllAuditions', { count: items.length })}
       </button>
     </span>
   );
 }
 
 function AdminThread({ briefId, talentId }: { briefId: string; talentId: string }) {
+  const t = useTranslations('admin.marketplace');
   const [messages, setMessages] = useState<{ id: string; sender_type: string; sender_name: string | null; body: string }[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -548,7 +554,7 @@ function AdminThread({ briefId, talentId }: { briefId: string; talentId: string 
   return (
     <div className="ml-3 mt-1 mb-2 border-l-2 border-gray-200 pl-3">
       <div className="space-y-1.5 max-h-60 overflow-y-auto py-1">
-        {messages.length === 0 && <p className="text-xs text-gray-400">尚無訊息</p>}
+        {messages.length === 0 && <p className="text-xs text-gray-400">{t('threadEmpty')}</p>}
         {messages.map((m) => (
           <div key={m.id} className="text-xs">
             <span className={m.sender_type === 'admin' ? 'text-blue-700' : m.sender_type === 'talent' ? 'text-green-700' : 'text-gray-600'}>
@@ -568,11 +574,11 @@ function AdminThread({ briefId, talentId }: { briefId: string; talentId: string 
               send();
             }
           }}
-          placeholder="以 Onyx 身分回覆…"
+          placeholder={t('threadPlaceholder')}
           className="flex-1 bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-900"
         />
         <button onClick={send} disabled={busy || !draft.trim()} className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded px-2 disabled:opacity-50">
-          送出
+          {t('send')}
         </button>
       </div>
     </div>
