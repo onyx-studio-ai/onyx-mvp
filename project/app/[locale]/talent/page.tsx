@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
 import Turnstile from '@/components/Turnstile';
 import TelegramConnect from '@/components/talent/TelegramConnect';
-import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share } from 'lucide-react';
+import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share, Heart } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES, TURNAROUNDS, turnaroundLabel,
   pickLabel, formatLangEntry, baseLangLabel, accentLabel, accentOptionsFor, demoLimit, DEMO_UNLIMITED, DEMO_MAX_SECONDS, type DemoItem,
@@ -174,6 +174,7 @@ export default function TalentDashboard() {
   const [savedMsg, setSavedMsg] = useState('');
   const [saveErr, setSaveErr] = useState('');
   const [isClient, setIsClient] = useState(false); // dual-role: also has client orders
+  const [favoriteCount, setFavoriteCount] = useState(0); // 幾位客戶收藏了我(只顯示數量,不顯示是誰)
   const [langPick, setLangPick] = useState('');
   const [langQ, setLangQ] = useState('');
   const [accentPick, setAccentPick] = useState('native');
@@ -192,8 +193,9 @@ export default function TalentDashboard() {
     const res = await authedFetch('/api/talent/me');
     if (res.status === 404) return setPhase('notalent');
     if (!res.ok) return setPhase('login');
-    const { talent, isClient: alsoClient } = (await res.json()) as { talent: Talent; isClient?: boolean };
+    const { talent, isClient: alsoClient, favoriteCount: favs } = (await res.json()) as { talent: Talent; isClient?: boolean; favoriteCount?: number };
     setIsClient(!!alsoClient);
+    setFavoriteCount(typeof favs === 'number' ? favs : 0);
     setT(talent);
     setForm({
       name: talent.name || '', english_name: talent.english_name || '', bio: talent.bio || '', gender: talent.gender || '',
@@ -513,6 +515,16 @@ export default function TalentDashboard() {
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className={`inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full ${statusBadge.cls}`}>{statusBadge.icon}{statusBadge.text}</span>
             {livenessBadge && <span className={`text-[11px] px-2.5 py-1 rounded-full ${livenessBadge.cls}`}>{livenessBadge.text}</span>}
+            {/* 收藏數:只顯示「有多少人收藏」的數量,不顯示是誰(客戶隱私)。0 人時不顯示。 */}
+            {favoriteCount > 0 && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-300"
+                title={tx('已收藏你聲音的客戶數', '已收藏你声音的客户数', 'Clients who saved your voice')}
+              >
+                <Heart className="w-3.5 h-3.5" />
+                {tx(`${favoriteCount} 人收藏了你的聲音`, `${favoriteCount} 人收藏了你的声音`, `${favoriteCount} ${favoriteCount === 1 ? 'person' : 'people'} saved your voice`)}
+              </span>
+            )}
             {t?.is_active && t?.id && (
               <button type="button" onClick={async () => {
                 const link = `${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/talents/${t.id}`;

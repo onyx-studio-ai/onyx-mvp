@@ -147,7 +147,19 @@ export async function GET(request: NextRequest) {
       } catch { /* non-fatal */ }
     }
 
-    return NextResponse.json({ talent: r.talent, isClient });
+    // 有多少客戶把這位配音員加入收藏(shortlist)。只回「數量」,不回是誰
+    // (客戶隱私)。用 head+exact 只取 count,不拉整批列。查詢失敗(表未建 /
+    // RLS quirk)一律回 0,不影響檔案本身載入。
+    let favoriteCount = 0;
+    try {
+      const { count } = await r.db
+        .from('talent_favorites')
+        .select('id', { count: 'exact', head: true })
+        .eq('talent_id', r.talent.id);
+      favoriteCount = count || 0;
+    } catch { /* non-fatal — 收藏數失敗不阻擋檔案載入 */ }
+
+    return NextResponse.json({ talent: r.talent, isClient, favoriteCount });
   } catch (err) {
     return supabaseErrorResponse(err, 'api/talent/me:GET');
   }
