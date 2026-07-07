@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { Wand2, Upload, AlertCircle, CheckCircle2, Loader2, RefreshCw, Volume2, Download } from 'lucide-react';
 
 // Browser → RunPod direct (bypasses Vercel function 10s timeout on Hobby plan).
@@ -23,6 +24,7 @@ function authHeaders(): Record<string, string> {
 }
 
 export default function AdminSovitsPage() {
+  const t = useTranslations('admin.sovits');
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [healthError, setHealthError] = useState('');
   const [loadingHealth, setLoadingHealth] = useState(true);
@@ -34,7 +36,7 @@ export default function AdminSovitsPage() {
 
   // TTS test form
   const [ttsVoice, setTtsVoice] = useState('');
-  const [ttsText, setTtsText] = useState('您好，我是 Onyx Studios 的 GPT-SoVITS 配音示範。');
+  const [ttsText, setTtsText] = useState(t('ttsDefaultText'));
   const [ttsSpeed, setTtsSpeed] = useState(1.0);
   const [ttsFormat, setTtsFormat] = useState<'wav' | 'mp3'>('wav');
   const [ttsBusy, setTtsBusy] = useState(false);
@@ -97,8 +99,8 @@ export default function AdminSovitsPage() {
   }, []);
 
   async function handleTts() {
-    if (!ttsText.trim()) return setTtsError('輸入要念的文字');
-    if (!SOVITS_URL) return setTtsError('NEXT_PUBLIC_SOVITS_API_URL 未設定');
+    if (!ttsText.trim()) return setTtsError(t('errEnterText'));
+    if (!SOVITS_URL) return setTtsError(t('errNoSovitsUrl'));
 
     setTtsBusy(true);
     setTtsError('');
@@ -118,12 +120,12 @@ export default function AdminSovitsPage() {
       });
       if (!res.ok) {
         const errText = await res.text().catch(() => `HTTP ${res.status}`);
-        throw new Error(errText.slice(0, 200) || 'TTS 失敗');
+        throw new Error(errText.slice(0, 200) || t('ttsFailed'));
       }
       const blob = await res.blob();
       setTtsAudioUrl(URL.createObjectURL(blob));
     } catch (err) {
-      setTtsError(err instanceof Error ? err.message : 'TTS 失敗');
+      setTtsError(err instanceof Error ? err.message : t('ttsFailed'));
     } finally {
       setTtsBusy(false);
     }
@@ -131,8 +133,8 @@ export default function AdminSovitsPage() {
 
   async function handleRvc(e: React.FormEvent) {
     e.preventDefault();
-    if (!rvcFile) return setRvcError('請選音檔');
-    if (!SOVITS_URL) return setRvcError('NEXT_PUBLIC_SOVITS_API_URL 未設定');
+    if (!rvcFile) return setRvcError(t('errPickAudio'));
+    if (!SOVITS_URL) return setRvcError(t('errNoSovitsUrl'));
 
     setRvcBusy(true);
     setRvcError('');
@@ -151,12 +153,12 @@ export default function AdminSovitsPage() {
       });
       if (!res.ok) {
         const errText = await res.text().catch(() => `HTTP ${res.status}`);
-        throw new Error(errText.slice(0, 200) || 'RVC 轉換失敗');
+        throw new Error(errText.slice(0, 200) || t('rvcFailed'));
       }
       const blob = await res.blob();
       setRvcAudioUrl(URL.createObjectURL(blob));
     } catch (err) {
-      setRvcError(err instanceof Error ? err.message : 'RVC 轉換失敗');
+      setRvcError(err instanceof Error ? err.message : t('rvcFailed'));
     } finally {
       setRvcBusy(false);
     }
@@ -170,24 +172,24 @@ export default function AdminSovitsPage() {
           GPT-SoVITS — TTS + RVC (Eric)
         </h1>
         <p className="text-gray-600 text-sm mt-1">
-          自托管 GPT-SoVITS pod · OpenAI-compatible TTS + 聲音轉換(RVC)
+          {t('subtitle')}
         </p>
       </div>
 
       {/* Health status */}
       <div className="mb-8 p-4 rounded-xl border border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-gray-700">Pod 狀態</h2>
+          <h2 className="text-sm font-semibold text-gray-700">{t('podStatus')}</h2>
           <button
             onClick={loadHealth}
             className="text-gray-500 hover:text-gray-900 p-1"
-            title="重新整理"
+            title={t('refresh')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
         {loadingHealth ? (
-          <p className="text-gray-500 text-sm">檢查中...</p>
+          <p className="text-gray-500 text-sm">{t('checking')}</p>
         ) : health ? (
           <div className="flex items-center gap-4 text-sm">
             <span className="flex items-center gap-1.5 text-green-700">
@@ -200,12 +202,12 @@ export default function AdminSovitsPage() {
           <div className="flex items-start gap-2 text-red-700 text-sm">
             <AlertCircle className="w-4 h-4 mt-0.5" />
             <div>
-              <p className="font-semibold">GPT-SoVITS pod 不可達</p>
+              <p className="font-semibold">{t('podUnreachable')}</p>
               <p className="text-xs mt-1">{healthError}</p>
               <p className="text-xs mt-2 text-gray-600">
-                檢查 Vercel 的 <code>NEXT_PUBLIC_SOVITS_API_URL</code> /{' '}
-                <code>NEXT_PUBLIC_SOVITS_API_KEY</code>(改完要 redeploy,build-time 才會 bake)。
-                確認 pod <code>a52pzfcunv6ov8</code> 是否在 RunPod console 開機。
+                {t('checkEnvPrefix')} <code>NEXT_PUBLIC_SOVITS_API_URL</code> /{' '}
+                <code>NEXT_PUBLIC_SOVITS_API_KEY</code>{t('checkEnvSuffix')}
+                {' '}{t('checkPodPrefix')} <code>a52pzfcunv6ov8</code> {t('checkPodSuffix')}
               </p>
             </div>
           </div>
@@ -216,19 +218,19 @@ export default function AdminSovitsPage() {
       <div className="mb-10">
         <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <Volume2 className="w-5 h-5 text-purple-700" />
-          TTS · 文字 → Eric 聲音
+          {t('ttsSectionTitle')}
         </h2>
         <div className="p-6 rounded-xl border border-gray-200 bg-white space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              預設聲音
+              {t('defaultVoice')}
             </label>
             <select
               value={ttsVoice}
               onChange={(e) => setTtsVoice(e.target.value)}
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900"
             >
-              {ttsVoices.length === 0 && <option value="">載入中…</option>}
+              {ttsVoices.length === 0 && <option value="">{t('loading')}</option>}
               {ttsVoices.map((v) => (
                 <option key={v.voice_id} value={v.voice_id}>
                   {v.name} ({v.voice_id})
@@ -239,21 +241,21 @@ export default function AdminSovitsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              文字內容
+              {t('textContent')}
             </label>
             <textarea
               value={ttsText}
               onChange={(e) => setTtsText(e.target.value)}
               rows={3}
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder:text-gray-400"
-              placeholder="輸入要念的文字..."
+              placeholder={t('textPlaceholder')}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                語速 ({ttsSpeed.toFixed(2)}x)
+                {t('speed', { speed: ttsSpeed.toFixed(2) })}
               </label>
               <input
                 type="range"
@@ -267,14 +269,14 @@ export default function AdminSovitsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                輸出格式
+                {t('outputFormat')}
               </label>
               <select
                 value={ttsFormat}
                 onChange={(e) => setTtsFormat(e.target.value as 'wav' | 'mp3')}
                 className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900"
               >
-                <option value="wav">WAV (無損)</option>
+                <option value="wav">{t('wavLossless')}</option>
                 <option value="mp3">MP3</option>
               </select>
             </div>
@@ -289,11 +291,11 @@ export default function AdminSovitsPage() {
             >
               {ttsBusy ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> 合成中...
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('synthesizing')}
                 </>
               ) : (
                 <>
-                  <Volume2 className="w-4 h-4" /> 合成
+                  <Volume2 className="w-4 h-4" /> {t('synthesize')}
                 </>
               )}
             </button>
@@ -312,7 +314,7 @@ export default function AdminSovitsPage() {
                 href={ttsAudioUrl}
                 download={`tts-${ttsVoice}.${ttsFormat}`}
                 className="text-purple-700 hover:text-purple-900 p-2"
-                title="下載"
+                title={t('download')}
               >
                 <Download className="w-5 h-5" />
               </a>
@@ -325,22 +327,22 @@ export default function AdminSovitsPage() {
       <div className="mb-10">
         <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <Upload className="w-5 h-5 text-purple-700" />
-          RVC · 上傳音檔 → 換成 Eric 聲音
+          {t('rvcSectionTitle')}
         </h2>
         <p className="text-xs text-gray-600 mb-3">
-          已有人聲錄音想換成 Eric 配音 → 上傳音檔(WAV/MP3,任何說話者),pod 會 voice-convert 成所選的 Eric 預設聲。
+          {t('rvcSectionDesc')}
         </p>
         <form onSubmit={handleRvc} className="p-6 rounded-xl border border-gray-200 bg-white space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              目標聲音
+              {t('targetVoice')}
             </label>
             <select
               value={rvcVoice}
               onChange={(e) => setRvcVoice(e.target.value)}
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900"
             >
-              {rvcVoices.length === 0 && <option value="">沒有可用的 RVC voice — 需在後台新增 rvc_pipeline 類型</option>}
+              {rvcVoices.length === 0 && <option value="">{t('noRvcVoice')}</option>}
               {rvcVoices.map((v) => (
                 <option key={v.voice_id} value={v.voice_id}>
                   {v.name} ({v.voice_id})
@@ -348,13 +350,13 @@ export default function AdminSovitsPage() {
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              Auto-pitch:上傳音檔自動偵測 f0 並對齊目標 voice 音域(無需手動調 pitch)
+              {t('autoPitchHint')}
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              來源音檔 <span className="text-red-700">*</span>
+              {t('sourceAudio')} <span className="text-red-700">*</span>
             </label>
             <input
               ref={rvcFileRef}
@@ -372,14 +374,14 @@ export default function AdminSovitsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              輸出格式
+              {t('outputFormat')}
             </label>
             <select
               value={rvcFormat}
               onChange={(e) => setRvcFormat(e.target.value as 'wav' | 'mp3')}
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900"
             >
-              <option value="wav">WAV (無損)</option>
+              <option value="wav">{t('wavLossless')}</option>
               <option value="mp3">MP3</option>
             </select>
           </div>
@@ -392,11 +394,11 @@ export default function AdminSovitsPage() {
             >
               {rvcBusy ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> 轉換中(可能 30-90s)...
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('converting')}
                 </>
               ) : (
                 <>
-                  <Wand2 className="w-4 h-4" /> 開始轉換
+                  <Wand2 className="w-4 h-4" /> {t('startConvert')}
                 </>
               )}
             </button>
@@ -415,7 +417,7 @@ export default function AdminSovitsPage() {
                 href={rvcAudioUrl}
                 download={`rvc-${rvcVoice}.${rvcFormat}`}
                 className="text-purple-700 hover:text-purple-900 p-2"
-                title="下載"
+                title={t('download')}
               >
                 <Download className="w-5 h-5" />
               </a>

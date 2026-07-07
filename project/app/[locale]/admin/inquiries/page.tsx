@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Search, Filter, RefreshCw, Mail, Send, Clock,
@@ -79,6 +80,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function InquiriesPage() {
+  const t = useTranslations('admin.inquiries');
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -267,9 +269,9 @@ export default function InquiriesPage() {
           automatically with the underlying data. */}
       <div className="flex gap-1 mb-5 border-b border-gray-200">
         {([
-          { id: 'all',     label: 'All',                                  count: inquiries.length },
-          { id: 'client',  label: 'Client briefs / 客戶詢價',              count: clientCount },
-          { id: 'partner', label: 'Partner applications / 人才申請',      count: partnerCount },
+          { id: 'all',     label: t('tabAll'),      count: inquiries.length },
+          { id: 'client',  label: t('tabClient'),   count: clientCount },
+          { id: 'partner', label: t('tabPartner'),  count: partnerCount },
         ] as const).map(tab => {
           const active = filterSourceGroup === tab.id;
           return (

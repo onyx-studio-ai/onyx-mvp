@@ -14,6 +14,7 @@ import {
   Plus, Edit, Trash2, X, ImagePlus, ArrowUp, ArrowDown, ListMusic,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -135,6 +136,7 @@ function SlotEditor({
   slotConfig: { key: string; label: string; editable?: boolean };
   onSaved: () => void;
 }) {
+  const tr = useTranslations("admin.showcases");
   const [label, setLabel] = useState(showcase?.label || "");
   const [subtitle, setSubtitle] = useState(showcase?.subtitle || "");
   const [description, setDescription] = useState(showcase?.description || "");
@@ -160,7 +162,7 @@ function SlotEditor({
     e.target.value = "";
 
     if (file.size > 50 * 1024 * 1024) {
-      toast.error("Audio file must be under 50 MB");
+      toast.error(tr("toastAudioTooLarge"));
       return;
     }
 
@@ -170,10 +172,10 @@ function SlotEditor({
       const path = `${sectionKey}/${slotConfig.key}/${Date.now()}-${safeName}`;
       const url = await uploadToStorage(path, file);
       setAudioUrl(url);
-      toast.success("Audio uploaded");
+      toast.success(tr("toastAudioUploaded"));
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error("Failed to upload audio");
+      toast.error(tr("toastAudioUploadFail"));
     } finally {
       setUploading(false);
     }
@@ -209,11 +211,11 @@ function SlotEditor({
         throw new Error(j.error || "Request failed");
       }
 
-      toast.success("Saved");
+      toast.success(tr("toastSaved"));
       onSaved();
     } catch (err) {
       console.error("Save error:", err);
-      toast.error("Failed to save");
+      toast.error(tr("toastSaveFail"));
     } finally {
       setSaving(false);
     }
@@ -232,38 +234,38 @@ function SlotEditor({
       {slotConfig.editable && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-gray-600 text-xs">Name</Label>
+            <Label className="text-gray-600 text-xs">{tr("slotName")}</Label>
             <Input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. Onyx Alpha"
+              placeholder={tr("slotNamePlaceholder")}
               className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-gray-600 text-xs">Subtitle</Label>
+            <Label className="text-gray-600 text-xs">{tr("slotSubtitle")}</Label>
             <Input
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="e.g. The Authority"
+              placeholder={tr("slotSubtitlePlaceholder")}
               className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
             />
           </div>
           <div className="space-y-1.5 col-span-2">
-            <Label className="text-gray-600 text-xs">Tags (comma-separated)</Label>
+            <Label className="text-gray-600 text-xs">{tr("slotTags")}</Label>
             <Input
               value={tagsStr}
               onChange={(e) => setTagsStr(e.target.value)}
-              placeholder="e.g. News, Corporate, Deep"
+              placeholder={tr("slotTagsPlaceholder")}
               className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
             />
           </div>
           <div className="space-y-1.5 col-span-2">
-            <Label className="text-gray-600 text-xs">Description</Label>
+            <Label className="text-gray-600 text-xs">{tr("slotDescription")}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Short description..."
+              placeholder={tr("slotDescriptionPlaceholder")}
               rows={2}
               className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm resize-none"
             />
@@ -289,17 +291,17 @@ function SlotEditor({
         >
           {uploading ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> {tr("uploading")}
             </>
           ) : (
             <>
               <Upload className="w-3.5 h-3.5" />{" "}
-              {audioUrl ? "Replace Audio" : "Upload Audio"}
+              {audioUrl ? tr("replaceAudio") : tr("uploadAudio")}
             </>
           )}
         </Button>
         <span className="text-[11px] text-gray-500">
-          MP3, WAV, AIFF, FLAC. Max 50 MB.
+          {tr("audioFormatHint")}
         </span>
         <div className="flex-1" />
         <Button
@@ -313,7 +315,7 @@ function SlotEditor({
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : (
             <>
-              <Save className="w-3.5 h-3.5" /> Save
+              <Save className="w-3.5 h-3.5" /> {tr("save")}
             </>
           )}
         </Button>
@@ -393,6 +395,7 @@ function MusicLibraryManager({
   tracks: AudioShowcase[];
   onChanged: () => void;
 }) {
+  const tr = useTranslations("admin.showcases");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TrackForm>(EMPTY_TRACK);
@@ -427,7 +430,7 @@ function MusicLibraryManager({
     if (!file) return;
     e.target.value = "";
     if (file.size > 50 * 1024 * 1024) {
-      toast.error("音檔須小於 50 MB");
+      toast.error(tr("mlAudioTooLarge"));
       return;
     }
     setUploadingAudio(true);
@@ -436,10 +439,10 @@ function MusicLibraryManager({
       const path = `${MUSIC_LIBRARY_SECTION}/${key}/${Date.now()}-${sanitizeFileName(file.name)}`;
       const url = await uploadToStorage(path, file);
       setForm((f) => ({ ...f, audio_url: url }));
-      toast.success("音檔已上傳");
+      toast.success(tr("mlAudioUploaded"));
     } catch (err) {
       console.error("Audio upload error:", err);
-      toast.error("音檔上傳失敗");
+      toast.error(tr("mlAudioUploadFail"));
     } finally {
       setUploadingAudio(false);
     }
@@ -450,11 +453,11 @@ function MusicLibraryManager({
     if (!file) return;
     e.target.value = "";
     if (!file.type.startsWith("image/")) {
-      toast.error("請選擇圖片檔");
+      toast.error(tr("mlPickImage"));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("封面須小於 10 MB");
+      toast.error(tr("mlCoverTooLarge"));
       return;
     }
     setUploadingImage(true);
@@ -463,10 +466,10 @@ function MusicLibraryManager({
       const path = `${MUSIC_LIBRARY_SECTION}/${key}/cover-${Date.now()}-${sanitizeFileName(file.name)}`;
       const url = await uploadToStorage(path, file);
       setForm((f) => ({ ...f, image_url: url }));
-      toast.success("封面已上傳");
+      toast.success(tr("mlCoverUploaded"));
     } catch (err) {
       console.error("Image upload error:", err);
-      toast.error("封面上傳失敗");
+      toast.error(tr("mlCoverUploadFail"));
     } finally {
       setUploadingImage(false);
     }
@@ -488,17 +491,17 @@ function MusicLibraryManager({
     e.preventDefault();
     const slot_key = sanitizeSlotKey(form.slot_key);
     if (!slot_key) {
-      toast.error("Slot Key 必填(小寫英數與 -,例:brand-sting-1)");
+      toast.error(tr("mlSlotKeyRequired"));
       return;
     }
     if (!form.label.trim()) {
-      toast.error("曲名必填");
+      toast.error(tr("mlTitleRequired"));
       return;
     }
     // slot_key 不可撞其他曲目(編輯自己那筆除外)
     const clash = tracks.find((t) => t.slot_key === slot_key && t.id !== editingId);
     if (clash) {
-      toast.error(`Slot Key「${slot_key}」已被其他曲目使用`);
+      toast.error(tr("mlSlotKeyClash", { slotKey: slot_key }));
       return;
     }
     const tags = [
@@ -520,21 +523,21 @@ function MusicLibraryManager({
         },
         editingId || undefined
       );
-      toast.success(editingId ? "已更新" : "已新增");
+      toast.success(editingId ? tr("mlUpdated") : tr("mlAdded"));
       setDialogOpen(false);
       setForm(EMPTY_TRACK);
       setEditingId(null);
       onChanged();
     } catch (err) {
       console.error("Save track error:", err);
-      toast.error(err instanceof Error ? err.message : "儲存失敗");
+      toast.error(err instanceof Error ? err.message : tr("mlSaveFail"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (t: AudioShowcase) => {
-    if (!confirm(`確定刪除「${t.label || t.slot_key}」?`)) return;
+    if (!confirm(tr("mlDeleteConfirm", { name: t.label || t.slot_key }))) return;
     setBusyId(t.id);
     try {
       const res = await fetch("/api/admin/showcases", {
@@ -546,11 +549,11 @@ function MusicLibraryManager({
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Request failed");
       }
-      toast.success("已刪除");
+      toast.success(tr("mlDeleted"));
       onChanged();
     } catch (err) {
       console.error("Delete track error:", err);
-      toast.error("刪除失敗");
+      toast.error(tr("mlDeleteFail"));
     } finally {
       setBusyId(null);
     }
@@ -579,7 +582,7 @@ function MusicLibraryManager({
       onChanged();
     } catch (err) {
       console.error("Reorder error:", err);
-      toast.error("排序失敗");
+      toast.error(tr("mlReorderFail"));
     } finally {
       setBusyId(null);
     }
@@ -593,26 +596,26 @@ function MusicLibraryManager({
         <div className="flex items-center gap-3">
           <ListMusic className="w-5 h-5 text-cyan-700" />
           <div>
-            <h3 className="text-base font-semibold text-gray-900">Music Library 音樂庫</h3>
+            <h3 className="text-base font-semibold text-gray-900">{tr("mlSectionTitle")}</h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              前台 /music/catalog 的曲目清單(可增刪、排序)。分類靠 tags 的 instrumental / vocal。
+              {tr("mlSectionDesc")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-100 text-gray-600 border border-gray-300">
-            {filledCount}/{sorted.length} 有音檔
+            {filledCount}/{sorted.length} {tr("mlHasAudioSuffix")}
           </span>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openNew} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 h-8">
-                <Plus className="w-4 h-4" /> 新增曲目
+                <Plus className="w-4 h-4" /> {tr("mlAddTrack")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200">
               <DialogHeader>
                 <DialogTitle className="text-gray-900 text-lg">
-                  {editingId ? "編輯曲目" : "新增曲目"}
+                  {editingId ? tr("mlEditTrack") : tr("mlAddTrack")}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -627,22 +630,22 @@ function MusicLibraryManager({
                       className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm disabled:opacity-60"
                     />
                     <p className="text-[11px] text-gray-500">
-                      唯一鍵,小寫英數與 -。{editingId ? "建立後不可改。" : "留意別跟現有曲目重複。"}
+                      {tr("mlSlotKeyHint")}{editingId ? tr("mlSlotKeyHintLocked") : tr("mlSlotKeyHintNew")}
                     </p>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-gray-700 text-xs">分頁</Label>
+                    <Label className="text-gray-700 text-xs">{tr("mlView")}</Label>
                     <select
                       value={form.view}
                       onChange={(e) => setForm({ ...form, view: e.target.value as "instrumental" | "vocal" })}
                       className="w-full bg-white border border-gray-300 rounded-md text-gray-900 h-9 text-sm px-2"
                     >
-                      <option value="instrumental">配音底音 Instrumental</option>
-                      <option value="vocal">POP 帶人聲 Vocal</option>
+                      <option value="instrumental">{tr("mlViewInstrumental")}</option>
+                      <option value="vocal">{tr("mlViewVocal")}</option>
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-gray-700 text-xs">曲名 *</Label>
+                    <Label className="text-gray-700 text-xs">{tr("mlTitle")}</Label>
                     <Input
                       value={form.label}
                       onChange={(e) => setForm({ ...form, label: e.target.value })}
@@ -651,16 +654,16 @@ function MusicLibraryManager({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-gray-700 text-xs">分類(genre)</Label>
+                    <Label className="text-gray-700 text-xs">{tr("mlGenre")}</Label>
                     <Input
                       value={form.subtitle}
                       onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
-                      placeholder="廣告 / 品牌"
+                      placeholder={tr("mlGenrePlaceholder")}
                       className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-gray-700 text-xs">排序(數字小的在前)</Label>
+                    <Label className="text-gray-700 text-xs">{tr("mlSortOrder")}</Label>
                     <Input
                       type="number"
                       value={form.sort_order}
@@ -669,35 +672,35 @@ function MusicLibraryManager({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-gray-700 text-xs">額外 tags(逗號分隔,選填)</Label>
+                    <Label className="text-gray-700 text-xs">{tr("mlExtraTags")}</Label>
                     <Input
                       value={form.extraTags}
                       onChange={(e) => setForm({ ...form, extraTags: e.target.value })}
-                      placeholder="例:featured"
+                      placeholder={tr("mlExtraTagsPlaceholder")}
                       className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-9 text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-gray-700 text-xs">風格描述</Label>
+                  <Label className="text-gray-700 text-xs">{tr("mlStyleDesc")}</Label>
                   <Textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     rows={2}
-                    placeholder="簡短有力的廣告片頭,適合 5-10 秒品牌標識"
+                    placeholder={tr("mlStyleDescPlaceholder")}
                     className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 text-sm resize-none"
                   />
                 </div>
 
                 {/* 封面 */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700 text-xs">封面圖</Label>
+                  <Label className="text-gray-700 text-xs">{tr("mlCover")}</Label>
                   <div className="flex items-start gap-4">
                     {form.image_url ? (
                       <div className="relative group">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={form.image_url} alt="封面" className="w-20 h-20 object-cover rounded-lg border border-gray-300" />
+                        <img src={form.image_url} alt={tr("mlCover")} className="w-20 h-20 object-cover rounded-lg border border-gray-300" />
                         <button
                           type="button"
                           onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
@@ -720,11 +723,11 @@ function MusicLibraryManager({
                         className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 gap-2"
                       >
                         {uploadingImage
-                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 上傳中...</>
-                          : <><ImagePlus className="w-3.5 h-3.5" /> 上傳封面</>}
+                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {tr("mlUploading")}</>
+                          : <><ImagePlus className="w-3.5 h-3.5" /> {tr("mlUploadCover")}</>}
                       </Button>
                       <p className="text-[11px] text-gray-500">
-                        JPG / PNG / WebP,≤ 10 MB。留空則前台沿用 music-samples/covers/{"{slot_key}"}.jpg。
+                        {tr("mlCoverHintPrefix")} music-samples/covers/{"{slot_key}"}.jpg{tr("mlCoverHintSuffix")}
                       </p>
                     </div>
                   </div>
@@ -732,7 +735,7 @@ function MusicLibraryManager({
 
                 {/* 音檔 */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700 text-xs">試聽音檔</Label>
+                  <Label className="text-gray-700 text-xs">{tr("mlPreviewAudio")}</Label>
                   <div className="flex items-center gap-3 flex-wrap">
                     {form.audio_url && <AudioPreview url={form.audio_url} />}
                     <input ref={audioFileRef} type="file" accept=".mp3,.wav,.aiff,.flac,audio/*" onChange={handleAudioUpload} className="hidden" />
@@ -743,11 +746,11 @@ function MusicLibraryManager({
                       className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 gap-2"
                     >
                       {uploadingAudio
-                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 上傳中...</>
-                        : <><Upload className="w-3.5 h-3.5" /> {form.audio_url ? "更換音檔" : "上傳音檔"}</>}
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {tr("mlUploading")}</>
+                        : <><Upload className="w-3.5 h-3.5" /> {form.audio_url ? tr("mlReplaceAudio") : tr("mlUploadAudio")}</>}
                     </Button>
                   </div>
-                  <p className="text-[11px] text-gray-500">MP3 / WAV / AIFF / FLAC,≤ 50 MB。</p>
+                  <p className="text-[11px] text-gray-500">{tr("mlAudioFormatHint")}</p>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
@@ -756,10 +759,10 @@ function MusicLibraryManager({
                     onClick={() => setDialogOpen(false)}
                     className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
                   >
-                    取消
+                    {tr("mlCancel")}
                   </Button>
                   <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 min-w-[110px]">
-                    {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> 儲存中...</> : "儲存曲目"}
+                    {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> {tr("mlSaving")}</> : tr("mlSaveTrack")}
                   </Button>
                 </div>
               </form>
@@ -771,7 +774,7 @@ function MusicLibraryManager({
       <div className="px-6 py-4">
         {sorted.length === 0 ? (
           <p className="text-sm text-gray-500 py-8 text-center">
-            尚無曲目。點「新增曲目」開始建立音樂庫。
+            {tr("mlEmpty")}
           </p>
         ) : (
           <div className="space-y-2">
@@ -791,7 +794,7 @@ function MusicLibraryManager({
                       onClick={() => move(i, -1)}
                       disabled={i === 0 || rowBusy}
                       className="text-gray-400 hover:text-gray-800 disabled:opacity-30"
-                      title="上移"
+                      title={tr("mlMoveUp")}
                     >
                       <ArrowUp className="w-4 h-4" />
                     </button>
@@ -800,7 +803,7 @@ function MusicLibraryManager({
                       onClick={() => move(i, 1)}
                       disabled={i === sorted.length - 1 || rowBusy}
                       className="text-gray-400 hover:text-gray-800 disabled:opacity-30"
-                      title="下移"
+                      title={tr("mlMoveDown")}
                     >
                       <ArrowDown className="w-4 h-4" />
                     </button>
@@ -819,7 +822,7 @@ function MusicLibraryManager({
                   {/* 主資訊 */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{t.label || "(未命名)"}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{t.label || tr("mlUnnamed")}</p>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 shrink-0">{view}</span>
                     </div>
                     <p className="text-xs text-gray-500 truncate">
@@ -833,7 +836,7 @@ function MusicLibraryManager({
                   {t.audio_url ? (
                     <AudioPreview url={t.audio_url} />
                   ) : (
-                    <span className="text-[11px] text-amber-600">無音檔</span>
+                    <span className="text-[11px] text-amber-600">{tr("mlNoAudio")}</span>
                   )}
 
                   {/* 動作 */}
@@ -868,6 +871,7 @@ function MusicLibraryManager({
 const FETCH_TIMEOUT_MS = 20_000;
 
 export default function AdminShowcasesPage() {
+  const t = useTranslations("admin.showcases");
   const [showcases, setShowcases] = useState<AudioShowcase[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -883,11 +887,10 @@ export default function AdminShowcasesPage() {
       !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
       !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
     ) {
-      const msg =
-        "缺少 NEXT_PUBLIC_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_ANON_KEY（請在 Vercel / .env 設定後重新部署）";
+      const msg = t("errMissingEnv");
       console.error(msg);
       setLoadError(msg);
-      toast.error("Supabase 未設定");
+      toast.error(t("toastSupabaseNotConfigured"));
       setLoading(false);
       return;
     }
@@ -903,7 +906,7 @@ export default function AdminShowcasesPage() {
             () =>
               reject(
                 new Error(
-                  `連線逾時（${FETCH_TIMEOUT_MS / 1000} 秒）。可能是網路、瀏覽器外掛阻擋，或 Supabase 無法連線。`
+                  t("errTimeout", { seconds: FETCH_TIMEOUT_MS / 1000 })
                 )
               ),
             FETCH_TIMEOUT_MS
@@ -918,7 +921,7 @@ export default function AdminShowcasesPage() {
       const message =
         err instanceof Error ? err.message : "Failed to load showcases";
       setLoadError(message);
-      toast.error("無法載入音訊作品設定");
+      toast.error(t("toastLoadFail"));
     } finally {
       setLoading(false);
     }
@@ -946,8 +949,7 @@ export default function AdminShowcasesPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 px-4">
         <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
         <p className="text-sm text-gray-500 text-center max-w-md">
-          正在從 Supabase 載入 audio_showcases… 若超過約 20 秒仍無反應，請改用 Chrome
-          試試，或暫停廣告阻擋／隱私外掛後重整。
+          {t("loadingHint")}
         </p>
       </div>
     );
@@ -957,7 +959,7 @@ export default function AdminShowcasesPage() {
     <div className="p-6 lg:p-8 text-gray-900">
       {loadError && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-950/40 px-4 py-3 text-sm text-red-700">
-          <p className="font-medium text-red-100 mb-1">無法載入資料</p>
+          <p className="font-medium text-red-100 mb-1">{t("loadFailTitle")}</p>
           <p className="text-red-700/90 mb-3">{loadError}</p>
           <Button
             type="button"
@@ -966,17 +968,17 @@ export default function AdminShowcasesPage() {
             onClick={() => fetchShowcases()}
             className="border-red-300 text-red-100 hover:bg-red-900/50"
           >
-            重試
+            {t("retry")}
           </Button>
         </div>
       )}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <Volume2 className="w-6 h-6 text-cyan-700" />
-          Audio Showcases
+          {t("pageTitle")}
         </h1>
         <p className="text-gray-500 text-sm mt-1">
-          Manage all showcase audio and text content across the site
+          {t("pageSubtitle")}
         </p>
       </div>
 
@@ -1021,7 +1023,7 @@ export default function AdminShowcasesPage() {
                         : "bg-gray-200 text-gray-600 border border-gray-400"
                     }`}
                   >
-                    {filledCount}/{section.slots.length} audio
+                    {filledCount}/{section.slots.length} {t("audioSuffix")}
                   </span>
                 </div>
               </button>

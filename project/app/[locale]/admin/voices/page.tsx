@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { Mic, Upload, Play, Pause, Trash2, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 
 // Browser → RunPod direct (bypasses Vercel function 10s timeout on Hobby plan).
@@ -21,6 +22,7 @@ interface HealthInfo {
 }
 
 export default function AdminVoicesPage() {
+  const t = useTranslations('admin.voices');
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [healthError, setHealthError] = useState('');
   const [voices, setVoices] = useState<VoiceInfo[]>([]);
@@ -37,7 +39,7 @@ export default function AdminVoicesPage() {
 
   // Test synth
   const [testVoice, setTestVoice] = useState('');
-  const [testText, setTestText] = useState('您好，我是 Onyx Studios 的 AI 配音示範。');
+  const [testText, setTestText] = useState(t('testDefaultText'));
   const [testInstruction, setTestInstruction] = useState('');
   const [testing, setTesting] = useState(false);
   const [testAudioUrl, setTestAudioUrl] = useState('');
@@ -367,18 +369,18 @@ export default function AdminVoicesPage() {
                 inference_zero_shot). Useful for Cantonese, emotion, speed. */}
             <div className="flex flex-wrap gap-1.5 mb-2">
               {[
-                { label: '清空', value: '' },
-                { label: '粵語', value: '请用广东话表达' },
-                { label: '四川話', value: '请用四川话表达' },
-                { label: '閩南話', value: '请用闽南话表达' },
-                { label: '上海話', value: '请用上海话表达' },
-                { label: '東北話', value: '请用东北话表达' },
-                { label: '興奮', value: '用兴奋的语气表达' },
-                { label: '溫柔', value: '用温柔的语气表达' },
-                { label: '嚴肅', value: '用严肃稳重的语气表达' },
-                { label: '快速', value: '请用尽可能快地语速说一句话' },
-                { label: '慢念', value: '请用较慢的语速朗读' },
-                { label: '大聲', value: 'Please say a sentence as loudly as possible.' },
+                { label: t('presetClear'), value: '' },
+                { label: t('presetCantonese'), value: '请用广东话表达' },
+                { label: t('presetSichuanese'), value: '请用四川话表达' },
+                { label: t('presetHokkien'), value: '请用闽南话表达' },
+                { label: t('presetShanghainese'), value: '请用上海话表达' },
+                { label: t('presetNortheastern'), value: '请用东北话表达' },
+                { label: t('presetExcited'), value: '用兴奋的语气表达' },
+                { label: t('presetGentle'), value: '用温柔的语气表达' },
+                { label: t('presetSerious'), value: '用严肃稳重的语气表达' },
+                { label: t('presetFast'), value: '请用尽可能快地语速说一句话' },
+                { label: t('presetSlow'), value: '请用较慢的语速朗读' },
+                { label: t('presetLoud'), value: 'Please say a sentence as loudly as possible.' },
               ].map((preset) => (
                 <button
                   key={preset.label}
@@ -398,7 +400,7 @@ export default function AdminVoicesPage() {
               type="text"
               value={testInstruction}
               onChange={(e) => setTestInstruction(e.target.value)}
-              placeholder="留空 = zero-shot 純複製語音。填內容 = CV3 instruct2 模式(粵語/情緒/語速控制)"
+              placeholder={t('instructionPlaceholder')}
               className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none"
             />
             <p className="text-xs text-gray-500 mt-1.5">
