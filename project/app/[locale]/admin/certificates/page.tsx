@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Award, Search, Download, ExternalLink, RefreshCw,
@@ -36,51 +36,7 @@ const RIGHTS_COLORS: Record<string, string> = {
 export default function AdminCertificatesPage() {
   const locale = useLocale();
   const isZhTW = locale === 'zh-TW';
-  const ui = isZhTW ? {
-    pageTitle: '授權證書',
-    issuedCount: '已簽發證書',
-    refresh: '重新整理',
-    searchPlaceholder: '搜尋 License ID、訂單編號、Email...',
-    loadFailed: '載入證書失敗',
-    empty: '找不到符合條件的證書',
-    colLicenseId: '授權編號',
-    colOrder: '訂單',
-    colClient: '客戶',
-    colProduct: '產品',
-    colRights: '權利',
-    colIssued: '簽發日期',
-    colActions: '操作',
-    titleDownloadPdf: '下載 PDF',
-    titleViewPublic: '查看公開頁',
-    rightsStandard: '標準',
-    rightsBroadcast: '廣播',
-    rightsGlobal: '全球',
-    orderTypeVoice: '配音',
-    orderTypeMusic: '音樂',
-    orderTypeOrchestra: '弦樂',
-  } : {
-    pageTitle: 'License Certificates',
-    issuedCount: 'certificates issued',
-    refresh: 'Refresh',
-    searchPlaceholder: 'Search by License ID, Order #, Email...',
-    loadFailed: 'Failed to load certificates',
-    empty: 'No certificates found',
-    colLicenseId: 'License ID',
-    colOrder: 'Order',
-    colClient: 'Client',
-    colProduct: 'Product',
-    colRights: 'Rights',
-    colIssued: 'Issued',
-    colActions: 'Actions',
-    titleDownloadPdf: 'Download PDF',
-    titleViewPublic: 'View Public Page',
-    rightsStandard: 'Standard',
-    rightsBroadcast: 'Broadcast',
-    rightsGlobal: 'Global',
-    orderTypeVoice: 'Voice',
-    orderTypeMusic: 'Music',
-    orderTypeOrchestra: 'Orchestra',
-  };
+  const t = useTranslations('admin.certificates');
 
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,10 +50,10 @@ export default function AdminCertificatesPage() {
       if (res.ok) {
         setCertificates(data.data || []);
       } else {
-        toast.error(ui.loadFailed);
+        toast.error(t('loadFailed'));
       }
     } catch {
-      toast.error(ui.loadFailed);
+      toast.error(t('loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -118,15 +74,15 @@ export default function AdminCertificatesPage() {
   });
 
   const rightsLabel = (level: string) => {
-    if (level === 'global') return ui.rightsGlobal;
-    if (level === 'broadcast') return ui.rightsBroadcast;
-    return ui.rightsStandard;
+    if (level === 'global') return t('rightsGlobal');
+    if (level === 'broadcast') return t('rightsBroadcast');
+    return t('rightsStandard');
   };
 
   const orderTypeLabel = (orderType: string) => {
-    if (orderType === 'voice') return ui.orderTypeVoice;
-    if (orderType === 'music') return ui.orderTypeMusic;
-    if (orderType === 'orchestra') return ui.orderTypeOrchestra;
+    if (orderType === 'voice') return t('orderTypeVoice');
+    if (orderType === 'music') return t('orderTypeMusic');
+    if (orderType === 'orchestra') return t('orderTypeOrchestra');
     return orderType;
   };
 
@@ -137,16 +93,16 @@ export default function AdminCertificatesPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Award className="w-6 h-6 text-green-700" />
-            {ui.pageTitle}
+            {t('pageTitle')}
           </h1>
-          <p className="text-gray-600 text-sm mt-1">{certificates.length} {ui.issuedCount}</p>
+          <p className="text-gray-600 text-sm mt-1">{certificates.length} {t('issuedCount')}</p>
         </div>
         <button
           onClick={fetchCertificates}
           className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm"
         >
           <RefreshCw className="w-4 h-4" />
-          {ui.refresh}
+          {t('refresh')}
         </button>
       </div>
 
@@ -158,7 +114,7 @@ export default function AdminCertificatesPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={ui.searchPlaceholder}
+            placeholder={t('searchPlaceholder')}
             className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-gray-400"
           />
         </div>
@@ -172,7 +128,7 @@ export default function AdminCertificatesPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <FileText className="w-12 h-12 text-gray-700 mx-auto mb-3" />
-          <p className="text-gray-600">{ui.empty}</p>
+          <p className="text-gray-600">{t('empty')}</p>
         </div>
       ) : (
         <div className="bg-white/50 border border-gray-200 rounded-2xl overflow-hidden">
@@ -180,13 +136,13 @@ export default function AdminCertificatesPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{ui.colLicenseId}</th>
-                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{ui.colOrder}</th>
-                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{ui.colClient}</th>
-                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{ui.colProduct}</th>
-                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{ui.colRights}</th>
-                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{ui.colIssued}</th>
-                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{ui.colActions}</th>
+                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{t('colLicenseId')}</th>
+                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{t('colOrder')}</th>
+                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{t('colClient')}</th>
+                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{t('colProduct')}</th>
+                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{t('colRights')}</th>
+                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{t('colIssued')}</th>
+                  <th className="text-left text-gray-600 text-xs font-medium uppercase tracking-wider px-5 py-3">{t('colActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,7 +183,7 @@ export default function AdminCertificatesPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
-                            title={ui.titleDownloadPdf}
+                            title={t('titleDownloadPdf')}
                           >
                             <Download className="w-4 h-4" />
                           </a>
@@ -237,7 +193,7 @@ export default function AdminCertificatesPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 text-gray-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                          title={ui.titleViewPublic}
+                          title={t('titleViewPublic')}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>

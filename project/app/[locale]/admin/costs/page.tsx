@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   RefreshCw, Plus, Pencil, Trash2, ExternalLink, Receipt, Wrench,
@@ -94,6 +95,7 @@ function StatusBadge({ status }: { status: string }) {
 
 /** 新增 / 編輯表單(modal)。cost=null 為新增。 */
 function CostForm({ cost, onClose, onSaved }: { cost: Cost | null; onClose: () => void; onSaved: () => void }) {
+  const t = useTranslations('admin.costs');
   const [f, setF] = useState({
     name: cost?.name || '',
     category: cost?.category || '',
@@ -110,7 +112,7 @@ function CostForm({ cost, onClose, onSaved }: { cost: Cost | null; onClose: () =
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
 
   const save = async () => {
-    if (!f.name.trim()) { toast.error('請填工具名稱'); return; }
+    if (!f.name.trim()) { toast.error(t('toolNameRequired')); return; }
     setSaving(true);
     const payload = {
       ...f,
@@ -124,8 +126,8 @@ function CostForm({ cost, onClose, onSaved }: { cost: Cost | null; onClose: () =
     });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
-    if (!res.ok) { toast.error(data.error || '儲存失敗'); return; }
-    toast.success(cost ? '已更新' : '已新增');
+    if (!res.ok) { toast.error(data.error || t('saveFailed')); return; }
+    toast.success(cost ? t('updated') : t('added'));
     onSaved();
     onClose();
   };
@@ -134,73 +136,73 @@ function CostForm({ cost, onClose, onSaved }: { cost: Cost | null; onClose: () =
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4" onClick={onClose}>
       <div className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">{cost ? '編輯工具費用' : '新增工具費用'}</h3>
+          <h3 className="text-lg font-bold text-gray-900">{cost ? t('editCost') : t('addCost')}</h3>
           <button onClick={onClose} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="px-6 py-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">工具名稱 *</label>
-            <input className={INPUT} value={f.name} onChange={(e) => set('name', e.target.value)} placeholder="例如 Supabase" />
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('toolNameLabel')}</label>
+            <input className={INPUT} value={f.name} onChange={(e) => set('name', e.target.value)} placeholder={t('toolNamePlaceholder')} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">類別</label>
-              <input className={INPUT} value={f.category} onChange={(e) => set('category', e.target.value)} list="cost-categories" placeholder="資料庫 / 部署 …" />
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('categoryLabel')}</label>
+              <input className={INPUT} value={f.category} onChange={(e) => set('category', e.target.value)} list="cost-categories" placeholder={t('categoryPlaceholder')} />
               <datalist id="cost-categories">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">目前方案</label>
-              <input className={INPUT} value={f.plan} onChange={(e) => set('plan', e.target.value)} placeholder="Free / Pro" />
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('currentPlanLabel')}</label>
+              <input className={INPUT} value={f.plan} onChange={(e) => set('plan', e.target.value)} placeholder={t('currentPlanPlaceholder')} />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">月費</label>
-              <input className={INPUT} type="number" min="0" step="0.01" value={f.monthly_cost} onChange={(e) => set('monthly_cost', e.target.value)} placeholder="留空=待填" />
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('monthlyFeeLabel')}</label>
+              <input className={INPUT} type="number" min="0" step="0.01" value={f.monthly_cost} onChange={(e) => set('monthly_cost', e.target.value)} placeholder={t('monthlyFeePlaceholder')} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">幣別</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('currencyLabel')}</label>
               <select className={INPUT} value={f.currency} onChange={(e) => set('currency', e.target.value)}>
                 <option value="USD">USD</option>
                 <option value="TWD">TWD</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">計費週期</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('billingCycleLabel')}</label>
               <select className={INPUT} value={f.billing_cycle} onChange={(e) => set('billing_cycle', e.target.value)}>
-                <option value="monthly">每月</option>
-                <option value="yearly">年費</option>
-                <option value="usage">按量</option>
-                <option value="free">免費</option>
+                <option value="monthly">{t('billingMonthly')}</option>
+                <option value="yearly">{t('billingYearly')}</option>
+                <option value="usage">{t('billingUsage')}</option>
+                <option value="free">{t('billingFree')}</option>
               </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">續費日</label>
-              <input className={INPUT} value={f.renewal_date} onChange={(e) => set('renewal_date', e.target.value)} placeholder="例如 每月 5 號 / 2027-01-15" />
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('renewalDateLabel')}</label>
+              <input className={INPUT} value={f.renewal_date} onChange={(e) => set('renewal_date', e.target.value)} placeholder={t('renewalDatePlaceholder')} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">狀態</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('statusLabel')}</label>
               <select className={INPUT} value={f.status} onChange={(e) => set('status', e.target.value)}>
-                <option value="active">使用中</option>
-                <option value="review">待評估升級</option>
-                <option value="inactive">已停用</option>
+                <option value="active">{t('statusActive')}</option>
+                <option value="review">{t('statusReviewUpgrade')}</option>
+                <option value="inactive">{t('statusInactive')}</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">管理後台連結</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('adminLinkLabel')}</label>
             <input className={INPUT} value={f.url} onChange={(e) => set('url', e.target.value)} placeholder="https://…" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">備註</label>
-            <textarea className={`${INPUT} resize-none`} rows={2} value={f.note} onChange={(e) => set('note', e.target.value)} placeholder="例如 已超額,建議升 Pro…" />
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('noteLabel')}</label>
+            <textarea className={`${INPUT} resize-none`} rows={2} value={f.note} onChange={(e) => set('note', e.target.value)} placeholder={t('notePlaceholder')} />
           </div>
         </div>
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-200">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">取消</button>
-          <button onClick={save} disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50">{saving ? '儲存中…' : (cost ? '儲存變更' : '新增')}</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">{t('cancel')}</button>
+          <button onClick={save} disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50">{saving ? t('saving') : (cost ? t('saveChanges') : t('add'))}</button>
         </div>
       </div>
     </div>
@@ -224,6 +226,7 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
   cost: Cost; invoices: Invoice[]; currentMonth: string;
   onEdit: () => void; onDelete: () => void; onInvoiceChanged: () => void;
 }) {
+  const t = useTranslations('admin.costs');
   const [uploading, setUploading] = useState(false);
   // 上傳歸屬月份:預設當前月;補傳舊發票時可改成對應月份,不會全擠當前月。
   const [uploadPeriod, setUploadPeriod] = useState(currentMonth);
@@ -244,10 +247,10 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
       body: JSON.stringify({ cost_id: cost.id, period: uploadPeriod, fileName: file.name }),
     });
     const pj = await prep.json().catch(() => ({}));
-    if (!prep.ok) throw new Error(pj.error || '準備上傳失敗');
+    if (!prep.ok) throw new Error(pj.error || t('prepUploadFailed'));
     // 步驟 2:上傳到 casting bucket(同專案發票上傳模式)
     const { error } = await supabase.storage.from('casting').uploadToSignedUrl(pj.path, pj.token, file);
-    if (error) throw new Error(`檔案上傳失敗:${error.message}`);
+    if (error) throw new Error(t('fileUploadFailed', { msg: error.message }));
     // 步驟 3:記一筆發票。存 storage path(pj.path)而非公開網址 —— 之後一律用
     // 簽名 URL route 來開,bucket 是公開或私有都不影響。
     const rec = await fetch('/api/admin/costs/invoices', {
@@ -255,7 +258,7 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
       body: JSON.stringify({ record: true, cost_id: cost.id, period: uploadPeriod, invoice_url: pj.path, file_name: file.name }),
     });
     const rj = await rec.json().catch(() => ({}));
-    if (!rec.ok) throw new Error(rj.error || '記錄發票失敗');
+    if (!rec.ok) throw new Error(rj.error || t('recordInvoiceFailed'));
   };
 
   // 批量上傳:序列跑(避免併發簽名 URL 撞在一起),最後一次總結 + 刷新;單檔多檔都走這。
@@ -265,21 +268,21 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
     let ok = 0; const fails: string[] = [];
     for (const file of files) {
       try { await uploadOne(file); ok++; }
-      catch (e) { fails.push(`${file.name}:${e instanceof Error ? e.message : '失敗'}`); }
+      catch (e) { fails.push(`${file.name}:${e instanceof Error ? e.message : t('failed')}`); }
     }
     setUploading(false);
-    if (ok > 0) { toast.success(`已上傳 ${ok} 張發票${fails.length ? `,${fails.length} 張失敗` : ''}`); onInvoiceChanged(); }
-    if (fails.length) toast.error(fails.slice(0, 3).join('\n') + (fails.length > 3 ? `\n…共 ${fails.length} 張失敗` : ''));
+    if (ok > 0) { toast.success(t('uploadedInvoicesResult', { ok, failSuffix: fails.length ? t('uploadedFailSuffix', { n: fails.length }) : '' })); onInvoiceChanged(); }
+    if (fails.length) toast.error(fails.slice(0, 3).join('\n') + (fails.length > 3 ? t('moreFailedSuffix', { n: fails.length }) : ''));
   };
 
   const removeInvoice = async (invoice: Invoice) => {
-    if (!window.confirm(`移除 ${cost.name} 的 ${invoice.period} 發票「${invoice.file_name || '發票'}」?`)) return;
+    if (!window.confirm(t('removeInvoiceConfirm', { name: cost.name, period: invoice.period, file: invoice.file_name || t('invoiceFallbackName') }))) return;
     const res = await fetch(`/api/admin/costs/invoices?id=${invoice.id}`, { method: 'DELETE' });
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      toast.error(j.error || '移除失敗'); return;
+      toast.error(j.error || t('removeFailed')); return;
     }
-    toast.success('已移除發票');
+    toast.success(t('invoiceRemoved'));
     onInvoiceChanged();
   };
 
@@ -298,10 +301,10 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
             </div>
             <div className="flex items-center gap-2 mt-1 text-xs text-gray-600 flex-wrap">
               {cost.category && <span>{cost.category}</span>}
-              {cost.plan && <><span>·</span><span>方案 {cost.plan}</span></>}
+              {cost.plan && <><span>·</span><span>{t('plan')} {cost.plan}</span></>}
               <span>·</span>
               <span>{BILLING_LABEL[cost.billing_cycle] || cost.billing_cycle}</span>
-              {cost.renewal_date && <><span>·</span><span>續費 {cost.renewal_date}</span></>}
+              {cost.renewal_date && <><span>·</span><span>{t('renewal')} {cost.renewal_date}</span></>}
             </div>
           </div>
         </div>
@@ -310,7 +313,7 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
             {cost.monthly_cost != null ? (
               <p className="text-lg font-bold text-gray-900">{cost.currency} {cost.monthly_cost.toLocaleString()}</p>
             ) : (
-              <p className="text-sm text-gray-400">待填</p>
+              <p className="text-sm text-gray-400">{t('tbd')}</p>
             )}
             <p className="text-[11px] text-gray-500">/ {BILLING_LABEL[cost.billing_cycle] || cost.billing_cycle}</p>
           </div>
@@ -324,11 +327,11 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
           {/* 本月發票狀態 badge:清單非空即為已上傳 */}
           {uploaded ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-              <Check className="w-3.5 h-3.5" /> 本月發票已上傳{invoices.length > 1 ? ` (${invoices.length})` : ''}
+              <Check className="w-3.5 h-3.5" /> {t('invoiceUploadedThisMonth')}{invoices.length > 1 ? ` (${invoices.length})` : ''}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
-              <FileText className="w-3.5 h-3.5" /> 本月發票未上傳
+              <FileText className="w-3.5 h-3.5" /> {t('invoiceNotUploadedThisMonth')}
             </span>
           )}
           {/* 歸屬月份:上傳這批算哪個月;預設當前月,補傳舊發票時改成對應月。 */}
@@ -336,15 +339,15 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
             value={uploadPeriod}
             onChange={(e) => setUploadPeriod(e.target.value)}
             disabled={uploading}
-            title="這批發票歸屬月份"
+            title={t('invoiceMonthTitle')}
             className="px-2 py-1 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:border-amber-300 focus:outline-none transition-colors disabled:opacity-50"
           >
             {recentPeriods().map((p) => (
-              <option key={p} value={p}>{p}{p === currentMonth ? '(本月)' : ''}</option>
+              <option key={p} value={p}>{p}{p === currentMonth ? t('thisMonthSuffix') : ''}</option>
             ))}
           </select>
           <label className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-            <Upload className="w-3.5 h-3.5" /> {uploading ? '上傳中…' : (uploaded ? '再上傳(可多張)' : '上傳發票(可多張)')}
+            <Upload className="w-3.5 h-3.5" /> {uploading ? t('uploading') : (uploaded ? t('reuploadMulti') : t('uploadInvoiceMulti'))}
             <input type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden"
               onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length) uploadInvoices(files); e.target.value = ''; }} />
           </label>
@@ -353,13 +356,13 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
           {cost.url && (
             <a href={cost.url} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">
-              <ExternalLink className="w-3.5 h-3.5" /> 管理
+              <ExternalLink className="w-3.5 h-3.5" /> {t('manage')}
             </a>
           )}
-          <button onClick={onEdit} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title="編輯">
+          <button onClick={onEdit} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" title={t('edit')}>
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={onDelete} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="刪除">
+          <button onClick={onDelete} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t('delete')}>
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -379,8 +382,8 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
                   className="w-full flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                 >
                   {yearOpen ? <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-gray-500 shrink-0" />}
-                  <span className="text-sm font-semibold text-gray-800">{year === '未分類' ? '未分類' : `${year} 年`}</span>
-                  <span className="text-xs text-gray-500">({yearCount} 張)</span>
+                  <span className="text-sm font-semibold text-gray-800">{year === '未分類' ? t('uncategorized') : t('yearLabel', { year })}</span>
+                  <span className="text-xs text-gray-500">{t('countInvoices', { count: yearCount })}</span>
                 </button>
                 {/* 月份層 */}
                 {yearOpen && (
@@ -395,20 +398,20 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
                           >
                             {monthOpen ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
                             <span className="text-xs font-medium text-gray-700">{mPeriod}</span>
-                            <span className="text-xs text-gray-500">({items.length} 張)</span>
+                            <span className="text-xs text-gray-500">{t('countInvoices', { count: items.length })}</span>
                           </button>
                           {monthOpen && (
                             <ul className="mt-1 ml-5 space-y-1.5">
                               {items.map((inv) => (
                                 <li key={inv.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
                                   <FileText className="w-4 h-4 text-gray-400 shrink-0" />
-                                  <span className="text-xs text-gray-700 truncate flex-1" title={inv.file_name || undefined}>{inv.file_name || '發票'}</span>
+                                  <span className="text-xs text-gray-700 truncate flex-1" title={inv.file_name || undefined}>{inv.file_name || t('invoiceFallbackName')}</span>
                                   <button onClick={() => openInvoice(inv)}
                                     className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors shrink-0">
-                                    <ExternalLink className="w-3.5 h-3.5" /> 看發票
+                                    <ExternalLink className="w-3.5 h-3.5" /> {t('viewInvoice')}
                                   </button>
                                   <button onClick={() => removeInvoice(inv)}
-                                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0" title="移除這張發票">
+                                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0" title={t('removeThisInvoice')}>
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </li>
@@ -430,6 +433,7 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
 }
 
 export default function AdminCostsPage() {
+  const t = useTranslations('admin.costs');
   const [costs, setCosts] = useState<Cost[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -446,11 +450,11 @@ export default function AdminCostsPage() {
         // 當前月子集在前端 filter 出來給 badge / 統計 / 月結打包用。
         fetch('/api/admin/costs/invoices'),
       ]);
-      if (!cr.ok) { toast.error('載入費用清單失敗'); }
+      if (!cr.ok) { toast.error(t('loadCostsFailed')); }
       else setCosts(await cr.json());
       if (ir.ok) setInvoices(await ir.json());
     } catch {
-      toast.error('網路錯誤');
+      toast.error(t('networkError'));
     }
     setLoading(false);
   }, []);
@@ -458,10 +462,10 @@ export default function AdminCostsPage() {
   useEffect(() => { load(); }, [load]);
 
   const deleteCost = async (cost: Cost) => {
-    if (!window.confirm(`刪除「${cost.name}」?此工具的所有發票紀錄也會一併移除,無法復原。`)) return;
+    if (!window.confirm(t('deleteCostConfirm', { name: cost.name }))) return;
     const res = await fetch(`/api/admin/costs?id=${cost.id}`, { method: 'DELETE' });
-    if (!res.ok) { toast.error('刪除失敗'); return; }
-    toast.success('已刪除');
+    if (!res.ok) { toast.error(t('deleteFailed')); return; }
+    toast.success(t('deleted'));
     load();
   };
 
@@ -492,51 +496,51 @@ export default function AdminCostsPage() {
   return (
     <div className="p-6 lg:p-10 max-w-5xl">
       <AdminHeader
-        title="營運成本"
-        subtitle={`每月支撐平台要付的工具費用一覽 · 當前月份 ${period}`}
+        title={t('pageTitle')}
+        subtitle={t('pageSubtitle', { period })}
         action={(
           <div className="flex items-center gap-2">
             <button onClick={load} className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> 重新整理
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> {t('refresh')}
             </button>
             <button onClick={() => { setEditing(null); setFormOpen(true); }} className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm rounded-lg transition-colors">
-              <Plus className="w-4 h-4" /> 新增工具
+              <Plus className="w-4 h-4" /> {t('addTool')}
             </button>
           </div>
         )}
       />
 
       <AdminStats items={[
-        { label: '每月固定支出', value: fixedLabel },
-        { label: '工具總數', value: costs.length },
-        { label: '待評估升級', value: reviewCount, color: reviewCount > 0 ? 'text-amber-700' : undefined },
-        { label: `本月發票 (${period})`, value: `${toolsWithInvoice}/${costs.length}`, color: 'text-green-700' },
+        { label: t('statMonthlyFixed'), value: fixedLabel },
+        { label: t('statTotalTools'), value: costs.length },
+        { label: t('statPendingReview'), value: reviewCount, color: reviewCount > 0 ? 'text-amber-700' : undefined },
+        { label: t('statThisMonthInvoices', { period }), value: `${toolsWithInvoice}/${costs.length}`, color: 'text-green-700' },
       ]} />
 
       {/* 月結:打包本月發票給會計 */}
       <div className="flex items-center justify-between gap-3 mb-6 p-4 bg-white border border-gray-200 rounded-xl flex-wrap">
         <div className="flex items-center gap-2 text-sm text-gray-700">
           <Receipt className="w-4 h-4 text-gray-500" />
-          <span>月結:把 <span className="font-medium">{period}</span> 已上傳的發票一次打包給會計({uploadedCount} 張)</span>
+          <span>{t('monthlyCloseLabel', { period })}{t('invoiceCountSuffix', { count: uploadedCount })}</span>
         </div>
         <button onClick={downloadZip} disabled={uploadedCount === 0}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-          <Package className="w-4 h-4" /> 打包本月發票 (zip)
+          <Package className="w-4 h-4" /> {t('packageInvoicesZip')}
         </button>
       </div>
 
       {loading ? (
         <div className="text-center py-16">
           <RefreshCw className="w-8 h-8 text-gray-400 animate-spin mx-auto mb-3" />
-          <p className="text-gray-500">載入中…</p>
+          <p className="text-gray-500">{t('loading')}</p>
         </div>
       ) : costs.length === 0 ? (
         <div className="text-center py-16 border border-gray-200 rounded-xl">
           <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
             <Receipt className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-600 font-medium">還沒有工具費用</p>
-          <p className="text-gray-500 text-sm mt-1">點右上角「新增工具」開始記錄</p>
+          <p className="text-gray-600 font-medium">{t('noCostsTitle')}</p>
+          <p className="text-gray-500 text-sm mt-1">{t('noCostsHint')}</p>
         </div>
       ) : (
         <div className="space-y-3">

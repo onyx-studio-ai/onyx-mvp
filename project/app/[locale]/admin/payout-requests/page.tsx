@@ -5,6 +5,7 @@
   admin-role only(API 用 requireAdminOnly + cookie)。
 */
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { Receipt, ExternalLink, CheckCircle, RotateCcw, Loader2, ChevronDown, Download } from 'lucide-react';
 import PayoutDetails from '@/components/admin/PayoutDetails';
 
@@ -37,6 +38,7 @@ const STATUS_CLS: Record<string, string> = {
 };
 
 export default function PayoutRequestsPage() {
+  const t = useTranslations('admin.payoutRequests');
   const [rows, setRows] = useState<Req[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'invoice_uploaded' | 'paid'>('all');
@@ -60,8 +62,8 @@ export default function PayoutRequestsPage() {
   useEffect(() => { load(); }, [load]);
 
   async function setStatus(id: string, status: string) {
-    if (status === 'paid' && !confirm('確認這筆已撥款?系統會給配音員寄一封收款通知信。')) return;
-    if (status === 'rejected' && !confirm('確認退回這筆請款?')) return;
+    if (status === 'paid' && !confirm(t('confirmPaid'))) return;
+    if (status === 'rejected' && !confirm(t('confirmReject'))) return;
     setBusy(id);
     try {
       const res = await fetch('/api/admin/payout-requests', {
@@ -71,7 +73,7 @@ export default function PayoutRequestsPage() {
       if (res.ok) {
         const j = await res.json().catch(() => ({}));
         // 撥款已完成,但通知信寄送有狀況 → 提醒老闆(撥款本身照樣成功)。
-        if (j.warning) alert(`撥款已完成,但通知信有狀況:\n${j.warning}`);
+        if (j.warning) alert(t('payoutDoneNotifyIssue', { warning: j.warning }));
         await load();
       }
     } finally { setBusy(null); }
@@ -84,16 +86,16 @@ export default function PayoutRequestsPage() {
       const res = await fetch(`/api/admin/payout-requests/export?period=${encodeURIComponent(period)}`, { credentials: 'include' });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(j.error || '匯出失敗');
+        alert(j.error || t('exportFailed'));
         return;
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `Onyx_撥款對帳_${period}.csv`;
+      a.href = url; a.download = `${t('exportFilePrefix')}_${period}.csv`;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
-    } catch { alert('匯出失敗,請稍後再試'); } finally { setExporting(false); }
+    } catch { alert(t('exportFailedRetry')); } finally { setExporting(false); }
   }
 
   const money = (n: number, c: string) => `${c} ${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -104,44 +106,44 @@ export default function PayoutRequestsPage() {
   return (
     <div className="p-6 lg:p-10">
       <div className="max-w-5xl">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-1"><Receipt className="w-6 h-6 text-violet-600" /> 請款單</h1>
-        <p className="text-sm text-gray-500 mb-6">配音員發起的請款。看發票、確認同意,撥款後按「已撥款」結案。款項每月結算、核准後約 30–45 天撥付。</p>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-1"><Receipt className="w-6 h-6 text-violet-600" /> {t('pageTitle')}</h1>
+        <p className="text-sm text-gray-500 mb-6">{t('pageSubtitle')}</p>
 
         {/* 會計對帳匯出:選整年或某月,匯出該期間已撥款的對帳 CSV(不含收款帳號個資)。 */}
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 mb-6 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-700"><Download className="w-4 h-4 text-gray-500" /> 撥款對帳匯出</div>
+          <div className="flex items-center gap-2 text-sm text-gray-700"><Download className="w-4 h-4 text-gray-500" /> {t('reconExport')}</div>
           <select value={expYear} onChange={(e) => setExpYear(e.target.value)} className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white">
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => <option key={y} value={String(y)}>{y} 年</option>)}
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => <option key={y} value={String(y)}>{t('yearSuffix', { year: y })}</option>)}
           </select>
           <select value={expMonth} onChange={(e) => setExpMonth(e.target.value)} className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white">
-            <option value="">整年</option>
-            {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((m) => <option key={m} value={m}>{m} 月</option>)}
+            <option value="">{t('wholeYear')}</option>
+            {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((m) => <option key={m} value={m}>{t('monthSuffix', { month: m })}</option>)}
           </select>
           <button onClick={exportCsv} disabled={exporting} className="text-sm px-3 py-1.5 rounded-md bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 inline-flex items-center gap-1.5">
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} 匯出 CSV
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} {t('exportCsv')}
           </button>
-          <span className="text-xs text-gray-400">僅含已撥款、以撥款日分期;不含銀行帳號等收款個資。</span>
+          <span className="text-xs text-gray-400">{t('exportNote')}</span>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
-          {([['待處理', 'pending'], ['已上傳發票', 'invoice_uploaded'], ['已撥款', 'paid']] as const).map(([label, key]) => (
+          {([['statPending', 'pending'], ['statInvoiceUploaded', 'invoice_uploaded'], ['statPaid', 'paid']] as const).map(([labelKey, key]) => (
             <div key={key} className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-xs text-gray-500">{label}</div>
+              <div className="text-xs text-gray-500">{t(labelKey)}</div>
               <div className="text-2xl font-bold text-gray-900">{count(key)}</div>
             </div>
           ))}
         </div>
 
         <div className="flex gap-2 mb-4">
-          {([['全部', 'all'], ['待處理', 'pending'], ['已上傳發票', 'invoice_uploaded'], ['已撥款', 'paid']] as const).map(([label, key]) => (
-            <button key={key} onClick={() => setFilter(key)} className={`text-xs px-3 py-1.5 rounded-full border ${filter === key ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-300'}`}>{label}</button>
+          {([['filterAll', 'all'], ['statPending', 'pending'], ['statInvoiceUploaded', 'invoice_uploaded'], ['statPaid', 'paid']] as const).map(([labelKey, key]) => (
+            <button key={key} onClick={() => setFilter(key)} className={`text-xs px-3 py-1.5 rounded-full border ${filter === key ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-300'}`}>{t(labelKey)}</button>
           ))}
         </div>
 
         {loading ? (
           <div className="text-center py-16 text-gray-400"><Loader2 className="w-6 h-6 animate-spin inline" /></div>
         ) : shown.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">目前沒有請款單。</div>
+          <div className="text-center py-16 text-gray-400 text-sm">{t('noRequests')}</div>
         ) : (
           <div className="space-y-3">
             {shown.map((r) => (
@@ -152,32 +154,32 @@ export default function PayoutRequestsPage() {
                       <span className="font-semibold text-gray-900">{r.talents?.name || '—'}</span>
                       <span className={`text-[11px] px-2 py-0.5 rounded-full border ${STATUS_CLS[r.status] || 'bg-gray-100 text-gray-600 border-gray-300'}`}>{STATUS_LABEL[r.status] || r.status}</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">{r.talents?.email} · {r.invoice_number} · {r.invoice_type === 'own' ? '自家發票' : '系統發票'}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{r.talents?.email} · {r.invoice_number} · {r.invoice_type === 'own' ? t('invoiceTypeOwn') : t('invoiceTypeSystem')}</div>
                     <div className="text-lg font-bold text-gray-900 mt-1">{money(r.amount, r.currency)}</div>
-                    {r.note && <div className="text-xs text-gray-500 mt-0.5">備註:{r.note}</div>}
-                    <div className="text-[11px] text-gray-400 mt-1">請款 {fmt(r.created_at)} · 同意 {fmt(r.consent_at)}{r.paid_at ? ` · 撥款 ${fmt(r.paid_at)}` : ''}</div>
+                    {r.note && <div className="text-xs text-gray-500 mt-0.5">{t('noteLabel')}{r.note}</div>}
+                    <div className="text-[11px] text-gray-400 mt-1">{t('requestedAt', { time: fmt(r.created_at) })} · {t('consentedAt', { time: fmt(r.consent_at) })}{r.paid_at ? t('paidAt', { time: fmt(r.paid_at) }) : ''}</div>
                     {r.certificate_code && (
-                      <div className="text-[11px] text-emerald-700 mt-1">撥款證明碼:<span className="font-mono select-all">{r.certificate_code}</span></div>
+                      <div className="text-[11px] text-emerald-700 mt-1">{t('certificateCodeLabel')}<span className="font-mono select-all">{r.certificate_code}</span></div>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {r.invoice_url
-                      ? <button onClick={() => openInvoice(r.invoice_url!)} className="text-xs text-violet-700 hover:underline inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" /> 看發票</button>
-                      : <span className="text-xs text-gray-400">尚未上傳發票</span>}
+                      ? <button onClick={() => openInvoice(r.invoice_url!)} className="text-xs text-violet-700 hover:underline inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" /> {t('viewInvoice')}</button>
+                      : <span className="text-xs text-gray-400">{t('invoiceNotUploaded')}</span>}
                     <button onClick={() => setExpanded(expanded === r.id ? null : r.id)} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 inline-flex items-center gap-1">
-                      收款資料 <ChevronDown className={`w-3 h-3 transition-transform ${expanded === r.id ? 'rotate-180' : ''}`} />
+                      {t('payoutDetails')} <ChevronDown className={`w-3 h-3 transition-transform ${expanded === r.id ? 'rotate-180' : ''}`} />
                     </button>
                     {r.status !== 'paid' && (
                       <div className="flex gap-2">
-                        <button onClick={() => setStatus(r.id, 'paid')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 inline-flex items-center gap-1">{busy === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} 已撥款</button>
-                        {r.status !== 'rejected' && <button onClick={() => setStatus(r.id, 'rejected')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-white text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50 inline-flex items-center gap-1"><RotateCcw className="w-3 h-3" /> 退回</button>}
+                        <button onClick={() => setStatus(r.id, 'paid')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 inline-flex items-center gap-1">{busy === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} {t('markPaid')}</button>
+                        {r.status !== 'rejected' && <button onClick={() => setStatus(r.id, 'rejected')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-white text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50 inline-flex items-center gap-1"><RotateCcw className="w-3 h-3" /> {t('reject')}</button>}
                       </div>
                     )}
                   </div>
                 </div>
                 {expanded === r.id && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">收款資料 · 扣繳試算(此筆 {r.currency})</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">{t('payoutDetailsWithholding', { currency: r.currency })}</p>
                     <PayoutDetails talentId={r.talent_id} gross={Number(r.amount) || 0} currency={r.currency} />
                   </div>
                 )}

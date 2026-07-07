@@ -12,6 +12,7 @@
 */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Search, RefreshCw, Wallet, DollarSign } from 'lucide-react';
 import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
@@ -29,6 +30,7 @@ const usd = (n: number) => fmt(n, 'USD'); // talent_earnings ledger has no curre
 const ym = (iso?: string | null) => (iso || '').slice(0, 7); // YYYY-MM
 
 export default function AdminFinance() {
+  const t = useTranslations('admin.finance');
   const [phase, setPhase] = useState<'loading' | 'ready'>('loading');
   const [orders, setOrders] = useState<(Order & { _type: 'voice' | 'music' })[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
@@ -51,7 +53,7 @@ export default function AdminFinance() {
         setOrders([...v, ...m]);
       }
       if (e) setEarnings(e.earnings || []);
-    } catch { toast.error('載入失敗,請稍後再試'); } finally { setRefreshing(false); setPhase('ready'); }
+    } catch { toast.error(t('loadFailed')); } finally { setRefreshing(false); setPhase('ready'); }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -105,8 +107,8 @@ export default function AdminFinance() {
   return (
     <div className="p-6 lg:p-8 text-gray-900">
       <AdminHeader
-        title="財務總覽"
-        subtitle="客戶應收 + 配音員應付的整體金流快照。應付明細在「人才分潤」,現金分倉在「口袋」。"
+        title={t('pageTitle')}
+        subtitle={t('pageSubtitle')}
         action={(
           <button onClick={load} className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors">
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
@@ -115,18 +117,18 @@ export default function AdminFinance() {
       />
 
       <AdminStats items={[
-        { label: `成交額(${activeCur})`, value: fmt(collected + receivable, activeCur), color: 'text-gray-900' },
-        { label: '已收', value: fmt(collected, activeCur), color: 'text-green-700' },
-        { label: '待收(未付款)', value: fmt(receivable, activeCur), color: 'text-amber-700' },
-        { label: '配音員待付(US$)', value: usd(payable), color: 'text-red-700' },
-        { label: '配音員已付(US$)', value: usd(paidOut), color: 'text-gray-500' },
+        { label: t('statGross', { cur: activeCur }), value: fmt(collected + receivable, activeCur), color: 'text-gray-900' },
+        { label: t('statCollected'), value: fmt(collected, activeCur), color: 'text-green-700' },
+        { label: t('statReceivable'), value: fmt(receivable, activeCur), color: 'text-amber-700' },
+        { label: t('statTalentPayable'), value: usd(payable), color: 'text-red-700' },
+        { label: t('statTalentPaid'), value: usd(paidOut), color: 'text-gray-500' },
       ]} />
 
       {/* Receivables toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜尋訂單編號、客戶 Email、專案…"
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('searchPlaceholder')}
             className="w-full bg-white border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none" />
         </div>
         {currencies.length > 1 && (
@@ -135,26 +137,26 @@ export default function AdminFinance() {
           </select>
         )}
         <select value={year} onChange={(e) => { setYear(e.target.value); setMonth('all'); }} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none">
-          <option value="all">全部年份</option>
-          {years.map((y) => <option key={y} value={y}>{y} 年</option>)}
+          <option value="all">{t('allYears')}</option>
+          {years.map((y) => <option key={y} value={y}>{t('yearSuffix', { year: y })}</option>)}
         </select>
         <select value={month} onChange={(e) => setMonth(e.target.value)} className="bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none">
-          <option value="all">全部月份</option>
-          {monthOpts.map((m) => <option key={m} value={m}>{m} 月</option>)}
+          <option value="all">{t('allMonths')}</option>
+          {monthOpts.map((m) => <option key={m} value={m}>{t('monthSuffix', { month: m })}</option>)}
         </select>
       </div>
 
-      <h2 className="text-sm font-semibold text-gray-700 mb-3">待收款項{receivables.length > 0 ? ` · ${receivables.length} 筆 · ${fmt(receivable, activeCur)}` : ''}</h2>
+      <h2 className="text-sm font-semibold text-gray-700 mb-3">{t('receivablesHeading')}{receivables.length > 0 ? t('receivablesHeadingSuffix', { count: receivables.length, amount: fmt(receivable, activeCur) }) : ''}</h2>
 
       {phase === 'loading' ? (
-        <div className="text-center py-16 text-gray-500 bg-white border border-gray-200 rounded-xl">載入中…</div>
+        <div className="text-center py-16 text-gray-500 bg-white border border-gray-200 rounded-xl">{t('loading')}</div>
       ) : receivables.length === 0 ? (
-        <div className="text-center py-16 text-gray-500 bg-white border border-gray-200 rounded-xl">{q || month !== 'all' ? '沒有符合的待收款項。' : '目前沒有待收款項,全部已收 ✓'}</div>
+        <div className="text-center py-16 text-gray-500 bg-white border border-gray-200 rounded-xl">{q || month !== 'all' ? t('noMatchingReceivables') : t('allCollected')}</div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
           {receivables.map((o) => (
             <div key={`${o._type}-${o.id}`} className="flex items-center gap-3 px-5 py-3.5">
-              <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ${o._type === 'voice' ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>{o._type === 'voice' ? '配音' : '音樂'}</span>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ${o._type === 'voice' ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>{o._type === 'voice' ? t('badgeVoice') : t('badgeMusic')}</span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900 truncate">{o.project_name || o.voice_selection || o.vibe || '—'}</p>
                 <p className="text-xs text-gray-500 truncate">{o.order_number ? `#${o.order_number} · ` : ''}{o.email}</p>
@@ -170,11 +172,11 @@ export default function AdminFinance() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
         <a href="/admin/payouts" className="flex items-center gap-3 bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-4 transition-colors">
           <DollarSign className="w-5 h-5 text-emerald-700 shrink-0" />
-          <div className="min-w-0"><p className="text-sm font-semibold text-gray-900">配音員應付明細</p><p className="text-xs text-gray-500">每位配音員的待付/已付、月結批次 → 人才分潤</p></div>
+          <div className="min-w-0"><p className="text-sm font-semibold text-gray-900">{t('linkPayableTitle')}</p><p className="text-xs text-gray-500">{t('linkPayableSubtitle')}</p></div>
         </a>
         <a href="/admin/pockets" className="flex items-center gap-3 bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-4 transition-colors">
           <Wallet className="w-5 h-5 text-blue-700 shrink-0" />
-          <div className="min-w-0"><p className="text-sm font-semibold text-gray-900">現金分倉</p><p className="text-xs text-gray-500">Profit First 收入分配與支出 → 口袋</p></div>
+          <div className="min-w-0"><p className="text-sm font-semibold text-gray-900">{t('linkPocketsTitle')}</p><p className="text-xs text-gray-500">{t('linkPocketsSubtitle')}</p></div>
         </a>
       </div>
     </div>

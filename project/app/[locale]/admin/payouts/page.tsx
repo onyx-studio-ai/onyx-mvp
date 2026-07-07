@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { DollarSign, Download, CheckCircle, Clock, Filter, RefreshCw, User, ChevronRight, CreditCard, ArrowLeft, Calendar, Wallet, Plus, X, Folder, ChevronDown } from 'lucide-react';
 import PayoutDetails from '@/components/admin/PayoutDetails';
 
@@ -98,6 +99,7 @@ function PaymentBadge({ method, details }: { method?: string | null; details?: R
 }
 
 export default function PayoutsPage() {
+  const t = useTranslations('admin.payouts');
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -153,12 +155,12 @@ export default function PayoutsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || '更新失敗');
+        alert(data.error || t('updateFailed'));
         return;
       }
       await fetchEarnings();
     } catch {
-      alert('更新失敗');
+      alert(t('updateFailed'));
     }
   };
 
@@ -374,7 +376,7 @@ export default function PayoutsPage() {
                       </span>
                     ) : isManaged ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
-                        指派製作
+                        {t('badgeManaged')}
                       </span>
                     ) : isManual ? (
                       <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
@@ -440,14 +442,14 @@ export default function PayoutsPage() {
                       <div className="space-y-3">
                         {e.talent_id && (
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">收款資料</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">{t('payoutDetailsLabel')}</p>
                             <PayoutDetails talentId={e.talent_id} gross={Number(e.commission_amount) || 0} />
                           </div>
                         )}
                         {e.local_folder_path && (
                           <div className="flex items-center gap-2 text-xs">
                             <Folder className="w-3.5 h-3.5 text-gray-500" />
-                            <span className="text-gray-600">本機資料夾:</span>
+                            <span className="text-gray-600">{t('localFolderLabel')}</span>
                             <code className="px-2 py-0.5 bg-white border border-gray-200 rounded text-gray-700 font-mono">
                               ~/Documents/Onyx/Accounting/{e.local_folder_path}
                             </code>
@@ -455,7 +457,7 @@ export default function PayoutsPage() {
                         )}
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-                            歸檔進度{isBuyout && <span className="ml-1 text-purple-700">(買斷流程簡化版)</span>}{isManaged && <span className="ml-1 text-violet-700">(指派製作簡化版)</span>}
+                            {t('filingProgress')}{isBuyout && <span className="ml-1 text-purple-700">{t('buyoutSimplified')}</span>}{isManaged && <span className="ml-1 text-violet-700">{t('managedSimplified')}</span>}
                           </p>
                           <div className={`grid grid-cols-2 ${isSimplified ? 'md:grid-cols-3' : 'md:grid-cols-5'} gap-2`}>
                             {effectiveChecklist(e).map(field => {
@@ -493,7 +495,7 @@ export default function PayoutsPage() {
                         </div>
                         {isManual && e.cost_breakdown && Object.keys(e.cost_breakdown).length > 0 && (
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">成本拆分(僅你看得到)</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{t('costBreakdownTitle')}</p>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                               {Object.entries(e.cost_breakdown).map(([key, val]) => (
                                 <div key={key} className="bg-white border border-gray-200 rounded px-2 py-1.5">
@@ -547,7 +549,7 @@ export default function PayoutsPage() {
           <button
             onClick={fetchEarnings}
             className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
-            title="重新整理"
+            title={t('refresh')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -556,7 +558,7 @@ export default function PayoutsPage() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
-            新增手動分潤
+            {t('addManualPayout')}
           </button>
           <button
             onClick={exportCSV}
@@ -833,6 +835,7 @@ function ManualEntryModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const t = useTranslations('admin.payouts');
   const [subtype, setSubtype] = useState<'client_deal' | 'buyout'>('client_deal');
   const [talentId, setTalentId] = useState('');
   const [orderNumber, setOrderNumber] = useState('');
@@ -903,13 +906,13 @@ function ManualEntryModal({
 
   const handleSubmit = async () => {
     setError(null);
-    if (!talentId) return setError('請選配音員');
-    if (!orderNumber.trim()) return setError('請輸入 Order Number');
+    if (!talentId) return setError(t('selectTalentError'));
+    if (!orderNumber.trim()) return setError(t('enterOrderNumberError'));
     if (!payoutAmount || Number(payoutAmount) <= 0) {
-      return setError(isBuyout ? '買斷金額要大於 0' : 'Talent payout 要大於 0');
+      return setError(isBuyout ? t('buyoutAmountPositive') : t('payoutPositive'));
     }
     if (!isBuyout && (!realTotal || realTotalNum <= 0)) {
-      return setError('Real total 要大於 0');
+      return setError(t('realTotalPositive'));
     }
 
     setSaving(true);
@@ -936,12 +939,12 @@ function ManualEntryModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || '建立失敗');
+        setError(data.error || t('createFailed'));
         return;
       }
       onCreated();
     } catch {
-      setError('建立失敗');
+      setError(t('createFailed'));
     } finally {
       setSaving(false);
     }
@@ -958,11 +961,11 @@ function ManualEntryModal({
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">新增手動分潤</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('addManualPayout')}</h2>
             <p className="text-xs text-gray-500 mt-0.5">
               {isBuyout
-                ? '一次付清買斷配音員的聲音。沒客戶 invoice,後續平台收入 Wing 拿 100%。'
-                : '線下/離平台案子。Real total 跟 talent payout 可以不一樣 — 中間差額放成本拆分,配音員看不到。'}
+                ? t('modalSubtitleBuyout')
+                : t('modalSubtitleClientDeal')}
             </p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
@@ -980,9 +983,9 @@ function ManualEntryModal({
                 !isBuyout ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              💼 案子分潤
+              💼 {t('clientDealTab')}
               <span className="block text-[10px] font-normal text-gray-500 mt-0.5">
-                客戶離平台付款,配音員拿一塊
+                {t('clientDealTabHint')}
               </span>
             </button>
             <button
@@ -992,22 +995,22 @@ function ManualEntryModal({
                 isBuyout ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              買斷配音員
+              {t('buyoutTab')}
               <span className="block text-[10px] font-normal text-gray-500 mt-0.5">
-                Wing 一次付清,聲音歸我
+                {t('buyoutTabHint')}
               </span>
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">配音員 *</label>
+              <label className="block text-xs text-gray-600 mb-1">{t('talentLabel')}</label>
               <select
                 value={talentId}
                 onChange={(e) => setTalentId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
               >
-                <option value="">-- 選 --</option>
+                <option value="">{t('selectPlaceholder')}</option>
                 {talentOptions.map(t => (
                   <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
                 ))}
@@ -1032,15 +1035,15 @@ function ManualEntryModal({
               />
               <p className="text-[10px] text-gray-500 mt-1">
                 {orderNumberManuallyEdited
-                  ? '自訂編號(改動後不再自動更新)'
-                  : '系統自動填下一個流水號,你可以直接改成自訂(例 SIERRA-Q3)'}
+                  ? t('orderNumberCustomHint')
+                  : t('orderNumberAutoHint')}
               </p>
             </div>
           </div>
 
           {isBuyout ? (
             <div>
-              <label className="block text-xs text-gray-600 mb-1">買斷金額 (US$) *</label>
+              <label className="block text-xs text-gray-600 mb-1">{t('buyoutAmountLabel')}</label>
               <input
                 type="number"
                 step="0.01"
@@ -1050,7 +1053,7 @@ function ManualEntryModal({
                 className="w-full border border-purple-300 rounded-lg px-3 py-2 text-sm font-mono bg-purple-50"
               />
               <p className="text-[10px] text-purple-700 mt-1">
-                Wing 一次付給配音員的買斷價。付完聲音歸 Onyx,後續平台收入 Wing 拿 100%。
+                {t('buyoutAmountHint')}
               </p>
             </div>
           ) : (
@@ -1065,7 +1068,7 @@ function ManualEntryModal({
                   placeholder="3000000"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
                 />
-                <p className="text-[10px] text-gray-500 mt-1">客戶真正付的金額,配音員看不到</p>
+                <p className="text-[10px] text-gray-500 mt-1">{t('realClientTotalHint')}</p>
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Talent Payout (US$) *</label>
@@ -1077,7 +1080,7 @@ function ManualEntryModal({
                   placeholder="300000"
                   className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm font-mono bg-emerald-50"
                 />
-                <p className="text-[10px] text-emerald-700 mt-1">配音員實拿(他看得到的)</p>
+                <p className="text-[10px] text-emerald-700 mt-1">{t('talentPayoutHint')}</p>
               </div>
             </div>
           )}
@@ -1097,7 +1100,7 @@ function ManualEntryModal({
                 </span>
               </div>
               <p className="text-[10px] text-gray-500 pt-1">
-                收款後自動拆 6 個 Profit First 口袋 — 看 <code>/admin/pockets</code>
+                {t('pocketsNoteBefore')}<code>/admin/pockets</code>{t('pocketsNoteAfter')}
               </p>
             </div>
           )}
@@ -1108,25 +1111,25 @@ function ManualEntryModal({
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={isBuyout ? 'e.g. Wing 自己找的 talent,Onyx 錄音室錄' : 'e.g. 跟 X 公司簽 3 年獨家,中間經過 Y agency'}
+              placeholder={isBuyout ? t('notesPlaceholderBuyout') : t('notesPlaceholderClientDeal')}
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">本機資料夾路徑</label>
+            <label className="block text-xs text-gray-600 mb-1">{t('localFolderPathLabel')}</label>
             <div className="flex items-center gap-2">
               <code className="text-xs text-gray-500 whitespace-nowrap">~/Documents/Onyx/Accounting/</code>
               <input
                 type="text"
                 value={folderPath}
                 onChange={(e) => setFolderPath(e.target.value)}
-                placeholder={suggestedFolderPath || '自動建議'}
+                placeholder={suggestedFolderPath || t('folderAutoSuggest')}
                 className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
               />
             </div>
             <p className="text-[10px] text-gray-500 mt-1">
-              你拖合約/發票/水單到這個資料夾,然後上面 5 個 checkbox 自己勾。空白會用自動建議。
+              {t('folderHint')}
             </p>
           </div>
 
@@ -1142,14 +1145,14 @@ function ManualEntryModal({
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            {saving ? '建立中...' : '建立分潤紀錄'}
+            {saving ? t('creating') : t('createPayoutRecord')}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Wallet, Plus, RefreshCw, X, ChevronDown, ArrowUpCircle, ArrowDownCircle, Sliders } from 'lucide-react';
 
 /**
@@ -58,6 +59,7 @@ function txnLabel(type: PocketTransaction['type']): { label: string; color: stri
 }
 
 export default function PocketsPage() {
+  const t = useTranslations('admin.pockets');
   const [pockets, setPockets] = useState<PocketBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -122,17 +124,17 @@ export default function PocketsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Wallet className="w-7 h-7 text-emerald-700" />
-            Profit First 口袋
+            {t('pageTitle')}
           </h1>
           <p className="text-gray-600 text-sm mt-1">
-            每筆收入自動拆 6 口袋。從口袋花錢,Profit 永遠先抽走。
+            {t('pageSubtitle')}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={fetchPockets}
             className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-            title="重新整理"
+            title={t('refresh')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -141,14 +143,14 @@ export default function PocketsPage() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg border border-gray-200 transition-colors"
           >
             <Sliders className="w-4 h-4" />
-            手動調整
+            {t('manualAdjust')}
           </button>
           <button
             onClick={() => setShowSpendModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
-            花錢
+            {t('spend')}
           </button>
         </div>
       </div>
@@ -315,6 +317,7 @@ function SpendModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const t = useTranslations('admin.pockets');
   const [pocketName, setPocketName] = useState(pockets[0]?.name || '');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -326,9 +329,9 @@ function SpendModal({
   const handleSubmit = async () => {
     setError(null);
     const amt = Number(amount);
-    if (!pocketName) return setError('請選口袋');
-    if (!amt || amt <= 0) return setError('金額要大於 0');
-    if (!description.trim()) return setError('請填用途');
+    if (!pocketName) return setError(t('selectPocketError'));
+    if (!amt || amt <= 0) return setError(t('amountPositiveError'));
+    if (!description.trim()) return setError(t('enterPurposeError'));
 
     setSaving(true);
     try {
@@ -339,12 +342,12 @@ function SpendModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || '失敗');
+        setError(data.error || t('failed'));
         return;
       }
       onSuccess();
     } catch {
-      setError('失敗');
+      setError(t('failed'));
     } finally {
       setSaving(false);
     }
@@ -361,8 +364,8 @@ function SpendModal({
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">花錢</h2>
-            <p className="text-xs text-gray-500 mt-0.5">從指定口袋扣款,記錄用途</p>
+            <h2 className="text-lg font-semibold text-gray-900">{t('spendTitle')}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{t('spendSubtitle')}</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
             <X className="w-5 h-5 text-gray-500" />
@@ -371,7 +374,7 @@ function SpendModal({
 
         <div className="px-6 py-5 space-y-4">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">口袋 *</label>
+            <label className="block text-xs text-gray-600 mb-1">{t('pocketLabel')}</label>
             <select
               value={pocketName}
               onChange={(e) => setPocketName(e.target.value)}
@@ -379,19 +382,19 @@ function SpendModal({
             >
               {pockets.map((p) => (
                 <option key={p.id} value={p.name}>
-                  {p.emoji} {p.display_name_zh} (餘額 US${fmtUSD(p.balance)})
+                  {p.emoji} {p.display_name_zh} ({t('balanceLabelPrefix')} US${fmtUSD(p.balance)})
                 </option>
               ))}
             </select>
             {selectedPocket && selectedPocket.balance <= 0 && (
               <p className="text-[11px] text-amber-700 mt-1">
-                ⚠️ 此口袋餘額不足,花完會變負數
+                {t('negativeBalanceWarning')}
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">金額 (US$) *</label>
+            <label className="block text-xs text-gray-600 mb-1">{t('amountLabel')}</label>
             <input
               type="number"
               step="0.01"
@@ -403,12 +406,12 @@ function SpendModal({
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">用途 *</label>
+            <label className="block text-xs text-gray-600 mb-1">{t('purposeLabel')}</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Facebook Ads 五月份"
+              placeholder={t('spendPurposePlaceholder')}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
@@ -425,14 +428,14 @@ function SpendModal({
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg"
           >
-            {saving ? '處理中...' : '確認花錢'}
+            {saving ? t('processing') : t('confirmSpend')}
           </button>
         </div>
       </div>
@@ -449,6 +452,7 @@ function AdjustModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const t = useTranslations('admin.pockets');
   const [pocketName, setPocketName] = useState(pockets[0]?.name || '');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -458,9 +462,9 @@ function AdjustModal({
   const handleSubmit = async () => {
     setError(null);
     const amt = Number(amount);
-    if (!pocketName) return setError('請選口袋');
-    if (!amt || amt === 0) return setError('金額不可為 0');
-    if (!description.trim()) return setError('請填用途');
+    if (!pocketName) return setError(t('selectPocketError'));
+    if (!amt || amt === 0) return setError(t('amountNonZeroError'));
+    if (!description.trim()) return setError(t('enterPurposeError'));
 
     setSaving(true);
     try {
@@ -476,12 +480,12 @@ function AdjustModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || '失敗');
+        setError(data.error || t('failed'));
         return;
       }
       onSuccess();
     } catch {
-      setError('失敗');
+      setError(t('failed'));
     } finally {
       setSaving(false);
     }
@@ -498,9 +502,9 @@ function AdjustModal({
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">手動調整</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('adjustTitle')}</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              正數加錢進口袋,負數扣錢。用於開戶 seed / 修正錯誤。
+              {t('adjustSubtitle')}
             </p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
@@ -510,7 +514,7 @@ function AdjustModal({
 
         <div className="px-6 py-5 space-y-4">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">口袋 *</label>
+            <label className="block text-xs text-gray-600 mb-1">{t('pocketLabel')}</label>
             <select
               value={pocketName}
               onChange={(e) => setPocketName(e.target.value)}
@@ -518,31 +522,31 @@ function AdjustModal({
             >
               {pockets.map((p) => (
                 <option key={p.id} value={p.name}>
-                  {p.emoji} {p.display_name_zh} (餘額 US${fmtUSD(p.balance)})
+                  {p.emoji} {p.display_name_zh} ({t('balanceLabelPrefix')} US${fmtUSD(p.balance)})
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">金額 (US$) *</label>
+            <label className="block text-xs text-gray-600 mb-1">{t('amountLabel')}</label>
             <input
               type="number"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="正數 = 加錢 / 負數 = 扣錢"
+              placeholder={t('adjustAmountPlaceholder')}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-600 mb-1">用途 *</label>
+            <label className="block text-xs text-gray-600 mb-1">{t('purposeLabel')}</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. 開戶 seed / 修正 5/1 重複記帳"
+              placeholder={t('adjustPurposePlaceholder')}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
@@ -559,14 +563,14 @@ function AdjustModal({
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg"
           >
-            {saving ? '處理中...' : '確認調整'}
+            {saving ? t('processing') : t('confirmAdjust')}
           </button>
         </div>
       </div>
