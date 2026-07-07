@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Search, RefreshCw, ChevronRight, Play, Music, Mic, ExternalLink, Music2, ChevronDown, ChevronUp, Award, Loader2, Send, Download } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,6 +18,7 @@ import { getVoiceTierLabel, getMusicTierLabel } from '@/lib/config/pricing.confi
 const PREVIEW_LINES = 5;
 
 function CollapsibleText({ text, label, mono }: { text: string; label: string; mono?: boolean }) {
+  const t = useTranslations('admin.orders');
   const [expanded, setExpanded] = useState(false);
   const lines = text.split('\n');
   const needsCollapse = lines.length > PREVIEW_LINES || text.length > 300;
@@ -31,9 +33,9 @@ function CollapsibleText({ text, label, mono }: { text: string; label: string; m
             className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-700 transition-colors"
           >
             {expanded ? (
-              <><ChevronUp className="w-3.5 h-3.5" /> Collapse</>
+              <><ChevronUp className="w-3.5 h-3.5" /> {t('collapse')}</>
             ) : (
-              <><ChevronDown className="w-3.5 h-3.5" /> Show all ({lines.length} lines)</>
+              <><ChevronDown className="w-3.5 h-3.5" /> {t('showAllLines', { count: lines.length })}</>
             )}
           </button>
         )}
@@ -123,27 +125,28 @@ interface StringsOrder {
 type AnyOrder = VoiceOrder | MusicOrder | StringsOrder;
 type StatusFilter = 'all' | 'paid' | 'processing' | 'completed' | 'pending_payment' | 'in_production' | 'version_ready' | 'awaiting_final' | 'awaiting_files' | 'delivered';
 
-function getStatusBadge(status: string) {
+// 顯示文字走 i18n:把 t 傳進來,只換 badge 文字不動 status 判斷邏輯。
+function getStatusBadge(status: string, t: ReturnType<typeof useTranslations>) {
   switch (status) {
     case 'paid':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 whitespace-nowrap">In Queue</Badge>;
+      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 whitespace-nowrap">{t('badgeInQueue')}</Badge>;
     case 'processing':
     case 'in_production':
-      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 whitespace-nowrap">In Production</Badge>;
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 whitespace-nowrap">{t('badgeInProduction')}</Badge>;
     case 'demo_ready':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">Demo Ready</Badge>;
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">{t('badgeDemoReady')}</Badge>;
     case 'client_reviewing':
-      return <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200 whitespace-nowrap">Client Reviewing</Badge>;
+      return <Badge variant="outline" className="bg-cyan-50 text-cyan-700 border-cyan-200 whitespace-nowrap">{t('badgeClientReviewing')}</Badge>;
     case 'revising':
-      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 whitespace-nowrap">Revising</Badge>;
+      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 whitespace-nowrap">{t('badgeRevising')}</Badge>;
     case 'delivered':
-      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 whitespace-nowrap">Delivered</Badge>;
+      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 whitespace-nowrap">{t('badgeDelivered')}</Badge>;
     case 'awaiting_final':
-      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 whitespace-nowrap">Awaiting Final</Badge>;
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 whitespace-nowrap">{t('badgeAwaitingFinal')}</Badge>;
     case 'completed':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 whitespace-nowrap">Complete</Badge>;
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 whitespace-nowrap">{t('badgeComplete')}</Badge>;
     case 'pending_payment':
-      return <Badge variant="outline" className="bg-gray-400/10 text-gray-500 border-gray-300 whitespace-nowrap">Pending Payment</Badge>;
+      return <Badge variant="outline" className="bg-gray-400/10 text-gray-500 border-gray-300 whitespace-nowrap">{t('badgePendingPayment')}</Badge>;
     default:
       return <Badge variant="outline" className="bg-gray-400/10 text-gray-500 border-gray-300 whitespace-nowrap">{status}</Badge>;
   }
@@ -192,13 +195,15 @@ function deriveRightsLevel(order: AnyOrder): 'standard' | 'broadcast' | 'global'
   return 'standard';
 }
 
-function rightsLevelLabel(level: string): string {
-  if (level === 'global') return 'Global TV & Game Rights (Full IP Buyout)';
-  if (level === 'broadcast') return 'Broadcast TV & Full Media Buyout';
-  return 'Standard Commercial';
+// 顯示文字走 i18n:t 由呼叫端傳入,只換文字不動 level 判斷。
+function rightsLevelLabel(level: string, t: ReturnType<typeof useTranslations>): string {
+  if (level === 'global') return t('rightsGlobal');
+  if (level === 'broadcast') return t('rightsBroadcast');
+  return t('rightsStandard');
 }
 
 function CertificateSection({ order }: { order: AnyOrder }) {
+  const t = useTranslations('admin.orders');
   const [certState, setCertState] = useState<'idle' | 'loading' | 'exists' | 'generating'>('idle');
   const [cert, setCert] = useState<{ license_id: string; pdf_url: string } | null>(null);
   const autoRights = deriveRightsLevel(order);
@@ -251,11 +256,11 @@ function CertificateSection({ order }: { order: AnyOrder }) {
         setCertState('exists');
       } else {
         setCertState('idle');
-        toast.error(data.error || 'Failed to generate certificate');
+        toast.error(data.error || t('certFailGenerate'));
       }
     } catch {
       setCertState('idle');
-      toast.error('Failed to generate certificate');
+      toast.error(t('certFailGenerate'));
     }
   };
 
@@ -267,15 +272,15 @@ function CertificateSection({ order }: { order: AnyOrder }) {
         <Award className="w-5 h-5 text-green-700 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-green-700 font-mono text-sm font-medium">#{cert.license_id}</p>
-          <p className="text-gray-500 text-xs">Certificate issued</p>
+          <p className="text-gray-500 text-xs">{t('certIssued')}</p>
         </div>
         <a href={cert.pdf_url} target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs transition-colors">
-          <Download className="w-3 h-3" /> PDF
+          <Download className="w-3 h-3" /> {t('certPdf')}
         </a>
         <a href={`/verify/${cert.license_id}`} target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs transition-colors">
-          <ExternalLink className="w-3 h-3" /> Verify
+          <ExternalLink className="w-3 h-3" /> {t('certVerify')}
         </a>
       </div>
     );
@@ -285,25 +290,25 @@ function CertificateSection({ order }: { order: AnyOrder }) {
     <div className="p-4 bg-white/50 border border-gray-200 rounded-xl space-y-3">
       <div className="flex items-center gap-2 text-sm text-gray-600">
         <Award className="w-4 h-4" />
-        <span className="font-medium">Generate License Certificate</span>
+        <span className="font-medium">{t('certGenerateTitle')}</span>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Project Name</label>
+          <label className="text-xs text-gray-500 mb-1 block">{t('certProjectName')}</label>
           <input
             type="text"
             value={projectName}
             onChange={e => setProjectName(e.target.value)}
-            placeholder={`Order #${order.order_number}`}
+            placeholder={t('certProjectPlaceholder', { num: order.order_number })}
             className="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-500"
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Rights Level (Auto)</label>
+          <label className="text-xs text-gray-500 mb-1 block">{t('certRightsAuto')}</label>
           <div className={`w-full bg-gray-100/50 border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-medium ${
             autoRights === 'global' ? 'text-emerald-700' : autoRights === 'broadcast' ? 'text-blue-700' : 'text-gray-700'
           }`}>
-            {rightsLevelLabel(autoRights)}
+            {rightsLevelLabel(autoRights, t)}
           </div>
         </div>
       </div>
@@ -311,7 +316,7 @@ function CertificateSection({ order }: { order: AnyOrder }) {
         <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
           <input type="checkbox" checked={sendToClient} onChange={e => setSendToClient(e.target.checked)}
             className="rounded border-gray-400" />
-          Email certificate to client
+          {t('certEmailToClient')}
         </label>
         <button
           onClick={generate}
@@ -319,9 +324,9 @@ function CertificateSection({ order }: { order: AnyOrder }) {
           className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
         >
           {certState === 'generating' ? (
-            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
+            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('certGenerating')}</>
           ) : (
-            <><Award className="w-3.5 h-3.5" /> Generate Certificate</>
+            <><Award className="w-3.5 h-3.5" /> {t('certGenerate')}</>
           )}
         </button>
       </div>
@@ -330,6 +335,7 @@ function CertificateSection({ order }: { order: AnyOrder }) {
 }
 
 export default function AdminOrdersPage() {
+  const t = useTranslations('admin.orders');
   const searchParams = useSearchParams();
   const [voiceOrders, setVoiceOrders] = useState<VoiceOrder[]>([]);
   const [musicOrders, setMusicOrders] = useState<MusicOrder[]>([]);
@@ -365,10 +371,10 @@ export default function AdminOrdersPage() {
       ]);
 
       if (voiceResult.error) {
-        setUpdateError('Failed to load voice orders: ' + voiceResult.error.message);
+        setUpdateError(t('errLoadVoice', { msg: voiceResult.error.message }));
       }
       if (musicResult.error) {
-        setUpdateError('Failed to load music orders: ' + musicResult.error.message);
+        setUpdateError(t('errLoadMusic', { msg: musicResult.error.message }));
       }
 
       setVoiceOrders((voiceResult.data || []).map(o => ({ ...o, revision_count: o.revision_count ?? 0, max_revisions: o.max_revisions ?? 2, type: 'voice' as const })));
@@ -381,12 +387,12 @@ export default function AdminOrdersPage() {
       const stringsData = Array.isArray(strings.body) ? strings.body : [];
       if (!strings.ok) {
         const msg = (strings.body && typeof strings.body === 'object' && 'error' in strings.body) ? String((strings.body as { error: unknown }).error) : 'request failed';
-        setUpdateError('Failed to load orchestra orders: ' + msg);
+        setUpdateError(t('errLoadOrchestra', { msg }));
       }
       setStringsOrders(stringsData.map((o: any) => ({ ...o, type: 'strings' as const })));
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setUpdateError('Failed to load orders: ' + (err instanceof Error ? err.message : 'unknown error'));
+      setUpdateError(t('errLoadOrders', { msg: err instanceof Error ? err.message : t('errUnknown') }));
     } finally {
       setLoading(false);
     }
@@ -449,15 +455,15 @@ export default function AdminOrdersPage() {
     }
     await fetchOrders();
     setBulkBusy(false); setSelected(new Set()); setBulkDate('');
-    toast.success(`已設定 ${ok} 筆預計交期${skipped ? `,跳過 ${skipped} 筆弦樂單` : ''}${failed ? `,失敗 ${failed} 筆` : ''}`);
+    toast.success(t('bulkDateResult', { ok, skipped, failed }));
   }
 
   return (
     <div className="p-8 min-h-screen text-gray-900">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Order Management</h1>
-          <p className="text-gray-600">Manage and deliver all voice, music, and strings orders</p>
+          <h1 className="text-3xl font-bold mb-1">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
         <Button
           variant="outline"
@@ -466,25 +472,25 @@ export default function AdminOrdersPage() {
           className="gap-2 border-gray-400 text-gray-200 hover:text-gray-900 hover:bg-gray-100"
         >
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          {t('refresh')}
         </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">Total Orders</p>
+          <p className="text-gray-600 text-sm">{t('totalOrders')}</p>
           <p className="text-2xl font-bold mt-1">{allOrders.length}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">In Queue</p>
+          <p className="text-gray-600 text-sm">{t('inQueue')}</p>
           <p className="text-2xl font-bold text-yellow-700 mt-1">{queueCount}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">In Production</p>
+          <p className="text-gray-600 text-sm">{t('inProduction')}</p>
           <p className="text-2xl font-bold text-orange-700 mt-1">{productionCount}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">Completed</p>
+          <p className="text-gray-600 text-sm">{t('completed')}</p>
           <p className="text-2xl font-bold text-green-700 mt-1">{completedCount}</p>
         </div>
       </div>
@@ -493,7 +499,7 @@ export default function AdminOrdersPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 w-4 h-4" />
           <Input
-            placeholder="Search by email or order number..."
+            placeholder={t('searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
@@ -501,39 +507,39 @@ export default function AdminOrdersPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex gap-1.5 bg-white border border-gray-300 rounded-lg p-1">
-            {(['all', 'voice', 'music', 'strings'] as const).map(t => (
+            {(['all', 'voice', 'music', 'strings'] as const).map(tp => (
               <button
-                key={t}
-                onClick={() => setFilterType(t)}
+                key={tp}
+                onClick={() => setFilterType(tp)}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${
-                  filterType === t
-                    ? t === 'voice'
+                  filterType === tp
+                    ? tp === 'voice'
                       ? 'bg-cyan-600 text-white'
-                      : t === 'music'
+                      : tp === 'music'
                       ? 'bg-emerald-600 text-white'
-                      : t === 'strings'
+                      : tp === 'strings'
                       ? 'bg-amber-600 text-white'
                       : 'bg-gray-300 text-white'
                     : 'text-gray-500 hover:text-white'
                 }`}
               >
-                {t === 'all' ? 'All Types' : t === 'voice' ? 'Voice' : t === 'music' ? 'Music' : 'Strings'}
+                {tp === 'all' ? t('allTypes') : tp === 'voice' ? t('typeVoice') : tp === 'music' ? t('typeMusic') : t('typeStrings')}
               </button>
             ))}
           </div>
           <div className="w-px h-5 bg-gray-200" />
           <div className="flex gap-1.5 flex-wrap">
             {([
-              { val: 'all', label: 'All', color: 'bg-gray-300' },
-              { val: 'paid', label: 'In Queue', color: 'bg-yellow-600' },
-              { val: 'awaiting_files', label: 'Awaiting Files', color: 'bg-amber-700' },
-              { val: 'in_production', label: 'In Production', color: 'bg-orange-600' },
-              { val: 'demo_ready', label: 'Demo Ready', color: 'bg-blue-600' },
-              { val: 'delivered', label: 'Delivered', color: 'bg-purple-600' },
-              { val: 'revising', label: 'Revising', color: 'bg-amber-600' },
-              { val: 'completed', label: 'Complete', color: 'bg-green-600' },
-              { val: 'pending_payment', label: 'Pending', color: 'bg-gray-400' },
-            ] as { val: StatusFilter; label: string; color: string }[]).map(({ val, label, color }) => (
+              { val: 'all', labelKey: 'statusAll', color: 'bg-gray-300' },
+              { val: 'paid', labelKey: 'statusInQueue', color: 'bg-yellow-600' },
+              { val: 'awaiting_files', labelKey: 'statusAwaitingFiles', color: 'bg-amber-700' },
+              { val: 'in_production', labelKey: 'statusInProduction', color: 'bg-orange-600' },
+              { val: 'demo_ready', labelKey: 'statusDemoReady', color: 'bg-blue-600' },
+              { val: 'delivered', labelKey: 'statusDelivered', color: 'bg-purple-600' },
+              { val: 'revising', labelKey: 'statusRevising', color: 'bg-amber-600' },
+              { val: 'completed', labelKey: 'statusComplete', color: 'bg-green-600' },
+              { val: 'pending_payment', labelKey: 'statusPending', color: 'bg-gray-400' },
+            ] as { val: StatusFilter; labelKey: string; color: string }[]).map(({ val, labelKey, color }) => (
               <button
                 key={val}
                 onClick={() => setFilterStatus(val)}
@@ -543,7 +549,7 @@ export default function AdminOrdersPage() {
                     : 'border-gray-400 text-gray-700 hover:text-gray-900 hover:border-gray-500'
                 }`}
               >
-                {label}
+                {t(labelKey)}
               </button>
             ))}
           </div>
@@ -560,17 +566,17 @@ export default function AdminOrdersPage() {
         <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
           <label className="flex items-center gap-2 text-gray-600 cursor-pointer select-none">
             <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} className="w-4 h-4 accent-cyan-600" />
-            全選({filtered.length})
+            {t('selectAll', { count: filtered.length })}
           </label>
           {selected.size > 0 && (
             <>
-              <span className="text-gray-700 font-medium">已選 {selected.size} 筆</span>
-              <button onClick={exportCsv} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"><Download className="w-3.5 h-3.5" /> 匯出 CSV</button>
+              <span className="text-gray-700 font-medium">{t('selectedCount', { count: selected.size })}</span>
+              <button onClick={exportCsv} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"><Download className="w-3.5 h-3.5" /> {t('exportCsv')}</button>
               <span className="inline-flex items-center gap-1.5">
                 <input type="date" value={bulkDate} onChange={e => setBulkDate(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-900" />
-                <button onClick={applyBulkDate} disabled={!bulkDate || bulkBusy} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50">{bulkBusy ? '…' : '設預計交期'}</button>
+                <button onClick={applyBulkDate} disabled={!bulkDate || bulkBusy} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50">{bulkBusy ? '…' : t('setEstDelivery')}</button>
               </span>
-              <button onClick={() => setSelected(new Set())} className="text-gray-500 hover:text-gray-700">清除</button>
+              <button onClick={() => setSelected(new Set())} className="text-gray-500 hover:text-gray-700">{t('clear')}</button>
             </>
           )}
         </div>
@@ -578,9 +584,9 @@ export default function AdminOrdersPage() {
 
       <div className="space-y-3">
         {loading ? (
-          <div className="text-center py-16 text-gray-600 bg-white border border-gray-200 rounded-xl">Loading orders...</div>
+          <div className="text-center py-16 text-gray-600 bg-white border border-gray-200 rounded-xl">{t('loadingOrders')}</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-600 bg-white border border-gray-200 rounded-xl">No orders found.</div>
+          <div className="text-center py-16 text-gray-600 bg-white border border-gray-200 rounded-xl">{t('noOrders')}</div>
         ) : (
           filtered.map(order => {
             const isExpanded = expandedId === order.id;
@@ -603,7 +609,7 @@ export default function AdminOrdersPage() {
                   {/* Type pill */}
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${isVoice ? 'bg-cyan-50 text-cyan-700' : isStrings ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
                     {isVoice ? <Mic className="w-3 h-3" /> : isStrings ? <Music2 className="w-3 h-3" /> : <Music className="w-3 h-3" />}
-                    {isVoice ? 'Voice' : isStrings ? 'Strings' : 'Music'}
+                    {isVoice ? t('pillVoice') : isStrings ? t('pillStrings') : t('pillMusic')}
                   </span>
 
                   {/* Order # + email stacked */}
@@ -615,10 +621,10 @@ export default function AdminOrdersPage() {
                   {/* Plan / Vibe */}
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-sm text-gray-900 font-medium truncate leading-tight">
-                      {isVoice ? (vo?.project_name || vo?.voice_selection || '—') : isStrings ? (so?.project_name || '—') : (mo?.vibe || '—')}
+                      {isVoice ? (vo?.project_name || vo?.voice_selection || t('dash')) : isStrings ? (so?.project_name || t('dash')) : (mo?.vibe || t('dash'))}
                     </span>
                     <span className="text-xs text-gray-500 truncate leading-tight mt-0.5">
-                      {isVoice ? getVoiceTierLabel(order.tier) : isStrings ? `${so?.tier_name || '—'} · ${so?.duration_minutes}min` : getMusicTierLabel(order.tier)}
+                      {isVoice ? getVoiceTierLabel(order.tier) : isStrings ? `${so?.tier_name || t('dash')} · ${t('durationMin', { min: so?.duration_minutes ?? 0 })}` : getMusicTierLabel(order.tier)}
                     </span>
                   </div>
 
@@ -634,7 +640,7 @@ export default function AdminOrdersPage() {
 
                   {/* Status badge */}
                   <div className="flex-shrink-0 w-36 flex justify-end">
-                    {getStatusBadge(order.status)}
+                    {getStatusBadge(order.status, t)}
                   </div>
 
                   {/* Date */}
@@ -651,25 +657,25 @@ export default function AdminOrdersPage() {
                       <>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Plan</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldPlan')}</p>
                             <p className="text-gray-200">{getVoiceTierLabel(vo.tier)}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Voice</p>
-                            <p className="text-gray-200">{vo.voice_selection || '—'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldVoice')}</p>
+                            <p className="text-gray-200">{vo.voice_selection || t('dash')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Use Case</p>
-                            <p className="text-gray-200">{vo.use_case || '—'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldUseCase')}</p>
+                            <p className="text-gray-200">{vo.use_case || t('dash')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Rights Level</p>
-                            <p className="text-gray-200">{vo.rights_level === 'global' ? 'Global TV & Game Rights' : vo.rights_level === 'broadcast' ? 'Broadcast TV & Buyout' : vo.broadcast_rights ? 'Broadcast (Legacy)' : 'Standard Commercial'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldRightsLevel')}</p>
+                            <p className="text-gray-200">{vo.rights_level === 'global' ? t('rightsGlobalShort') : vo.rights_level === 'broadcast' ? t('rightsBroadcastShort') : vo.broadcast_rights ? t('rightsBroadcastLegacy') : t('rightsStandard')}</p>
                           </div>
                         </div>
 
                         {vo.script_text && (
-                          <CollapsibleText text={vo.script_text} label="Script" mono />
+                          <CollapsibleText text={vo.script_text} label={t('fieldScript')} mono />
                         )}
                       </>
                     )}
@@ -678,43 +684,43 @@ export default function AdminOrdersPage() {
                       <>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Vibe / Genre</p>
-                            <p className="text-gray-200">{mo.vibe || '—'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldVibeGenre')}</p>
+                            <p className="text-gray-200">{mo.vibe || t('dash')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Plan</p>
-                            <p className="text-gray-200">{getMusicTierLabel(mo.tier) || '—'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldPlan')}</p>
+                            <p className="text-gray-200">{getMusicTierLabel(mo.tier) || t('dash')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Usage Type</p>
-                            <p className="text-gray-200">{mo.usage_type || '—'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldUsageType')}</p>
+                            <p className="text-gray-200">{mo.usage_type || t('dash')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">String Addon</p>
-                            <p className="text-gray-200">{mo.string_addon || 'None'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldStringAddon')}</p>
+                            <p className="text-gray-200">{mo.string_addon || t('addonNone')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Rights Level</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldRightsLevel')}</p>
                             <p className={`font-medium ${
                               mo.tier === 'masterpiece' ? 'text-emerald-700' :
                               mo.tier === 'pro-arrangement' ? 'text-blue-700' : 'text-gray-200'
-                            }`}>{rightsLevelLabel(deriveRightsLevel(mo as unknown as AnyOrder))}</p>
+                            }`}>{rightsLevelLabel(deriveRightsLevel(mo as unknown as AnyOrder), t)}</p>
                           </div>
                           {mo.talent_name && (
                             <div className="col-span-2 md:col-span-4">
-                              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Singer / Talent</p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldSingerTalent')}</p>
                               <p className="text-emerald-700 font-medium">{mo.talent_name}</p>
                             </div>
                           )}
                         </div>
 
                         {mo.description && (
-                          <CollapsibleText text={mo.description} label="Brief / Description" />
+                          <CollapsibleText text={mo.description} label={t('fieldBriefDescription')} />
                         )}
 
                         {mo.reference_link && (
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Reference / Sonic Ref</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{t('fieldReferenceSonic')}</p>
                             <a
                               href={mo.reference_link}
                               target="_blank"
@@ -752,24 +758,24 @@ export default function AdminOrdersPage() {
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Setup</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldSetup')}</p>
                             <p className="text-gray-200">{so.tier_name}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Duration</p>
-                            <p className="text-gray-200">{so.duration_minutes} min</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldDuration')}</p>
+                            <p className="text-gray-200">{t('durationMin', { min: so.duration_minutes })}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Usage</p>
-                            <p className="text-gray-200">{so.usage_type || '—'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldUsage')}</p>
+                            <p className="text-gray-200">{so.usage_type || t('dash')}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Genre</p>
-                            <p className="text-gray-200">{so.genre || '—'}</p>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('fieldGenre')}</p>
+                            <p className="text-gray-200">{so.genre || t('dash')}</p>
                           </div>
                         </div>
                         {so.description && (
-                          <CollapsibleText text={so.description} label="Brief" />
+                          <CollapsibleText text={so.description} label={t('fieldBrief')} />
                         )}
                         <OrchestraOrderWorkflow
                           order={so as any}

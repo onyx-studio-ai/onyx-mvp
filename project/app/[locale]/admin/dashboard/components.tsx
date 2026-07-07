@@ -55,13 +55,16 @@ interface TrafficChartProps {
     orders: number;
     revenue?: number;
   }>;
+  // 顯示文字由呼叫端(dashboard 頁)以 i18n 傳入;預設維持原英文,故其他呼叫端不受影響。
+  title?: string;
+  description?: string;
 }
 
-export const TrafficChart = ({ data }: TrafficChartProps) => (
+export const TrafficChart = ({ data, title = 'Daily Orders (7 days)', description = 'Paid orders per day' }: TrafficChartProps) => (
   <Card className="bg-white border-gray-200">
     <CardHeader>
-      <CardTitle className="text-gray-900 text-lg">Daily Orders (7 days)</CardTitle>
-      <p className="text-gray-600 text-xs">Paid orders per day</p>
+      <CardTitle className="text-gray-900 text-lg">{title}</CardTitle>
+      <p className="text-gray-600 text-xs">{description}</p>
     </CardHeader>
     <CardContent>
       <ResponsiveContainer width="100%" height={300}>
@@ -97,13 +100,16 @@ interface VoiceBarChartProps {
     percentage: number;
     orders: number;
   }>;
+  // 顯示文字由呼叫端(dashboard 頁)以 i18n 傳入;預設維持原英文。
+  title?: string;
+  description?: string;
 }
 
-export const VoiceBarChart = ({ data }: VoiceBarChartProps) => (
+export const VoiceBarChart = ({ data, title = 'Top Voices', description = 'Order distribution' }: VoiceBarChartProps) => (
   <Card className="bg-white border-gray-200">
     <CardHeader>
-      <CardTitle className="text-gray-900 text-lg">Top Voices</CardTitle>
-      <p className="text-gray-600 text-xs">Order distribution</p>
+      <CardTitle className="text-gray-900 text-lg">{title}</CardTitle>
+      <p className="text-gray-600 text-xs">{description}</p>
     </CardHeader>
     <CardContent>
       <ResponsiveContainer width="100%" height={300}>

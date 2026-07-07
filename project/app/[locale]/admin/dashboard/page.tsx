@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { DollarSign, ShoppingCart, Music, Mic, ArrowRight, RefreshCw } from 'lucide-react';
 import { TrafficChart, VoiceBarChart, SectionHeader } from './components';
@@ -46,17 +47,19 @@ function formatCurrency(val: number) {
   return `US$${val.toFixed(0)}`;
 }
 
-function timeAgo(dateStr: string) {
+// 顯示字串走 i18n:把 t 傳進來,只換文字不動時間計算邏輯。
+function timeAgo(dateStr: string, t: ReturnType<typeof useTranslations>) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t('justNow');
+  if (mins < 60) return t('minsAgo', { mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24) return t('hrsAgo', { hrs });
+  return t('daysAgo', { days: Math.floor(hrs / 24) });
 }
 
 export default function AdminDashboardPage() {
+  const t = useTranslations('admin.dashboard');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -174,7 +177,7 @@ export default function AdminDashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading dashboard...</div>
+        <div className="text-gray-600">{t('loading')}</div>
       </div>
     );
   }
@@ -187,8 +190,8 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-gray-600 text-sm mt-1">Live business data</p>
+              <h1 className="text-3xl font-bold">{t('title')}</h1>
+              <p className="text-gray-600 text-sm mt-1">{t('subtitle')}</p>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -196,11 +199,11 @@ export default function AdminDashboardPage() {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm transition-colors"
               >
                 <RefreshCw size={14} />
-                Refresh
+                {t('refresh')}
               </button>
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-200">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-700 text-sm font-medium">Live</span>
+                <span className="text-green-700 text-sm font-medium">{t('live')}</span>
               </div>
             </div>
           </div>
@@ -209,47 +212,47 @@ export default function AdminDashboardPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <section>
-          <SectionHeader title="Revenue Overview" />
+          <SectionHeader title={t('revenueOverview')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-600 text-sm">Total Revenue</span>
+                <span className="text-gray-600 text-sm">{t('totalRevenue')}</span>
                 <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
                   <DollarSign className="w-5 h-5 text-green-500" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-green-700">{formatCurrency(s.totalRevenue)}</p>
-              <p className="text-xs text-gray-600 mt-1">All time paid orders</p>
+              <p className="text-xs text-gray-600 mt-1">{t('totalRevenueDesc')}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-600 text-sm">Voice Revenue</span>
+                <span className="text-gray-600 text-sm">{t('voiceRevenue')}</span>
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                   <Mic className="w-5 h-5 text-blue-700" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-blue-700">{formatCurrency(s.voiceRevenue)}</p>
-              <p className="text-xs text-gray-600 mt-1">{s.paidOrders > 0 ? Math.round((s.voiceRevenue / s.totalRevenue) * 100) : 0}% of total</p>
+              <p className="text-xs text-gray-600 mt-1">{t('percentOfTotal', { percent: s.paidOrders > 0 ? Math.round((s.voiceRevenue / s.totalRevenue) * 100) : 0 })}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-600 text-sm">Music Revenue</span>
+                <span className="text-gray-600 text-sm">{t('musicRevenue')}</span>
                 <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
                   <Music className="w-5 h-5 text-amber-700" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-amber-700">{formatCurrency(s.musicRevenue)}</p>
-              <p className="text-xs text-gray-600 mt-1">{s.totalRevenue > 0 ? Math.round((s.musicRevenue / s.totalRevenue) * 100) : 0}% of total</p>
+              <p className="text-xs text-gray-600 mt-1">{t('percentOfTotal', { percent: s.totalRevenue > 0 ? Math.round((s.musicRevenue / s.totalRevenue) * 100) : 0 })}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-gray-600 text-sm">Total Orders</span>
+                <span className="text-gray-600 text-sm">{t('totalOrders')}</span>
                 <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
                   <ShoppingCart className="w-5 h-5 text-gray-700" />
                 </div>
               </div>
               <p className="text-2xl font-bold">{s.totalOrders}</p>
-              <p className="text-xs text-gray-600 mt-1">{s.paidOrders} paid · {s.pendingOrders} pending</p>
+              <p className="text-xs text-gray-600 mt-1">{t('ordersPaidPending', { paid: s.paidOrders, pending: s.pendingOrders })}</p>
             </div>
           </div>
         </section>
@@ -258,34 +261,34 @@ export default function AdminDashboardPage() {
         <TrafficSection />
 
         <section>
-          <SectionHeader title="Last 7 Days" />
+          <SectionHeader title={t('last7Days')} />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TrafficChart data={s.dailyData} />
+            <TrafficChart data={s.dailyData} title={t('dailyOrdersTitle')} description={t('dailyOrdersDesc')} />
             {s.voiceBreakdown.length > 0 ? (
-              <VoiceBarChart data={s.voiceBreakdown} />
+              <VoiceBarChart data={s.voiceBreakdown} title={t('topVoicesTitle')} description={t('topVoicesDesc')} />
             ) : (
               <div className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center justify-center">
-                <p className="text-gray-600 text-sm">No voice orders yet</p>
+                <p className="text-gray-600 text-sm">{t('noVoiceOrders')}</p>
               </div>
             )}
           </div>
         </section>
 
         <section>
-          <SectionHeader title="Recent Paid Orders" />
+          <SectionHeader title={t('recentPaidOrders')} />
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
             {s.recentTransactions.length === 0 ? (
-              <div className="text-center py-12 text-gray-600 text-sm">No paid orders yet</div>
+              <div className="text-center py-12 text-gray-600 text-sm">{t('noPaidOrders')}</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Customer</th>
-                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Order</th>
-                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Type</th>
-                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Time</th>
-                      <th className="text-right px-6 py-4 text-sm font-medium text-gray-600">Amount</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">{t('colCustomer')}</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">{t('colOrder')}</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">{t('colType')}</th>
+                      <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">{t('colTime')}</th>
+                      <th className="text-right px-6 py-4 text-sm font-medium text-gray-600">{t('colAmount')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -302,10 +305,10 @@ export default function AdminDashboardPage() {
                               ? 'bg-blue-50 text-blue-700'
                               : 'bg-amber-50 text-amber-700'
                           }`}>
-                            {tx.type === 'voice' ? 'Voice' : 'Music'}
+                            {tx.type === 'voice' ? t('typeVoice') : t('typeMusic')}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{timeAgo(tx.created_at)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{timeAgo(tx.created_at, t)}</td>
                         <td className="px-6 py-4 text-sm text-right font-semibold text-green-700">
                           +{formatCurrency(tx.amount)}
                         </td>
@@ -320,7 +323,7 @@ export default function AdminDashboardPage() {
                 href="/admin/orders"
                 className="inline-flex items-center gap-2 text-sm text-blue-700 hover:text-blue-700 transition-colors group"
               >
-                <span>View All Orders</span>
+                <span>{t('viewAllOrders')}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -328,27 +331,27 @@ export default function AdminDashboardPage() {
         </section>
 
         <section>
-          <SectionHeader title="Quick Stats" />
+          <SectionHeader title={t('quickStats')} />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
               <p className="text-3xl font-bold text-gray-900">{s.paidOrders}</p>
-              <p className="text-gray-600 text-sm mt-1">Paid Orders</p>
+              <p className="text-gray-600 text-sm mt-1">{t('statPaidOrders')}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
               <p className="text-3xl font-bold text-amber-700">{s.pendingOrders}</p>
-              <p className="text-gray-600 text-sm mt-1">Awaiting Payment</p>
+              <p className="text-gray-600 text-sm mt-1">{t('statAwaitingPayment')}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
               <p className="text-3xl font-bold text-blue-700">
                 {s.totalOrders > 0 ? Math.round((s.paidOrders / s.totalOrders) * 100) : 0}%
               </p>
-              <p className="text-gray-600 text-sm mt-1">Conversion Rate</p>
+              <p className="text-gray-600 text-sm mt-1">{t('statConversionRate')}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
               <p className="text-3xl font-bold text-green-700">
                 {s.paidOrders > 0 ? formatCurrency(s.totalRevenue / s.paidOrders) : 'US$0'}
               </p>
-              <p className="text-gray-600 text-sm mt-1">Avg. Order Value</p>
+              <p className="text-gray-600 text-sm mt-1">{t('statAvgOrderValue')}</p>
             </div>
           </div>
         </section>

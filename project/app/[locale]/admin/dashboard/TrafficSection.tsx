@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -36,6 +37,7 @@ function countryLabel(code: string) {
 }
 
 export default function TrafficSection() {
+  const t = useTranslations('admin.traffic');
   const [data, setData] = useState<TrafficData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -65,9 +67,9 @@ export default function TrafficSection() {
   if (loading) {
     return (
       <section>
-        <SectionHeader title="Website Traffic" />
+        <SectionHeader title={t('websiteTraffic')} />
         <div className="bg-white border border-gray-200 rounded-2xl p-6 text-gray-600 text-sm">
-          Loading traffic data…
+          {t('loading')}
         </div>
       </section>
     );
@@ -76,9 +78,9 @@ export default function TrafficSection() {
   if (error || !data) {
     return (
       <section>
-        <SectionHeader title="Website Traffic" />
+        <SectionHeader title={t('websiteTraffic')} />
         <div className="bg-white border border-gray-200 rounded-2xl p-6 text-gray-600 text-sm">
-          No traffic data yet. Tracking starts once the <code>page_views</code> table is created and visitors arrive.
+          {t('empty')}
         </div>
       </section>
     );
@@ -97,60 +99,60 @@ export default function TrafficSection() {
   return (
     <>
       <section>
-        <SectionHeader title={`Website Traffic (last ${d.windowDays} days)`} />
+        <SectionHeader title={t('websiteTrafficWindow', { days: d.windowDays })} />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-600 text-sm">Total Page Views</span>
+              <span className="text-gray-600 text-sm">{t('totalPageViews')}</span>
               <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
                 <Eye className="w-5 h-5 text-indigo-600" />
               </div>
             </div>
             <p className="text-2xl font-bold text-indigo-700">{d.totalViews.toLocaleString()}</p>
-            <p className="text-xs text-gray-600 mt-1">All tracked front-end pages</p>
+            <p className="text-xs text-gray-600 mt-1">{t('totalPageViewsDesc')}</p>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-600 text-sm">Approx. Visitors</span>
+              <span className="text-gray-600 text-sm">{t('approxVisitors')}</span>
               <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
                 <Users className="w-5 h-5 text-teal-600" />
               </div>
             </div>
             <p className="text-2xl font-bold text-teal-700">{d.approxVisitors.toLocaleString()}</p>
-            <p className="text-xs text-gray-600 mt-1">Est. by page + country + day (no IP stored)</p>
+            <p className="text-xs text-gray-600 mt-1">{t('approxVisitorsDesc')}</p>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-600 text-sm">Countries</span>
+              <span className="text-gray-600 text-sm">{t('countries')}</span>
               <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center">
                 <Globe className="w-5 h-5 text-sky-600" />
               </div>
             </div>
             <p className="text-2xl font-bold text-sky-700">{d.countries.filter((c) => c.country !== 'Unknown').length}</p>
-            <p className="text-xs text-gray-600 mt-1">Distinct visitor countries</p>
+            <p className="text-xs text-gray-600 mt-1">{t('countriesDesc')}</p>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-600 text-sm">Views → Inquiry</span>
+              <span className="text-gray-600 text-sm">{t('viewsToInquiry')}</span>
               <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-violet-600" />
               </div>
             </div>
             <p className="text-2xl font-bold text-violet-700">{funnelInquiryRate}%</p>
-            <p className="text-xs text-gray-600 mt-1">{d.funnel.inquiries} inquiries from {d.funnel.views} views</p>
+            <p className="text-xs text-gray-600 mt-1">{t('inquiriesFromViews', { inquiries: d.funnel.inquiries, views: d.funnel.views })}</p>
           </div>
         </div>
       </section>
 
       <section>
-        <SectionHeader title="Traffic Trend & Funnel" />
+        <SectionHeader title={t('trafficTrendFunnel')} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h3 className="text-gray-900 text-lg font-semibold">Daily Page Views</h3>
-            <p className="text-gray-600 text-xs mb-4">Views per day, last {d.windowDays} days</p>
+            <h3 className="text-gray-900 text-lg font-semibold">{t('dailyPageViews')}</h3>
+            <p className="text-gray-600 text-xs mb-4">{t('dailyPageViewsDesc', { days: d.windowDays })}</p>
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={trend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -166,30 +168,30 @@ export default function TrafficSection() {
 
           {/* 漏斗:頁面瀏覽 → 詢價 → 訂單 */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h3 className="text-gray-900 text-lg font-semibold">Conversion Funnel</h3>
-            <p className="text-gray-600 text-xs mb-4">Where visitors drop off, last {d.windowDays} days</p>
+            <h3 className="text-gray-900 text-lg font-semibold">{t('conversionFunnel')}</h3>
+            <p className="text-gray-600 text-xs mb-4">{t('conversionFunnelDesc', { days: d.windowDays })}</p>
             <div className="space-y-3">
-              <FunnelBar label="Page Views" value={d.funnel.views} max={d.funnel.views} color="bg-indigo-500" />
-              <div className="text-center text-xs text-gray-500">↓ {funnelInquiryRate}% reach inquiry</div>
-              <FunnelBar label="Inquiries" value={d.funnel.inquiries} max={d.funnel.views} color="bg-violet-500" />
-              <div className="text-center text-xs text-gray-500">↓ {funnelOrderRate}% of inquiries convert</div>
-              <FunnelBar label="Paid Orders" value={d.funnel.orders} max={d.funnel.views} color="bg-green-500" />
+              <FunnelBar label={t('funnelPageViews')} value={d.funnel.views} max={d.funnel.views} color="bg-indigo-500" />
+              <div className="text-center text-xs text-gray-500">{t('funnelReachInquiry', { rate: funnelInquiryRate })}</div>
+              <FunnelBar label={t('funnelInquiries')} value={d.funnel.inquiries} max={d.funnel.views} color="bg-violet-500" />
+              <div className="text-center text-xs text-gray-500">{t('funnelInquiriesConvert', { rate: funnelOrderRate })}</div>
+              <FunnelBar label={t('funnelPaidOrders')} value={d.funnel.orders} max={d.funnel.views} color="bg-green-500" />
             </div>
           </div>
         </div>
       </section>
 
       <section>
-        <SectionHeader title="Top Pages & Countries" />
+        <SectionHeader title={t('topPagesCountries')} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 熱門頁 */}
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-500" />
-              <span className="text-gray-900 font-semibold">Top Pages</span>
+              <span className="text-gray-900 font-semibold">{t('topPages')}</span>
             </div>
             {d.topPages.length === 0 ? (
-              <div className="px-6 py-8 text-gray-600 text-sm text-center">No page views yet</div>
+              <div className="px-6 py-8 text-gray-600 text-sm text-center">{t('noPageViews')}</div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {d.topPages.map((p) => (
@@ -206,10 +208,10 @@ export default function TrafficSection() {
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
               <Globe className="w-4 h-4 text-gray-500" />
-              <span className="text-gray-900 font-semibold">Countries</span>
+              <span className="text-gray-900 font-semibold">{t('countriesListTitle')}</span>
             </div>
             {d.countries.length === 0 ? (
-              <div className="px-6 py-8 text-gray-600 text-sm text-center">No country data yet</div>
+              <div className="px-6 py-8 text-gray-600 text-sm text-center">{t('noCountryData')}</div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {d.countries.slice(0, 10).map((c) => (
