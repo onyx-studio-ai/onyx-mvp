@@ -522,7 +522,7 @@ export default function TalentDashboard() {
                 title={tx('已收藏你聲音的客戶數', '已收藏你声音的客户数', 'Clients who saved your voice')}
               >
                 <Heart className="w-3.5 h-3.5" />
-                {tx(`${favoriteCount} 人收藏了你的聲音`, `${favoriteCount} 人收藏了你的声音`, `${favoriteCount} ${favoriteCount === 1 ? 'person' : 'people'} saved your voice`)}
+                {favoriteCount}
               </span>
             )}
             {t?.is_active && t?.id && (
