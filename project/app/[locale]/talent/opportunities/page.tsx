@@ -957,8 +957,15 @@ function BriefCard({
               </div>
             </div>
           ) : (
-            /* General (single-voice) call — respond with an existing demo OR an upload + price. */
-            <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} tx={tx} onQuoted={onQuoted} myName={myName} templates={templates} onTemplates={onTemplates} />
+            /* General (single-voice) call — respond with an existing demo OR an upload + price.
+               Roles-mode shows "N 人已試" per role; general has no roles, so surface the
+               case-level count (quotes with no role_name are keyed under '') the same way. */
+            <>
+              {(() => { const c = roleCounts[''] || 0; return (
+                <p className="text-xs mb-2"><span className={c > 0 ? 'text-[#E4CB94] font-medium' : 'text-gray-400'}>{c}</span> <span className="text-gray-400">{tx('人已試', '人已试', 'auditioned')}</span></p>
+              ); })()}
+              <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} tx={tx} onQuoted={onQuoted} myName={myName} templates={templates} onTemplates={onTemplates} />
+            </>
           )}
         </>
       ) : (
