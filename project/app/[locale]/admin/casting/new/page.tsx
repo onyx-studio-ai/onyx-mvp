@@ -142,8 +142,9 @@ function NewCasting() {
   // AI cases invite from talent_applications (everyone who filled the form + opted
   // into AI) via免註冊 magic-link — includes people not yet approved/online. Selected
   // by email (they may have no talents account). Default = all selected.
-  const [aiPool, setAiPool] = useState<{ email: string; name: string }[]>([]);
+  const [aiPool, setAiPool] = useState<{ email: string; name: string; langs: string }[]>([]);
   const [selEmails, setSelEmails] = useState<Set<string>>(new Set());
+  const [userEditedEmails, setUserEditedEmails] = useState(false);
   const [aiPoolErr, setAiPoolErr] = useState('');
   // When opened as /admin/casting/new?from=<id> we're completing a client request:
   // pre-fill from their brief, show who asked + their budget, and publish IN PLACE.
@@ -240,19 +241,29 @@ function NewCasting() {
   }, []);
 
   // AI case → load the invite pool = applicants who opted into the matching consent
-  // (talent_applications, incl. not-yet-approved). Default: select everyone.
+  // (talent_applications ∪ talents, incl. not-yet-approved). Default selection is
+  // handled by the effect below (matching-language), not here.
   useEffect(() => {
+    setUserEditedEmails(false);
     if (!aiType) { setAiPool([]); setSelEmails(new Set()); setAiPoolErr(''); return; }
     (async () => {
       setAiPoolErr('');
       const r = await fetch(`/api/admin/casting/ai-applicants?type=${aiType}`, { credentials: 'include' }).catch(() => null);
       if (!r || !r.ok) { setAiPoolErr('無法載入報名者名單,請重新整理。'); setAiPool([]); return; }
       const j = await r.json().catch(() => ({}));
-      const pool: { email: string; name: string }[] = Array.isArray(j.applicants) ? j.applicants : [];
+      const pool: { email: string; name: string; langs: string }[] = Array.isArray(j.applicants) ? j.applicants : [];
       setAiPool(pool);
-      setSelEmails(new Set(pool.map((p) => p.email))); // default: all selected (Wing can deselect)
     })();
   }, [aiType]);
+
+  // Default AI selection = applicants who MATCH the case language (inviting someone
+  // who doesn't speak it is useless) — until the admin edits the picker. Re-runs as
+  // the pool loads / the case language changes.
+  useEffect(() => {
+    if (!aiType || userEditedEmails || aiPool.length === 0) return;
+    setSelEmails(new Set(aiPool.filter(matchesLang).map((p) => p.email)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiPool, language, aiType, userEditedEmails]);
 
   // language match for the picker (best-effort default pre-check)
   const langTokens = (s: string) => (s || '').split(/[^A-Za-z一-鿿]+/).map((x) => x.trim().toLowerCase()).filter((x) => (/[一-鿿]/.test(x) ? x.length >= 2 : x.length >= 3));
@@ -577,27 +588,31 @@ function NewCasting() {
               // AI case: invite everyone who filled the form + opted into AI (incl.
               // not-yet-approved), by email → 免註冊 magic-link. Default all selected.
               <>
-                <p className="text-xs text-[#6FCF97] mb-3">🟢 AI 案 —— 列出所有「填過報名表 + 已同意{aiType === 'training' ? '錄製 AI 訓練素材' : '聲音製成 AI'}」的人({aiPool.length} 位),不限是否已上線審核。預設全選,可取消不想發的;發佈時寄免註冊試音連結給勾選的人。完全的一般人(沒報名)用下方公開連結。</p>
+                <p className="text-xs text-[#6FCF97] mb-3">🟢 AI 案 —— 列出所有「填過報名表 + 已同意{aiType === 'training' ? '錄製 AI 訓練素材' : '聲音製成 AI'}」的人({aiPool.length} 位),不限是否已上線審核。預設勾選<span className="font-medium">符合語系</span>的人(不符語系邀了也沒用);發佈時寄免註冊試音連結給勾選的人。完全的一般人(沒報名)用下方公開連結。</p>
                 {aiPoolErr ? <p className="text-xs text-red-400">{aiPoolErr}</p> : aiPool.length === 0 ? (
                   <p className="text-xs text-gray-400">目前沒有「接受 AI」的報名者 —— 可用下方公開連結招人(對方點開就能試、等於當場同意)。</p>
                 ) : (
                   <>
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋 email / 名字…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#6FCF97]/60 max-w-[200px]" />
-                      <button type="button" onClick={() => setSelEmails(new Set(aiPool.map((p) => p.email)))} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">全選</button>
-                      <button type="button" onClick={() => setSelEmails(new Set())} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
+                      <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-[#6FCF97]" />只顯示符合語系</label>
+                      <button type="button" onClick={() => { setUserEditedEmails(true); setSelEmails(new Set(aiPool.filter(matchesLang).map((p) => p.email))); }} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">該語系全選</button>
+                      <button type="button" onClick={() => { setUserEditedEmails(true); setSelEmails(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
                     </div>
                     {(() => {
                       const q = talentSearch.trim().toLowerCase();
-                      const shown = aiPool.filter((p) => !q || p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q));
+                      const shown = aiPool
+                        .filter((p) => (langOnly ? matchesLang(p) : true))
+                        .filter((p) => !q || p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.langs.toLowerCase().includes(q));
                       return (
                         <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
-                          {shown.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的報名者。</p>}
+                          {shown.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的報名者{langOnly ? '(可關閉「只顯示符合語系」看全部)' : ''}。</p>}
                           {shown.slice(0, 500).map((p) => (
                             <label key={p.email} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
-                              <input type="checkbox" checked={selEmails.has(p.email)} onChange={() => setSelEmails((s) => { const n = new Set(s); if (n.has(p.email)) n.delete(p.email); else n.add(p.email); return n; })} className="accent-[#6FCF97]" />
+                              <input type="checkbox" checked={selEmails.has(p.email)} onChange={() => { setUserEditedEmails(true); setSelEmails((s) => { const n = new Set(s); if (n.has(p.email)) n.delete(p.email); else n.add(p.email); return n; }); }} className="accent-[#6FCF97]" />
                               <span className="text-gray-100">{p.name}</span>
-                              <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[55%]">{p.email}</span>
+                              {matchesLang(p) && <span className="text-[10px] text-green-400/80">符合語系</span>}
+                              <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[45%]">{p.email}</span>
                             </label>
                           ))}
                         </div>
