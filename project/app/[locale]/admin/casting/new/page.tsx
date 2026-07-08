@@ -58,7 +58,12 @@ const CATEGORIES: { label: string; mode: 'roles' | 'general' }[] = [
   { label: '動畫 Animation', mode: 'roles' },
   { label: '戲劇·角色 Drama', mode: 'roles' },
   { label: '角色配唱 Character Singing', mode: 'roles' },
+  // Client-side AI/TTS engagement (voice becomes an AI model for a CLIENT). Picking
+  // this reveals the clone/training sub-type + gates the case to opted-in talents.
+  { label: 'TTS / AI 語音', mode: 'general' },
 ];
+// The one category that flags a case as client-side AI/TTS (drives ai_type + consent gate).
+const AI_CATEGORY = 'TTS / AI 語音';
 
 // /hire content_type (English key) → casting category label, so a client request
 // lands on the right category + mode instead of the 遊戲 default.
@@ -141,6 +146,9 @@ function NewCasting() {
     setCategory(label);
     const m = CATEGORIES.find((c) => c.label === label)?.mode;
     if (m) setMode(m); // category drives the default flow; toggle can still override
+    // TTS / AI category drives the AI sub-type: default to 'clone' (聲音變AI) on
+    // entry, keep an existing sub-type, and clear it when a non-AI category is picked.
+    setAiType((prev) => (label === AI_CATEGORY ? (prev || 'clone') : ''));
   }
 
   useEffect(() => {
@@ -632,16 +640,14 @@ function NewCasting() {
             : '配音員用平台現有 demo 或上傳一段 demo + 報價即可,不需逐角色錄音(廣告 / 旁白 / 有聲書等)。'}
         </p>
 
-        {/* TTS / AI case (client-side). When on, this case is INVITE-GATED: only
-            talents who opted into the matching consent (聲音變AI / 訓練素材) can be
-            invited or see it. The talent signs the CLIENT's authorization, not Onyx's. */}
-        <div className={`rounded-lg p-3 border ${aiType ? 'bg-[#6FCF97]/[0.07] border-[#6FCF97]/40' : 'bg-gray-50 border-gray-200'}`}>
-          <label className="flex items-start gap-2 cursor-pointer">
-            <input type="checkbox" className="mt-0.5 accent-[#6FCF97]" checked={!!aiType} onChange={(e) => setAiType(e.target.checked ? 'clone' : '')} />
-            <span className="text-sm text-gray-800">此案為 <span className="font-medium">TTS / AI 案(客戶端)</span> —— 配音員的聲音會被製成 AI</span>
-          </label>
-          {aiType && (
-            <div className="mt-2.5 pl-6 space-y-1.5">
+        {/* When the 類別 is TTS / AI, this case is client-side voice→AI: pick the
+            sub-type (clone/training). It's INVITE-GATED — only talents who opted into
+            the matching consent are invited / can see it; they sign the CLIENT's
+            authorization, not Onyx's. Choosing a non-AI category clears this. */}
+        {category === AI_CATEGORY && (
+          <div className="rounded-lg p-3 border bg-[#6FCF97]/[0.07] border-[#6FCF97]/40">
+            <p className="text-sm text-gray-800 mb-2"><span className="font-medium">TTS / AI 案(客戶端)</span> —— 配音員的聲音會被製成 AI。請選類型:</p>
+            <div className="space-y-1.5">
               {([['clone', '聲音製成 AI(會用到本人聲音)', '例:客戶要拿錄音做成 TTS 合成模型 → 篩「接受聲音變 AI」的配音員'],
                  ['training', 'AI 訓練素材(不會用到本人聲音)', '例:只是錄泛用語料餵模型,聲音不會被複製 → 篩「接受錄訓練素材」的配音員']] as const).map(([k, l, hint]) => (
                 <label key={k} className="flex items-start gap-2 cursor-pointer">
@@ -649,10 +655,10 @@ function NewCasting() {
                   <span className="text-sm text-gray-700">{l}<span className="block text-[11px] text-gray-400">{hint}</span></span>
                 </label>
               ))}
-              <p className="text-[11px] text-[#4b9c6e] pt-1">🟢 只有「已同意」且已上線的配音員才會被邀請 / 看得到此案;沒同意的完全看不到。配音員接案後另簽<span className="font-medium">客戶的授權書</span>。</p>
             </div>
-          )}
-        </div>
+            <p className="text-[11px] text-[#4b9c6e] pt-2">🟢 只有「已同意」且已上線的配音員才會被邀請 / 看得到此案;沒同意的完全看不到。配音員接案後另簽<span className="font-medium">客戶的授權書</span>。</p>
+          </div>
+        )}
 
         <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
         <Field label="報酬(客戶預算,給配音員看 · 台幣/美金二選一)">
