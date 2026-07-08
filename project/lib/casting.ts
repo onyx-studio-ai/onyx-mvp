@@ -24,6 +24,33 @@ const TYPE_ABBR: [RegExp, string][] = [
   [/配唱|singing/i, 'SING'],
 ];
 
+// 試音截止是否已過。取 audition_deadline,沒有就退回 deadline;都沒設 = 永不截止
+// (維持原規則)。穩健 parse:吃正常 ISO(2026-06-30),也吃舊/髒的「6/30」這種
+// 沒年份短字串(以案子建立年份推年,推出來早於建立日就 +1 年)—— 舊資料過期也擋得住。
+// 只判「截止(停收試音)」,不改案子 status;真正結案是採用→建製作單那條。
+function endOfDay(y: number, mo: number, d: number): number {
+  return new Date(y, mo - 1, d, 23, 59, 59, 999).getTime();
+}
+function deadlineEndTs(raw: string, createdAt?: string | null): number {
+  let m = /(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(raw);        // 完整日期 YYYY-MM-DD
+  if (m) return endOfDay(+m[1], +m[2], +m[3]);
+  m = /^(\d{1,2})[-/](\d{1,2})$/.exec(raw);                     // 只有月/日:6/30
+  if (m) {
+    const cd = createdAt ? new Date(createdAt) : null;
+    const baseYear = cd && !isNaN(cd.getTime()) ? cd.getFullYear() : new Date().getFullYear();
+    let ts = endOfDay(baseYear, +m[1], +m[2]);
+    if (cd && !isNaN(cd.getTime()) && ts < cd.getTime()) ts = endOfDay(baseYear + 1, +m[1], +m[2]);
+    return ts;
+  }
+  return new Date(`${raw.slice(0, 10)}T23:59:59`).getTime();    // 最後才交給原生 parse
+}
+export function auditionDeadlinePassed(b: { audition_deadline?: string | null; deadline?: string | null; created_at?: string | null }): boolean {
+  const raw = (b.audition_deadline || b.deadline || '').toString().trim();
+  if (!raw) return false; // 沒設截止 = 永不截止
+  const ts = deadlineEndTs(raw, b.created_at);
+  return Number.isFinite(ts) && Date.now() > ts;
+}
+
 export function caseCode(b: { content_type?: string | null; created_at?: string | null; brief_number?: string | null }): string {
   const ct = b.content_type || '';
   let type = 'VO';

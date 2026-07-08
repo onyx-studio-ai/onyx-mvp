@@ -2903,6 +2903,7 @@
       "rolesCount": "{count} roles",
       "quotesCount": "{count} quotes",
       "deadlineLabel": "Deadline",
+      "auditionEnded": "· Auditions closed (still assignable)",
       "clientBudget": "Client budget",
       "addRolesPublish": "✏️ Add Roles + Pricing and Publish →",
       "previewFrontTitle": "Preview the front-end as a talent sees it (read-only)",

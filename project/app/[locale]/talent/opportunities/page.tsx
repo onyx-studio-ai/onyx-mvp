@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
-import { caseCode } from '@/lib/casting';
+import { caseCode, auditionDeadlinePassed } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
 import ReviewBox from '@/components/marketplace/ReviewBox';
 import { StatModule, EntityCard, InfoPills } from '@/components/dashboard/cards';
@@ -1067,11 +1067,8 @@ function CaseHeader({
 // audition_deadline 那天 23:59 之後就鎖(當天仍可交),parse 失敗一律不鎖(不誤鎖)。
 // 後端 quotes API 另有同樣把關,前端 disabled 只是提早擋 UI。
 function auditionClosed(brief: Brief): boolean {
-  if (typeof brief.closed === 'boolean') return brief.closed;
-  const d = brief.audition_deadline || brief.deadline;   // 沒設試音截止就用交付截止當界線,與卡片顯示的截止日一致
-  if (!d) return false;
-  const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
-  return Number.isFinite(t) && Date.now() > t;
+  if (typeof brief.closed === 'boolean') return brief.closed; // 後端算好的優先(統一來源)
+  return auditionDeadlinePassed(brief);                       // fallback:同一套穩健判定
 }
 
 // 截止時三處(角色試音 / 單一聲音案 / 普通報價)共用的統一提示條 —— 灰底、置頂,

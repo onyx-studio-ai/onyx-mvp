@@ -2903,6 +2903,7 @@
       "rolesCount": "{count} 角",
       "quotesCount": "{count} 报价",
       "deadlineLabel": "截止",
+      "auditionEnded": "· 已截止(仍可分案)",
       "clientBudget": "客户预算",
       "addRolesPublish": "✏️ 补角色 + 定价并发布 →",
       "previewFrontTitle": "以配音员视角预览前台(只读)",

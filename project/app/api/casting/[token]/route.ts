@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { auditionDeadlinePassed } from '@/lib/casting';
 
 /*
   Guest casting endpoints (token = the invite link's capability; no login).
@@ -34,14 +35,11 @@ function pickGuestBrief(brief: Record<string, unknown>): Record<string, unknown>
   return out;
 }
 
-// 試音是否已截止 = 案件非 open,或過了 audition_deadline||deadline(當天 23:59)。
-// 沒設截止日 / parse 失敗一律不算截止(與登入端 / briefs API 同一套規則)。
-function castingClosed(brief: { status?: string | null; audition_deadline?: string | null; deadline?: string | null }): boolean {
+// 試音是否已截止 = 案件非 open,或過了 audition_deadline||deadline(用共用
+// auditionDeadlinePassed,吃 ISO 也吃舊「6/30」短字串)。沒設截止 = 不算截止。
+function castingClosed(brief: { status?: string | null; audition_deadline?: string | null; deadline?: string | null; created_at?: string | null }): boolean {
   if (brief.status !== 'open') return true;
-  const d = brief.audition_deadline || brief.deadline;
-  if (!d) return false;
-  const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
-  return Number.isFinite(t) && Date.now() > t;
+  return auditionDeadlinePassed(brief);
 }
 
 async function resolveInvite(token: string) {

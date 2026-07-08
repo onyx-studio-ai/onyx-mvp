@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
-import { caseCode } from '@/lib/casting';
+import { caseCode, auditionDeadlinePassed } from '@/lib/casting';
 import JSZip from 'jszip';
 import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
@@ -265,6 +265,7 @@ export default function AdminMarketplace() {
                     {b.kind === 'casting' && (b.roles || []).length > 0 && <span>{t('rolesCount', { count: (b.roles || []).length })}</span>}
                     <span>{t('quotesCount', { count: quotesFor(b.id).length })}</span>
                     {(b.audition_deadline || b.deadline) && <span>{t('deadlineLabel')} {b.audition_deadline || b.deadline}</span>}
+                    {b.status === 'open' && auditionDeadlinePassed(b) && <span className="text-red-600 font-medium">{t('auditionEnded')}</span>}
                   </div>
                 </div>
                 <span className={`text-gray-400 text-xs pt-1 transition-transform ${isOpen(b.id) ? 'rotate-180' : ''}`}>▾</span>

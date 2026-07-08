@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { auditionDeadlinePassed } from '@/lib/casting';
 
 /*
   Public self-serve casting join (no login, no admin). The casting call's id is a
@@ -16,19 +17,16 @@ const EMAILRE = /^[\w.%+-]+@[\w.-]+\.[a-z]{2,}$/i;
 
 // 試音是否已截止 = 案件非 open,或過了 audition_deadline||deadline(當天 23:59)。
 // 沒設 / parse 失敗一律不算截止(與登入端 / briefs API / [token] 端同一套規則)。
-function castingClosed(brief: { status?: string | null; audition_deadline?: string | null; deadline?: string | null }): boolean {
+function castingClosed(brief: { status?: string | null; audition_deadline?: string | null; deadline?: string | null; created_at?: string | null }): boolean {
   if (brief.status !== 'open') return true;
-  const d = brief.audition_deadline || brief.deadline;
-  if (!d) return false;
-  const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
-  return Number.isFinite(t) && Date.now() > t;
+  return auditionDeadlinePassed(brief);
 }
 
 async function loadCasting(briefId: string) {
   const db = getSupabaseServiceClient();
   const { data } = await db
     .from('marketplace_briefs')
-    .select('id, title, language, rate_note, kind, status, audition_deadline, deadline, ai_type')
+    .select('id, title, language, rate_note, kind, status, audition_deadline, deadline, ai_type, created_at')
     .eq('id', briefId)
     .maybeSingle();
   return { db, brief: data && data.kind === 'casting' ? data : null };

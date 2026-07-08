@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
+import { auditionDeadlinePassed } from '@/lib/casting';
 
 /*
   GET /api/talent/briefs — open voice-over briefs the talent can quote on, plus
@@ -67,15 +68,9 @@ export async function GET(request: NextRequest) {
       .eq('talent_id', (r.talent as { id: string }).id)
       .order('created_at', { ascending: false });
 
-    // 試音是否已截止(統一在後端算,前端各處都吃這個布林,不再各自 parse)。
-    // 取 audition_deadline || deadline;有值且 parse 成功且過了當天 23:59 = true。
-    // 沒設或 parse 失敗 = false(沿用「沒設=不截止;要截止就去後台設真日期」)。
-    const isClosed = (b: { audition_deadline?: string | null; deadline?: string | null }): boolean => {
-      const d = b.audition_deadline || b.deadline;
-      if (!d) return false;
-      const t = new Date(`${String(d).slice(0, 10)}T23:59:59`).getTime();
-      return Number.isFinite(t) && Date.now() > t;
-    };
+    // 試音是否已截止(統一在後端算,前端各處都吃這個布林)。用共用 auditionDeadlinePassed:
+    // 吃正常 ISO 也吃舊「6/30」短字串(以案子建立年份推年);沒設截止 = 不截止。
+    const isClosed = (b: { audition_deadline?: string | null; deadline?: string | null; created_at?: string | null }): boolean => auditionDeadlinePassed(b);
 
     // Derive a non-identifying source flag (platform-posted vs from a client) and
     // STRIP client_email — talents see the source label, never the client identity.

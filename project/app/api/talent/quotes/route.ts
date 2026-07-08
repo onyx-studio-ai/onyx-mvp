@@ -3,6 +3,7 @@ import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
 import { quoteReceivedEmail, deliveryUploadedEmail, castingDeliveryClientEmail, extraDemoUploadedEmail } from '@/lib/mail-templates';
 import { sanitizeMessage } from '@/lib/message-filter';
+import { auditionDeadlinePassed } from '@/lib/casting';
 
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -49,17 +50,14 @@ export async function POST(request: NextRequest) {
     // Brief must exist and be open.
     const { data: brief } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline')
+      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline, created_at')
       .eq('id', briefId)
       .maybeSingle();
     if (!brief) return NextResponse.json({ error: 'Brief not found' }, { status: 404 });
     if (brief.status !== 'open') return NextResponse.json({ error: 'This brief is no longer open' }, { status: 400 });
-    // 試音截止:過了截止日(當天 23:59)就不再收試音;沒設試音截止就用交付截止當界線。parse 失敗不擋。
-    const closeBy = brief.audition_deadline || brief.deadline;
-    if (closeBy) {
-      const dl = new Date(`${String(closeBy).slice(0, 10)}T23:59:59`).getTime();
-      if (Number.isFinite(dl) && Date.now() > dl) return NextResponse.json({ error: '這個案子的試音已截止。' }, { status: 400 });
-    }
+    // 試音截止:過了截止日(當天 23:59)就不再收試音;沒設試音截止就用交付截止當界線。
+    // 用共用 auditionDeadlinePassed(吃 ISO 也吃舊「6/30」短字串,以建立年份推年)。
+    if (auditionDeadlinePassed(brief)) return NextResponse.json({ error: '這個案子的試音已截止。' }, { status: 400 });
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
 
