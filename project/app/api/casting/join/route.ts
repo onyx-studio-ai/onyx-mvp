@@ -28,7 +28,7 @@ async function loadCasting(briefId: string) {
   const db = getSupabaseServiceClient();
   const { data } = await db
     .from('marketplace_briefs')
-    .select('id, title, language, rate_note, kind, status, audition_deadline, deadline')
+    .select('id, title, language, rate_note, kind, status, audition_deadline, deadline, ai_type')
     .eq('id', briefId)
     .maybeSingle();
   return { db, brief: data && data.kind === 'casting' ? data : null };
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   if (!brief) return NextResponse.json({ error: 'invalid' }, { status: 404 });
   return NextResponse.json({
     title: brief.title, language: brief.language, rate_note: brief.rate_note,
-    closed: castingClosed(brief),
+    ai_type: brief.ai_type, closed: castingClosed(brief),
   });
 }
 

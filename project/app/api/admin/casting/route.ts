@@ -73,10 +73,11 @@ async function notifySelectedTalents(
   db: ReturnType<typeof getSupabaseServiceClient>,
   brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null },
   talentIds: string[],
+  aiType?: string | null, // 'clone' | 'training' | null — AI cases only email talents who opted in
 ) {
   if (!talentIds.length) return 0;
   const { data: talents } = await db.from('talents')
-    .select('email')
+    .select('email, coop_ai_clone, coop_ai_training')
     .in('id', talentIds.slice(0, 500))
     .eq('is_active', true)          // gate: never invite offline / un-vetted talents
     .not('email', 'is', null)
@@ -85,6 +86,10 @@ async function notifySelectedTalents(
   const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i;
   const seen = new Set<string>();
   const recips = (talents || []).filter((t) => {
+    // Consent gate (belt-and-suspenders on top of the UI picker): for an AI case,
+    // only talents who opted into the matching coop flag are ever emailed.
+    if (aiType === 'clone' && !t.coop_ai_clone) return false;
+    if (aiType === 'training' && !t.coop_ai_training) return false;
     const e = String(t.email || '').trim().toLowerCase();
     if (!EMAIL_OK.test(e) || SKIP.test(e) || seen.has(e)) return false;
     seen.add(e); return true;
@@ -186,6 +191,8 @@ export async function POST(request: NextRequest) {
     accent: String(b.accent || '').slice(0, 120) || null,
     voice_style: String(b.voice_style || '').slice(0, 120) || null,
     voice_age: String(b.voice_age || '').slice(0, 120) || null,
+    // Client-side AI/TTS case: 'clone' = 聲音變AI, 'training' = 訓練素材; else null (ordinary casting).
+    ai_type: ['clone', 'training'].includes(String(b.ai_type)) ? String(b.ai_type) : null,
     locale: String(b.locale || 'zh-TW'),
     status: 'open',
   };
@@ -225,8 +232,10 @@ export async function POST(request: NextRequest) {
   };
   try {
     if (Array.isArray(b.invite_talent_ids)) {
-      notified = await notifySelectedTalents(db, briefMeta, (b.invite_talent_ids as unknown[]).map(String).filter(Boolean));
-    } else if (b.notify !== false) {
+      notified = await notifySelectedTalents(db, briefMeta, (b.invite_talent_ids as unknown[]).map(String).filter(Boolean), row.ai_type);
+    } else if (b.notify !== false && !row.ai_type) {
+      // Never broadcast an AI case by language — those go only to opted-in talents
+      // via the explicit picker selection above.
       notified = await notifyMatchingTalents(db, briefMeta);
     }
   } catch { /* best-effort */ }

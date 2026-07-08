@@ -13,7 +13,7 @@ import { resolveTalentFromRequest } from '@/lib/talent-auth';
   dashboard keeps working.
 */
 export async function GET(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id, name, languages, demos, quote_templates');
+  const r = await resolveTalentFromRequest(request, 'id, name, languages, demos, quote_templates, coop_ai_clone, coop_ai_training');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
 
   // The talent's own published demos — offered as "pick an existing demo" when
@@ -27,12 +27,22 @@ export async function GET(request: NextRequest) {
   try {
     const { data: briefsRaw, error: bErr } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, kind, title, roles, audition_script, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, accent, voice_style, voice_age, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, language, length, budget, budget_type, budget_currency, deadline, brief, created_at, status, client_email')
+      .select('id, brief_number, kind, title, roles, audition_script, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, accent, voice_style, voice_age, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, language, length, budget, budget_type, budget_currency, deadline, brief, created_at, status, client_email, ai_type')
       .eq('status', 'open')
       .order('created_at', { ascending: false })
       .limit(50);
     if (bErr) throw bErr;
-    const briefs = briefsRaw || [];
+    // AI/TTS cases (voice becomes an AI model) are only visible to talents who
+    // opted into the matching consent — 'clone' → coop_ai_clone, 'training' →
+    // coop_ai_training. Ordinary cases (ai_type null) stay visible to everyone.
+    const aiClone = !!(r.talent as { coop_ai_clone?: boolean }).coop_ai_clone;
+    const aiTrain = !!(r.talent as { coop_ai_training?: boolean }).coop_ai_training;
+    const briefs = (briefsRaw || []).filter((b) => {
+      const at = (b as { ai_type?: string | null }).ai_type;
+      if (at === 'clone') return aiClone;
+      if (at === 'training') return aiTrain;
+      return true;
+    });
 
     // Per-role audition counts (casting only). The count IS shown to talents, and
     // audition_cap is a soft "popular" threshold (a nudge to try other roles) — NOT

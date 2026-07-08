@@ -28,7 +28,7 @@ export default function CastingJoin() {
   const tx = (zh: string, en: string) => (isZh ? zh : en);
 
   const [phase, setPhase] = useState<'loading' | 'invalid' | 'ready'>('loading');
-  const [info, setInfo] = useState<{ title?: string; language?: string; rate_note?: string; closed?: boolean } | null>(null);
+  const [info, setInfo] = useState<{ title?: string; language?: string; rate_note?: string; ai_type?: string; closed?: boolean } | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
@@ -64,9 +64,17 @@ export default function CastingJoin() {
       <h1 className="text-2xl font-semibold mb-1">{tx('試音邀請', 'Casting Audition')}</h1>
       {info.title && <p className="text-lg text-gray-200 mb-2">{info.title}</p>}
       <div className="flex flex-wrap gap-1.5 mb-4">
+        {info.ai_type && <span className="text-xs bg-[#6FCF97]/15 text-[#6FCF97] border border-[#6FCF97]/30 px-2 py-0.5 rounded-full">{info.ai_type === 'training' ? tx('AI 訓練素材', 'AI training') : tx('TTS / 聲音變 AI', 'TTS / voice→AI')}</span>}
         {info.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{info.language}</span>}
         {info.rate_note && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{info.rate_note}</span>}
       </div>
+      {info.ai_type && !info.closed && (
+        <p className="text-xs text-[#6FCF97] bg-[#6FCF97]/[0.08] border border-[#6FCF97]/25 rounded-lg px-3 py-2 mb-4">
+          {info.ai_type === 'training'
+            ? tx('這是一個 AI 訓練素材案 —— 錄音會用於訓練 AI(不會複製你的聲音)。接案後將另簽客戶的授權書。', 'This is an AI training-data project — recordings train an AI (your own voice isn’t cloned). You’ll sign the client’s authorization if you take it.')
+            : tx('這是一個 TTS / AI 語音案 —— 你的錄音會被製成 AI 語音模型(用你的音色合成語音)。接案後將另簽客戶的授權書。', 'This is a TTS / AI voice project — your recordings become an AI voice model (your voice, synthesized). You’ll sign the client’s authorization if you take it.')}
+        </p>
+      )}
 
       {info.closed ? (
         <p className="text-amber-300 text-sm">{tx('這個試音案已結束。', 'This casting call has closed.')}</p>

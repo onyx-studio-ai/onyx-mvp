@@ -120,8 +120,12 @@ function NewCasting() {
   const [copied, setCopied] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [notify] = useState(true); // legacy fallback flag (picker drives invites now)
+  // AI / TTS case (client-side): the talent's voice becomes an AI model for a CLIENT
+  // (not Onyx's own training). '' = ordinary casting; 'clone' = 聲音製成AI(用到本人聲音,
+  // filters coop_ai_clone); 'training' = AI 訓練素材(不用本人聲音, filters coop_ai_training).
+  const [aiType, setAiType] = useState<'' | 'clone' | 'training'>('');
   // Publish-time talent picker — invite ONLY online (vetted) talents (the gate).
-  const [roster, setRoster] = useState<{ id: string; name: string; langs: string }[]>([]);
+  const [roster, setRoster] = useState<{ id: string; name: string; langs: string; aiClone: boolean; aiTrain: boolean }[]>([]);
   const [rosterErr, setRosterErr] = useState('');
   const [selTalents, setSelTalents] = useState<Set<string>>(new Set());
   const [userEditedSel, setUserEditedSel] = useState(false);
@@ -208,7 +212,7 @@ function NewCasting() {
       const asText = (v: unknown) => (Array.isArray(v) ? v.join(' ') : String(v || ''));
       const list = (Array.isArray(all) ? all : [])
         .filter((t: { is_active?: boolean; type?: string }) => t.is_active && ['voice_actor', 'VO', 'Singer'].includes(t.type || ''))
-        .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim() }))
+        .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim(), aiClone: !!t.coop_ai_clone, aiTrain: !!t.coop_ai_training }))
         .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
       setRoster(list);
     })();
@@ -220,16 +224,20 @@ function NewCasting() {
   const matchesLang = (t: { langs: string }) => caseToks.length > 0 && caseToks.some((k) => t.langs.toLowerCase().includes(k));
   const reqName = (fromClient?.requested_talent || '').trim().toLowerCase();
   const isRequested = (t: { name: string }) => !!reqName && (t.name.toLowerCase() === reqName || reqName.includes(t.name.toLowerCase()));
+  // For an AI case, a talent must have opted into the matching consent (聲音變AI /
+  // 訓練素材). Non-AI cases have no such gate → everyone qualifies.
+  const consents = (t: { aiClone: boolean; aiTrain: boolean }) => (aiType === 'clone' ? t.aiClone : aiType === 'training' ? t.aiTrain : true);
 
   // Default selection = matching-language + the requested talent, until the admin
-  // manually edits the picker. Re-runs as language/client info arrives (async import).
+  // manually edits the picker. For AI cases, gated to talents who opted in. Re-runs
+  // as language / client info / ai_type arrives (async import).
   useEffect(() => {
     if (userEditedSel || roster.length === 0) return;
     const sel = new Set<string>();
-    for (const t of roster) if (matchesLang(t) || isRequested(t)) sel.add(t.id);
+    for (const t of roster) if ((matchesLang(t) || isRequested(t)) && consents(t)) sel.add(t.id);
     setSelTalents(sel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roster, language, fromClient, userEditedSel]);
+  }, [roster, language, fromClient, userEditedSel, aiType]);
 
   const toggleTalent = (id: string) => { setUserEditedSel(true); setSelTalents((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
 
@@ -323,6 +331,7 @@ function NewCasting() {
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
       length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
       accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
+      ai_type: aiType, // ''=一般 / 'clone'=聲音變AI / 'training'=訓練素材(客戶端)
       invite_talent_ids: Array.from(selTalents), // publish-time picker (online talents only)
       id: fromId || undefined, // present = publish the client request in place (no duplicate)
     };
@@ -400,6 +409,7 @@ function NewCasting() {
           {title && <h2 className="text-2xl font-semibold mb-1" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{title}</h2>}
           <div className="flex flex-wrap gap-1.5 mb-3">
             <span className="text-xs bg-purple-500/15 text-purple-200 px-2 py-0.5 rounded-full">試音案</span>
+            {aiType && <span className="text-xs bg-[#6FCF97]/15 text-[#6FCF97] border border-[#6FCF97]/30 px-2 py-0.5 rounded-full">{aiType === 'training' ? 'AI 訓練素材案' : 'TTS / 聲音變 AI 案'}</span>}
             {language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{language}</span>}
             {rn && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{rn}</span>}
             {methodList.map((m) => <span key={m} className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{methodLabel(m)}</span>)}
@@ -522,17 +532,21 @@ function NewCasting() {
               <p className="text-sm font-semibold text-gray-200">邀請配音員試音</p>
               <span className="text-xs text-amber-300">已選 {selTalents.size} 位</span>
             </div>
-            <p className="text-xs text-gray-500 mb-3">只列已上線(審核過)的配音員 —— 這是平台的把關。指定配音員已自動勾選;可「該語系全選」或自行挑選,發佈時會寄試音邀請給勾選的人。</p>
+            {aiType
+              ? <p className="text-xs text-[#6FCF97] mb-3">🟢 AI 案 —— 只列出「已同意{aiType === 'training' ? '錄製 AI 訓練素材' : '聲音製成 AI'}」且已上線的配音員({roster.filter(consents).length} 位)。沒同意的不會出現、也不會被打擾;發佈時只寄給勾選的人。</p>
+              : <p className="text-xs text-gray-500 mb-3">只列已上線(審核過)的配音員 —— 這是平台的把關。指定配音員已自動勾選;可「該語系全選」或自行挑選,發佈時會寄試音邀請給勾選的人。</p>}
             {rosterErr ? <p className="text-xs text-red-400">{rosterErr}</p> : (
               <>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 max-w-[200px]" />
                   <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-amber-500" />只顯示符合語系</label>
-                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter(matchesLang).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
+                  {aiType && <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter(consents).map((t) => t.id))); }} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">全選接受的人</button>}
+                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter((t) => matchesLang(t) && consents(t)).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
                   <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
                 </div>
                 {(() => {
                   const shown = roster
+                    .filter((t) => (aiType ? consents(t) : true)) // AI case: consenting talents only (the gate)
                     .filter((t) => (langOnly ? matchesLang(t) || isRequested(t) : true))
                     .filter((t) => { const q = talentSearch.trim().toLowerCase(); return !q || t.name.toLowerCase().includes(q) || t.langs.toLowerCase().includes(q); });
                   const ordered = [...shown].sort((a, b) => (isRequested(b) ? 1 : 0) - (isRequested(a) ? 1 : 0));
@@ -617,6 +631,28 @@ function NewCasting() {
             ? '配音員分角色試音(遊戲 / 動畫 / 戲劇)。每個角色一張卡、可上傳角色圖片。'
             : '配音員用平台現有 demo 或上傳一段 demo + 報價即可,不需逐角色錄音(廣告 / 旁白 / 有聲書等)。'}
         </p>
+
+        {/* TTS / AI case (client-side). When on, this case is INVITE-GATED: only
+            talents who opted into the matching consent (聲音變AI / 訓練素材) can be
+            invited or see it. The talent signs the CLIENT's authorization, not Onyx's. */}
+        <div className={`rounded-lg p-3 border ${aiType ? 'bg-[#6FCF97]/[0.07] border-[#6FCF97]/40' : 'bg-gray-50 border-gray-200'}`}>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input type="checkbox" className="mt-0.5 accent-[#6FCF97]" checked={!!aiType} onChange={(e) => setAiType(e.target.checked ? 'clone' : '')} />
+            <span className="text-sm text-gray-800">此案為 <span className="font-medium">TTS / AI 案(客戶端)</span> —— 配音員的聲音會被製成 AI</span>
+          </label>
+          {aiType && (
+            <div className="mt-2.5 pl-6 space-y-1.5">
+              {([['clone', '聲音製成 AI(會用到本人聲音)', '例:客戶要拿錄音做成 TTS 合成模型 → 篩「接受聲音變 AI」的配音員'],
+                 ['training', 'AI 訓練素材(不會用到本人聲音)', '例:只是錄泛用語料餵模型,聲音不會被複製 → 篩「接受錄訓練素材」的配音員']] as const).map(([k, l, hint]) => (
+                <label key={k} className="flex items-start gap-2 cursor-pointer">
+                  <input type="radio" name="aiType" className="mt-0.5 accent-[#6FCF97]" checked={aiType === k} onChange={() => setAiType(k)} />
+                  <span className="text-sm text-gray-700">{l}<span className="block text-[11px] text-gray-400">{hint}</span></span>
+                </label>
+              ))}
+              <p className="text-[11px] text-[#4b9c6e] pt-1">🟢 只有「已同意」且已上線的配音員才會被邀請 / 看得到此案;沒同意的完全看不到。配音員接案後另簽<span className="font-medium">客戶的授權書</span>。</p>
+            </div>
+          )}
+        </div>
 
         <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
         <Field label="報酬(客戶預算,給配音員看 · 台幣/美金二選一)">

@@ -56,6 +56,7 @@ type Brief = {
   id: string;
   brief_number: string;
   kind?: string | null;             // 'casting' = admin casting call
+  ai_type?: string | null;          // 'clone' | 'training' = client-side AI/TTS case
   source?: 'platform' | 'client';   // who posted it (no client identity leaked)
   title?: string | null;
   roles?: Role[] | null;
@@ -1030,6 +1031,7 @@ function CaseHeader({
             {isCasting
               ? <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{tx('試音案', '试音案', 'Casting')}</span>
               : cat && <span className="text-[11px] bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{cat}</span>}
+            {brief.ai_type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#6FCF97]/15 text-[#6FCF97] border border-[#6FCF97]/30">{brief.ai_type === 'training' ? tx('AI 訓練素材', 'AI 训练素材', 'AI training') : tx('TTS / 聲音變 AI', 'TTS / 声音变 AI', 'TTS / voice→AI')}</span>}
             {brief.language && <span className="text-[11px] bg-white/[0.06] border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{brief.language}</span>}
             {brief.has_singing && <span className="text-[11px] bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', 'Singing')}</span>}
             {brief.wants_live_session && <span className="text-[11px] bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('線上監錄', '线上监录', 'Live')}</span>}
