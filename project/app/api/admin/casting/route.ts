@@ -66,30 +66,32 @@ async function notifyMatchingTalents(
   return matched.length;
 }
 
-// Email a SPECIFIC, admin-selected set of talents (the publish-time picker). CORE
-// GATE: only ONLINE (is_active) talents are ever invited — Onyx's vetting is the
-// platform's moat, so un-vetted/offline talents are never sent casting invites.
+// Email a SPECIFIC, admin-selected set of talents (the publish-time picker).
+// GATE depends on case type:
+//  - Normal cases: only ONLINE (is_active) talents — Onyx's vetting is the moat.
+//  - AI cases: open to anyone who opted into the matching consent (vetted or not) —
+//    an AI corpus wants "a voice + willing to be AI", not professional VO vetting.
 async function notifySelectedTalents(
   db: ReturnType<typeof getSupabaseServiceClient>,
   brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null },
   talentIds: string[],
-  aiType?: string | null, // 'clone' | 'training' | null — AI cases only email talents who opted in
+  aiType?: string | null, // 'clone' | 'training' | null — AI cases gate on consent, not vetting
 ) {
   if (!talentIds.length) return 0;
   const { data: talents } = await db.from('talents')
-    .select('email, coop_ai_clone, coop_ai_training')
+    .select('email, is_active, coop_ai_clone, coop_ai_training')
     .in('id', talentIds.slice(0, 500))
-    .eq('is_active', true)          // gate: never invite offline / un-vetted talents
     .not('email', 'is', null)
     .limit(500);
   const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i;
   const seen = new Set<string>();
   const recips = (talents || []).filter((t) => {
-    // Consent gate (belt-and-suspenders on top of the UI picker): for an AI case,
-    // only talents who opted into the matching coop flag are ever emailed.
-    if (aiType === 'clone' && !t.coop_ai_clone) return false;
-    if (aiType === 'training' && !t.coop_ai_training) return false;
+    // AI case → require the matching consent (any vetting status). Normal case →
+    // require vetting (is_active). Belt-and-suspenders on top of the UI picker.
+    if (aiType === 'clone') { if (!t.coop_ai_clone) return false; }
+    else if (aiType === 'training') { if (!t.coop_ai_training) return false; }
+    else if (!t.is_active) return false;
     const e = String(t.email || '').trim().toLowerCase();
     if (!EMAIL_OK.test(e) || SKIP.test(e) || seen.has(e)) return false;
     seen.add(e); return true;

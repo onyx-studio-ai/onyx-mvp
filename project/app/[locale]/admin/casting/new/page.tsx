@@ -130,8 +130,10 @@ function NewCasting() {
   // (not Onyx's own training). '' = ordinary casting; 'clone' = 聲音製成AI(用到本人聲音,
   // filters coop_ai_clone); 'training' = AI 訓練素材(不用本人聲音, filters coop_ai_training).
   const [aiType, setAiType] = useState<'' | 'clone' | 'training'>('');
-  // Publish-time talent picker — invite ONLY online (vetted) talents (the gate).
-  const [roster, setRoster] = useState<{ id: string; name: string; langs: string; aiClone: boolean; aiTrain: boolean }[]>([]);
+  // Publish-time talent picker. Normal cases invite ONLY online (vetted) talents
+  // (the gate). AI cases are open to anyone who opted into AI — vetted or not —
+  // so `active` (= online vetted VO) is tracked per talent to apply the right gate.
+  const [roster, setRoster] = useState<{ id: string; name: string; langs: string; active: boolean; aiClone: boolean; aiTrain: boolean }[]>([]);
   const [rosterErr, setRosterErr] = useState('');
   const [selTalents, setSelTalents] = useState<Set<string>>(new Set());
   const [userEditedSel, setUserEditedSel] = useState(false);
@@ -220,9 +222,12 @@ function NewCasting() {
       if (!r || !r.ok) { setRosterErr('無法載入配音員名單,請重新整理。'); return; }
       const all = await r.json().catch(() => []);
       const asText = (v: unknown) => (Array.isArray(v) ? v.join(' ') : String(v || ''));
+      const isVettedVO = (t: { is_active?: boolean; type?: string }) => !!t.is_active && ['voice_actor', 'VO', 'Singer'].includes(t.type || '');
       const list = (Array.isArray(all) ? all : [])
-        .filter((t: { is_active?: boolean; type?: string }) => t.is_active && ['voice_actor', 'VO', 'Singer'].includes(t.type || ''))
-        .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim(), aiClone: !!t.coop_ai_clone, aiTrain: !!t.coop_ai_training }))
+        // Vetted online voice actors (normal-case pool) + anyone who opted into AI
+        // (AI cases don't require vetting — a general person who accepts AI qualifies).
+        .filter((t: { is_active?: boolean; type?: string; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => isVettedVO(t) || t.coop_ai_clone || t.coop_ai_training)
+        .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown; is_active?: boolean; type?: string; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim(), active: isVettedVO(t), aiClone: !!t.coop_ai_clone, aiTrain: !!t.coop_ai_training }))
         .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
       setRoster(list);
     })();
@@ -237,14 +242,17 @@ function NewCasting() {
   // For an AI case, a talent must have opted into the matching consent (聲音變AI /
   // 訓練素材). Non-AI cases have no such gate → everyone qualifies.
   const consents = (t: { aiClone: boolean; aiTrain: boolean }) => (aiType === 'clone' ? t.aiClone : aiType === 'training' ? t.aiTrain : true);
+  // Who's eligible to be invited: normal cases → online vetted VOs only (the gate);
+  // AI cases → anyone who opted into the matching consent (vetted or not).
+  const eligible = (t: { active: boolean; aiClone: boolean; aiTrain: boolean }) => (aiType ? consents(t) : t.active);
 
   // Default selection = matching-language + the requested talent, until the admin
-  // manually edits the picker. For AI cases, gated to talents who opted in. Re-runs
-  // as language / client info / ai_type arrives (async import).
+  // manually edits the picker, gated by eligibility. Re-runs as language / client
+  // info / ai_type arrives (async import).
   useEffect(() => {
     if (userEditedSel || roster.length === 0) return;
     const sel = new Set<string>();
-    for (const t of roster) if ((matchesLang(t) || isRequested(t)) && consents(t)) sel.add(t.id);
+    for (const t of roster) if ((matchesLang(t) || isRequested(t)) && eligible(t)) sel.add(t.id);
     setSelTalents(sel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster, language, fromClient, userEditedSel, aiType]);
@@ -543,7 +551,7 @@ function NewCasting() {
               <span className="text-xs text-amber-300">已選 {selTalents.size} 位</span>
             </div>
             {aiType
-              ? <p className="text-xs text-[#6FCF97] mb-3">🟢 AI 案 —— 只列出「已同意{aiType === 'training' ? '錄製 AI 訓練素材' : '聲音製成 AI'}」且已上線的配音員({roster.filter(consents).length} 位)。沒同意的不會出現、也不會被打擾;發佈時只寄給勾選的人。</p>
+              ? <p className="text-xs text-[#6FCF97] mb-3">🟢 AI 案 —— 開放給所有「已同意{aiType === 'training' ? '錄製 AI 訓練素材' : '聲音製成 AI'}」的人({roster.filter(consents).length} 位),不限是否已上線審核、不限配音員身分。沒同意的不會出現;發佈時只寄給勾選的人。完全的一般人可用下方公開連結。</p>
               : <p className="text-xs text-gray-500 mb-3">只列已上線(審核過)的配音員 —— 這是平台的把關。指定配音員已自動勾選;可「該語系全選」或自行挑選,發佈時會寄試音邀請給勾選的人。</p>}
             {rosterErr ? <p className="text-xs text-red-400">{rosterErr}</p> : (
               <>
@@ -551,12 +559,12 @@ function NewCasting() {
                   <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 max-w-[200px]" />
                   <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-amber-500" />只顯示符合語系</label>
                   {aiType && <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter(consents).map((t) => t.id))); }} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">全選接受的人</button>}
-                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter((t) => matchesLang(t) && consents(t)).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
+                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter((t) => matchesLang(t) && eligible(t)).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
                   <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
                 </div>
                 {(() => {
                   const shown = roster
-                    .filter((t) => (aiType ? consents(t) : true)) // AI case: consenting talents only (the gate)
+                    .filter(eligible) // normal → online vetted VOs; AI → anyone who accepts AI
                     .filter((t) => (langOnly ? matchesLang(t) || isRequested(t) : true))
                     .filter((t) => { const q = talentSearch.trim().toLowerCase(); return !q || t.name.toLowerCase().includes(q) || t.langs.toLowerCase().includes(q); });
                   const ordered = [...shown].sort((a, b) => (isRequested(b) ? 1 : 0) - (isRequested(a) ? 1 : 0));
@@ -658,7 +666,7 @@ function NewCasting() {
                 </label>
               ))}
             </div>
-            <p className="text-[11px] text-[#4b9c6e] pt-2">🟢 只有「已同意」且已上線的配音員才會被邀請 / 看得到此案;沒同意的完全看不到。配音員接案後另簽<span className="font-medium">客戶的授權書</span>。</p>
+            <p className="text-[11px] text-[#4b9c6e] pt-2">🟢 開放給所有「已同意」的人(不限是否已上線審核、不限配音員身分,一般人也能試);沒同意的看不到。接案後另簽<span className="font-medium">客戶的授權書</span>。</p>
           </div>
         )}
 
