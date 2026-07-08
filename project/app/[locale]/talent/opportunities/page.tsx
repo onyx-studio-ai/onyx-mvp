@@ -83,6 +83,7 @@ type Brief = {
   live_session_tool: string | null;
   audition_deadline: string | null;
   language: string | null;
+  gender_needs?: string | null;     // 需求人數/性別, e.g. 一男一女
   length: string | null;
   budget: string | null;
   budget_type: string | null;
@@ -863,6 +864,7 @@ function BriefCard({
             const methodLabel = (m: string) => (m === 'home' ? tx('在家錄', '在家录', 'Home') : m === 'studio' ? tx('錄音室', '录音室', 'Studio') : m === 'online' ? tx('線上監錄', '线上监录', 'Online') : m);
             const info: [string, string][] = ([
               [tx('語言', '语言', 'Language'), brief.language],
+              [tx('需求', '需求', 'Needs'), brief.gender_needs],
               [tx('口音', '口音', 'Accent'), brief.accent],
               [tx('聲音風格', '声音风格', 'Style'), brief.voice_style],
               [tx('聲音年齡', '声音年龄', 'Voice age'), brief.voice_age],

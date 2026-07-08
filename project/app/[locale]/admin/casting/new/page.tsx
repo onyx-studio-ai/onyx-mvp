@@ -91,6 +91,7 @@ function NewCasting() {
   const [category, setCategory] = useState('遊戲 Video Game');
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('中文 · 台灣國語');
+  const [genderNeeds, setGenderNeeds] = useState(''); // 需求人數/性別, e.g. 一男一女 (esp. general/TTS mode where roles aren't listed)
   const [brief, setBrief] = useState('');
   const [rateCur, setRateCur] = useState('TWD');
   const [rateAmt, setRateAmt] = useState('');
@@ -164,6 +165,7 @@ function NewCasting() {
       if (bf.title) setTitle(bf.title);
       { const cat = resolveCategory(bf.content_type); if (cat) pickCategory(cat); }
       if (bf.language) setLanguage(bf.language);
+      if (bf.gender_needs) setGenderNeeds(bf.gender_needs);
       if (bf.brief) setBrief(bf.brief);
       // carry the client's values straight in — the selects render any non-standard
       // value too (optsWith), so nothing is silently dropped or overwritten on publish.
@@ -332,7 +334,7 @@ function NewCasting() {
     setBusy(true);
     const roles = mode === 'general' ? [] : mergedRoles();
     const payload = {
-      title, content_type: category, language, brief, rate_note: buildRateNote(), base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
+      title, content_type: category, language, gender_needs: genderNeeds, brief, rate_note: buildRateNote(), base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
       audition_deadline: auditionDeadline, recording_start: recordingStart,
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
       roles, audition_script: auditionScript,
@@ -452,7 +454,7 @@ function NewCasting() {
           {(() => {
             const ml = (m: string) => (m === 'home' ? '在家錄' : m === 'studio' ? '錄音室' : m === 'online' ? '線上監錄' : m);
             const info = ([
-              ['語言', language], ['口音', accent], ['聲音風格', voiceStyle], ['聲音年齡', voiceAge],
+              ['語言', language], ['需求', genderNeeds], ['口音', accent], ['聲音風格', voiceStyle], ['聲音年齡', voiceAge],
               ['使用範圍', mediaScope], ['地區', territory], ['授權', licenseTerm], ['預計開錄', recordingStart],
               ['含修改', Number(baseRev) > 0 ? `${baseRev} 次` : ''],
               ['錄音方式', Object.keys(methods).filter((k) => methods[k]).map(ml).join(' / ')],
@@ -661,6 +663,7 @@ function NewCasting() {
         )}
 
         <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
+        <Field label="需求(人數 / 性別)"><input className={input} value={genderNeeds} onChange={(e) => setGenderNeeds(e.target.value)} placeholder="例:一男一女 / 2 男 1 女 / 女聲 1 位" /></Field>
         <Field label="報酬(客戶預算,給配音員看 · 台幣/美金二選一)">
           <div className="flex items-center gap-2">
             <select className={`${input} w-28`} value={rateCur} onChange={(e) => setRateCur(e.target.value)}>
@@ -764,8 +767,9 @@ function NewCasting() {
           );
         })()}
         </>}
-        <Field label="試音方向 / 聲音方向(選填,配音員只能線上看)">
-          <textarea className={`${input} min-h-[100px] resize-y`} value={auditionScript} onChange={(e) => setAuditionScript(e.target.value)} placeholder="情緒、語速、聲音方向…(或共用樣詞)" />
+        <Field label={category === AI_CATEGORY ? '試音稿 / 聲音方向(配音員只能線上看、不能下載)' : '試音方向 / 聲音方向(選填,配音員只能線上看)'}>
+          <textarea className={`${input} min-h-[100px] resize-y`} value={auditionScript} onChange={(e) => setAuditionScript(e.target.value)}
+            placeholder={category === AI_CATEGORY ? '貼上完整試音稿(基礎發音 / 表現力 / 問句 / 長句 / 對話…);配音員只能線上看、不能下載' : '情緒、語速、聲音方向…(或共用樣詞)'} />
         </Field>
 
         <Field label="參考素材 — 連結">
