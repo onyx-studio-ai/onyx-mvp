@@ -31,6 +31,23 @@ const LICENSE_OPTS = ['', '一年', '兩年', '三年', '永久', '買斷', '專
 const ACCENT_OPTS = ['', '中文 · 台灣國語', '中文 · 大陸普通話', '粵語', '台語', '英語', '日語', '不限', '其他'];
 const STYLE_OPTS = ['', '對話自然', '旁白沉穩', '權威 / 正式', '溫暖', '活潑 / 年輕', '角色演繹', '不限', '其他'];
 const AGE_OPTS = ['', '兒童', '青少年', '青年', '中年', '熟齡', '全年齡 / 不限', '其他'];
+// 需求人數(依性別)—— 與客戶端 /hire 同一套,配音員/admin 用點的不用打字。
+const VOICE_COUNTS = ['0', '1', '2', '3', '4', '5+'];
+const countLabel = (v: string) => (v === '5+' ? '5 位以上' : `${v} 位`);
+// 兩個下拉組成「男聲 N 位、女聲 M 位」(0 的性別略過);與 /hire hire:381-384 一致。
+function buildGenderNeeds(male: string, female: string) {
+  const parts: string[] = [];
+  if (male !== '0') parts.push(`男聲 ${countLabel(male)}`);
+  if (female !== '0') parts.push(`女聲 ${countLabel(female)}`);
+  return parts.join('、');
+}
+const voicesTotal = (male: string, female: string) => (male === '5+' ? 5 : Number(male) || 0) + (female === '5+' ? 5 : Number(female) || 0);
+// 反解析匯入字串(如「男聲 1 位、女聲 2 位」)回男/女下拉值,匯入客戶案時用。
+function parseGenderNeeds(s?: string | null): { male: string; female: string } {
+  const t = String(s || '');
+  const m = /男[聲声]?\s*(\d)/.exec(t); const f = /女[聲声]?\s*(\d)/.exec(t);
+  return { male: m ? m[1] : '0', female: f ? f[1] : '0' };
+}
 const optEl = (o: string) => <option key={o || '_'} value={o}>{o || '— 不指定 —'}</option>;
 // include an imported value as a selectable option even if it's not in the standard
 // list — so a client's free-text value (e.g. 香港 / 2年 / All Media) shows + persists.
@@ -91,7 +108,12 @@ function NewCasting() {
   const [category, setCategory] = useState('遊戲 Video Game');
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('中文 · 台灣國語');
-  const [genderNeeds, setGenderNeeds] = useState(''); // 需求人數/性別, e.g. 一男一女 (esp. general/TTS mode where roles aren't listed)
+  // 需求人數(男/女)—— 用下拉點選,送出組成 gender_needs 字串 + voices_needed 數字。
+  const [maleVoices, setMaleVoices] = useState('0');
+  const [femaleVoices, setFemaleVoices] = useState('0');
+  // 客戶端有、後台原本不能設的旗標(補上)。線上監錄已由「錄音方式」的 online 涵蓋,不重複。
+  const [hasSinging, setHasSinging] = useState(false);
+  const [wantsDirector, setWantsDirector] = useState(false);
   const [brief, setBrief] = useState('');
   const [rateCur, setRateCur] = useState('TWD');
   const [rateAmt, setRateAmt] = useState('');
@@ -174,7 +196,9 @@ function NewCasting() {
       if (bf.title) setTitle(bf.title);
       { const cat = resolveCategory(bf.content_type); if (cat) pickCategory(cat); }
       if (bf.language) setLanguage(bf.language);
-      if (bf.gender_needs) setGenderNeeds(bf.gender_needs);
+      if (bf.gender_needs) { const g = parseGenderNeeds(bf.gender_needs); setMaleVoices(g.male); setFemaleVoices(g.female); }
+      if (bf.has_singing) setHasSinging(true);
+      if (bf.wants_director) setWantsDirector(true);
       if (bf.brief) setBrief(bf.brief);
       // carry the client's values straight in — the selects render any non-standard
       // value too (optsWith), so nothing is silently dropped or overwritten on publish.
@@ -374,7 +398,10 @@ function NewCasting() {
     setBusy(true);
     const roles = mode === 'general' ? [] : mergedRoles();
     const payload = {
-      title, content_type: category, language, gender_needs: genderNeeds, brief, rate_note: buildRateNote(), base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
+      title, content_type: category, language,
+      gender_needs: buildGenderNeeds(maleVoices, femaleVoices), voices_needed: voicesTotal(maleVoices, femaleVoices) || null,
+      has_singing: hasSinging, wants_director: wantsDirector,
+      brief, rate_note: buildRateNote(), base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
       audition_deadline: auditionDeadline, recording_start: recordingStart,
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
       roles, audition_script: auditionScript,
@@ -496,7 +523,7 @@ function NewCasting() {
           {(() => {
             const ml = (m: string) => (m === 'home' ? '在家錄' : m === 'studio' ? '錄音室' : m === 'online' ? '線上監錄' : m);
             const info = ([
-              ['語言', language], ['需求', genderNeeds], ['口音', accent], ['聲音風格', voiceStyle], ['聲音年齡', voiceAge],
+              ['語言', language], ['需求', buildGenderNeeds(maleVoices, femaleVoices)], ['口音', accent], ['聲音風格', voiceStyle], ['聲音年齡', voiceAge],
               ['使用範圍', mediaScope], ['地區', territory], ['授權', licenseTerm], ['預計開錄', recordingStart],
               ['含修改', Number(baseRev) > 0 ? `${baseRev} 次` : ''],
               ['錄音方式', Object.keys(methods).filter((k) => methods[k]).map(ml).join(' / ')],
@@ -744,7 +771,17 @@ function NewCasting() {
         )}
 
         <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
-        <Field label="需求(人數 / 性別)"><input className={input} value={genderNeeds} onChange={(e) => setGenderNeeds(e.target.value)} placeholder="例:一男一女 / 2 男 1 女 / 女聲 1 位" /></Field>
+        <Field label="需求(人數 / 性別)">
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex items-center gap-2 text-sm text-gray-600">男聲
+              <select className={input} value={maleVoices} onChange={(e) => setMaleVoices(e.target.value)}>{VOICE_COUNTS.map((v) => <option key={v} value={v}>{countLabel(v)}</option>)}</select>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-600">女聲
+              <select className={input} value={femaleVoices} onChange={(e) => setFemaleVoices(e.target.value)}>{VOICE_COUNTS.map((v) => <option key={v} value={v}>{countLabel(v)}</option>)}</select>
+            </label>
+          </div>
+          {buildGenderNeeds(maleVoices, femaleVoices) && <p className="text-[11px] text-gray-400 mt-1">需求:{buildGenderNeeds(maleVoices, femaleVoices)}</p>}
+        </Field>
         <Field label="報酬(客戶預算,給配音員看 · 台幣/美金二選一)">
           <div className="flex items-center gap-2">
             <select className={`${input} w-28`} value={rateCur} onChange={(e) => setRateCur(e.target.value)}>
@@ -772,6 +809,12 @@ function NewCasting() {
                 <input type="checkbox" checked={methods[k]} onChange={(e) => setMethods((m) => ({ ...m, [k]: e.target.checked }))} /> {l}
               </label>
             ))}
+          </div>
+        </Field>
+        <Field label="其他需求(可複選)">
+          <div className="flex gap-4 text-sm text-gray-700">
+            <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={hasSinging} onChange={(e) => setHasSinging(e.target.checked)} /> 含唱歌</label>
+            <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={wantsDirector} onChange={(e) => setWantsDirector(e.target.checked)} /> 需要聲音導演</label>
           </div>
         </Field>
 

@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         ${row('交付截止 Delivery', b.deadline)}
         ${row('聲音導演 Director', b.wants_director ? 'Yes' : '')}
         ${row('線上同步錄音 Live', b.wants_live_session ? (b.live_session_tool ? `Yes (${b.live_session_tool})` : 'Yes') : '')}
-        ${row('稿件 Script', b.script_status)}
+        ${row('稿件 Script', [b.script_type === 'final' ? '正式稿' : b.script_type === 'audition' ? '試音稿' : '', b.script_text ? '(已附文字稿)' : '', b.script_file_url ? '(已附檔案)' : ''].filter(Boolean).join(' '))}
         ${row('參考聲音 Ref', b.ref_audio_url)}
         ${row('語系 Locale', b.locale)}
       </table>

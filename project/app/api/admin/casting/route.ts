@@ -204,7 +204,10 @@ export async function POST(request: NextRequest) {
     content_type: String(b.content_type || '').slice(0, 80) || null, // 類別(廣告/旁白/遊戲…)
     brief: briefText,
     language: String(b.language || '').slice(0, 80) || null,
-    gender_needs: String(b.gender_needs || '').slice(0, 200) || null, // 需求人數/性別, e.g. 一男一女
+    gender_needs: String(b.gender_needs || '').slice(0, 200) || null, // 需求人數/性別, e.g. 男聲 1 位、女聲 1 位
+    voices_needed: Number.isFinite(Number(b.voices_needed)) && Number(b.voices_needed) > 0 ? Math.trunc(Number(b.voices_needed)) : null,
+    has_singing: b.has_singing === true,
+    wants_director: b.wants_director === true,
     rate_note: String(b.rate_note || '').slice(0, 200) || null,
     base_revisions: Number.isFinite(Number(b.base_revisions)) ? Math.max(0, Math.trunc(Number(b.base_revisions))) : 1,
     audition_cap: Number.isFinite(Number(b.audition_cap)) ? Math.max(1, Math.trunc(Number(b.audition_cap))) : 5,
