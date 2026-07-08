@@ -89,7 +89,10 @@ export async function GET(request: NextRequest) {
     // closed) — the open-only list above drops them, so the talent would lose sight
     // of what they actually got. Surface them separately.
     const acceptedBriefIds = [...new Set((myQuotes || []).filter((q) => q.status === 'accepted').map((q) => q.brief_id as string))];
-    const openIds = new Set(briefs.map((b) => (b as { id: string }).id));
+    // Classify won/ended against ALL open briefs (briefsRaw), NOT the ai_type-filtered
+    // display list — else an AI case the talent quoted but can't currently see (no
+    // matching consent) is wrongly shown as "已結束" although it's still open.
+    const openIds = new Set((briefsRaw || []).map((b) => (b as { id: string }).id));
     const wonIds = acceptedBriefIds.filter((id) => !openIds.has(id));
     let wonBriefs: unknown[] = [];
     if (wonIds.length) {
