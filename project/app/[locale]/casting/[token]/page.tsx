@@ -326,7 +326,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
-      <p className="text-xs text-gray-500">{tx('上傳一段 demo + 報價即可(不需逐角色錄)。', 'Upload one demo + your price (no per-role recording).')}</p>
+      <p className="text-xs text-gray-500">{tx('依上方試音稿錄製並上傳你的試音,再填報價。', 'Record your audition from the script above, upload it, then enter your price.')}</p>
       <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading || closed} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
       {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
