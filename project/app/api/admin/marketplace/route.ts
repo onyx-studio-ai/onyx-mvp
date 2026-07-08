@@ -77,34 +77,44 @@ export async function PATCH(request: NextRequest) {
           .update({ status: 'accepted', updated_at: now })
           .eq('id', id)
           .in('status', ['submitted', 'shortlisted'])
-          .select('brief_id, talent_id')
+          .select('brief_id, talent_id, role_name')
           .maybeSingle();
         if (!q) return NextResponse.json({ error: 'Quote is no longer available to accept' }, { status: 409 });
 
-        // Award the brief only if it isn't already awarded — prevents double-award.
-        const { data: awarded } = await db
-          .from('marketplace_briefs')
-          .update({ awarded_quote_id: id, status: 'awarded', updated_at: now })
-          .eq('id', q.brief_id)
-          .is('awarded_quote_id', null)
-          .select('id')
-          .maybeSingle();
-        if (!awarded) {
-          await db.from('marketplace_quotes').update({ status: 'submitted', updated_at: now }).eq('id', id);
-          return NextResponse.json({ error: 'This brief is already awarded' }, { status: 409 });
-        }
+        // Load the brief once — decides single-voice vs multi-role AND feeds the notify.
+        const { data: brief } = await db.from('marketplace_briefs')
+          .select('roles, title, content_type, client_email, locale, awarded_quote_id, status')
+          .eq('id', q.brief_id).maybeSingle();
+        const briefRoles = (Array.isArray((brief as { roles?: { name?: string }[] } | null)?.roles) ? (brief as { roles?: { name?: string }[] }).roles! : [])
+          .map((ro) => ro?.name).filter((n): n is string => !!n);
+        const isMultiRole = !!q.role_name && briefRoles.length > 0;
 
-        // Reject the remaining live quotes on this brief.
-        await db
-          .from('marketplace_quotes')
-          .update({ status: 'rejected', updated_at: now })
-          .eq('brief_id', q.brief_id)
-          .neq('id', id)
-          .in('status', ['submitted', 'shortlisted']);
+        if (isMultiRole) {
+          // Multi-role: accept THIS role's winner without touching the other roles.
+          // Reject only the other live quotes FOR THE SAME ROLE; leave other roles open
+          // to keep picking. Brief goes 'awarded' (enables 建立製作單) but keeps NO single
+          // awarded_quote_id and can still accept more roles — to-order builds from every
+          // accepted quote.
+          await db.from('marketplace_quotes').update({ status: 'rejected', updated_at: now })
+            .eq('brief_id', q.brief_id).eq('role_name', q.role_name).neq('id', id).in('status', ['submitted', 'shortlisted']);
+          if (brief?.status !== 'awarded') {
+            await db.from('marketplace_briefs').update({ status: 'awarded', updated_at: now }).eq('id', q.brief_id);
+          }
+        } else {
+          // Single-voice: award the brief once (prevents double-award), reject everyone else.
+          const { data: awarded } = await db.from('marketplace_briefs')
+            .update({ awarded_quote_id: id, status: 'awarded', updated_at: now })
+            .eq('id', q.brief_id).is('awarded_quote_id', null).select('id').maybeSingle();
+          if (!awarded) {
+            await db.from('marketplace_quotes').update({ status: 'submitted', updated_at: now }).eq('id', id);
+            return NextResponse.json({ error: 'This brief is already awarded' }, { status: 409 });
+          }
+          await db.from('marketplace_quotes').update({ status: 'rejected', updated_at: now })
+            .eq('brief_id', q.brief_id).neq('id', id).in('status', ['submitted', 'shortlisted']);
+        }
 
         // Notify the winning talent + the client that a selection was made (best-effort).
         try {
-          const { data: brief } = await db.from('marketplace_briefs').select('title, content_type, client_email, locale').eq('id', q.brief_id).maybeSingle();
           const { data: talent } = await db.from('talents').select('name, email').eq('id', q.talent_id).maybeSingle();
           const title = String(brief?.title || brief?.content_type || '配音案');
           if (talent?.email) {

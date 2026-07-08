@@ -2879,6 +2879,7 @@
       "toOrderConfirm": "Convert \"{name}\" into a production order?\nIt moves into the Orders system to manage production and delivery, and this casting call closes.",
       "toOrderFail": "Failed to create order",
       "toOrderSuccess": "Production order {orderNumber} created — manage production and delivery in Orders",
+      "toOrderSuccessMulti": "{count} production orders created — manage production and delivery in Orders",
       "toOrderFailRetry": "Failed to create order, please try again later",
       "cloneConfirm": "Clone \"{name}\" into a new case?\nThe new case returns to \"Client Requests\" for review (you can re-edit and re-post); the original case and its auditions stay untouched.",
       "cloneFail": "Clone failed",

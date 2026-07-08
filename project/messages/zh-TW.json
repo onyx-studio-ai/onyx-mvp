@@ -2879,6 +2879,7 @@
       "toOrderConfirm": "將「{name}」轉成製作單?\n會進入「訂單」系統管理製作與交付,此試音案隨之結案。",
       "toOrderFail": "建單失敗",
       "toOrderSuccess": "已建立製作單 {orderNumber} —— 請到「訂單」管理製作與交付",
+      "toOrderSuccessMulti": "已建立 {count} 張製作單 —— 請到「訂單」管理製作與交付",
       "toOrderFailRetry": "建單失敗,請稍後再試",
       "cloneConfirm": "複製「{name}」成一個新案?\n新案會回到「客戶請求」待審(可重新編輯再發);原案與原試音都保留不動。",
       "cloneFail": "複製失敗",

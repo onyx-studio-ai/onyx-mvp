@@ -153,7 +153,7 @@ export default function AdminMarketplace() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(j.error || t('toOrderFail')); return; }
-      toast.success(t('toOrderSuccess', { orderNumber: j.order_number }));
+      toast.success(j.count > 1 ? t('toOrderSuccessMulti', { count: j.count }) : t('toOrderSuccess', { orderNumber: j.order_number }));
       load();
     } catch { toast.error(t('toOrderFailRetry')); }
   }
