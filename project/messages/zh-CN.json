@@ -2983,7 +2983,7 @@
       "timeMinsAgo": "{mins} 分钟前",
       "timeHoursAgo": "{hrs} 小时前",
       "timeDaysAgo": "{days} 天前",
-      "approveConfirm": "批准 {name}?\n\n这会:\n• 寄出批准信到 {email}\n• 在系统建立配音员资料\n• 信中会附上后续步骤说明(签署合同 + Voice ID 录音)",
+      "approveConfirm": "批准 {name}?\n\n这会:\n• 寄出批准信到 {email}\n• 在系统建立配音员资料\n• 信中附上开通链接,对方确认合作条款后即上架",
       "toastUpdateFail": "更新状态失败",
       "toastApproved": "已批准!已寄出启用信到 {email}",
       "toastRejected": "已拒绝。已寄出通知到 {email}",

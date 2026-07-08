@@ -2983,7 +2983,7 @@
       "timeMinsAgo": "{mins}m ago",
       "timeHoursAgo": "{hrs}h ago",
       "timeDaysAgo": "{days}d ago",
-      "approveConfirm": "Approve {name}?\n\nThis will:\n• Send approval email to {email}\n• Create a talent record in the system\n• The email will include next-step instructions (contract signing + Voice ID recording)",
+      "approveConfirm": "Approve {name}?\n\nThis will:\n• Send approval email to {email}\n• Create a talent record in the system\n• The email includes an activation link; once they confirm the cooperation terms, they go live",
       "toastUpdateFail": "Failed to update status",
       "toastApproved": "Approved! Onboarding email sent to {email}",
       "toastRejected": "Rejected. Notification sent to {email}",

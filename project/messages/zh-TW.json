@@ -2983,7 +2983,7 @@
       "timeMinsAgo": "{mins} 分鐘前",
       "timeHoursAgo": "{hrs} 小時前",
       "timeDaysAgo": "{days} 天前",
-      "approveConfirm": "核准 {name}?\n\n這會:\n• 寄出核准信到 {email}\n• 在系統建立配音員資料\n• 信中會附上後續步驟說明(簽署合約 + Voice ID 錄音)",
+      "approveConfirm": "核准 {name}?\n\n這會:\n• 寄出核准信到 {email}\n• 在系統建立配音員資料\n• 信中附上開通連結,對方確認合作條款後即上架",
       "toastUpdateFail": "更新狀態失敗",
       "toastApproved": "已核准!已寄出啟用信到 {email}",
       "toastRejected": "已拒絕。已寄出通知到 {email}",
