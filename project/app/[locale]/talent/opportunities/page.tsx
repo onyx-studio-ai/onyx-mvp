@@ -829,7 +829,7 @@ function BriefCard({
 
   return (
     <div className={`bg-white/[0.03] backdrop-blur-sm border rounded-xl overflow-hidden transition ${open ? 'border-white/15' : 'border-white/[0.06] hover:border-white/[0.12]'}`}>
-      <CaseHeader brief={brief} isCasting={isCasting} roleCount={(brief.roles || []).length} hasMine={myQuotes.length > 0} open={open} onToggle={() => setOpen((o) => !o)} tx={tx} />
+      <CaseHeader brief={brief} isCasting={isCasting} roleCount={(brief.roles || []).length} auditionCount={Object.values(roleCounts).reduce((a, b) => a + b, 0)} hasMine={myQuotes.length > 0} open={open} onToggle={() => setOpen((o) => !o)} tx={tx} />
 
       {open && (
       <div className="px-5 pb-5">
@@ -957,15 +957,8 @@ function BriefCard({
               </div>
             </div>
           ) : (
-            /* General (single-voice) call — respond with an existing demo OR an upload + price.
-               Roles-mode shows "N 人已試" per role; general has no roles, so surface the
-               case-level count (quotes with no role_name are keyed under '') the same way. */
-            <>
-              {(() => { const c = roleCounts[''] || 0; return (
-                <p className="text-xs mb-2"><span className={c > 0 ? 'text-[#E4CB94] font-medium' : 'text-gray-400'}>{c}</span> <span className="text-gray-400">{tx('人已試', '人已试', 'auditioned')}</span></p>
-              ); })()}
-              <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} tx={tx} onQuoted={onQuoted} myName={myName} templates={templates} onTemplates={onTemplates} />
-            </>
+            /* General (single-voice) call — respond with an existing demo OR an upload + price. */
+            <GeneralResponse brief={brief} myDemos={myDemos} done={myQuotes[0]} tx={tx} onQuoted={onQuoted} myName={myName} templates={templates} onTemplates={onTemplates} />
           )}
         </>
       ) : (
@@ -1015,11 +1008,12 @@ function BriefCard({
 // Compact, always-visible case header (Voices-style list row). Click to expand the
 // full detail below. Shows the headline facts so several cases scan at a glance.
 function CaseHeader({
-  brief, isCasting, roleCount, hasMine, open, onToggle, tx,
+  brief, isCasting, roleCount, auditionCount, hasMine, open, onToggle, tx,
 }: {
   brief: Brief;
   isCasting: boolean;
   roleCount: number;
+  auditionCount: number;    // total auditions on this case (sum across roles / general)
   hasMine: boolean;
   open: boolean;
   onToggle: () => void;
@@ -1052,6 +1046,7 @@ function CaseHeader({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs">
             {brief.rate_note && <span className="text-[#E4CB94] font-medium">{brief.rate_note}</span>}
             {isCasting && roleCount > 0 && <span className="text-gray-300">{tx(`共 ${roleCount} 角`, `共 ${roleCount} 角`, `${roleCount} roles`)}</span>}
+            {isCasting && auditionCount > 0 && <span className="text-[#E4CB94]">{tx(`${auditionCount} 人已試`, `${auditionCount} 人已试`, `${auditionCount} auditioned`)}</span>}
             {!isCasting && brief.budget && <span className="text-gray-300">{tx('預算', '预算', 'Budget')} {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
             {due && (auditionClosed(brief)
               ? <span className="text-red-300 font-medium">{tx('已截止', '已截止', 'Closed')}</span>
