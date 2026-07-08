@@ -139,6 +139,12 @@ function NewCasting() {
   const [userEditedSel, setUserEditedSel] = useState(false);
   const [langOnly, setLangOnly] = useState(true);
   const [talentSearch, setTalentSearch] = useState('');
+  // AI cases invite from talent_applications (everyone who filled the form + opted
+  // into AI) via免註冊 magic-link — includes people not yet approved/online. Selected
+  // by email (they may have no talents account). Default = all selected.
+  const [aiPool, setAiPool] = useState<{ email: string; name: string }[]>([]);
+  const [selEmails, setSelEmails] = useState<Set<string>>(new Set());
+  const [aiPoolErr, setAiPoolErr] = useState('');
   // When opened as /admin/casting/new?from=<id> we're completing a client request:
   // pre-fill from their brief, show who asked + their budget, and publish IN PLACE.
   const search = useSearchParams();
@@ -232,6 +238,21 @@ function NewCasting() {
       setRoster(list);
     })();
   }, []);
+
+  // AI case → load the invite pool = applicants who opted into the matching consent
+  // (talent_applications, incl. not-yet-approved). Default: select everyone.
+  useEffect(() => {
+    if (!aiType) { setAiPool([]); setSelEmails(new Set()); setAiPoolErr(''); return; }
+    (async () => {
+      setAiPoolErr('');
+      const r = await fetch(`/api/admin/casting/ai-applicants?type=${aiType}`, { credentials: 'include' }).catch(() => null);
+      if (!r || !r.ok) { setAiPoolErr('無法載入報名者名單,請重新整理。'); setAiPool([]); return; }
+      const j = await r.json().catch(() => ({}));
+      const pool: { email: string; name: string }[] = Array.isArray(j.applicants) ? j.applicants : [];
+      setAiPool(pool);
+      setSelEmails(new Set(pool.map((p) => p.email))); // default: all selected (Wing can deselect)
+    })();
+  }, [aiType]);
 
   // language match for the picker (best-effort default pre-check)
   const langTokens = (s: string) => (s || '').split(/[^A-Za-z一-鿿]+/).map((x) => x.trim().toLowerCase()).filter((x) => (/[一-鿿]/.test(x) ? x.length >= 2 : x.length >= 3));
@@ -350,7 +371,9 @@ function NewCasting() {
       length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
       accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
       ai_type: aiType, // ''=一般 / 'clone'=聲音變AI / 'training'=訓練素材(客戶端)
-      invite_talent_ids: Array.from(selTalents), // publish-time picker (online talents only)
+      // AI case → invite opted-in applicants by email (免註冊 magic-link);
+      // normal case → invite online vetted talents by id (the picker).
+      ...(aiType ? { invite_emails: Array.from(selEmails) } : { invite_talent_ids: Array.from(selTalents) }),
       id: fromId || undefined, // present = publish the client request in place (no duplicate)
     };
     const res = await fetch('/api/admin/casting', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -378,7 +401,7 @@ function NewCasting() {
           <h1 className="text-2xl font-semibold mb-2">✅ 案件已發布</h1>
           <p className="text-gray-600 mb-1">案號:{done.brief_number}</p>
           <p className="text-gray-500 text-sm mb-1">已註冊的配音員在「案件」就看得到了。</p>
-          {done.notified ? <p className="text-green-700 text-sm mb-6">📧 已寄信通知 {done.notified} 位符合語言的配音員來試音。</p> : <p className="text-gray-400 text-sm mb-6">(未寄通知信)</p>}
+          {done.notified ? <p className="text-green-700 text-sm mb-6">📧 已{aiType ? `寄免註冊試音連結給 ${done.notified} 位接受 AI 的報名者` : `寄信通知 ${done.notified} 位符合語言的配音員來試音`}。</p> : <p className="text-gray-400 text-sm mb-6">(未寄通知信)</p>}
 
           {/* Shareable open link — paste anywhere (WeChat/LINE). Anyone opens, enters
               their email, auditions without registering, and can upgrade later. */}
@@ -547,43 +570,78 @@ function NewCasting() {
           {/* Publish-time invite picker — only ONLINE (vetted) talents appear (the gate) */}
           <div className="mt-5 border-t border-white/10 pt-4">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <p className="text-sm font-semibold text-gray-200">邀請配音員試音</p>
-              <span className="text-xs text-amber-300">已選 {selTalents.size} 位</span>
+              <p className="text-sm font-semibold text-gray-200">{aiType ? '邀請(接受 AI 的報名者)' : '邀請配音員試音'}</p>
+              <span className="text-xs text-amber-300">已選 {aiType ? selEmails.size : selTalents.size} 位</span>
             </div>
-            {aiType
-              ? <p className="text-xs text-[#6FCF97] mb-3">🟢 AI 案 —— 開放給所有「已同意{aiType === 'training' ? '錄製 AI 訓練素材' : '聲音製成 AI'}」的人({roster.filter(consents).length} 位),不限是否已上線審核、不限配音員身分。沒同意的不會出現;發佈時只寄給勾選的人。完全的一般人可用下方公開連結。</p>
-              : <p className="text-xs text-gray-500 mb-3">只列已上線(審核過)的配音員 —— 這是平台的把關。指定配音員已自動勾選;可「該語系全選」或自行挑選,發佈時會寄試音邀請給勾選的人。</p>}
-            {rosterErr ? <p className="text-xs text-red-400">{rosterErr}</p> : (
+            {aiType ? (
+              // AI case: invite everyone who filled the form + opted into AI (incl.
+              // not-yet-approved), by email → 免註冊 magic-link. Default all selected.
               <>
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 max-w-[200px]" />
-                  <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-amber-500" />只顯示符合語系</label>
-                  {aiType && <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter(consents).map((t) => t.id))); }} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">全選接受的人</button>}
-                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter((t) => matchesLang(t) && eligible(t)).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
-                  <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
-                </div>
-                {(() => {
-                  const shown = roster
-                    .filter(eligible) // normal → online vetted VOs; AI → anyone who accepts AI
-                    .filter((t) => (langOnly ? matchesLang(t) || isRequested(t) : true))
-                    .filter((t) => { const q = talentSearch.trim().toLowerCase(); return !q || t.name.toLowerCase().includes(q) || t.langs.toLowerCase().includes(q); });
-                  const ordered = [...shown].sort((a, b) => (isRequested(b) ? 1 : 0) - (isRequested(a) ? 1 : 0));
-                  return (
-                    <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
-                      {ordered.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的上線配音員{langOnly ? '(可關閉「只顯示符合語系」看全部)' : ''}。</p>}
-                      {ordered.slice(0, 200).map((t) => (
-                        <label key={t.id} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
-                          <input type="checkbox" checked={selTalents.has(t.id)} onChange={() => toggleTalent(t.id)} className="accent-amber-500" />
-                          <span className="text-gray-100">{t.name}</span>
-                          {isRequested(t) && <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">🎯 指定</span>}
-                          {matchesLang(t) && <span className="text-[10px] text-green-400/80">符合語系</span>}
-                          <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[40%]">{t.langs}</span>
-                        </label>
-                      ))}
+                <p className="text-xs text-[#6FCF97] mb-3">🟢 AI 案 —— 列出所有「填過報名表 + 已同意{aiType === 'training' ? '錄製 AI 訓練素材' : '聲音製成 AI'}」的人({aiPool.length} 位),不限是否已上線審核。預設全選,可取消不想發的;發佈時寄免註冊試音連結給勾選的人。完全的一般人(沒報名)用下方公開連結。</p>
+                {aiPoolErr ? <p className="text-xs text-red-400">{aiPoolErr}</p> : aiPool.length === 0 ? (
+                  <p className="text-xs text-gray-400">目前沒有「接受 AI」的報名者 —— 可用下方公開連結招人(對方點開就能試、等於當場同意)。</p>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋 email / 名字…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#6FCF97]/60 max-w-[200px]" />
+                      <button type="button" onClick={() => setSelEmails(new Set(aiPool.map((p) => p.email)))} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">全選</button>
+                      <button type="button" onClick={() => setSelEmails(new Set())} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
                     </div>
-                  );
-                })()}
-                {reqName && roster.length > 0 && !roster.some(isRequested) && <p className="text-[11px] text-amber-400/80 mt-1.5">⚠ 指定配音員「{fromClient?.requested_talent}」不在上線名單中,無法寄送(僅發給已上線者)。</p>}
+                    {(() => {
+                      const q = talentSearch.trim().toLowerCase();
+                      const shown = aiPool.filter((p) => !q || p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q));
+                      return (
+                        <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
+                          {shown.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的報名者。</p>}
+                          {shown.slice(0, 500).map((p) => (
+                            <label key={p.email} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
+                              <input type="checkbox" checked={selEmails.has(p.email)} onChange={() => setSelEmails((s) => { const n = new Set(s); if (n.has(p.email)) n.delete(p.email); else n.add(p.email); return n; })} className="accent-[#6FCF97]" />
+                              <span className="text-gray-100">{p.name}</span>
+                              <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[55%]">{p.email}</span>
+                            </label>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
+              </>
+            ) : (
+              // Normal case: online vetted voice actors only (the vetting gate).
+              <>
+                <p className="text-xs text-gray-500 mb-3">只列已上線(審核過)的配音員 —— 這是平台的把關。指定配音員已自動勾選;可「該語系全選」或自行挑選,發佈時會寄試音邀請給勾選的人。</p>
+                {rosterErr ? <p className="text-xs text-red-400">{rosterErr}</p> : (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 max-w-[200px]" />
+                      <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-amber-500" />只顯示符合語系</label>
+                      <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter((t) => matchesLang(t) && eligible(t)).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
+                      <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
+                    </div>
+                    {(() => {
+                      const shown = roster
+                        .filter(eligible)
+                        .filter((t) => (langOnly ? matchesLang(t) || isRequested(t) : true))
+                        .filter((t) => { const q = talentSearch.trim().toLowerCase(); return !q || t.name.toLowerCase().includes(q) || t.langs.toLowerCase().includes(q); });
+                      const ordered = [...shown].sort((a, b) => (isRequested(b) ? 1 : 0) - (isRequested(a) ? 1 : 0));
+                      return (
+                        <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
+                          {ordered.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的上線配音員{langOnly ? '(可關閉「只顯示符合語系」看全部)' : ''}。</p>}
+                          {ordered.slice(0, 200).map((t) => (
+                            <label key={t.id} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
+                              <input type="checkbox" checked={selTalents.has(t.id)} onChange={() => toggleTalent(t.id)} className="accent-amber-500" />
+                              <span className="text-gray-100">{t.name}</span>
+                              {isRequested(t) && <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">🎯 指定</span>}
+                              {matchesLang(t) && <span className="text-[10px] text-green-400/80">符合語系</span>}
+                              <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[40%]">{t.langs}</span>
+                            </label>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    {reqName && roster.length > 0 && !roster.some(isRequested) && <p className="text-[11px] text-amber-400/80 mt-1.5">⚠ 指定配音員「{fromClient?.requested_talent}」不在上線名單中,無法寄送(僅發給已上線者)。</p>}
+                  </>
+                )}
               </>
             )}
           </div>

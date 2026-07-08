@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
-import { castingNotifyEmail, clientBriefPublishedEmail } from '@/lib/mail-templates';
+import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail } from '@/lib/mail-templates';
 import { caseCode } from '@/lib/casting';
 
 /*
@@ -107,6 +108,35 @@ async function notifySelectedTalents(
   });
   await Promise.all(recips.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
   return recips.length;
+}
+
+// Invite a set of emails to a casting call via a免註冊 magic-link (/casting/<token>).
+// Used for AI cases, whose pool = applicants who opted into AI (talent_applications)
+// — many have no talent account yet, so a per-email invite (not /talent notify) is
+// the right channel. Idempotent per (brief, email): reuses an existing token.
+async function inviteEmailsMagicLink(
+  db: ReturnType<typeof getSupabaseServiceClient>,
+  brief: { id: string; title?: string | null },
+  emails: string[],
+) {
+  const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i;
+  const clean = [...new Set(emails.map((e) => String(e).trim().toLowerCase()))].filter((e) => EMAIL_OK.test(e) && !SKIP.test(e)).slice(0, 500);
+  let invited = 0;
+  for (const email of clean) {
+    const { data: existing } = await db.from('casting_invites').select('token').eq('brief_id', brief.id).eq('email', email).maybeSingle();
+    let token = existing?.token as string | undefined;
+    if (!token) {
+      token = crypto.randomBytes(24).toString('hex');
+      const { error } = await db.from('casting_invites').insert({ brief_id: brief.id, email, token });
+      if (error) continue; // possible race on (brief,email) unique — skip, they still get one link
+    }
+    const link = `${SITE}/zh-TW/casting/${token}`;
+    const mail = castingInviteEmail({ title: brief.title || undefined, link, locale: 'zh-TW' });
+    await sendEmail({ category: 'HELLO', to: email, subject: mail.subject, html: mail.html }).catch(() => {});
+    invited++;
+  }
+  return invited;
 }
 
 // GET /api/admin/casting?id=<briefId> — load one brief to pre-fill the form
@@ -234,7 +264,10 @@ export async function POST(request: NextRequest) {
     code: caseCode({ content_type: row.content_type, created_at: data.created_at, brief_number: data.brief_number }),
   };
   try {
-    if (Array.isArray(b.invite_talent_ids)) {
+    if (row.ai_type && Array.isArray(b.invite_emails)) {
+      // AI case: invite opted-in applicants (incl. not-yet-approved) by免註冊 magic-link.
+      notified = await inviteEmailsMagicLink(db, { id: data.id as string, title }, (b.invite_emails as unknown[]).map(String));
+    } else if (Array.isArray(b.invite_talent_ids)) {
       notified = await notifySelectedTalents(db, briefMeta, (b.invite_talent_ids as unknown[]).map(String).filter(Boolean), row.ai_type);
     } else if (b.notify !== false && !row.ai_type) {
       // Never broadcast an AI case by language — those go only to opted-in talents
