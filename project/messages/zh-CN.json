@@ -2115,6 +2115,16 @@
     "toolsDescription": "为语音配音、音频工程与音乐创作者精心策划的 AI 工具清单，涵盖 TTS、语音克隆、音乐生成、配音与语音识别，共 20 款精选持续更新。",
     "aboutTitle": "关于我们 | Onyx Studios",
     "contactTitle": "联系我们 | Onyx Studios",
+    "aboutDescription": "Onyx Studios 结合 AI 语音生成与录音室级人工精修。了解我们的团队、录音室与制作方式,如何交付自然、可播出的声音。",
+    "contactDescription": "配音、文字转语音、配音本地化与音乐项目,欢迎与 Onyx Studios 联系。报价、咨询、合作洽谈都可以。",
+    "hireTitle": "在线配音发案・征配音员 | Onyx Studios",
+    "hireDescription": "发布您的配音需求,匹配经审核的专业配音员。多语选角、快速试音、报价透明,由 Onyx 居中把关。",
+    "voicesTitle": "配音员阵容・AI 声音试听 | Onyx Studios",
+    "voicesDescription": "浏览专业配音员与 AI 声音,涵盖多语言与各种风格。在线试听 demo,为您的项目找到对的声音。",
+    "applyTitle": "加入 Onyx 配音员・报名 | Onyx Studios",
+    "applyDescription": "加入 Onyx Studios 人才库。以配音员、歌手或录音室伙伴身份报名,接收匹配的配音与 TTS 案件。",
+    "talentsTitle": "配音员名册 | Onyx Studios",
+    "talentsDescription": "认识 Onyx Studios 的专业配音员。浏览档案、语言与 demo,为您的制作选出最合适的声音。",
     "dashboardTitle": "控制台 | Onyx Studios"
   },
   "verify": {
