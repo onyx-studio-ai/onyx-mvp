@@ -38,6 +38,17 @@ function toLocalePath(locale: string, route: string) {
   return route === '/' ? `/${locale}` : `/${locale}${route}`;
 }
 
+// hreflang group for a route → emitted by Next as <xhtml:link rel="alternate">, so
+// Google links the three locale versions of a page instead of treating them as
+// duplicates (this is how the homepage + every page gets its hreflang, without any
+// head/page change). Each entry references all locales + x-default (default locale).
+function languagesFor(route: string): Record<string, string> {
+  const langs: Record<string, string> = {};
+  for (const locale of routing.locales) langs[locale] = `${BASE_URL}${toLocalePath(locale, route)}`;
+  langs['x-default'] = `${BASE_URL}${toLocalePath(routing.defaultLocale, route)}`;
+  return langs;
+}
+
 // Public, published human voice talents → /talents/[id] long-tail landing pages.
 // Mirrors the EXACT filter of the public /api/talents/roster endpoint so the
 // sitemap and the browsable gallery stay in lockstep: active, real humans
@@ -81,6 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: (route === '/' ? 'daily' : 'weekly') as 'daily' | 'weekly',
       priority: route === '/' ? 1 : route === '/pricing' || route === '/music/pricing' ? 0.9 : 0.7,
+      alternates: { languages: languagesFor(route) },
     }))
   );
 
@@ -90,18 +102,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(post.date + 'T00:00:00Z'),
       changeFrequency: 'monthly' as const,
       priority: 0.8,
+      alternates: { languages: languagesFor(`/blog/${post.slug}`) },
     }))
   );
 
   // ~1,500 talents × 3 locales ≈ 4,500 URLs — comfortably under Google's
-  // 50k-per-file cap, so a single sitemap is fine. One entry per locale,
-  // matching how static/blog routes are emitted (no hreflang groups yet).
+  // 50k-per-file cap, so a single sitemap is fine. One entry per locale, each
+  // carrying the hreflang group for its three language versions.
   const talentEntries = (await getPublishedTalents()).flatMap((t) =>
     routing.locales.map((locale) => ({
       url: `${BASE_URL}${toLocalePath(locale, `/talents/${t.id}`)}`,
       lastModified: t.updated_at ? new Date(t.updated_at) : now,
       changeFrequency: 'weekly' as const,
       priority: 0.6,
+      alternates: { languages: languagesFor(`/talents/${t.id}`) },
     }))
   );
 
