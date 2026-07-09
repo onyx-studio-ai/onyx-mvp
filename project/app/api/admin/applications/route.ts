@@ -207,6 +207,16 @@ export async function PATCH(request: NextRequest) {
             phone: application.phone || null,
             country: application.country || null,
             expected_rates: expectedRates,
+            // Carry the applicant's cooperation opt-ins onto the live talent row so
+            // downstream (casting filters, /talent self-edit) reflect what they agreed
+            // to. Previously these weren't copied → talents.coop_* stayed at default.
+            coop_accept_jobs: application.coop_accept_jobs ?? true,
+            coop_open_buyout: !!application.coop_open_buyout,
+            coop_ai_clone: !!application.coop_ai_clone,
+            coop_ai_training: !!application.coop_ai_training,
+            coop_proofread: !!application.coop_proofread,
+            coop_voice_director: !!application.coop_voice_director,
+            low_price_data_optin: !!application.low_price_data_optin,
           }]).select('id').single();
 
           if (talentError) {
