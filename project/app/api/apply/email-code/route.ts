@@ -17,7 +17,11 @@ import { signOtp } from '@/lib/otp-code';
 */
 
 const SECRET = process.env.EMAIL_CODE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const TTL_MS = 10 * 60 * 1000; // 10 minutes
+// 30 min — the OTP exp is stamped at code-REQUEST time and must outlast the whole
+// apply flow (fill the form + upload a demo, which submit does before re-verifying
+// the OTP). 10 min was too short: a slow/large demo upload expired the proof and the
+// applicant got "Email not verified" at submit despite having verified. (report 2026-07-09)
+const TTL_MS = 30 * 60 * 1000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // HMAC signing lives in lib/otp-code (signOtp) so apply/submit can re-verify the
