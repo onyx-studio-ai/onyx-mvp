@@ -220,7 +220,7 @@ export default function TalentRoster() {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx('搜尋名稱、語言、聲線…', '搜寻名称、语言、声线…', 'Search name, language, voice…')}
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-blue-500 focus:outline-none placeholder:text-gray-600" />
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm focus:border-white/40 focus:outline-none placeholder:text-gray-600" />
           </div>
           <select className={selectCls} value={lang} onChange={(e) => { setLang(e.target.value); setAccent(''); }}>
             <option value="">{tx('所有語言', '所有语言', 'All languages')}</option>
@@ -261,12 +261,12 @@ export default function TalentRoster() {
         {topLangs.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-6">
             <button onClick={() => { setLang(''); setAccent(''); }}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${lang === '' ? 'bg-blue-500/20 text-blue-200 border-blue-400/40' : 'bg-zinc-900 text-gray-300 border-zinc-700 hover:border-zinc-500'}`}>
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${lang === '' ? 'bg-white text-black border-white' : 'bg-zinc-900 text-gray-300 border-zinc-700 hover:border-zinc-500'}`}>
               {tx('全部', '全部', 'All')} <span className="opacity-50">{talents.length}</span>
             </button>
             {topLangs.map(([k, n]) => (
               <button key={k} onClick={() => { setLang(lang === k ? '' : k); setAccent(''); }}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${lang === k ? 'bg-blue-500/20 text-blue-200 border-blue-400/40' : 'bg-zinc-900 text-gray-300 border-zinc-700 hover:border-zinc-500'}`}>
+                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${lang === k ? 'bg-white text-black border-white' : 'bg-zinc-900 text-gray-300 border-zinc-700 hover:border-zinc-500'}`}>
                 {baseLangLabel(k, locale)} <span className="opacity-50">{n}</span>
               </button>
             ))}
@@ -300,24 +300,24 @@ export default function TalentRoster() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={t.headshot_url} alt={nameOf(t)} className="w-12 h-12 rounded-full object-cover" />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 to-zinc-700 flex items-center justify-center text-lg font-semibold text-blue-200">{initial(nameOf(t))}</div>
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center text-lg font-semibold text-gray-300">{initial(nameOf(t))}</div>
                       )}
                       {pd && (
                         <button onClick={() => togglePlay(t)} aria-label={tx('播放試聽', '播放试听', 'Play demo')}
-                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center hover:bg-amber-400">
+                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 shadow-md">
                           {isNow && playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
                         </button>
                       )}
                     </div>
                     <div className="min-w-0">
-                      <Link href={`/${locale}/talents/${t.id}`} className="font-semibold text-white hover:text-blue-300 truncate block">{nameOf(t)}</Link>
+                      <Link href={`/${locale}/talents/${t.id}`} className="font-semibold text-white hover:text-amber-200 truncate block">{nameOf(t)}</Link>
                       {meta && <p className="text-[11px] text-gray-500 truncate">{meta}</p>}
                     </div>
                     <div className="ml-auto self-start flex-none"><FavoriteButton talentId={t.id} size={16} /></div>
                   </div>
 
                   {(t.languages || []).length > 0 && pills(t.languages || [], (k) => formatLangEntry(k, locale), 'bg-zinc-800 text-gray-300')}
-                  {servicesOf(t.tags).length > 0 && pills(servicesOf(t.tags), (k) => tx(SERVICE_LABEL[k].tw, SERVICE_LABEL[k].cn, SERVICE_LABEL[k].en), 'bg-sky-500/10 text-sky-300 border border-sky-500/30')}
+                  {servicesOf(t.tags).length > 0 && pills(servicesOf(t.tags), (k) => tx(SERVICE_LABEL[k].tw, SERVICE_LABEL[k].cn, SERVICE_LABEL[k].en), 'bg-white/5 text-gray-300 border border-white/10')}
                   {(t.voice_traits || []).length > 0 && pills(t.voice_traits || [], (k) => (TRAIT_KEYS.has(k) ? traitLabel(k, locale) : (pickLocale(t.tag_i18n?.[k], locale) || k)), 'bg-amber-500/10 text-amber-300/90')}
 
                   <Link href={`/${locale}/talents/${t.id}`} className="mt-auto inline-flex items-center gap-1 text-sm text-amber-300 hover:text-amber-200">
@@ -344,7 +344,7 @@ export default function TalentRoster() {
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
             <button onClick={() => { const a = audioRef.current; if (!a) return; if (a.paused) a.play().catch(() => {}); else a.pause(); }}
               aria-label={playing ? tx('暫停', '暂停', 'Pause') : tx('播放', '播放', 'Play')}
-              className="w-9 h-9 rounded-full bg-amber-500 text-black flex items-center justify-center hover:bg-amber-400 flex-none">
+              className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 flex-none">
               {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
             </button>
             <div className="min-w-0 w-32 sm:w-44 flex-none">
