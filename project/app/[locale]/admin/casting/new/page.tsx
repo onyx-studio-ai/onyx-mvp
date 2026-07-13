@@ -42,6 +42,36 @@ function buildGenderNeeds(male: string, female: string) {
   return parts.join('、');
 }
 const voicesTotal = (male: string, female: string) => (male === '5+' ? 5 : Number(male) || 0) + (female === '5+' ? 5 : Number(female) || 0);
+
+// 語言比對正規化 —— 報名者的語言存的是英文正規值(如 'Chinese · Taiwan'),案件語言常是
+// 中文字(如 '中文 · 台灣國語'),直接比子字串會跨語言比不到(這是「符合語系全部 0 人」的
+// 根因)。把兩邊都轉成同一組語言鍵(家族 zh/en… + 地區 zh-tw/zh-cn/yue/nan…)再比。
+const langKeys = (s: string): string[] => {
+  const t = (s || '').toLowerCase();
+  const has = (...xs: string[]) => xs.some((x) => t.includes(x));
+  const k = new Set<string>();
+  if (has('cantonese', '粵', '粤', '廣東', '广东', '香港', 'hong kong')) k.add('yue');
+  if (has('hokkien', '閩南', '闽南', '台語', '台语', 'taigi')) k.add('nan');
+  if (has('mandarin', 'chinese', '中文', '國語', '国语', '華語', '华语', '普通話', '普通话')) {
+    k.add('zh');
+    if (has('taiwan', '台灣', '台湾', '臺灣')) k.add('zh-tw');
+    if (has('mainland', '大陸', '大陆', '中國', '中国', 'prc', '普通話', '普通话')) k.add('zh-cn');
+    if (has('malaysia', '馬來', '马来')) k.add('zh-my');
+  }
+  if (has('english', '英文', '英語', '英语')) k.add('en');
+  if (has('japanese', '日文', '日語', '日语')) k.add('ja');
+  if (has('korean', '韓', '韩')) k.add('ko');
+  return [...k];
+};
+// 地區/方言鍵(比家族更具體);案件若指定了它,配對就要求對得上該地區,避免大陸腔被選進台灣案。
+const isSpecificKey = (key: string) => key.includes('-') || key === 'yue' || key === 'nan';
+// 性別正規化成 male/female('' = 不明);先判 female 因為 'female' 內含 'male'。
+const normGender = (v: unknown): '' | 'male' | 'female' => {
+  const s = String(v || '').toLowerCase();
+  if (s.includes('female') || s.includes('女')) return 'female';
+  if (s.includes('male') || s.includes('男')) return 'male';
+  return '';
+};
 // 反解析匯入字串(如「男聲 1 位、女聲 2 位」)回男/女下拉值,匯入客戶案時用。
 function parseGenderNeeds(s?: string | null): { male: string; female: string } {
   const t = String(s || '');
@@ -155,16 +185,17 @@ function NewCasting() {
   // Publish-time talent picker. Normal cases invite ONLY online (vetted) talents
   // (the gate). AI cases are open to anyone who opted into AI — vetted or not —
   // so `active` (= online vetted VO) is tracked per talent to apply the right gate.
-  const [roster, setRoster] = useState<{ id: string; name: string; langs: string; active: boolean; aiClone: boolean; aiTrain: boolean }[]>([]);
+  const [roster, setRoster] = useState<{ id: string; name: string; langs: string; gender: '' | 'male' | 'female'; active: boolean; aiClone: boolean; aiTrain: boolean }[]>([]);
   const [rosterErr, setRosterErr] = useState('');
   const [selTalents, setSelTalents] = useState<Set<string>>(new Set());
   const [userEditedSel, setUserEditedSel] = useState(false);
   const [langOnly, setLangOnly] = useState(true);
+  const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
   const [talentSearch, setTalentSearch] = useState('');
   // AI cases invite from talent_applications (everyone who filled the form + opted
   // into AI) via免註冊 magic-link — includes people not yet approved/online. Selected
   // by email (they may have no talents account). Default = all selected.
-  const [aiPool, setAiPool] = useState<{ email: string; name: string; langs: string }[]>([]);
+  const [aiPool, setAiPool] = useState<{ email: string; name: string; langs: string; gender: '' | 'male' | 'female' }[]>([]);
   const [selEmails, setSelEmails] = useState<Set<string>>(new Set());
   const [userEditedEmails, setUserEditedEmails] = useState(false);
   const [aiPoolErr, setAiPoolErr] = useState('');
@@ -258,7 +289,7 @@ function NewCasting() {
         // Vetted online voice actors (normal-case pool) + anyone who opted into AI
         // (AI cases don't require vetting — a general person who accepts AI qualifies).
         .filter((t: { is_active?: boolean; type?: string; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => isVettedVO(t) || t.coop_ai_clone || t.coop_ai_training)
-        .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown; is_active?: boolean; type?: string; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim(), active: isVettedVO(t), aiClone: !!t.coop_ai_clone, aiTrain: !!t.coop_ai_training }))
+        .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown; gender?: unknown; is_active?: boolean; type?: string; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim(), gender: normGender(t.gender), active: isVettedVO(t), aiClone: !!t.coop_ai_clone, aiTrain: !!t.coop_ai_training }))
         .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
       setRoster(list);
     })();
@@ -275,8 +306,8 @@ function NewCasting() {
       const r = await fetch(`/api/admin/casting/ai-applicants?type=${aiType}`, { credentials: 'include' }).catch(() => null);
       if (!r || !r.ok) { setAiPoolErr('無法載入報名者名單,請重新整理。'); setAiPool([]); return; }
       const j = await r.json().catch(() => ({}));
-      const pool: { email: string; name: string; langs: string }[] = Array.isArray(j.applicants) ? j.applicants : [];
-      setAiPool(pool);
+      const raw: { email: string; name: string; langs: string; gender?: unknown }[] = Array.isArray(j.applicants) ? j.applicants : [];
+      setAiPool(raw.map((p) => ({ email: p.email, name: p.name, langs: p.langs, gender: normGender(p.gender) })));
     })();
   }, [aiType]);
 
@@ -289,10 +320,22 @@ function NewCasting() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiPool, language, aiType, userEditedEmails]);
 
-  // language match for the picker (best-effort default pre-check)
-  const langTokens = (s: string) => (s || '').split(/[^A-Za-z一-鿿]+/).map((x) => x.trim().toLowerCase()).filter((x) => (/[一-鿿]/.test(x) ? x.length >= 2 : x.length >= 3));
-  const caseToks = langTokens(language);
-  const matchesLang = (t: { langs: string }) => caseToks.length > 0 && caseToks.some((k) => t.langs.toLowerCase().includes(k));
+  // language match for the picker (best-effort default pre-check) — normalize both
+  // sides via langKeys so a Chinese case language matches English-canonical applicant
+  // languages. If the case names a region/dialect, require that specific key.
+  const caseKeys = langKeys(language);
+  const caseSpecific = caseKeys.filter(isSpecificKey);
+  const matchesLang = (t: { langs: string }) => {
+    const a = langKeys(t.langs);
+    if (caseKeys.length === 0 || a.length === 0) return false;
+    return (caseSpecific.length ? caseSpecific : caseKeys).some((key) => a.includes(key));
+  };
+  const matchesGender = (t: { gender: '' | 'male' | 'female' }) => genderFilter === 'all' || t.gender === genderFilter;
+  // AI picker's currently-visible list (語系 + 性別 + 搜尋),供「全選目前清單」與清單共用。
+  const aiShown = aiPool
+    .filter((p) => (langOnly ? matchesLang(p) : true))
+    .filter(matchesGender)
+    .filter((p) => { const q = talentSearch.trim().toLowerCase(); return !q || p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.langs.toLowerCase().includes(q); });
   const reqName = (fromClient?.requested_talent || '').trim().toLowerCase();
   const isRequested = (t: { name: string }) => !!reqName && (t.name.toLowerCase() === reqName || reqName.includes(t.name.toLowerCase()));
   // For an AI case, a talent must have opted into the matching consent (聲音變AI /
@@ -301,6 +344,14 @@ function NewCasting() {
   // Who's eligible to be invited: normal cases → online vetted VOs only (the gate);
   // AI cases → anyone who opted into the matching consent (vetted or not).
   const eligible = (t: { active: boolean; aiClone: boolean; aiTrain: boolean }) => (aiType ? consents(t) : t.active);
+  // Normal picker's currently-visible list (eligible + 語系 + 性別 + 搜尋;指定的人置頂),
+  // 供「全選目前清單」與清單共用。
+  const rosterShown = roster
+    .filter(eligible)
+    .filter((t) => (langOnly ? matchesLang(t) || isRequested(t) : true))
+    .filter(matchesGender)
+    .filter((t) => { const q = talentSearch.trim().toLowerCase(); return !q || t.name.toLowerCase().includes(q) || t.langs.toLowerCase().includes(q); })
+    .sort((a, b) => (isRequested(b) ? 1 : 0) - (isRequested(a) ? 1 : 0));
 
   // Default selection = matching-language + the requested talent, until the admin
   // manually edits the picker, gated by eligibility. Re-runs as language / client
@@ -623,28 +674,26 @@ function NewCasting() {
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋 email / 名字…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#6FCF97]/60 max-w-[200px]" />
                       <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-[#6FCF97]" />只顯示符合語系</label>
-                      <button type="button" onClick={() => { setUserEditedEmails(true); setSelEmails(new Set(aiPool.filter(matchesLang).map((p) => p.email))); }} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">該語系全選</button>
+                      <div className="inline-flex rounded-lg overflow-hidden border border-white/10 text-xs">
+                        {([['all', '全部性別'], ['male', '男'], ['female', '女']] as const).map(([g, label]) => (
+                          <button key={g} type="button" onClick={() => setGenderFilter(g)} className={`px-2.5 py-1 ${genderFilter === g ? 'bg-[#6FCF97]/25 text-[#6FCF97]' : 'text-gray-300 hover:bg-white/10'}`}>{label}</button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => { setUserEditedEmails(true); setSelEmails(new Set(aiShown.map((p) => p.email))); }} className="text-xs bg-[#6FCF97]/15 hover:bg-[#6FCF97]/25 text-[#6FCF97] rounded px-2.5 py-1">全選目前清單</button>
                       <button type="button" onClick={() => { setUserEditedEmails(true); setSelEmails(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
                     </div>
-                    {(() => {
-                      const q = talentSearch.trim().toLowerCase();
-                      const shown = aiPool
-                        .filter((p) => (langOnly ? matchesLang(p) : true))
-                        .filter((p) => !q || p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.langs.toLowerCase().includes(q));
-                      return (
-                        <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
-                          {shown.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的報名者{langOnly ? '(可關閉「只顯示符合語系」看全部)' : ''}。</p>}
-                          {shown.slice(0, 500).map((p) => (
-                            <label key={p.email} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
-                              <input type="checkbox" checked={selEmails.has(p.email)} onChange={() => { setUserEditedEmails(true); setSelEmails((s) => { const n = new Set(s); if (n.has(p.email)) n.delete(p.email); else n.add(p.email); return n; }); }} className="accent-[#6FCF97]" />
-                              <span className="text-gray-100">{p.name}</span>
-                              {matchesLang(p) && <span className="text-[10px] text-green-400/80">符合語系</span>}
-                              <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[45%]">{p.email}</span>
-                            </label>
-                          ))}
-                        </div>
-                      );
-                    })()}
+                    <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
+                      {aiShown.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的報名者{langOnly || genderFilter !== 'all' ? '(可放寬「語系 / 性別」篩選看更多)' : ''}。</p>}
+                      {aiShown.slice(0, 500).map((p) => (
+                        <label key={p.email} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
+                          <input type="checkbox" checked={selEmails.has(p.email)} onChange={() => { setUserEditedEmails(true); setSelEmails((s) => { const n = new Set(s); if (n.has(p.email)) n.delete(p.email); else n.add(p.email); return n; }); }} className="accent-[#6FCF97]" />
+                          <span className="text-gray-100">{p.name}</span>
+                          {p.gender && <span className="text-[10px] text-gray-400 bg-white/10 px-1 rounded">{p.gender === 'male' ? '男' : '女'}</span>}
+                          {matchesLang(p) && <span className="text-[10px] text-green-400/80">符合語系</span>}
+                          <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[45%]">{p.email}</span>
+                        </label>
+                      ))}
+                    </div>
                   </>
                 )}
               </>
@@ -657,22 +706,24 @@ function NewCasting() {
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <input value={talentSearch} onChange={(e) => setTalentSearch(e.target.value)} placeholder="搜尋配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 max-w-[200px]" />
                       <label className="text-xs text-gray-400 flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={langOnly} onChange={(e) => setLangOnly(e.target.checked)} className="accent-amber-500" />只顯示符合語系</label>
-                      <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(roster.filter((t) => matchesLang(t) && eligible(t)).map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">該語系全選</button>
+                      <div className="inline-flex rounded-lg overflow-hidden border border-white/10 text-xs">
+                        {([['all', '全部性別'], ['male', '男'], ['female', '女']] as const).map(([g, label]) => (
+                          <button key={g} type="button" onClick={() => setGenderFilter(g)} className={`px-2.5 py-1 ${genderFilter === g ? 'bg-amber-500/25 text-amber-200' : 'text-gray-300 hover:bg-white/10'}`}>{label}</button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set(rosterShown.map((t) => t.id))); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">全選目前清單</button>
                       <button type="button" onClick={() => { setUserEditedSel(true); setSelTalents(new Set()); }} className="text-xs bg-white/10 hover:bg-white/15 text-gray-200 rounded px-2.5 py-1">清除</button>
                     </div>
                     {(() => {
-                      const shown = roster
-                        .filter(eligible)
-                        .filter((t) => (langOnly ? matchesLang(t) || isRequested(t) : true))
-                        .filter((t) => { const q = talentSearch.trim().toLowerCase(); return !q || t.name.toLowerCase().includes(q) || t.langs.toLowerCase().includes(q); });
-                      const ordered = [...shown].sort((a, b) => (isRequested(b) ? 1 : 0) - (isRequested(a) ? 1 : 0));
+                      const ordered = rosterShown;
                       return (
                         <div className="max-h-56 overflow-y-auto rounded-lg border border-white/10 divide-y divide-white/5">
-                          {ordered.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的上線配音員{langOnly ? '(可關閉「只顯示符合語系」看全部)' : ''}。</p>}
+                          {ordered.length === 0 && <p className="text-xs text-gray-500 p-3">沒有符合的上線配音員{langOnly || genderFilter !== 'all' ? '(可放寬「語系 / 性別」篩選看更多)' : ''}。</p>}
                           {ordered.slice(0, 200).map((t) => (
                             <label key={t.id} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-white/[0.03]">
                               <input type="checkbox" checked={selTalents.has(t.id)} onChange={() => toggleTalent(t.id)} className="accent-amber-500" />
                               <span className="text-gray-100">{t.name}</span>
+                              {t.gender && <span className="text-[10px] text-gray-400 bg-white/10 px-1 rounded">{t.gender === 'male' ? '男' : '女'}</span>}
                               {isRequested(t) && <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">🎯 指定</span>}
                               {matchesLang(t) && <span className="text-[10px] text-green-400/80">符合語系</span>}
                               <span className="ml-auto text-[11px] text-gray-500 truncate max-w-[40%]">{t.langs}</span>
