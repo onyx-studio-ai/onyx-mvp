@@ -27,7 +27,9 @@ const PUBLIC_CARD_COLS = [
   'sort_order',
   // internal_cost 只用來在伺服器端算 frontend_price(見下方 map),不回給前端。
   'internal_cost',
-  'frontend_price',
+  // 注意:不要在此加 'frontend_price' —— talents 沒有這個實體欄位,select 到它整個
+  // 查詢會 PGRST 500(害 /voices AI 牆、首頁精選、音樂歌手牆全空)。價格由下方 map
+  // 用 internal_cost*1.6 算出來回傳,不需要、也不能 select 這個不存在的欄位。
 ].join(', ');
 
 export async function GET(request: NextRequest) {
