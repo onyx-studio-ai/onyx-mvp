@@ -98,13 +98,16 @@ export async function POST(request: NextRequest) {
     );
 
     const supabase = getSupabaseServiceClient();
-    // fire-and-forget:不 await 的話 serverless 可能提前結束,所以 await 但吞錯。
-    await supabase.from('page_views').insert({
+    // fire-and-forget:不 await 的話 serverless 可能提前結束,所以 await。錯誤不擋頁面
+    // (仍回 204),但要 console.error 出來 —— 之前純吞錯,害 page_views 缺欄位(PGRST204)
+    // 導致每筆寫入靜默失敗、埋點斷了一週都沒人發現(2026-07-13)。留 log 讓 Vercel 看得到。
+    const { error } = await supabase.from('page_views').insert({
       path,
       country,
       referrer,
       locale: normalizeLocale(body.locale),
     });
+    if (error) console.error('[track] page_views insert failed:', error.code, error.message);
 
     return new NextResponse(null, { status: 204 });
   } catch {
