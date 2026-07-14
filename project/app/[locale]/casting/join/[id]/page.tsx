@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { langLabel } from '@/lib/languages';
 import { useRouter } from '@/i18n/navigation';
 
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
@@ -65,7 +66,7 @@ export default function CastingJoin() {
       {info.title && <p className="text-lg text-gray-200 mb-2">{info.title}</p>}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {info.ai_type && <span className="text-xs bg-[#6FCF97]/15 text-[#6FCF97] border border-[#6FCF97]/30 px-2 py-0.5 rounded-full">{info.ai_type === 'training' ? tx('AI 訓練素材', 'AI training') : tx('TTS / 聲音變 AI', 'TTS / voice→AI')}</span>}
-        {info.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{info.language}</span>}
+        {info.language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{langLabel(info.language, locale)}</span>}
         {info.rate_note && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{info.rate_note}</span>}
       </div>
       {info.ai_type && !info.closed && (

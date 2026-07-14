@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
+import { langLabel } from '@/lib/languages';
 import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -402,10 +403,11 @@ function JobAgreement({ brief, quote, tx, onAccepted }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const locale = useLocale();
   const lic = licenseWindow(brief.license_term, brief.order_created);
   // Service & skill line: 真人配音 (Voice Over) + the use-case (content_type), e.g. 線上廣告.
   const skill = [tx('真人配音 Voice Over', '真人配音 Voice Over', 'Voice Over'), brief.content_type].filter(Boolean).join(' · ');
-  const voice = [brief.language, brief.accent].filter(Boolean).join(' · ');
+  const voice = [langLabel(brief.language, locale), brief.accent].filter(Boolean).join(' · ');
   async function accept() {
     setErr(''); setBusy(true);
     try {
@@ -798,6 +800,7 @@ function BriefCard({
   tx: (tw: string, cn: string, en: string) => string;
   onQuoted: (q: Quote) => void;
 }) {
+  const locale = useLocale();
   const popularThreshold = Number(brief.audition_cap) || 5;
   const isCasting = brief.kind === 'casting';
   const hasRoles = (brief.roles || []).length > 0; // casting WITHOUT roles = general single-voice call
@@ -863,7 +866,7 @@ function BriefCard({
           {(() => {
             const methodLabel = (m: string) => (m === 'home' ? tx('在家錄', '在家录', 'Home') : m === 'studio' ? tx('錄音室', '录音室', 'Studio') : m === 'online' ? tx('線上監錄', '线上监录', 'Online') : m);
             const info: [string, string][] = ([
-              [tx('語言', '语言', 'Language'), brief.language],
+              [tx('語言', '语言', 'Language'), langLabel(brief.language, locale)],
               [tx('需求', '需求', 'Needs'), brief.gender_needs],
               [tx('口音', '口音', 'Accent'), brief.accent],
               [tx('聲音風格', '声音风格', 'Style'), brief.voice_style],
@@ -1019,6 +1022,7 @@ function CaseHeader({
   onToggle: () => void;
   tx: (tw: string, cn: string, en: string) => string;
 }) {
+  const locale = useLocale();
   const due = brief.audition_deadline || brief.deadline;
   const cat = brief.content_type || (brief.categories || [])[0];
   return (
@@ -1035,7 +1039,7 @@ function CaseHeader({
               ? <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{tx('試音案', '试音案', 'Casting')}</span>
               : cat && <span className="text-[11px] bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{cat}</span>}
             {brief.ai_type && <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#6FCF97]/15 text-[#6FCF97] border border-[#6FCF97]/30">{brief.ai_type === 'training' ? tx('AI 訓練素材', 'AI 训练素材', 'AI training') : tx('TTS / 聲音變 AI', 'TTS / 声音变 AI', 'TTS / voice→AI')}</span>}
-            {brief.language && <span className="text-[11px] bg-white/[0.06] border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{brief.language}</span>}
+            {brief.language && <span className="text-[11px] bg-white/[0.06] border border-white/10 text-gray-300 px-2 py-0.5 rounded-full">{langLabel(brief.language, locale)}</span>}
             {brief.has_singing && <span className="text-[11px] bg-pink-500/15 text-pink-200 px-2 py-0.5 rounded-full">{tx('含唱歌', '含唱歌', 'Singing')}</span>}
             {brief.wants_live_session && <span className="text-[11px] bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('線上監錄', '线上监录', 'Live')}</span>}
             {brief.wants_director && <span className="text-[11px] bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{tx('聲音導演', '声音导演', 'Director')}</span>}

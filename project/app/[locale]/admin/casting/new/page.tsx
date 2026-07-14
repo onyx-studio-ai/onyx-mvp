@@ -13,6 +13,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
+import { LANGUAGES, langLabel } from '@/lib/languages';
 
 type RefFile = { name: string; url: string };
 type ParsedRole = { name: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
@@ -137,7 +138,7 @@ function NewCasting() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('遊戲 Video Game');
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
-  const [language, setLanguage] = useState('中文 · 台灣國語');
+  const [language, setLanguage] = useState('Mandarin · Taiwan');
   // 需求人數(男/女)—— 用下拉點選,送出組成 gender_needs 字串 + voices_needed 數字。
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
@@ -540,7 +541,7 @@ function NewCasting() {
           <div className="flex flex-wrap gap-1.5 mb-3">
             <span className="text-xs bg-purple-500/15 text-purple-200 px-2 py-0.5 rounded-full">試音案</span>
             {aiType && <span className="text-xs bg-[#6FCF97]/15 text-[#6FCF97] border border-[#6FCF97]/30 px-2 py-0.5 rounded-full">{aiType === 'training' ? 'AI 訓練素材案' : 'TTS / 聲音變 AI 案'}</span>}
-            {language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{language}</span>}
+            {language && <span className="text-xs bg-green-500/10 text-green-200 px-2 py-0.5 rounded-full">{langLabel(language, 'zh-TW')}</span>}
             {rn && <span className="text-xs bg-amber-500/15 text-amber-200 px-2 py-0.5 rounded-full">{rn}</span>}
             {methodList.map((m) => <span key={m} className="text-xs bg-sky-500/15 text-sky-200 px-2 py-0.5 rounded-full">{methodLabel(m)}</span>)}
           </div>
@@ -574,7 +575,7 @@ function NewCasting() {
           {(() => {
             const ml = (m: string) => (m === 'home' ? '在家錄' : m === 'studio' ? '錄音室' : m === 'online' ? '線上監錄' : m);
             const info = ([
-              ['語言', language], ['需求', buildGenderNeeds(maleVoices, femaleVoices)], ['口音', accent], ['聲音風格', voiceStyle], ['聲音年齡', voiceAge],
+              ['語言', langLabel(language, 'zh-TW')], ['需求', buildGenderNeeds(maleVoices, femaleVoices)], ['口音', accent], ['聲音風格', voiceStyle], ['聲音年齡', voiceAge],
               ['使用範圍', mediaScope], ['地區', territory], ['授權', licenseTerm], ['預計開錄', recordingStart],
               ['含修改', Number(baseRev) > 0 ? `${baseRev} 次` : ''],
               ['錄音方式', Object.keys(methods).filter((k) => methods[k]).map(ml).join(' / ')],
@@ -821,7 +822,10 @@ function NewCasting() {
           </div>
         )}
 
-        <Field label="語言"><input className={input} value={language} onChange={(e) => setLanguage(e.target.value)} /></Field>
+        <Field label="語言"><select className={input} value={language} onChange={(e) => setLanguage(e.target.value)}>
+          {language && !LANGUAGES.some((o) => o.v === language) && <option value={language}>{language}(舊值)</option>}
+          {LANGUAGES.map((o) => <option key={o.v} value={o.v}>{o.tw}</option>)}
+        </select></Field>
         <Field label="需求(人數 / 性別)">
           <div className="grid grid-cols-2 gap-3">
             <label className="flex items-center gap-2 text-sm text-gray-600">男聲

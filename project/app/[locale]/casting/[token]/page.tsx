@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { langLabel } from '@/lib/languages';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { toMp3 } from '@/lib/to-mp3';
@@ -52,7 +53,7 @@ export default function GuestCasting() {
           ? <span className="text-xs px-2.5 py-1 rounded-full bg-[#7fb2e8]/15 text-[#9ec4ee] border border-[#7fb2e8]/30">{tx('客戶委託', 'Client brief')}</span>
           : <span className="text-xs px-2.5 py-1 rounded-full bg-[#C9A86A]/15 text-[#E4CB94] border border-[#C9A86A]/30">{tx('平台發案', 'Onyx-posted')}</span>}
         <span className="text-xs px-2.5 py-1 rounded-full" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 }}>{tx('試音邀請', 'Casting')}</span>
-        {brief.language && <span className="text-xs bg-white/[0.06] border border-white/10 text-gray-200 px-2.5 py-1 rounded-full">{brief.language}</span>}
+        {brief.language && <span className="text-xs bg-white/[0.06] border border-white/10 text-gray-200 px-2.5 py-1 rounded-full">{langLabel(brief.language, locale)}</span>}
       </div>
       {brief.brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{brief.brief}</p>}
       <p className="text-xs text-gray-500 mb-4">{tx('免註冊。可以先看,之後點同一條連結回來上傳 —— 進度會保留。', 'No sign-up. Read now, return via the same link to upload later — your progress is kept.')}</p>
@@ -87,7 +88,7 @@ export default function GuestCasting() {
       {(() => {
         const ml = (m: string) => (m === 'home' ? tx('在家錄', 'Home') : m === 'studio' ? tx('錄音室', 'Studio') : m === 'online' ? tx('線上監錄', 'Online') : m);
         const info = ([
-          [tx('語言', 'Language'), brief.language],
+          [tx('語言', 'Language'), langLabel(brief.language, locale)],
           [tx('口音', 'Accent'), brief.accent],
           [tx('聲音風格', 'Style'), brief.voice_style],
           [tx('聲音年齡', 'Voice age'), brief.voice_age],
