@@ -27,7 +27,7 @@ export const LANGUAGES: LangOption[] = [
   { v: 'Mandarin · Tianjin', tw: '中文 · 天津話', cn: '中文 · 天津话' },
   { v: 'Mandarin · Shandong', tw: '中文 · 山東話', cn: '中文 · 山东话' },
   { v: 'Mandarin · Henan', tw: '中文 · 河南話(中原官話)', cn: '中文 · 河南话(中原官话)' },
-  { v: 'Mandarin · Lanyin', tw: '中文 · 兰银官話(西北)', cn: '中文 · 兰银官话(西北)' },
+  { v: 'Mandarin · Lanyin', tw: '中文 · 蘭銀官話(西北)', cn: '中文 · 兰银官话(西北)' },
   { v: 'Mandarin · Southwestern', tw: '中文 · 西南官話(雲貴)', cn: '中文 · 西南官话(云贵)' },
   { v: 'Shanghainese · Wu', tw: '上海話(吳語)', cn: '上海话(吴语)' },
   { v: 'Teochew', tw: '潮州話', cn: '潮州话' },
