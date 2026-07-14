@@ -87,7 +87,7 @@ export default function TalentRoster() {
 
   // --- persistent now-playing player (single audio element) ---
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [now, setNow] = useState<{ id: string; name: string; label: string } | null>(null);
+  const [now, setNow] = useState<{ id: string; name: string; label: string; headshot?: string } | null>(null);
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
   const [dur, setDur] = useState(0);
@@ -185,7 +185,7 @@ export default function TalentRoster() {
     const a = audioRef.current;
     if (!pd || !a) return;
     if (now?.id === t.id) { if (a.paused) a.play().catch(() => {}); else a.pause(); return; }
-    setNow({ id: t.id, name: nameOf(t), label: pd.label });
+    setNow({ id: t.id, name: nameOf(t), label: pd.label, headshot: t.headshot_url || undefined });
     a.src = pd.url;
     a.currentTime = 0;
     a.play().catch(() => {});
@@ -344,21 +344,28 @@ export default function TalentRoster() {
         onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
       />
       {now && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur border-t border-zinc-800">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-            <button onClick={() => { const a = audioRef.current; if (!a) return; if (a.paused) a.play().catch(() => {}); else a.pause(); }}
-              aria-label={playing ? tx('暫停', '暂停', 'Pause') : tx('播放', '播放', 'Play')}
-              className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 flex-none">
-              {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-            </button>
-            <div className="min-w-0 w-32 sm:w-44 flex-none">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/85 backdrop-blur-xl border-t border-white/10">
+          <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center gap-3">
+            {now.headshot ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={now.headshot} alt={now.name} className="w-10 h-10 rounded-[10px] object-cover flex-none" />
+            ) : (
+              <div className="w-10 h-10 rounded-[10px] bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center text-sm font-semibold text-gray-300 flex-none">{initial(now.name)}</div>
+            )}
+            <div className="min-w-0 w-24 sm:w-40 flex-none">
               <p className="text-sm font-medium text-white truncate">{now.name}</p>
               <p className="text-[11px] text-gray-400 truncate">{now.label}</p>
             </div>
+            <button onClick={() => { const a = audioRef.current; if (!a) return; if (a.paused) a.play().catch(() => {}); else a.pause(); }}
+              aria-label={playing ? tx('暫停', '暂停', 'Pause') : tx('播放', '播放', 'Play')}
+              className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 flex-none shadow-md">
+              {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+            </button>
+            <span className="text-[11px] text-gray-500 tabular-nums flex-none w-9 text-right hidden sm:block">{fmtTime(cur)}</span>
             <input type="range" min={0} max={dur || 0} value={cur} step={0.1}
               onChange={(e) => { const a = audioRef.current; if (a) a.currentTime = Number(e.target.value); }}
               className="flex-1 accent-amber-500 h-1" aria-label={tx('進度', '进度', 'Seek')} />
-            <span className="text-[11px] text-gray-400 tabular-nums flex-none w-20 text-right">{fmtTime(cur)} / {fmtTime(dur)}</span>
+            <span className="text-[11px] text-gray-500 tabular-nums flex-none w-9 hidden sm:block">{fmtTime(dur)}</span>
           </div>
         </div>
       )}

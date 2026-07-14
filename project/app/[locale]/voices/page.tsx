@@ -37,7 +37,9 @@ const LANG_CODE_MAP: Record<string, string> = {
 };
 
 function resolveLangCode(lang: string): string {
-  const lower = lang.toLowerCase().trim();
+  // AI 聲音的語言常存成 "english/native" / "mandarin/native"(帶熟練度後綴),
+  // 直接比對不到 → 全被歸到雜項桶,害單一語言鈕都顯示「即將推出」。先去掉 "/後綴"。
+  const lower = lang.toLowerCase().trim().split('/')[0].trim();
   if (LANG_CODE_MAP[lower]) return LANG_CODE_MAP[lower];
 
   const parenMatch = lower.match(/\(([^)]+)\)/);
@@ -481,21 +483,27 @@ export default function VoicesPage() {
         const v = allVoices.find((x) => x.id === playingVoiceId);
         if (!v) return null;
         return (
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur border-t border-zinc-800">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-              <button
-                onClick={stopCurrentAudio}
-                aria-label={t('stopPreview')}
-                className="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-400 flex-none"
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/85 backdrop-blur-xl border-t border-white/10">
+            <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-[10px] flex-none flex items-center justify-center text-blue-100"
+                style={{ background: v.gender === 'female' ? 'linear-gradient(135deg,#3b3568,#6a5bb0)' : 'linear-gradient(135deg,#26375e,#3f63c4)' }}
               >
-                <Pause className="w-4 h-4" />
-              </button>
-              <div className="min-w-0 w-40 flex-none">
+                {v.gender === 'female' ? <UserRound className="w-5 h-5" /> : <User className="w-5 h-5" />}
+              </div>
+              <div className="min-w-0 w-28 sm:w-40 flex-none">
                 <p className="text-sm font-medium text-white truncate">{v.name}</p>
                 <p className="text-[11px] text-gray-400 truncate">{genderLabel(v.gender)}</p>
               </div>
+              <button
+                onClick={stopCurrentAudio}
+                aria-label={t('stopPreview')}
+                className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 flex-none shadow-md"
+              >
+                <Pause className="w-4 h-4" />
+              </button>
               <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
-                <div className="h-full bg-blue-400 rounded-full transition-[width] duration-200" style={{ width: `${audioProgress}%` }} />
+                <div className="h-full bg-sky-400 rounded-full transition-[width] duration-200" style={{ width: `${audioProgress}%` }} />
               </div>
             </div>
           </div>
