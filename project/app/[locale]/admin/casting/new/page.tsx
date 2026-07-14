@@ -139,6 +139,8 @@ function NewCasting() {
   const [category, setCategory] = useState('遊戲 Video Game');
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('Mandarin · Taiwan');
+  const [langOpen, setLangOpen] = useState(false);   // 語言可搜尋下拉
+  const [langQ, setLangQ] = useState('');
   // 需求人數(男/女)—— 用下拉點選,送出組成 gender_needs 字串 + voices_needed 數字。
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
@@ -822,10 +824,38 @@ function NewCasting() {
           </div>
         )}
 
-        <Field label="語言"><select className={input} value={language} onChange={(e) => setLanguage(e.target.value)}>
-          {language && !LANGUAGES.some((o) => o.v === language) && <option value={language}>{language}(舊值)</option>}
-          {LANGUAGES.map((o) => <option key={o.v} value={o.v}>{o.tw}</option>)}
-        </select></Field>
+        <Field label="語言">
+          <div className="relative">
+            <input
+              className={input}
+              value={langOpen ? langQ : (LANGUAGES.some((o) => o.v === language) ? langLabel(language, 'zh-TW') : language)}
+              placeholder="打字搜尋或點選(中文 / 英文皆可)…"
+              onFocus={() => { setLangOpen(true); setLangQ(''); }}
+              onChange={(e) => { setLangQ(e.target.value); setLangOpen(true); }}
+              onBlur={() => setTimeout(() => setLangOpen(false), 150)}
+            />
+            {langOpen && (() => {
+              const q = langQ.trim().toLowerCase();
+              const list = q ? LANGUAGES.filter((o) => o.tw.toLowerCase().includes(q) || o.cn.toLowerCase().includes(q) || o.v.toLowerCase().includes(q)) : LANGUAGES;
+              return (
+                <div className="absolute z-30 left-0 right-0 mt-1 max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl">
+                  {list.length === 0 && <p className="px-3 py-2 text-sm text-gray-400">找不到「{langQ}」</p>}
+                  {list.map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); setLanguage(o.v); setLangOpen(false); setLangQ(''); }}
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2 hover:bg-gray-100 ${o.v === language ? 'bg-green-50 text-green-700' : 'text-gray-800'}`}
+                    >
+                      <span>{o.tw}</span>
+                      <span className="text-[11px] text-gray-400 shrink-0">{o.v}</span>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </Field>
         <Field label="需求(人數 / 性別)">
           <div className="grid grid-cols-2 gap-3">
             <label className="flex items-center gap-2 text-sm text-gray-600">男聲
