@@ -202,6 +202,11 @@ function NewCasting() {
   const [selEmails, setSelEmails] = useState<Set<string>>(new Set());
   const [userEditedEmails, setUserEditedEmails] = useState(false);
   const [aiPoolErr, setAiPoolErr] = useState('');
+  // 指定邀請(可含未上線):按名字點名任何已核准的人,系統用它存的 email 寄免註冊試音連結。
+  const [directory, setDirectory] = useState<{ id: string; name: string; email: string; active: boolean; gender: '' | 'male' | 'female' }[]>([]);
+  const [pinned, setPinned] = useState<{ email: string; name: string; active: boolean }[]>([]);
+  const [pinQ, setPinQ] = useState('');
+  const [pinOpen, setPinOpen] = useState(false);
   // When opened as /admin/casting/new?from=<id> we're completing a client request:
   // pre-fill from their brief, show who asked + their budget, and publish IN PLACE.
   const search = useSearchParams();
@@ -295,6 +300,11 @@ function NewCasting() {
         .map((t: { id: string; name?: string; languages?: unknown; native_languages?: unknown; gender?: unknown; is_active?: boolean; type?: string; coop_ai_clone?: boolean; coop_ai_training?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', langs: `${asText(t.languages)} ${asText(t.native_languages)}`.trim(), gender: normGender(t.gender), active: isVettedVO(t), aiClone: !!t.coop_ai_clone, aiTrain: !!t.coop_ai_training }))
         .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
       setRoster(list);
+      // 全通訊錄(含未上線,只要有 email)供「指定邀請」按名字搜。
+      setDirectory((Array.isArray(all) ? all : [])
+        .filter((t: { email?: string }) => !!t.email)
+        .map((t: { id: string; name?: string; email?: string; gender?: unknown; is_active?: boolean; type?: string }) => ({ id: t.id, name: t.name || '(未命名)', email: String(t.email), active: isVettedVO(t), gender: normGender(t.gender) }))
+        .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name)));
     })();
   }, []);
 
@@ -466,6 +476,7 @@ function NewCasting() {
       // AI case → invite opted-in applicants by email (免註冊 magic-link);
       // normal case → invite online vetted talents by id (the picker).
       ...(aiType ? { invite_emails: Array.from(selEmails) } : { invite_talent_ids: Array.from(selTalents) }),
+      ...(pinned.length ? { pin_invite_emails: pinned.map((p) => p.email) } : {}),
       id: fromId || undefined, // present = publish the client request in place (no duplicate)
     };
     const res = await fetch('/api/admin/casting', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -741,6 +752,48 @@ function NewCasting() {
               </>
             )}
           </div>
+
+          {/* 指定邀請(可含未上線)—— 按名字點名任何已核准的人,系統用它存的 email 免註冊發 */}
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-sm font-semibold text-gray-200">指定邀請(可含未上線)</p>
+              <span className="text-xs text-amber-300">已點名 {pinned.length} 位</span>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">打名字搜任何已核准的配音員(含未上線),點一下加入。發佈時系統自動用他存的 email 寄免註冊試音連結 —— 你不用碰 email。</p>
+            {pinned.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {pinned.map((p) => (
+                  <span key={p.email} className="inline-flex items-center gap-1.5 text-xs bg-amber-500/15 text-amber-200 border border-amber-500/30 rounded-full pl-2.5 pr-1 py-1">
+                    {p.name}{!p.active && <span className="text-[10px] text-gray-400">未上線</span>}
+                    <button type="button" onClick={() => setPinned((s) => s.filter((x) => x.email !== p.email))} className="w-4 h-4 rounded-full hover:bg-white/10 flex items-center justify-center" aria-label="移除">✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="relative">
+              <input value={pinQ} onChange={(e) => { setPinQ(e.target.value); setPinOpen(true); }} onFocus={() => setPinOpen(true)} onBlur={() => setTimeout(() => setPinOpen(false), 150)}
+                placeholder="打名字搜配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 w-full max-w-[280px]" />
+              {pinOpen && pinQ.trim() && (() => {
+                const q = pinQ.trim().toLowerCase();
+                const picked = new Set(pinned.map((p) => p.email));
+                const hits = directory.filter((d) => !picked.has(d.email) && d.name.toLowerCase().includes(q)).slice(0, 20);
+                return (
+                  <div className="absolute z-30 left-0 mt-1 w-full max-w-[280px] max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-[#161616] shadow-xl divide-y divide-white/5">
+                    {hits.length === 0 && <p className="text-xs text-gray-500 p-3">找不到「{pinQ}」</p>}
+                    {hits.map((d) => (
+                      <button key={d.email} type="button" onMouseDown={(e) => { e.preventDefault(); setPinned((s) => [...s, { email: d.email, name: d.name, active: d.active }]); setPinQ(''); setPinOpen(false); }}
+                        className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-white/[0.05] text-gray-100">
+                        <span>{d.name}</span>
+                        {d.gender && <span className="text-[10px] text-gray-400 bg-white/10 px-1 rounded">{d.gender === 'male' ? '男' : '女'}</span>}
+                        {!d.active && <span className="text-[10px] text-amber-300/80">未上線</span>}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
           {err && <p className="text-red-400 text-sm mt-4">{err}</p>}
           <div className="flex gap-3 mt-4">
             <button onClick={() => setPreviewing(false)} className="bg-white/10 hover:bg-white/15 text-white rounded-lg px-5 py-2.5 text-sm">← 返回修改</button>

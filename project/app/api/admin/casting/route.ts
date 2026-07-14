@@ -277,6 +277,11 @@ export async function POST(request: NextRequest) {
       // via the explicit picker selection above.
       notified = await notifyMatchingTalents(db, briefMeta);
     }
+    // 指定邀請(可含未上線):不論案別,對點名的 email 額外寄免註冊 magic-link 試音連結。
+    // 讓 Wing 能按名字點名任何已核准的人(含未上線),系統用它存的 email 寄,不必手打 email。
+    if (Array.isArray(b.pin_invite_emails) && b.pin_invite_emails.length) {
+      notified += await inviteEmailsMagicLink(db, { id: data.id as string, title }, (b.pin_invite_emails as unknown[]).map(String));
+    }
   } catch { /* best-effort */ }
   return NextResponse.json({ ok: true, id: data.id, brief_number: data.brief_number, notified });
 }
