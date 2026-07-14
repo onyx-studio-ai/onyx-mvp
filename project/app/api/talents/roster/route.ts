@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
       .select('id, type, application_id, sort_order, created_at, published_snapshot')
       .eq('is_active', true)
       .in('type', ['VO', 'voice_actor'])
-      .not('application_id', 'is', null)
+      // 排除 AI 合成聲音(voice_id 已驗證的走 /voices AI 頁)。
+      // 之前用「有 application_id」當判準是錯的 —— 申請單被刪會清空 application_id,
+      // 連帶把真人(如布魯麵/白熊)誤擋在前台外。改用 voice_id 驗證狀態排除 AI 才對。
+      .or('voice_id_status.is.null,voice_id_status.neq.verified')
       .not('published_snapshot', 'is', null)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false });
