@@ -17,6 +17,7 @@ import { useLocale } from 'next-intl';
 import { Search, ArrowRight, Play, Pause } from 'lucide-react';
 import FavoriteButton from '@/components/marketplace/FavoriteButton';
 import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
+import { Waveform, WaveStyle } from '@/components/Waveform';
 import {
   formatLangEntry, baseLangLabel, canonicalLangKey, accentKeyOf, accentLabel, traitLabel, useCaseLabel, voiceAgeLabel, countryLabel,
   VOICE_TRAITS, USE_CASES, VOICE_AGES, TRAIT_KEYS,
@@ -207,6 +208,7 @@ export default function TalentRoster() {
 
   return (
     <main className="min-h-screen bg-[#050505] text-white">
+      <WaveStyle />
       <div className="max-w-6xl mx-auto px-4 pt-28 pb-32">
         {/* Centered hero mirrors /voices so toggling AI <-> Human doesn't jump. */}
         <div className="text-center mb-12">
@@ -285,7 +287,7 @@ export default function TalentRoster() {
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map((t) => {
+            {filtered.map((t, idx) => {
               const pd = primaryDemo(t);
               const isNow = now?.id === t.id;
               const yrs = typeof t.years_experience === 'number' && t.years_experience > 0
@@ -295,25 +297,27 @@ export default function TalentRoster() {
               return (
                 <div key={t.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-3 hover:border-zinc-600 transition-colors flex flex-col gap-2 min-h-[184px]">
                   <div className="flex items-center gap-3">
-                    <div className="relative flex-none">
-                      {t.headshot_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={t.headshot_url} alt={nameOf(t)} className="w-12 h-12 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center text-lg font-semibold text-gray-300">{initial(nameOf(t))}</div>
-                      )}
-                      {pd && (
-                        <button onClick={() => togglePlay(t)} aria-label={tx('播放試聽', '播放试听', 'Play demo')}
-                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 shadow-md">
-                          {isNow && playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 ml-0.5" />}
-                        </button>
-                      )}
-                    </div>
-                    <div className="min-w-0">
+                    {t.headshot_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={t.headshot_url} alt={nameOf(t)} className="w-12 h-12 rounded-[14px] object-cover flex-none" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-[14px] bg-gradient-to-br from-zinc-700 to-zinc-800 flex-none flex items-center justify-center text-lg font-semibold text-gray-300">{initial(nameOf(t))}</div>
+                    )}
+                    <div className="min-w-0 flex-1">
                       <Link href={`/${locale}/talents/${t.id}`} className="font-semibold text-white hover:text-amber-200 truncate block">{nameOf(t)}</Link>
                       {meta && <p className="text-[11px] text-gray-500 truncate">{meta}</p>}
                     </div>
-                    <div className="ml-auto self-start flex-none"><FavoriteButton talentId={t.id} size={16} /></div>
+                    <div className="self-start flex-none"><FavoriteButton talentId={t.id} size={16} /></div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {pd ? (
+                      <button onClick={() => togglePlay(t)} aria-label={tx('播放試聽', '播放试听', 'Play demo')}
+                        className="flex-none w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 shadow-md">
+                        {isNow && playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                      </button>
+                    ) : <span className="flex-none w-9 h-9" />}
+                    <Waveform variant="human" seed={idx} active={isNow && playing} />
                   </div>
 
                   {(t.languages || []).length > 0 && pills(t.languages || [], (k) => formatLangEntry(k, locale), 'bg-zinc-800 text-gray-300')}

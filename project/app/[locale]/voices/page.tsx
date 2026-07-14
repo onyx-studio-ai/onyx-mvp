@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/landing/Footer';
 import BrowseVoiceTabs from '@/components/BrowseVoiceTabs';
+import { Waveform, WaveStyle } from '@/components/Waveform';
 import { audioManager } from '@/lib/audioManager';
 
 const POPULAR_CODES = ['en', 'zh-CN', 'zh-TW', 'yue', 'ja', 'ko', 'th', 'es', 'fr'];
@@ -260,6 +261,7 @@ export default function VoicesPage() {
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-x-hidden pt-20">
+      <WaveStyle />
       <div className="relative pt-20 pb-28 px-4">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.05),transparent_50%)]" />
 
@@ -383,7 +385,7 @@ export default function VoicesPage() {
 
           {availableVoices.length > 0 ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-              {availableVoices.map((voice: Voice) => {
+              {availableVoices.map((voice: Voice, vi: number) => {
                 const selectedIdx = selectedDemoIndexByVoice[voice.id];
                 const isPlaying = playingVoiceId === voice.id;
                 return (
@@ -392,27 +394,32 @@ export default function VoicesPage() {
                     className="bg-zinc-950 border border-zinc-800 rounded-2xl p-3 hover:border-zinc-600 transition-colors flex flex-col gap-2 min-h-[180px]"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="relative flex-none">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 to-zinc-700 flex items-center justify-center text-blue-200">
-                          {voice.gender === 'female' ? <UserRound className="w-6 h-6" /> : <User className="w-6 h-6" />}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            const selectedDemo = selectedIdx != null ? voice.demos?.[selectedIdx] : null;
-                            const url = selectedDemo?.url || voice.audioPreviewUrl;
-                            toggleAudioPreview({ ...voice, audioPreviewUrl: url }, e);
-                          }}
-                          aria-label={isPlaying ? t('stopPreview') : t('playPreview')}
-                          className="absolute -right-1 -bottom-1 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-400"
-                        >
-                          {isPlaying ? <Activity className="w-3 h-3 animate-pulse" /> : <Play className="w-3 h-3 ml-0.5" />}
-                        </button>
+                      <div
+                        className="w-12 h-12 rounded-[14px] flex-none flex items-center justify-center text-blue-100"
+                        style={{ background: voice.gender === 'female' ? 'linear-gradient(135deg,#3b3568,#6a5bb0)' : 'linear-gradient(135deg,#26375e,#3f63c4)' }}
+                      >
+                        {voice.gender === 'female' ? <UserRound className="w-6 h-6" /> : <User className="w-6 h-6" />}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-white truncate">{voice.name}</h3>
                         <p className="text-[11px] text-gray-500">{genderLabel(voice.gender)}</p>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          const selectedDemo = selectedIdx != null ? voice.demos?.[selectedIdx] : null;
+                          const url = selectedDemo?.url || voice.audioPreviewUrl;
+                          toggleAudioPreview({ ...voice, audioPreviewUrl: url }, e);
+                        }}
+                        aria-label={isPlaying ? t('stopPreview') : t('playPreview')}
+                        className="flex-none w-9 h-9 rounded-full bg-white text-black flex items-center justify-center hover:bg-gray-100 shadow-md"
+                      >
+                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                      </button>
+                      <Waveform variant="ai" seed={vi} active={isPlaying} />
                     </div>
 
                     {voice.demos && voice.demos.length > 1 && (
