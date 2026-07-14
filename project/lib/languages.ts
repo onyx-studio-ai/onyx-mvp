@@ -33,6 +33,9 @@ export const LANGUAGES: LangOption[] = [
   { v: 'Teochew', tw: '潮州話', cn: '潮州话' },
   { v: 'Hokkien · Minnan', tw: '閩南語(福建)', cn: '闽南语(福建)' },
   { v: 'Xiang · Hunanese', tw: '湖南話(湘語)', cn: '湖南话(湘语)' },
+  // 通用/不指定地區(母語但沒寫地區時用,別硬塞地區)
+  { v: 'Mandarin', tw: '中文 · 通用(不分地區)', cn: '中文 · 通用(不分地区)' },
+  { v: 'Cantonese', tw: '粵語 · 通用', cn: '粤语 · 通用' },
   // ── 英文(口音需求最大)──
   { v: 'English · American', tw: '英文 · 美國', cn: '英文 · 美国' },
   { v: 'English · British', tw: '英文 · 英國', cn: '英文 · 英国' },
@@ -45,29 +48,35 @@ export const LANGUAGES: LangOption[] = [
   { v: 'English · Indian', tw: '英文 · 印度', cn: '英文 · 印度' },
   { v: 'English · Singapore', tw: '英文 · 新加坡', cn: '英文 · 新加坡' },
   { v: 'English · Filipino', tw: '英文 · 菲律賓', cn: '英文 · 菲律宾' },
+  { v: 'English', tw: '英文 · 通用(不分地區)', cn: '英文 · 通用(不分地区)' },
   // ── 西班牙文 ──
   { v: 'Spanish · Spain', tw: '西班牙文 · 西班牙', cn: '西班牙文 · 西班牙' },
   { v: 'Spanish · Latin America', tw: '西班牙文 · 拉丁美洲', cn: '西班牙文 · 拉丁美洲' },
   { v: 'Spanish · Mexican', tw: '西班牙文 · 墨西哥', cn: '西班牙文 · 墨西哥' },
   { v: 'Spanish · Argentine', tw: '西班牙文 · 阿根廷', cn: '西班牙文 · 阿根廷' },
   { v: 'Spanish · Colombian', tw: '西班牙文 · 哥倫比亞', cn: '西班牙文 · 哥伦比亚' },
+  { v: 'Spanish', tw: '西班牙文 · 通用', cn: '西班牙文 · 通用' },
   // ── 法文 ──
   { v: 'French · France', tw: '法文 · 法國', cn: '法文 · 法国' },
   { v: 'French · Canadian', tw: '法文 · 加拿大(魁北克)', cn: '法文 · 加拿大(魁北克)' },
   { v: 'French · Belgian', tw: '法文 · 比利時', cn: '法文 · 比利时' },
   { v: 'French · Swiss', tw: '法文 · 瑞士', cn: '法文 · 瑞士' },
+  { v: 'French', tw: '法文 · 通用', cn: '法文 · 通用' },
   // ── 葡萄牙文 ──
   { v: 'Portuguese · Brazil', tw: '葡萄牙文 · 巴西', cn: '葡萄牙文 · 巴西' },
   { v: 'Portuguese · Portugal', tw: '葡萄牙文 · 葡萄牙', cn: '葡萄牙文 · 葡萄牙' },
+  { v: 'Portuguese', tw: '葡萄牙文 · 通用', cn: '葡萄牙文 · 通用' },
   // ── 德文 ──
   { v: 'German · Germany', tw: '德文 · 德國', cn: '德文 · 德国' },
   { v: 'German · Austria', tw: '德文 · 奧地利', cn: '德文 · 奥地利' },
   { v: 'German · Swiss', tw: '德文 · 瑞士', cn: '德文 · 瑞士' },
+  { v: 'German', tw: '德文 · 通用', cn: '德文 · 通用' },
   // ── 阿拉伯文 ──
   { v: 'Arabic · Modern Standard', tw: '阿拉伯文 · 標準', cn: '阿拉伯文 · 标准' },
   { v: 'Arabic · Egyptian', tw: '阿拉伯文 · 埃及', cn: '阿拉伯文 · 埃及' },
   { v: 'Arabic · Gulf', tw: '阿拉伯文 · 海灣', cn: '阿拉伯文 · 海湾' },
   { v: 'Arabic · Levantine', tw: '阿拉伯文 · 黎凡特', cn: '阿拉伯文 · 黎凡特' },
+  { v: 'Arabic', tw: '阿拉伯文 · 通用', cn: '阿拉伯文 · 通用' },
   // ── 東亞 / 東南亞 ──
   { v: 'Japanese', tw: '日文', cn: '日文' },
   { v: 'Korean', tw: '韓文', cn: '韩文' },
