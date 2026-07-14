@@ -95,6 +95,12 @@ export default function AdminMarketplace() {
   const [editRate, setEditRate] = useState<{ id: string; val: string } | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
+  // 指定邀請(可含未上線):對已發佈案件按名字點名,系統用存的 email 免註冊發。
+  const [directory, setDirectory] = useState<{ id: string; name: string; email: string; active: boolean }[]>([]);
+  const [pinFor, setPinFor] = useState<Brief | null>(null);
+  const [pinPicked, setPinPicked] = useState<{ email: string; name: string; active: boolean }[]>([]);
+  const [pinQ, setPinQ] = useState('');
+  const [pinBusy, setPinBusy] = useState(false);
   const isOpen = (id: string) => openIds.has(id);
   const toggleOpen = (id: string) => setOpenIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
@@ -113,6 +119,29 @@ export default function AdminMarketplace() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 全通訊錄(含未上線,只要有 email)供「指定邀請」按名字搜。
+  useEffect(() => {
+    fetch('/api/admin/talents', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((all) => setDirectory((Array.isArray(all) ? all : [])
+        .filter((t: { email?: string }) => !!t.email)
+        .map((t: { id: string; name?: string; email?: string; is_active?: boolean; type?: string }) => ({ id: t.id, name: t.name || '(未命名)', email: String(t.email), active: !!t.is_active && ['voice_actor', 'VO', 'Singer'].includes(t.type || '') }))))
+      .catch(() => {});
+  }, []);
+
+  async function sendPinInvites() {
+    if (!pinFor || !pinPicked.length) return;
+    setPinBusy(true);
+    try {
+      const res = await fetch('/api/admin/casting', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ id: pinFor.id, pin_invite_emails: pinPicked.map((p) => p.email), send: true }),
+      }).then((r) => r.json());
+      if (res.sent) { toast.success(`已寄試音邀請給 ${res.notified} 位`); setPinFor(null); setPinPicked([]); setPinQ(''); }
+      else toast.error('寄送失敗');
+    } catch { toast.error('寄送失敗'); } finally { setPinBusy(false); }
+  }
 
   // open the first case by default; respect the user's toggles after that
   useEffect(() => { if (briefs.length) setOpenIds((s) => (s.size ? s : new Set([briefs[0].id]))); }, [briefs]);
@@ -300,6 +329,12 @@ export default function AdminMarketplace() {
                       {notifying === b.id ? t('processing') : t('notifyTalent')}
                     </button>
                   )}
+                  {b.status === 'open' && b.kind === 'casting' && (
+                    <button onClick={() => { setPinFor(b); setPinPicked([]); setPinQ(''); }}
+                      className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded px-2.5 py-1 whitespace-nowrap" title="按名字點名邀請(可含未上線)">
+                      指定邀請
+                    </button>
+                  )}
                   {quotesFor(b.id).some((q) => q.sample_url) && (
                     <DownloadAllAuditions briefId={b.id} quotes={quotesFor(b.id)} label={b.kind === 'casting' ? caseCode(b) : b.brief_number} />
                   )}
@@ -451,6 +486,54 @@ export default function AdminMarketplace() {
           </div>
         ))}
       </div>
+
+      {/* 指定邀請 modal —— 按名字點名(含未上線),系統用存的 email 免註冊發試音邀請 */}
+      {pinFor && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setPinFor(null)}>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-semibold text-gray-900 truncate">指定邀請 · {pinFor.title || caseCode(pinFor)}</h3>
+              <button onClick={() => setPinFor(null)} className="text-gray-400 hover:text-gray-700 flex-none ml-2" aria-label="關閉">✕</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">打名字搜任何已核准的配音員(含未上線),點一下加入。按「寄邀請」→ 系統自動用他存的 email 寄免註冊試音連結,你不用碰 email。</p>
+            {pinPicked.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {pinPicked.map((p) => (
+                  <span key={p.email} className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 rounded-full pl-2.5 pr-1 py-1">
+                    {p.name}{!p.active && <span className="text-[10px] text-gray-500">未上線</span>}
+                    <button onClick={() => setPinPicked((s) => s.filter((x) => x.email !== p.email))} className="w-4 h-4 rounded-full hover:bg-black/10 flex items-center justify-center" aria-label="移除">✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <input value={pinQ} onChange={(e) => setPinQ(e.target.value)} placeholder="打名字搜配音員…" autoFocus
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400" />
+            {pinQ.trim() && (() => {
+              const q = pinQ.trim().toLowerCase();
+              const picked = new Set(pinPicked.map((p) => p.email));
+              const hits = directory.filter((d) => !picked.has(d.email) && d.name.toLowerCase().includes(q)).slice(0, 20);
+              return (
+                <div className="mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+                  {hits.length === 0 && <p className="text-xs text-gray-400 p-3">找不到「{pinQ}」</p>}
+                  {hits.map((d) => (
+                    <button key={d.email} onClick={() => { setPinPicked((s) => [...s, { email: d.email, name: d.name, active: d.active }]); setPinQ(''); }}
+                      className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 text-gray-800">
+                      <span>{d.name}</span>{!d.active && <span className="text-[10px] text-amber-600">未上線</span>}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+            <div className="flex gap-2 mt-4 justify-end">
+              <button onClick={() => setPinFor(null)} className="text-sm px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">取消</button>
+              <button onClick={sendPinInvites} disabled={pinBusy || !pinPicked.length}
+                className="text-sm px-4 py-2 rounded-lg bg-green-500 hover:bg-green-400 disabled:opacity-50 text-white font-medium">
+                {pinBusy ? '寄送中…' : `寄邀請(${pinPicked.length})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

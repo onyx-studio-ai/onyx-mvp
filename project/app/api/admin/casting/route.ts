@@ -328,6 +328,21 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // 指定邀請(按名字)—— 對已發佈案件,寄免註冊 magic-link 給點名的 email(含未上線者)。
+  // send:false 只回可寄數量(不實寄);send:true 才真的寄。用系統存的 email,Wing 不必手打。
+  if (Array.isArray(b.pin_invite_emails)) {
+    const { data: pb } = await db.from('marketplace_briefs').select('title, kind').eq('id', id).maybeSingle();
+    if (!pb || pb.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
+    const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emails = (b.pin_invite_emails as unknown[]).map((e) => String(e).trim().toLowerCase());
+    if (b.send !== true) {
+      const clean = [...new Set(emails)].filter((e) => EMAIL_OK.test(e));
+      return NextResponse.json({ ok: true, notified: clean.length, sent: false });
+    }
+    const n = await inviteEmailsMagicLink(db, { id, title: pb.title }, emails);
+    return NextResponse.json({ ok: true, notified: n, sent: true });
+  }
+
   const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note, gender_needs, audition_deadline').eq('id', id).maybeSingle();
   if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
   if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });
