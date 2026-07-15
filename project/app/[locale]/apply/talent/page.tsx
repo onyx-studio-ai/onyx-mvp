@@ -17,6 +17,7 @@ import { useLocale } from 'next-intl';
 import { Check, X, Plus, ArrowRight, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGES } from '@/lib/languages';
+import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
 
 const STEPS = [
   { tw: '基本資料', cn: '基本资料', en: 'Basics' },
@@ -172,6 +173,13 @@ export default function TalentApply() {
   const [codeMsg, setCodeMsg] = useState('');
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
+  // 表單自動草稿(檔案與 email 驗證狀態不入草稿:File 無法序列化、OTP 有時效)
+  const draft = useFormDraft('apply-talent', { step, form, langs, cats, feels, env, coop, lowData }, (d) => {
+    setStep(d.step ?? 0); setForm((f) => ({ ...f, ...(d.form || {}) }));
+    setLangs(d.langs || []); setCats(d.cats || []); setFeels(d.feels || []);
+    setEnv(d.env ?? null); if (d.coop) setCoop(d.coop); setLowData(!!d.lowData);
+  });
+
   const onEmailChange = (v: string) => { set('email', v); setEmailVerified(false); setCodeMeta(null); setOtpProof(null); setCode(''); setCodeMsg(''); };
 
   const sendCode = async () => {
@@ -303,6 +311,7 @@ export default function TalentApply() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || tx('送出失敗,請重試', '送出失败,请重试', 'Submission failed — please try again'));
+      draft.clear();
       setDoneNo(data.application_number || tx('已送出', '已送出', 'Submitted'));
     } catch (e) {
       setError(e instanceof Error ? e.message : tx('發生錯誤,請重試', '发生错误,请重试', 'Something went wrong — please try again'));
@@ -356,6 +365,8 @@ export default function TalentApply() {
         <h1 className="text-2xl font-bold mb-1">{tx('歡迎加入 Onyx 配音陣容', '欢迎加入 Onyx 配音阵容', 'Join the Onyx voice roster')}</h1>
         <p className="text-sm text-gray-400 mb-1">{tx('請完整填寫以下資料,約需 2 分鐘。', '请完整填写以下资料,约需 2 分钟。', 'Please complete the form below — it takes about 2 minutes.')}</p>
         <p className="text-xs text-gray-500 mb-8">{tx('標示 ＊ 為必填項目,其餘皆為選填。', '标示 ＊ 为必填项目,其余皆为选填。', 'Fields marked ＊ are required; all others are optional.')}</p>
+
+        <DraftBanner draft={draft} tx={tx} />
 
         <div className="flex gap-1.5 mb-8">
           {STEPS.map((s, i) => (

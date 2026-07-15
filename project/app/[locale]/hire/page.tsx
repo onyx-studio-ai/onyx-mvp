@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
 
 type Opt = { v: string; tw: string; cn: string };
 type Opt3 = { v: string; tw: string; cn: string; en: string };
@@ -246,6 +247,22 @@ export default function Hire() {
   const [scriptText, setScriptText] = useState('');
   const [scriptFileUrl, setScriptFileUrl] = useState('');
   const [scriptFileName, setScriptFileName] = useState('');
+
+  // 自動草稿:客戶長表單填一半關頁不再全丟(送出成功才清)。
+  const draft = useFormDraft('hire', {
+    form, refUrls, budgetCurrency, contentType, hasSinging, wantsDirector, wantsLiveSession,
+    budgetType, budgetUnit, liveSessionTool, liveSessionOther, media, territory, territoryOther,
+    license, licenseOther, language, accent, voiceStyle, voiceAge, lengthMode, lenH, lenM, lenS,
+    lenWords, maleVoices, femaleVoices, scriptType, scriptMode, scriptText,
+  }, (d) => {
+    setForm(d.form); setRefUrls(d.refUrls?.length ? d.refUrls : ['']); setBudgetCurrency(d.budgetCurrency);
+    setContentType(d.contentType); setHasSinging(d.hasSinging); setWantsDirector(d.wantsDirector); setWantsLiveSession(d.wantsLiveSession);
+    setBudgetType(d.budgetType); setBudgetUnit(d.budgetUnit); setLiveSessionTool(d.liveSessionTool); setLiveSessionOther(d.liveSessionOther);
+    setMedia(d.media); setTerritory(d.territory); setTerritoryOther(d.territoryOther); setLicense(d.license); setLicenseOther(d.licenseOther);
+    setLanguage(d.language); setAccent(d.accent); setVoiceStyle(d.voiceStyle); setVoiceAge(d.voiceAge);
+    setLengthMode(d.lengthMode); setLenH(d.lenH); setLenM(d.lenM); setLenS(d.lenS); setLenWords(d.lenWords);
+    setMaleVoices(d.maleVoices); setFemaleVoices(d.femaleVoices); setScriptType(d.scriptType); setScriptMode(d.scriptMode); setScriptText(d.scriptText);
+  });
   const [scriptUploading, setScriptUploading] = useState(false);
   // role sheet (game / drama / animation only)
   const [rolesFileUrl, setRolesFileUrl] = useState('');
@@ -431,6 +448,7 @@ export default function Hire() {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || tx('送出失敗,請重試', '送出失败,请重试', 'Submission failed — please try again'));
       setDone(true);
+      draft.clear();   // 送出成功 → 清自動草稿
     } catch (e) {
       setError(e instanceof Error ? e.message : tx('發生錯誤,請重試', '发生错误,请重试', 'Something went wrong'));
     } finally { setSubmitting(false); }
@@ -466,6 +484,7 @@ export default function Hire() {
         ) : (
           <p className="text-xs text-gray-500 mb-8">{tx('這裡是真人配音發案。需要 AI 配音 / TTS 或 AI 訓練資料?在「案件類型」選對應項,我們帶你去對的工作室。', '这里是真人配音发案。需要 AI 配音 / TTS 或 AI 训练资料?在「案件类型」选对应项,我们带你去对的工作室。', 'This is for human voiceover. Need AI / TTS or AI training data? Pick it under “Project type” and we’ll point you to the right studio.')}</p>
         )}
+        <DraftBanner draft={draft} tx={tx} />
 
         {requestedTalent && (
           <div className="mb-8 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 flex items-center justify-between gap-3">

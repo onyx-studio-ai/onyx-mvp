@@ -14,6 +14,7 @@ import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 import { LANGUAGES, langLabel } from '@/lib/languages';
+import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
 
 type RefFile = { name: string; url: string };
 type ParsedRole = { name: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
@@ -212,6 +213,23 @@ function NewCasting() {
   const search = useSearchParams();
   const [fromId, setFromId] = useState('');
   const [fromClient, setFromClient] = useState<{ name?: string; company?: string; email?: string; budget?: string; budget_type?: string; has_singing?: boolean; wants_director?: boolean; wants_live_session?: boolean; gender_needs?: string; requested_talent?: string; local_studio_region?: string; script_file_url?: string } | null>(null);
+
+  // 自動草稿:打到一半關頁不再全丟(送出成功才清)。從客戶請求帶入(?from=)時停用,以帶入為準。
+  const draft = useFormDraft('casting-new', {
+    title, category, mode, language, maleVoices, femaleVoices, hasSinging, wantsDirector, brief,
+    rateCur, rateAmt, rateUnit, scale, deadline, mediaScope, territory, licenseTerm, accent,
+    voiceStyle, voiceAge, baseRev, cap, auditionDeadline, recordingStart, methods, rolesText,
+    parsedRoles, auditionScript, refLinks, refFiles, aiType,
+  }, (d) => {
+    setTitle(d.title); setCategory(d.category); setMode(d.mode); setLanguage(d.language);
+    setMaleVoices(d.maleVoices); setFemaleVoices(d.femaleVoices); setHasSinging(d.hasSinging); setWantsDirector(d.wantsDirector);
+    setBrief(d.brief); setRateCur(d.rateCur); setRateAmt(d.rateAmt); setRateUnit(d.rateUnit); setScale(d.scale);
+    setDeadline(d.deadline); setMediaScope(d.mediaScope); setTerritory(d.territory); setLicenseTerm(d.licenseTerm);
+    setAccent(d.accent); setVoiceStyle(d.voiceStyle); setVoiceAge(d.voiceAge); setBaseRev(d.baseRev); setCap(d.cap);
+    setAuditionDeadline(d.auditionDeadline); setRecordingStart(d.recordingStart); setMethods(d.methods);
+    setRolesText(d.rolesText); setParsedRoles(d.parsedRoles); setAuditionScript(d.auditionScript);
+    setRefLinks(d.refLinks?.length ? d.refLinks : ['']); setRefFiles(d.refFiles || []); setAiType(d.aiType);
+  }, !search?.get('from'));
 
   function pickCategory(label: string) {
     setCategory(label);
@@ -484,6 +502,7 @@ function NewCasting() {
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || '發案失敗');
     setDone({ id: j.id, brief_number: j.brief_number, notified: j.notified });
+    draft.clear();   // 發佈成功 → 清掉自動草稿
     // 發佈後重置這些「看不見會殘留」的旗標,避免同頁連續發案時帶到下一個案子。
     setHasSinging(false); setWantsDirector(false);
     setMethods({ home: false, studio: false, online: false });
@@ -814,7 +833,8 @@ function NewCasting() {
     <main className="min-h-screen px-4 py-12 text-gray-900">
       <div className="max-w-2xl mx-auto space-y-4">
         <h1 className="text-2xl font-semibold">{fromId ? '完成客戶請求 → 發佈試音案' : '發案 · 人聲試音案'}</h1>
-        <p className="text-gray-500 text-sm">填好後先預覽,確認沒問題再發佈。</p>
+        <p className="text-gray-500 text-sm">填好後先預覽,確認沒問題再發佈。填寫過程會自動存草稿,沒空寫完直接關頁,回來可續。</p>
+        <DraftBanner draft={draft} />
 
         {fromClient && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
