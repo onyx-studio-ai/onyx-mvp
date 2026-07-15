@@ -94,7 +94,7 @@ export default function EditCasting() {
       if (!res.ok) { setMsg(j.error || '指派失敗'); return; }
       setPickRoles(new Set()); setPay(''); setInviteName(''); setInviteEmail('');
       load();   // 重載 → 角色卡即時亮「✓ 已指派 · 誰」
-      let m = `✓ 已指派 ${j.assigned} 個角色`;
+      let m = `✓ 已指派 ${j.assigned} 個角色 —— 尚未通知配音員;稿件備妥後到「製作管理」按「發出通知」才會通知+開放查看`;
       if (j.skipped?.length) m += `(跳過 ${j.skipped.length}:已指派過)`;
       if (j.setup_url) {
         m += inviteEmail.trim() ? ` · 已寄設定密碼信` : ` · 邀請連結已產生(下方複製丟 LINE)`;
@@ -108,7 +108,7 @@ export default function EditCasting() {
           `我們已將《${f.title || '配音案'}》的 ${j.assigned} 個配音角色指派給您。\n\n` +
           `請點下方連結設定密碼開通帳號(24 小時內有效):\n${j.setup_url}\n` +
           `${loginLine}\n` +
-          `開通後在「製作中」即可看到:角色台詞、參考音(可下載)、完成日;錄好直接在頁面上傳即可。\n\n` +
+          `開通帳號後請先等我們的開錄通知 —— 台詞定稿與參考音備妥後會再通知您,屆時「製作中」就會看到:角色台詞、參考音(可下載)、完成日;錄好直接在頁面上傳即可,請勿提前開錄。\n\n` +
           `如連結過期或有任何問題,直接回覆這則訊息就好。謝謝!`
         );
       }

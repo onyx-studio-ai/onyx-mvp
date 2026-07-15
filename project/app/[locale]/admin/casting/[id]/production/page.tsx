@@ -14,10 +14,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
+import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; released_at?: string | null };
 
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 
@@ -34,7 +35,7 @@ export default function ProductionPage() {
     const t = setInterval(() => setImportSec((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [busy]);
-  const importStage = importSec < 8 ? '解析各角色分頁台詞…' : importSec < 25 ? '抽取角色/皮膚圖並壓縮…' : importSec < 70 ? '上傳角色圖到雲端(上百張,最花時間)…' : '寫入各角色製作稿與酬勞…';
+  const importStage = importSec < 10 ? '上傳台詞表並解析各角色分頁…' : importSec < 30 ? '抽取角色/皮膚圖並壓縮…' : importSec < 75 ? '上傳角色圖到雲端(上百張,最花時間)…' : '寫入各角色製作稿與酬勞…';
   const [draft, setDraft] = useState<Record<string, { script: string; tp: string; price: string; notes: string; deadline: string }>>({});
 
   const load = useCallback(async () => {
@@ -66,9 +67,16 @@ export default function ProductionPage() {
     } catch (e) { toast.error(e instanceof Error ? e.message : '儲存失敗'); } finally { setBusy(null); }
   }
 
-  async function uploadRef(o: Order, file: File) {
+  async function uploadRef(o: Order, raw: File) {
     setBusy(o.id);
     try {
+      // 非 mp3 的音檔/影片自動轉 mp3(Wing 不用手動轉;wav/mp4 太肥,省空間+配音員下載快)
+      let file = raw;
+      if (needsMp3Convert(raw)) {
+        toast.info(`正在轉成 mp3(省空間):${raw.name}`, { duration: 6000 });
+        file = await mediaToMp3(raw);
+        if (file === raw) toast.warning('這個檔解不出音軌,改用原檔上傳');
+      }
       // 既有 upload 端點:回 { path, token, publicUrl },前端用 signed URL 直傳 casting bucket。
       const u = await fetch('/api/admin/casting/upload', {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
@@ -102,16 +110,44 @@ export default function ProductionPage() {
   async function importLines(file: File) {
     setBusy('import');
     try {
-      const fd = new FormData(); fd.append('file', file);
-      const res = await fetch(`/api/admin/casting/import-lines?brief_id=${encodeURIComponent(id)}`, { method: 'POST', credentials: 'include', body: fd });
+      // xlsx 夾上百張角色圖動輒 10MB+,直接 POST 會撞 Vercel 4.5MB body 上限(之前一直
+      // 「匯入失敗」的根因)→ 改成先簽名上傳到 casting bucket,再把 path 交給匯入 API。
+      const u = await fetch('/api/admin/casting/upload', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok || !uj.path || !uj.token) throw new Error(uj.error || '台詞表上傳準備失敗');
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(`台詞表上傳失敗:${upErr.message}`);
+      const res = await fetch(`/api/admin/casting/import-lines?brief_id=${encodeURIComponent(id)}`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: uj.path }),
+      });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error || '匯入失敗');
+      if (!res.ok) throw new Error(j.error || `匯入失敗(HTTP ${res.status})`);
       const okList = (j.matched || []).map((m: { role: string; lines: number; pay?: string }) => `${m.role}(${m.lines}句${m.pay ? `,酬勞 ${m.pay}` : ''})`).join('、');
       toast.success(`已填入 ${j.matched?.length || 0} 個角色的台詞:${okList || '—'}`, { duration: 8000 });
       if (j.unmatched?.length) toast.warning(`這些角色還沒有製作單,台詞先跳過:${j.unmatched.map((m: { role: string }) => m.role).join('、')} —— 先在案件建單再匯一次即可`, { duration: 12000 });
       load();
     } catch (e) { toast.error(e instanceof Error ? e.message : '匯入失敗'); } finally { setBusy(null); }
   }
+
+  // 發出通知:把未 released 的指派單正式開給配音員(可見+寄信+Telegram)。
+  async function releaseOrders(orderIds?: string[]) {
+    setBusy('release');
+    try {
+      const res = await fetch('/api/admin/casting/release', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ brief_id: id, ...(orderIds?.length ? { order_ids: orderIds } : {}) }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || `發出失敗(HTTP ${res.status})`);
+      toast.success(`已發出 ${j.released} 張單給 ${j.talents} 位配音員(寄信 ${j.notified} 封,Telegram 有綁定就會收到)`, { duration: 8000 });
+      load();
+    } catch (e) { toast.error(e instanceof Error ? e.message : '發出失敗'); } finally { setBusy(null); }
+  }
+  const unreleased = orders.filter((o) => !o.released_at && o.talent_id);
 
   if (phase === 'loading') return <div className="p-8 text-gray-500 text-sm">載入中…</div>;
   if (phase === 'notfound') return <div className="p-8 text-gray-500 text-sm">找不到這個案件。</div>;
@@ -122,10 +158,23 @@ export default function ProductionPage() {
       <h1 className="text-xl font-semibold mt-2 mb-1">製作管理 · {briefTitle}</h1>
       <p className="text-gray-500 text-sm mb-4">每個角色一張製作單。台詞可整案 xlsx 匯入(按角色分頁自動填),參考音可多檔(角色參考 + 配音員中選聲線,配音員端可聽可下載),價格可調。</p>
 
-      <label className={`inline-flex items-center gap-2 text-sm font-medium rounded-lg px-4 py-2 mb-3 ${busy === 'import' ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-400 text-black cursor-pointer'}`}>
-        {busy === 'import' ? '匯入中…' : '⬆ 匯入台詞表(xlsx)'}
-        <input type="file" accept=".xlsx" className="hidden" disabled={busy === 'import'} onChange={(e) => e.target.files?.[0] && importLines(e.target.files[0])} />
-      </label>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <label className={`inline-flex items-center gap-2 text-sm font-medium rounded-lg px-4 py-2 ${busy === 'import' ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-400 text-black cursor-pointer'}`}>
+          {busy === 'import' ? '匯入中…' : '⬆ 匯入台詞表(xlsx)'}
+          <input type="file" accept=".xlsx" className="hidden" disabled={busy === 'import'} onChange={(e) => e.target.files?.[0] && importLines(e.target.files[0])} />
+        </label>
+        {unreleased.length > 0 && (
+          <button onClick={() => releaseOrders()} disabled={busy === 'release'}
+            className="text-sm font-medium rounded-lg px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black">
+            {busy === 'release' ? '發出中…' : `📣 發出通知(${unreleased.length} 張未通知)`}
+          </button>
+        )}
+      </div>
+      {unreleased.length > 0 && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+          有 {unreleased.length} 張指派單「尚未發出」—— 配音員還看不到也沒收到通知。等台詞/參考音/價格都確認好,按上面「發出通知」一次通知(同一人多角色只寄一封);也可以在單卡上逐張發出。
+        </p>
+      )}
       {busy === 'import' && (
         <div className="mb-6 rounded-xl border border-green-300 bg-green-50 p-4 flex items-center gap-3">
           <span className="w-5 h-5 rounded-full border-2 border-green-500 border-t-transparent animate-spin flex-none" />
@@ -147,6 +196,13 @@ export default function ProductionPage() {
                 <span className="font-semibold">{o.role_name || '(未命名角色)'}</span>
                 <span className="text-xs text-gray-500">{o.talent_name || '(未指派)'}</span>
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border ${o.status === 'delivered' ? 'bg-sky-50 text-sky-700 border-sky-200' : o.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-violet-50 text-violet-700 border-violet-200'}`}>{o.status === 'delivered' ? '已交付·待驗收' : o.status === 'completed' ? '已完成' : '待錄製'}</span>
+                {!o.released_at && o.talent_id && (
+                  <>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-300">未發出·配音員看不到</span>
+                    <button onClick={() => releaseOrders([o.id])} disabled={busy === 'release'}
+                      className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-medium">發出這張</button>
+                  </>
+                )}
                 <span className="ml-auto text-[11px] text-gray-400">{o.order_number}</span>
               </div>
 
@@ -190,7 +246,7 @@ export default function ProductionPage() {
                 </div>
                 <label className="inline-flex items-center gap-1.5 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 rounded-lg px-3 py-1.5 cursor-pointer mt-1.5">
                   {busy === o.id ? '處理中…' : '+ 上傳參考音'}
-                  <input type="file" accept="audio/*,.mp3,.wav,.m4a" className="hidden" disabled={busy === o.id} onChange={(e) => e.target.files?.[0] && uploadRef(o, e.target.files[0])} />
+                  <input type="file" accept="audio/*,video/mp4,video/quicktime,.mp3,.wav,.m4a,.mp4,.mov" className="hidden" disabled={busy === o.id} onChange={(e) => e.target.files?.[0] && uploadRef(o, e.target.files[0])} />
                 </label>
               </div>
 

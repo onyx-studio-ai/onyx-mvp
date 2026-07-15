@@ -42,13 +42,28 @@ export async function POST(request: NextRequest) {
   const briefId = new URL(request.url).searchParams.get('brief_id') || '';
   if (!briefId) return NextResponse.json({ error: 'missing brief_id' }, { status: 400 });
 
+  // 兩種進件:JSON {path}(前端先簽名上傳到 casting bucket;繞過 Vercel 4.5MB body 上限,
+  // 女王百貨這種夾 170+ 張圖的 xlsx 直接 POST 必 413)/ 或舊式 FormData 直傳(小檔)。
   let buf: Buffer;
-  try {
-    const form = await request.formData();
-    const file = form.get('file') as File | null;
-    if (!file) return NextResponse.json({ error: 'missing file' }, { status: 400 });
-    buf = Buffer.from(await file.arrayBuffer());
-  } catch { return NextResponse.json({ error: 'bad form data' }, { status: 400 }); }
+  const isJson = (request.headers.get('content-type') || '').includes('application/json');
+  if (isJson) {
+    let path = '';
+    try { path = String((await request.json())?.path || ''); } catch { /* fallthrough */ }
+    if (!path || !path.startsWith('reference/')) return NextResponse.json({ error: 'missing path' }, { status: 400 });
+    const db0 = getSupabaseServiceClient();
+    const { data, error } = await db0.storage.from('casting').download(path);
+    if (error || !data) return NextResponse.json({ error: `下載台詞表失敗:${error?.message || '檔案不存在'}` }, { status: 400 });
+    buf = Buffer.from(await data.arrayBuffer());
+    // 台詞表含客戶完整稿件,解析進記憶體後立刻從公開 bucket 移除(best-effort)。
+    db0.storage.from('casting').remove([path]).catch(() => {});
+  } else {
+    try {
+      const form = await request.formData();
+      const file = form.get('file') as File | null;
+      if (!file) return NextResponse.json({ error: 'missing file' }, { status: 400 });
+      buf = Buffer.from(await file.arrayBuffer());
+    } catch { return NextResponse.json({ error: 'bad form data' }, { status: 400 }); }
+  }
 
   const wb = new ExcelJS.Workbook();
   try { await wb.xlsx.load(buf as unknown as ArrayBuffer); } catch { return NextResponse.json({ error: '不是有效的 xlsx' }, { status: 400 }); }

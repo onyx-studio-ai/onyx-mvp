@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 import { LANGUAGES, langLabel } from '@/lib/languages';
 import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
+import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 
 type RefFile = { name: string; url: string };
 type ParsedRole = { name: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
@@ -407,11 +408,14 @@ function NewCasting() {
     }).filter((r) => r.name);
   }
 
-  async function uploadFile(file: File) {
+  async function uploadFile(raw: File) {
     setErr('');
-    if (file.size > 50 * 1024 * 1024) { setErr('檔案請勿超過 50MB,過大請放雲端用下方「貼直連抓進平台」。'); return; }
+    if (raw.size > 50 * 1024 * 1024) { setErr('檔案請勿超過 50MB,過大請放雲端用下方「貼直連抓進平台」。'); return; }
     setWorking('上傳中…');
     try {
+      // 參考音只要不是 mp3(wav/mp4/m4a…)自動轉 160kbps mp3 —— 省空間,配音員載得快。
+      let file = raw;
+      if (needsMp3Convert(raw)) { setWorking('轉 mp3 中…'); file = await mediaToMp3(raw); setWorking('上傳中…'); }
       const u = await fetch('/api/admin/casting/upload', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json();
       if (!u.ok) throw new Error(uj.error || '上傳準備失敗');

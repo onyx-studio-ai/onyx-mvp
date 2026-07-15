@@ -3,7 +3,6 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail, emailLocaleForTalent } from '@/lib/mail';
 import { talentAccountSetupEmail } from '@/lib/mail-templates';
-import { notifyTalentTelegram } from '@/lib/telegram';
 
 /*
   POST /api/admin/casting/assign — Onyx DIRECTLY assigns a batch of roles to one
@@ -154,15 +153,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (assigned > 0 && talentId) {
-    const title = (brief.title as string) || (brief.content_type as string) || '配音案件';
-    if (talentEmail && !setupUrl) {
-      // Existing talent → a plain "you've been assigned" note (invited ones already got the setup mail).
-      sendEmail({ category: 'PRODUCTION', to: talentEmail, subject: `您被指派了 ${assigned} 個角色 — ${title}`,
-        html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>Onyx 已為「<strong>${title}</strong>」指派 <strong>${assigned}</strong> 個角色給您。請登入後台在「製作中」查看角色與稿件並上傳成品。</p><p><a href="${SITE}/talent/opportunities">前往後台 →</a></p></div>` }).catch(() => {});
-    }
-    notifyTalentTelegram(db, talentId, `🎯 您被指派了 ${assigned} 個角色(${title})。請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
-  }
+  // 指派≠通知(Wing 2026-07-15):這裡「不」寄指派信、不發 Telegram,單子也先不出現在
+  // 配音員後台(released_at=null)。等 Wing 在製作管理確認台詞/參考音/價格後按「發出
+  // 通知」(/api/admin/casting/release)才通知+可見 —— 避免配音員搶在定稿前就開錄。
+  // (新邀請的帳號設定信照發,那只是開帳號,不含稿件。)
 
   // login_email:給 LINE 邀請訊息用 —— 對方之後登入的帳號(真信箱或佔位帳號)。
   const { data: tFinal } = await db.from('talents').select('email').eq('id', talentId).maybeSingle();

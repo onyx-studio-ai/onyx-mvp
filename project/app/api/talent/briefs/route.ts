@@ -133,9 +133,12 @@ export async function GET(request: NextRequest) {
     // voice_order per role, talent_id = me, quote_id null. Surface each as its own
     // work item (a talent can have many roles on one project).
     const talentId = (r.talent as { id: string }).id;
+    // released_at null = Wing 還在備稿(指派了但沒按「發出通知」)→ 配音員先看不到,
+    // 免得搶在定稿匯入前就開錄(2026-07-15 女王百貨實際發生過)。
     const { data: ao } = await r.db.from('voice_orders')
       .select('id, brief_id, role_name, project_name, script_text, script_file_url, production_notes, reference_files, role_images, deadline, status, download_url, talent_price, currency, created_at')
       .eq('talent_id', talentId).is('quote_id', null).neq('status', 'completed')
+      .not('released_at', 'is', null)
       .order('created_at', { ascending: true });
     const aoIds = (ao || []).map((o) => o.id as string);
     const aoVers: Record<string, { id: string; file_name: string; file_url: string; status?: string | null }[]> = {};
