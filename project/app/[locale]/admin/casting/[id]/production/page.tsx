@@ -28,6 +28,13 @@ export default function ProductionPage() {
   const [briefTitle, setBriefTitle] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [busy, setBusy] = useState<string | null>(null);   // orderId 或 'import'
+  const [importSec, setImportSec] = useState(0);           // 匯入計時(顯示「還活著」)
+  useEffect(() => {
+    if (busy !== 'import') { setImportSec(0); return; }
+    const t = setInterval(() => setImportSec((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
+  const importStage = importSec < 8 ? '解析各角色分頁台詞…' : importSec < 25 ? '抽取角色/皮膚圖並壓縮…' : importSec < 70 ? '上傳角色圖到雲端(上百張,最花時間)…' : '寫入各角色製作稿與酬勞…';
   const [draft, setDraft] = useState<Record<string, { script: string; tp: string; price: string; notes: string; deadline: string }>>({});
 
   const load = useCallback(async () => {
@@ -115,10 +122,19 @@ export default function ProductionPage() {
       <h1 className="text-xl font-semibold mt-2 mb-1">製作管理 · {briefTitle}</h1>
       <p className="text-gray-500 text-sm mb-4">每個角色一張製作單。台詞可整案 xlsx 匯入(按角色分頁自動填),參考音可多檔(角色參考 + 配音員中選聲線,配音員端可聽可下載),價格可調。</p>
 
-      <label className="inline-flex items-center gap-2 text-sm bg-green-500 hover:bg-green-400 text-black font-medium rounded-lg px-4 py-2 cursor-pointer mb-6">
+      <label className={`inline-flex items-center gap-2 text-sm font-medium rounded-lg px-4 py-2 mb-3 ${busy === 'import' ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-green-500 hover:bg-green-400 text-black cursor-pointer'}`}>
         {busy === 'import' ? '匯入中…' : '⬆ 匯入台詞表(xlsx)'}
         <input type="file" accept=".xlsx" className="hidden" disabled={busy === 'import'} onChange={(e) => e.target.files?.[0] && importLines(e.target.files[0])} />
       </label>
+      {busy === 'import' && (
+        <div className="mb-6 rounded-xl border border-green-300 bg-green-50 p-4 flex items-center gap-3">
+          <span className="w-5 h-5 rounded-full border-2 border-green-500 border-t-transparent animate-spin flex-none" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-green-900">正在匯入台詞表 —— {importStage}</p>
+            <p className="text-xs text-green-700 mt-0.5">已進行 {importSec} 秒。台詞表夾了上百張角色圖,通常需 1~2 分鐘,請不要關閉或重新整理頁面;完成後會跳出結果通知。</p>
+          </div>
+        </div>
+      )}
 
       {orders.length === 0 && <p className="text-sm text-gray-500">這個案子還沒有製作單 —— 先在「編輯案件」用「指派」把角色指派給配音員(每角色一單),再回來這裡。</p>}
 

@@ -18,7 +18,8 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 */
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// 台詞表夾 170+ 張角色圖(sharp 壓縮+逐張上傳),60 秒會被切斷 → 提到 5 分鐘(Vercel Pro 上限內)。
+export const maxDuration = 300;
 
 let _s2t: ((s: string) => string) | null = null;
 function s2t(input: string): string {
