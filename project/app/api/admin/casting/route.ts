@@ -306,6 +306,9 @@ export async function PATCH(request: NextRequest) {
     for (const [k, max] of [['title', 200], ['content_type', 80], ['language', 80], ['brief', 20000], ['rate_note', 200], ['audition_deadline', 120], ['recording_start', 120], ['deadline', 120], ['length', 120], ['media_scope', 200], ['territory', 120], ['license_term', 200], ['accent', 120], ['voice_style', 120], ['voice_age', 120], ['audition_script', 20000]] as [string, number][]) setStr(k, max);
     if (e.base_revisions !== undefined) upd.base_revisions = Math.max(0, Math.trunc(Number(e.base_revisions) || 0));
     if (e.audition_cap !== undefined) upd.audition_cap = Math.max(1, Math.trunc(Number(e.audition_cap) || 5));
+    // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 讓編輯頁能改(修正從客戶請求帶入時自動勾的)。
+    for (const k of ['has_singing', 'wants_director', 'wants_live_session']) if (e[k] !== undefined) upd[k] = !!e[k];
+    if (Array.isArray(e.recording_methods)) upd.recording_methods = (e.recording_methods as unknown[]).map(String).filter((x) => ['home', 'studio', 'online'].includes(x));
     if (Array.isArray(e.roles)) {
       upd.roles = (e.roles as RoleIn[]).filter((r) => r && String(r.name || '').trim()).slice(0, 100).map((r) => ({
         name: String(r.name).trim().slice(0, 80),
