@@ -32,6 +32,8 @@ const normName = (s: string) => s2t(String(s || '')).replace(/\s+/g, '').trim();
 // 主角色 key:皮膚變體「福爾森-寒城謎箋」、附註「林炎(rapper)」「杉浦迎之/禮賓員」都歸回
 // 主名(同一配音員同一張單);變體全名保留在每句標頭,配音員知道是哪個皮膚。
 const mainKey = (s: string) => normName(s).split(/[-—/(（]/)[0];
+// 分頁名/訂單名對比用:再去掉中點類符號(「塞伦沃克」分頁 vs 「塞倫・沃克」訂單)。
+const looseKey = (s: string) => mainKey(s).replace(/[・·•.]/g, '');
 
 type Line = { idx: number; role: string; variant?: string; text: string; orig?: string; emotion?: string; speed?: string; func?: string; scene?: string; age?: string; gender?: string; trait?: string; introd?: string };
 
@@ -70,6 +72,7 @@ export async function POST(request: NextRequest) {
 
   // ── 解析:每個角色分頁 → 台詞列(+ 每列嵌入的角色/皮膚圖)──
   const byRole = new Map<string, Line[]>();
+  const roleSheet = new Map<string, string>();   // 角色鍵 → 所在分頁(looseKey),做「分頁歸戶」
   const imgJobs: { key: string; name: string; imageId: number }[] = [];
   const cellStr = (c: ExcelJS.CellValue): string => {
     if (c == null) return '';
@@ -79,6 +82,7 @@ export async function POST(request: NextRequest) {
   };
   for (const ws of wb.worksheets) {
     if (/分配|分派|說明|说明/.test(ws.name)) continue;   // 總表/說明頁略過
+    const sheetKey = looseKey(ws.name);
     // 找標題列(含「角色名」與台詞欄「TW」或「原版臺詞」)
     let headerRow = 0; const col: Record<string, number> = {};
     ws.eachRow((row, n) => {
@@ -119,6 +123,7 @@ export async function POST(request: NextRequest) {
       // 原版與 TW 都保留 —— Wing 要配音員兩個都看得到(對照語氣/斷句)。
       arr.push({ idx: arr.length + 1, role: key, variant: fullRole !== key ? fullRole : undefined, text, orig: orig && orig !== text ? orig : undefined, emotion: get(col.emotion), speed: get(col.speed), func: get(col.func), scene: get(col.scene), age: get(col.age), gender: get(col.gender), trait: get(col.trait), introd: get(col.introd) });
       byRole.set(key, arr);
+      if (!roleSheet.has(key)) roleSheet.set(key, sheetKey);
       rowInfo[n] = { key, fullRole };
     });
     // 該分頁的嵌入圖:錨列對到台詞列 → 掛到該角色(圖名=皮膚/變體全名,配音員好對照)
@@ -154,6 +159,7 @@ export async function POST(request: NextRequest) {
   }
   const { data: orders } = await db.from('voice_orders').select('id, role_name, order_number, talent_id, pay_unit, pay_rate').eq('brief_id', briefId);
   const orderByName = new Map((orders || []).filter((o) => o.role_name).map((o) => [mainKey(String(o.role_name)), o]));
+  const orderByLoose = new Map((orders || []).filter((o) => o.role_name).map((o) => [looseKey(String(o.role_name)), o]));
   // 無分隔符的皮膚名(顧冶擊劍皮膚、谷川翔一決勝時刻)用「以訂單角色名為前綴」合併;
   // 長名優先,避免短名訂單誤吞別的角色。
   const anchors = [...orderByName.entries()].sort((a, b) => b[0].length - a[0].length);
@@ -164,6 +170,9 @@ export async function POST(request: NextRequest) {
   for (const [role, lines] of byRole) {
     let order = orderByName.get(role);
     if (!order) { const hit = anchors.find(([k]) => k.length >= 2 && role.startsWith(k)); order = hit?.[1]; }
+    // 分頁歸戶:皮膚列常不帶主角前綴(顾冶分頁裡直接寫「緋夜共舞」),列名對不到
+    // 訂單時,用「所在分頁的主角」找訂單(2026-07-15 女王百貨顧冶 11 句漏 4 句的根因)。
+    if (!order) { const sk = roleSheet.get(role); if (sk) order = orderByLoose.get(sk); }
     if (!order) { unmatched.push({ role, lines: lines.length }); continue; }
     const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), order: order as Ord, lines: [], images: [] };
     const anchor = mainKey(slot.roleName);
