@@ -516,7 +516,7 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
-  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; deadline?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; reference_files?: { name?: string; url: string }[] | null; deadline?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
 
@@ -635,6 +635,20 @@ export default function Opportunities() {
                 badge={o.status === 'delivered'
                   ? <span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('已交付 · 待驗收', '已交付 · 待验收', 'Delivered · in review')}</span>
                   : <span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('待錄製', '待录制', 'To record')}</span>}>
+                {(o.reference_files || []).length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-[11px] text-gray-300 mb-1">{tx('參考音(角色參考 / 你的中選聲線,可下載)', '参考音(角色参考 / 你的中选声线,可下载)', 'Reference audio (downloadable)')}</p>
+                    <div className="space-y-1.5">
+                      {(o.reference_files || []).map((f, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-2 py-1.5">
+                          <span className="text-[11px] text-gray-400 truncate max-w-[30%]">{f.name || tx('參考音', '参考音', 'Reference')}</span>
+                          <audio controls src={f.url} className="h-8 flex-1 min-w-0" />
+                          <a href={f.url} download target="_blank" rel="noreferrer" className="text-[11px] text-amber-300 hover:underline shrink-0">{tx('下載', '下载', 'Download')}</a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
                 {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('下載稿件檔', '下载稿件档', 'Download script')}</a>}
                 {o.deadline && <p className="text-[11px] text-gray-300 mt-1">{tx('希望交付', '希望交付', 'Due')}: {o.deadline}</p>}

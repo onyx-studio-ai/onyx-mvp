@@ -2890,7 +2890,7 @@
       "notifyFail": "Failed to send, please try again later",
       "toOrderPrompt": "Platform-posted case: enter the client email for this order (used for billing and delivery notifications):",
       "emailInvalid": "Invalid email format",
-      "toOrderConfirm": "Convert \"{name}\" into a production order?\nIt moves into the Orders system to manage production and delivery, and this casting call closes.",
+      "toOrderConfirm": "Create production orders for the ACCEPTED roles of \"{name}\"?\nOnly accepted roles get an order (one per role). The casting call stays open until every role has an order — you can keep assigning.",
       "toOrderFail": "Failed to create order",
       "toOrderSuccess": "Production order {orderNumber} created — manage production and delivery in Orders",
       "toOrderSuccessMulti": "{count} production orders created — manage production and delivery in Orders",

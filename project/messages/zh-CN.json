@@ -2890,7 +2890,7 @@
       "notifyFail": "寄送失败,请稍后再试",
       "toOrderPrompt": "平台发案:请输入这笔订单的客户 email(用于账务与交付通知):",
       "emailInvalid": "email 格式不正确",
-      "toOrderConfirm": "将「{name}」转成制作单?\n会进入「订单」系统管理制作与交付,此试音案随之结案。",
+      "toOrderConfirm": "将「{name}」的已采用角色转成制作单?\n只会为「已采用」的角色建单(每角色一张);案子要等全部角色都建单后才会关闭,现在还能继续分案。",
       "toOrderFail": "建单失败",
       "toOrderSuccess": "已建立制作单 {orderNumber} —— 请到「订单」管理制作与交付",
       "toOrderSuccessMulti": "已建立 {count} 张制作单 —— 请到「订单」管理制作与交付",

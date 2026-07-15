@@ -335,6 +335,12 @@ export default function AdminMarketplace() {
                       指定邀請
                     </button>
                   )}
+                  {b.kind === 'casting' && (
+                    <a href={`/admin/casting/${b.id}/production`}
+                      className="text-xs bg-violet-600 hover:bg-violet-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title="角色製作單:台詞匯入 / 參考音 / 調價">
+                      製作管理
+                    </a>
+                  )}
                   {quotesFor(b.id).some((q) => q.sample_url) && (
                     <DownloadAllAuditions briefId={b.id} quotes={quotesFor(b.id)} label={b.kind === 'casting' ? caseCode(b) : b.brief_number} />
                   )}

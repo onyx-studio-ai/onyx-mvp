@@ -96,10 +96,10 @@ export async function GET(request: NextRequest) {
         .in('id', wonIds);
       // The FINAL script the client locked at selection lives on the production
       // order — surface it so the won talent records from the right script (self-serve).
-      const { data: ords } = await r.db.from('voice_orders').select('id, brief_id, script_text, script_file_url, deadline, created_at, status, payment_status').in('brief_id', wonIds);
-      const orderByBrief: Record<string, { id: string; script_text?: string | null; script_file_url?: string | null; deadline?: string | null; created_at?: string | null; status?: string | null; payment_status?: string | null }> = {};
+      const { data: ords } = await r.db.from('voice_orders').select('id, brief_id, script_text, script_file_url, reference_files, deadline, created_at, status, payment_status').in('brief_id', wonIds);
+      const orderByBrief: Record<string, { id: string; script_text?: string | null; script_file_url?: string | null; reference_files?: { name?: string; url: string }[] | null; deadline?: string | null; created_at?: string | null; status?: string | null; payment_status?: string | null }> = {};
       const orderIdToBrief: Record<string, string> = {};
-      for (const o of ords || []) { if (o.brief_id) { orderByBrief[o.brief_id as string] = { id: o.id as string, script_text: o.script_text as string | null, script_file_url: o.script_file_url as string | null, deadline: o.deadline as string | null, created_at: o.created_at as string | null, status: o.status as string | null, payment_status: o.payment_status as string | null }; orderIdToBrief[o.id as string] = o.brief_id as string; } }
+      for (const o of ords || []) { if (o.brief_id) { orderByBrief[o.brief_id as string] = { id: o.id as string, script_text: o.script_text as string | null, script_file_url: o.script_file_url as string | null, reference_files: (o.reference_files as { name?: string; url: string }[] | null) || null, deadline: o.deadline as string | null, created_at: o.created_at as string | null, status: o.status as string | null, payment_status: o.payment_status as string | null }; orderIdToBrief[o.id as string] = o.brief_id as string; } }
       // The talent's delivered files (voice_order_versions) per won brief.
       const deliveriesByBrief: Record<string, { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[]> = {};
       const orderIds = (ords || []).map((o) => o.id as string);
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     // work item (a talent can have many roles on one project).
     const talentId = (r.talent as { id: string }).id;
     const { data: ao } = await r.db.from('voice_orders')
-      .select('id, brief_id, role_name, project_name, script_text, script_file_url, deadline, status, download_url, talent_price, currency, created_at')
+      .select('id, brief_id, role_name, project_name, script_text, script_file_url, reference_files, deadline, status, download_url, talent_price, currency, created_at')
       .eq('talent_id', talentId).is('quote_id', null).neq('status', 'completed')
       .order('created_at', { ascending: true });
     const aoIds = (ao || []).map((o) => o.id as string);
