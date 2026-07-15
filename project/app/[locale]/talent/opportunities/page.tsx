@@ -58,7 +58,6 @@ type Brief = {
   brief_number: string;
   kind?: string | null;             // 'casting' = admin casting call
   ai_type?: string | null;          // 'clone' | 'training' = client-side AI/TTS case
-  assigned_roles?: string[] | null; // 已徵得的角色名(不露指派給誰)—— 角色卡標「已徵得」
   source?: 'platform' | 'client';   // who posted it (no client identity leaked)
   title?: string | null;
   roles?: Role[] | null;
