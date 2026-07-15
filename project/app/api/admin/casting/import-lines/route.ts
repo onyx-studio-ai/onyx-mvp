@@ -201,13 +201,15 @@ export async function POST(request: NextRequest) {
   const matched: { role: string; lines: number; images?: number; pay?: string }[] = [];
   for (const [orderId, { roleName, order, lines, images }] of byOrder) {
     const first = lines[0];
-    const head = [`【角色】${roleName}`, [first.gender, first.age && `${first.age}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句,請依每句指引錄製(【】內為皮膚/變體名)。`].filter(Boolean).join('\n');
+    // 每句一律標「錄音台詞:」(要錄的台灣版);有大陸原版就附上當語氣/斷句對照 ——
+    // Wing 2026-07-15:不標清楚配音員會不曉得要錄哪行,不能有光禿禿的一行字。
+    const head = [`【角色】${roleName}`, [first.gender, first.age && `${first.age.replace(/[歲岁]/g, '')}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句 —— 每句只錄「錄音台詞:」那一行;「大陸原版:」只是語氣/斷句對照,不用錄。(【】內為皮膚/變體名)`].filter(Boolean).join('\n');
     const body = lines.map((l, i) => {
       const tags = [l.func, l.emotion && `情緒:${l.emotion}`, l.speed && `語速:${l.speed}`].filter(Boolean).join(' | ');
       return [
         `${i + 1}. ${l.variant ? `【${l.variant}】` : ''}${tags ? `(${tags})` : ''}`,
-        l.orig ? `原版:${l.orig}` : '',
-        l.orig ? `台詞:${l.text}` : l.text,   // 有原版就雙語並列;沒有就單行
+        l.orig ? `大陸原版:${l.orig}` : '',
+        `錄音台詞:${l.text}`,
         l.scene ? `   ▸ 畫面:${l.scene}` : '',
       ].filter(Boolean).join('\n');
     }).join('\n\n');
