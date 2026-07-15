@@ -149,7 +149,11 @@ export async function GET(request: NextRequest) {
   const db = getSupabaseServiceClient();
   const { data: brief } = await db.from('marketplace_briefs').select('*').eq('id', id).maybeSingle();
   if (!brief) return NextResponse.json({ error: 'not found' }, { status: 404 });
-  return NextResponse.json({ brief });
+  // 本案的試音/報價(給編輯頁「指派」下拉:有試音的人置頂+帶他的報價當預設派工價)。
+  const { data: quotes } = await db.from('marketplace_quotes')
+    .select('talent_id, talent_name, role_name, gross_amount, currency, status')
+    .eq('brief_id', id).neq('status', 'withdrawn');
+  return NextResponse.json({ brief, quotes: quotes || [] });
 }
 
 export async function POST(request: NextRequest) {

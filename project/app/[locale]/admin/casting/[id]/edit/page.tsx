@@ -50,7 +50,9 @@ export default function EditCasting() {
 
   // ── Direct assignment (managed production): pick roles → assign to a talent
   // (existing or invite by email) with a fixed pay-per-role. Admin-only. ──
-  const [talents, setTalents] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [talents, setTalents] = useState<{ id: string; name: string; email: string; active?: boolean }[]>([]);
+  // 本案試過音的人(含每人最低報價)—— 指派下拉置頂,選了自動帶報價當派工價。
+  const [auditioned, setAuditioned] = useState<{ talent_id: string; name: string; amount?: number; currency?: string }[]>([]);
   const [pickRoles, setPickRoles] = useState<Set<string>>(new Set());
   const [assignMode, setAssignMode] = useState<'existing' | 'invite'>('existing');
   const [assignTalent, setAssignTalent] = useState('');
@@ -60,7 +62,17 @@ export default function EditCasting() {
   const [assigning, setAssigning] = useState(false);
   const togglePick = (name: string) => setPickRoles((s) => { const n = new Set(s); if (n.has(name)) n.delete(name); else n.add(name); return n; });
 
-  useEffect(() => { fetch('/api/talents?type=VO').then((r) => (r.ok ? r.json() : { talents: [] })).then((d) => setTalents((Array.isArray(d?.talents) ? d.talents : Array.isArray(d) ? d : []).map((t: { id: string; name: string; email?: string }) => ({ id: t.id, name: t.name, email: t.email || '' })))).catch(() => {}); }, []);
+  // 全名冊走 admin 端點(含未上線的真人)。之前誤用公開 /api/talents —— 那個只回
+  // voice_id 已驗證的 AI 聲音,下拉整排只剩 Onyx Alpha/Bravo/Delta(2026-07-15 Wing 抓到)。
+  useEffect(() => {
+    fetch('/api/admin/talents', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((all) => setTalents((Array.isArray(all) ? all : [])
+        .filter((t: { type?: string; voice_id_status?: string }) => ['VO', 'voice_actor', 'Singer'].includes(t.type || '') && t.voice_id_status !== 'verified')
+        .map((t: { id: string; name?: string; email?: string; is_active?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', email: t.email || '', active: !!t.is_active }))
+        .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))))
+      .catch(() => {});
+  }, []);
 
   async function assign() {
     const names = [...pickRoles];
@@ -96,8 +108,21 @@ export default function EditCasting() {
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/casting?id=${encodeURIComponent(id)}`, { credentials: 'include' });
     if (!res.ok) { setPhase('notfound'); return; }
-    const bf = (await res.json().catch(() => ({})))?.brief;
+    const j = await res.json().catch(() => ({}));
+    const bf = j?.brief;
     if (!bf) { setPhase('notfound'); return; }
+    // 本案試音者:每人取最低報價,指派下拉置頂 + 自動帶價。
+    {
+      const best = new Map<string, { talent_id: string; name: string; amount?: number; currency?: string }>();
+      for (const q of (j.quotes || []) as { talent_id?: string; talent_name?: string; gross_amount?: number; currency?: string }[]) {
+        if (!q.talent_id) continue;
+        const cur = best.get(q.talent_id);
+        if (!cur || (q.gross_amount != null && (cur.amount == null || q.gross_amount < cur.amount))) {
+          best.set(q.talent_id, { talent_id: q.talent_id, name: q.talent_name || '(未命名)', amount: q.gross_amount ?? cur?.amount, currency: q.currency || cur?.currency });
+        }
+      }
+      setAuditioned([...best.values()].sort((a, b) => a.name.localeCompare(b.name)));
+    }
     setF({
       title: bf.title || '', content_type: bf.content_type || '', language: bf.language || '', brief: bf.brief || '',
       rate_note: bf.rate_note || '', audition_deadline: bf.audition_deadline || '', recording_start: bf.recording_start || '',
@@ -240,9 +265,20 @@ export default function EditCasting() {
               </div>
               {assignMode === 'existing' ? (
                 <label className="block"><span className="text-xs text-gray-600 mb-1 block">配音員</span>
-                  <select className={`${input} min-w-[220px]`} value={assignTalent} onChange={(e) => setAssignTalent(e.target.value)}>
+                  <select className={`${input} min-w-[220px]`} value={assignTalent} onChange={(e) => {
+                    setAssignTalent(e.target.value);
+                    const a = auditioned.find((x) => x.talent_id === e.target.value);
+                    if (a?.amount != null) setPay(String(a.amount));   // 試音者 → 自動帶他的報價(可改)
+                  }}>
                     <option value="">— 選一位 —</option>
-                    {talents.map((t) => <option key={t.id} value={t.id}>{t.name}{t.email ? ` (${t.email})` : ''}</option>)}
+                    {auditioned.length > 0 && (
+                      <optgroup label={`⭐ 本案有試音(${auditioned.length})`}>
+                        {auditioned.map((a) => <option key={a.talent_id} value={a.talent_id}>{a.name}{a.amount != null ? ` — 報價 ${a.currency || ''}${a.amount}` : ''}</option>)}
+                      </optgroup>
+                    )}
+                    <optgroup label="其他配音員(未試音,含未上線)">
+                      {talents.filter((t) => !auditioned.some((a) => a.talent_id === t.id)).map((t) => <option key={t.id} value={t.id}>{t.name}{t.active === false ? '(未上線)' : ''}</option>)}
+                    </optgroup>
                   </select>
                 </label>
               ) : (
