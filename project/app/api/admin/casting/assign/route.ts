@@ -22,11 +22,14 @@ export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
 
-  let body: { brief_id?: string; role_names?: string[]; pay_per_role?: number; talent_id?: string; invite?: { name?: string; email?: string } };
+  let body: { brief_id?: string; role_names?: string[]; pay_per_role?: number; pay_unit?: string; talent_id?: string; invite?: { name?: string; email?: string } };
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const briefId = String(body.brief_id || '');
   const roleNames = Array.isArray(body.role_names) ? body.role_names.map((r) => String(r).trim()).filter(Boolean) : [];
   const pay = Math.max(0, Number(body.pay_per_role) || 0);
+  // 計價單位:per_role(每角色一口價,預設)| per_line(每句單價 × 句數 —— 句數在匯入
+  // 台詞表時自動數出來並回填 talent_price,指派當下酬勞先掛 0 待計)。
+  const payUnit = body.pay_unit === 'per_line' ? 'per_line' : 'per_role';
   if (!briefId || !roleNames.length) return NextResponse.json({ error: 'brief_id 與 role_names 必填' }, { status: 400 });
 
   const db = getSupabaseServiceClient();
@@ -114,7 +117,10 @@ export async function POST(request: NextRequest) {
       currency,
       project_name: `${(brief.title as string) || '配音案'} · ${rn}`,
       talent_id: talentId,
-      talent_price: pay,            // fixed pay Onyx agreed with the talent
+      // per_role:酬勞=一口價;per_line:先掛 0,匯入台詞表時自動 = pay_rate × 句數。
+      talent_price: payUnit === 'per_line' ? 0 : pay,
+      pay_unit: payUnit,
+      pay_rate: pay,
       status: 'in_production',      // ready to record now
       payment_status: 'completed',  // internal — bypasses the client-payment gate
       revision_count: 0,
@@ -131,7 +137,8 @@ export async function POST(request: NextRequest) {
     // per-role fee; tier 'managed' keeps it OUT of the Profit-First income pockets
     // (client billing is invoiced separately). Best-effort — a payout-record hiccup
     // must never undo a successful assignment (backfillable later).
-    if (pay > 0) {
+    // per_line 的酬勞要等匯入台詞數句數才知道 → 分潤紀錄由 import-lines 補建,這裡跳過。
+    if (pay > 0 && payUnit !== 'per_line') {
       const { error: eErr } = await db.from('talent_earnings').insert({
         talent_id: talentId, order_id: ord.id, order_type: 'voice', order_number: orderNumber,
         tier: 'managed', order_total: pay, commission_rate: 1, commission_amount: pay, status: 'pending',

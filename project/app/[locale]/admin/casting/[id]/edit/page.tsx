@@ -59,6 +59,7 @@ export default function EditCasting() {
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [pay, setPay] = useState('');
+  const [payUnit, setPayUnit] = useState<'per_role' | 'per_line'>('per_role');   // 計價:每角色一口價 / 每句單價×句數(匯台詞時自動算)
   const [assigning, setAssigning] = useState(false);
   const togglePick = (name: string) => setPickRoles((s) => { const n = new Set(s); if (n.has(name)) n.delete(name); else n.add(name); return n; });
 
@@ -77,7 +78,7 @@ export default function EditCasting() {
   async function assign() {
     const names = [...pickRoles];
     if (!names.length) { setMsg('請先勾選要指派的角色'); return; }
-    const payload: { brief_id: string; role_names: string[]; pay_per_role: number; talent_id?: string; invite?: { name: string; email: string } } = { brief_id: id, role_names: names, pay_per_role: Number(pay) || 0 };
+    const payload: { brief_id: string; role_names: string[]; pay_per_role: number; pay_unit: string; talent_id?: string; invite?: { name: string; email: string } } = { brief_id: id, role_names: names, pay_per_role: Number(pay) || 0, pay_unit: payUnit };
     if (assignMode === 'existing') { if (!assignTalent) { setMsg('請選配音員'); return; } payload.talent_id = assignTalent; }
     else { if (!inviteEmail.trim()) { setMsg('請填邀請 email'); return; } payload.invite = { name: inviteName.trim(), email: inviteEmail.trim() }; }
     setAssigning(true); setMsg('');
@@ -287,7 +288,14 @@ export default function EditCasting() {
                   <label className="block"><span className="text-xs text-gray-600 mb-1 block">Email</span><input className={`${input} w-52`} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="email@example.com" /></label>
                 </>
               )}
-              <label className="block"><span className="text-xs text-gray-600 mb-1 block">每角派工價</span><input type="number" className={`${input} w-28`} value={pay} onChange={(e) => setPay(e.target.value)} placeholder="NT$" /></label>
+              <label className="block"><span className="text-xs text-gray-600 mb-1 block">計價方式</span>
+                <select className={`${input} w-32`} value={payUnit} onChange={(e) => setPayUnit(e.target.value as 'per_role' | 'per_line')}>
+                  <option value="per_role">每角色一口價</option>
+                  <option value="per_line">每句計價</option>
+                </select>
+              </label>
+              <label className="block"><span className="text-xs text-gray-600 mb-1 block">{payUnit === 'per_line' ? '每句單價' : '每角派工價'}</span><input type="number" className={`${input} w-28`} value={pay} onChange={(e) => setPay(e.target.value)} placeholder="NT$" /></label>
+              {payUnit === 'per_line' && <p className="text-[11px] text-violet-700 self-end pb-2.5">酬勞=單價×句數,匯入台詞表時自動算(例:150×10句=1,500)</p>}
               <button onClick={assign} disabled={assigning || !pickRoles.size} className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2 text-sm">{assigning ? '指派中…' : `指派選取的 ${pickRoles.size} 角`}</button>
             </div>
             {assignMode === 'invite' && <p className="text-[11px] text-gray-500 mt-2">邀請新人:會自動建帳號 + 寄設定密碼信;他登入後就看到被指派的角色,之後也能補完檔案送審成為正式配音員。</p>}

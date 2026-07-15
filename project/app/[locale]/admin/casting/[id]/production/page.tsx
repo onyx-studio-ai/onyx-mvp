@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; currency?: string | null; deadline?: string | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null };
 
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 
@@ -99,7 +99,7 @@ export default function ProductionPage() {
       const res = await fetch(`/api/admin/casting/import-lines?brief_id=${encodeURIComponent(id)}`, { method: 'POST', credentials: 'include', body: fd });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || '匯入失敗');
-      const okList = (j.matched || []).map((m: { role: string; lines: number }) => `${m.role}(${m.lines}句)`).join('、');
+      const okList = (j.matched || []).map((m: { role: string; lines: number; pay?: string }) => `${m.role}(${m.lines}句${m.pay ? `,酬勞 ${m.pay}` : ''})`).join('、');
       toast.success(`已填入 ${j.matched?.length || 0} 個角色的台詞:${okList || '—'}`, { duration: 8000 });
       if (j.unmatched?.length) toast.warning(`這些角色還沒有製作單,台詞先跳過:${j.unmatched.map((m: { role: string }) => m.role).join('、')} —— 先在案件建單再匯一次即可`, { duration: 12000 });
       load();
@@ -135,7 +135,7 @@ export default function ProductionPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-3 mb-2 max-w-2xl">
-                <label className="block"><span className="text-xs text-gray-600 mb-1 block">配音員酬勞({o.currency || 'TWD'})</span>
+                <label className="block"><span className="text-xs text-gray-600 mb-1 block">配音員酬勞({o.currency || 'TWD'}){o.pay_unit === 'per_line' && o.pay_rate ? ` — 每句 ${o.pay_rate},匯台詞自動算` : ''}</span>
                   <input className={input} inputMode="decimal" value={d.tp} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, tp: e.target.value } }))} /></label>
                 <label className="block"><span className="text-xs text-gray-600 mb-1 block">客戶價(選填)</span>
                   <input className={input} inputMode="decimal" value={d.price} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, price: e.target.value } }))} /></label>

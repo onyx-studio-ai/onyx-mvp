@@ -136,27 +136,28 @@ export async function POST(request: NextRequest) {
       } catch { /* 單張 best-effort */ }
     }));
   }
-  const { data: orders } = await db.from('voice_orders').select('id, role_name').eq('brief_id', briefId);
+  const { data: orders } = await db.from('voice_orders').select('id, role_name, order_number, talent_id, pay_unit, pay_rate').eq('brief_id', briefId);
   const orderByName = new Map((orders || []).filter((o) => o.role_name).map((o) => [mainKey(String(o.role_name)), o]));
   // 無分隔符的皮膚名(顧冶擊劍皮膚、谷川翔一決勝時刻)用「以訂單角色名為前綴」合併;
   // 長名優先,避免短名訂單誤吞別的角色。
   const anchors = [...orderByName.entries()].sort((a, b) => b[0].length - a[0].length);
 
-  const byOrder = new Map<string, { roleName: string; lines: Line[]; images: { name: string; url: string }[] }>();
+  type Ord = { id: string; role_name?: string | null; order_number?: string | null; talent_id?: string | null; pay_unit?: string | null; pay_rate?: number | null };
+  const byOrder = new Map<string, { roleName: string; order: Ord; lines: Line[]; images: { name: string; url: string }[] }>();
   const unmatched: { role: string; lines: number }[] = [];
   for (const [role, lines] of byRole) {
     let order = orderByName.get(role);
     if (!order) { const hit = anchors.find(([k]) => k.length >= 2 && role.startsWith(k)); order = hit?.[1]; }
     if (!order) { unmatched.push({ role, lines: lines.length }); continue; }
-    const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), lines: [], images: [] };
+    const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), order: order as Ord, lines: [], images: [] };
     const anchor = mainKey(slot.roleName);
     for (const l of lines) slot.lines.push({ ...l, variant: l.variant || (role !== anchor ? role : undefined) });
     for (const img of imgsByKey.get(role) || []) slot.images.push(img);
     byOrder.set(String(order.id), slot);
   }
 
-  const matched: { role: string; lines: number; images?: number }[] = [];
-  for (const [orderId, { roleName, lines, images }] of byOrder) {
+  const matched: { role: string; lines: number; images?: number; pay?: string }[] = [];
+  for (const [orderId, { roleName, order, lines, images }] of byOrder) {
     const first = lines[0];
     const head = [`【角色】${roleName}`, [first.gender, first.age && `${first.age}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句,請依每句指引錄製(【】內為皮膚/變體名)。`].filter(Boolean).join('\n');
     const body = lines.map((l, i) => {
@@ -168,9 +169,25 @@ export async function POST(request: NextRequest) {
         l.scene ? `   ▸ 畫面:${l.scene}` : '',
       ].filter(Boolean).join('\n');
     }).join('\n\n');
-    const { error } = await db.from('voice_orders').update({ script_text: `${head}\n\n${body}`, role_images: images.length ? images : null }).eq('id', orderId);
-    if (error) unmatched.push({ role: roleName, lines: lines.length });
-    else matched.push({ role: roleName, lines: lines.length, images: images.length });
+    const upd: Record<string, unknown> = { script_text: `${head}\n\n${body}`, role_images: images.length ? images : null };
+    // 按句計價的單:酬勞 = 單價 × 句數,匯入時自動算(重匯會依最新句數重算)。
+    let payNote: string | undefined;
+    const rate = Number(order.pay_rate) || 0;
+    if (order.pay_unit === 'per_line' && rate > 0) {
+      const total = rate * lines.length;
+      upd.talent_price = total;
+      payNote = `${rate}×${lines.length}句=${total}`;
+    }
+    const { error } = await db.from('voice_orders').update(upd).eq('id', orderId);
+    if (error) { unmatched.push({ role: roleName, lines: lines.length }); continue; }
+    matched.push({ role: roleName, lines: lines.length, images: images.length, pay: payNote });
+    // 分潤紀錄同步(per_line 在指派時跳過建立,這裡補建/更新成正確總額)。
+    if (order.pay_unit === 'per_line' && rate > 0 && order.talent_id) {
+      const total = rate * lines.length;
+      const { data: exist } = await db.from('talent_earnings').select('id').eq('order_id', orderId).maybeSingle();
+      if (exist) await db.from('talent_earnings').update({ order_total: total, commission_amount: total }).eq('id', exist.id);
+      else await db.from('talent_earnings').insert({ talent_id: order.talent_id, order_id: orderId, order_type: 'voice', order_number: order.order_number, tier: 'managed', order_total: total, commission_rate: 1, commission_amount: total, status: 'pending' });
+    }
   }
   return NextResponse.json({ ok: true, matched, unmatched, totalRoles: byRole.size });
 }
