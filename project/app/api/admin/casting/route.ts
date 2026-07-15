@@ -153,7 +153,15 @@ export async function GET(request: NextRequest) {
   const { data: quotes } = await db.from('marketplace_quotes')
     .select('talent_id, talent_name, role_name, gross_amount, currency, status')
     .eq('brief_id', id).neq('status', 'withdrawn');
-  return NextResponse.json({ brief, quotes: quotes || [] });
+  // 已建的角色製作單(給編輯頁標「這角色已指派給誰」)。
+  const { data: ords } = await db.from('voice_orders')
+    .select('role_name, talent_price, pay_unit, pay_rate, status, talents(name)')
+    .eq('brief_id', id).not('role_name', 'is', null);
+  const assigned = (ords || []).map((o) => {
+    const t = o.talents as { name?: string } | { name?: string }[] | null;
+    return { role_name: o.role_name, talent_name: (Array.isArray(t) ? t[0]?.name : t?.name) || null, talent_price: o.talent_price, pay_unit: o.pay_unit, pay_rate: o.pay_rate, status: o.status };
+  });
+  return NextResponse.json({ brief, quotes: quotes || [], assigned });
 }
 
 export async function POST(request: NextRequest) {

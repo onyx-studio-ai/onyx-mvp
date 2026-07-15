@@ -29,6 +29,7 @@ export default function GuestCasting() {
 
   const [phase, setPhase] = useState<'loading' | 'invalid' | 'ready'>('loading');
   const [brief, setBrief] = useState<Brief | null>(null);
+  const [assignedRoles, setAssignedRoles] = useState<string[]>([]);   // 已徵得的角色名(匿名)
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [mine, setMine] = useState<Audition[]>([]);
   const [closed, setClosed] = useState(false);
@@ -37,7 +38,7 @@ export default function GuestCasting() {
     const res = await fetch(`/api/casting/${token}`);
     if (!res.ok) return setPhase('invalid');
     const j = await res.json();
-    setBrief(j.brief); setCounts(j.roleCounts || {}); setMine(j.myAuditions || []); setClosed(!!j.closed);
+    setBrief(j.brief); setCounts(j.roleCounts || {}); setMine(j.myAuditions || []); setClosed(!!j.closed); setAssignedRoles(j.assignedRoles || []);
     setPhase('ready');
   }, [token]);
   useEffect(() => { load(); }, [load]);
@@ -132,6 +133,7 @@ export default function GuestCasting() {
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
                 source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
+                assigned={!!ro.name && assignedRoles.includes(ro.name)}
                 done={mine.find((m) => (m.role_name || '') === (ro.name || ''))} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
             ))}
           </div>
@@ -153,8 +155,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   return <main className="min-h-screen bg-black text-white px-4 pt-24 pb-12"><div className="max-w-4xl mx-auto">{children}</div></main>;
 }
 
-function GuestRole({ token, role, count, popular, done, closed, source, rateNote, budget, budgetType, tx, onDone }: {
-  token: string; role: Role; count: number; popular: boolean; done?: Audition; closed: boolean;
+function GuestRole({ token, role, count, popular, assigned, done, closed, source, rateNote, budget, budgetType, tx, onDone }: {
+  token: string; role: Role; count: number; popular: boolean; assigned?: boolean; done?: Audition; closed: boolean;
   source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string;
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
@@ -206,7 +208,10 @@ function GuestRole({ token, role, count, popular, done, closed, source, rateNote
   const nameRow = (
     <div className="flex items-start justify-between gap-2">
       <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{role.name}</span>
-      {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
+      <span className="flex items-center gap-1.5 shrink-0">
+        {assigned && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap bg-white/[0.08] text-gray-400 border border-white/10">{tx('已徵得', 'Cast')}</span>}
+        {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
+      </span>
     </div>
   );
 

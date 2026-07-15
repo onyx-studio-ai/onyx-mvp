@@ -68,7 +68,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
   // 白名單挑欄位 → 只回試音者該看的,客戶身分/預算幣別/指名配音員等底牌一律不外洩。
   const safeBrief = pickGuestBrief(brief as Record<string, unknown>);
-  return NextResponse.json({ brief: safeBrief, roleCounts, myAuditions, invite: { email: invite.email, name: invite.name }, closed: castingClosed(brief) });
+  // 已徵得的角色(只給角色名,不露指派給誰)—— 前台標「已徵得」。
+  const { data: aos } = await db.from('voice_orders').select('role_name').eq('brief_id', invite.brief_id).not('role_name', 'is', null);
+  const assignedRoles = [...new Set((aos || []).map((o) => String(o.role_name)))];
+  return NextResponse.json({ brief: safeBrief, roleCounts, myAuditions, assignedRoles, invite: { email: invite.email, name: invite.name }, closed: castingClosed(brief) });
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {

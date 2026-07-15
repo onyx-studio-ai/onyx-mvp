@@ -53,6 +53,8 @@ export default function EditCasting() {
   const [talents, setTalents] = useState<{ id: string; name: string; email: string; active?: boolean }[]>([]);
   // 本案試過音的人(含每人最低報價)—— 指派下拉置頂,選了自動帶報價當派工價。
   const [auditioned, setAuditioned] = useState<{ talent_id: string; name: string; amount?: number; currency?: string }[]>([]);
+  // 已指派狀態:角色名 → 指派給誰/酬勞(後台看得到;前台只標「已徵得」不露名)。
+  const [assignedRoles, setAssignedRoles] = useState<Record<string, { talent_name: string | null; talent_price?: number | null; pay_unit?: string | null; pay_rate?: number | null; status?: string | null }>>({});
   const [pickRoles, setPickRoles] = useState<Set<string>>(new Set());
   const [assignMode, setAssignMode] = useState<'existing' | 'invite'>('existing');
   const [assignTalent, setAssignTalent] = useState('');
@@ -87,6 +89,7 @@ export default function EditCasting() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setMsg(j.error || '指派失敗'); return; }
       setPickRoles(new Set()); setPay(''); setInviteName(''); setInviteEmail('');
+      load();   // 重載 → 角色卡即時亮「✓ 已指派 · 誰」
       let m = `✓ 已指派 ${j.assigned} 個角色`;
       if (j.skipped?.length) m += `(跳過 ${j.skipped.length}:已指派過)`;
       if (j.setup_url) m += ` · 已寄設定密碼信給新配音員`;
@@ -124,6 +127,9 @@ export default function EditCasting() {
       }
       setAuditioned([...best.values()].sort((a, b) => a.name.localeCompare(b.name)));
     }
+    setAssignedRoles(Object.fromEntries(((j.assigned || []) as { role_name?: string | null; talent_name?: string | null; talent_price?: number | null; pay_unit?: string | null; pay_rate?: number | null; status?: string | null }[])
+      .filter((a) => a.role_name)
+      .map((a) => [String(a.role_name), { talent_name: a.talent_name || null, talent_price: a.talent_price, pay_unit: a.pay_unit, pay_rate: a.pay_rate, status: a.status }])));
     setF({
       title: bf.title || '', content_type: bf.content_type || '', language: bf.language || '', brief: bf.brief || '',
       rate_note: bf.rate_note || '', audition_deadline: bf.audition_deadline || '', recording_start: bf.recording_start || '',
@@ -218,9 +224,16 @@ export default function EditCasting() {
             <span className="text-xs text-gray-500">共 {roles.length} 角</span>
           </div>
           <div className="space-y-3">
-            {roles.map((r, i) => (
-              <div key={i} className={`flex gap-3 bg-white border rounded-xl p-4 ${r.name && pickRoles.has(r.name) ? 'border-violet-400 ring-1 ring-violet-200' : 'border-gray-200'}`}>
-                <label className="flex items-start pt-1" title={r.name ? '選取以指派' : '先填角色名才能指派'}>
+            {roles.map((r, i) => {
+              const asg = r.name ? assignedRoles[r.name] : undefined;
+              return (
+              <div key={i} className={`relative flex gap-3 bg-white border rounded-xl p-4 ${asg ? 'border-green-300' : r.name && pickRoles.has(r.name) ? 'border-violet-400 ring-1 ring-violet-200' : 'border-gray-200'}`}>
+                {asg && (
+                  <span className="absolute top-2 right-2 whitespace-nowrap text-[11px] bg-green-100 text-green-800 border border-green-300 rounded-full px-2.5 py-0.5">
+                    ✓ 已指派 · {asg.talent_name || '—'}{asg.pay_unit === 'per_line' && asg.pay_rate ? ` · ${asg.pay_rate}/句` : asg.talent_price ? ` · NT$${asg.talent_price}` : ''}
+                  </span>
+                )}
+                <label className="flex items-start pt-1" title={asg ? `已指派給 ${asg.talent_name || ''}` : r.name ? '選取以指派' : '先填角色名才能指派'}>
                   <input type="checkbox" className="accent-violet-600" checked={!!r.name && pickRoles.has(r.name)} disabled={!r.name} onChange={() => r.name && togglePick(r.name)} />
                 </label>
                 <div className="w-16 shrink-0">
@@ -252,7 +265,7 @@ export default function EditCasting() {
                   </label>
                 </div>
               </div>
-            ))}
+            );})}
           </div>
 
           <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50/60 p-4">

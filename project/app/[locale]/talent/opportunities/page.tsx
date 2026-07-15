@@ -85,6 +85,7 @@ type Brief = {
   audition_deadline: string | null;
   language: string | null;
   gender_needs?: string | null;     // 需求人數/性別, e.g. 一男一女
+  assigned_roles?: string[] | null; // 已徵得的角色名(不含指派給誰 —— 匿名)
   length: string | null;
   budget: string | null;
   budget_type: string | null;
@@ -1205,10 +1206,15 @@ function RoleAudition({
       {role.is_lead && <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded font-medium z-10" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)' }}>★ {tx('主角', '主角', 'Lead')}</span>}
     </div>
   );
+  // 這角色已徵得(有人被指派了)—— 只標狀態,不露是誰。
+  const isAssigned = !!role.name && (brief.assigned_roles || []).includes(role.name);
   const nameRow = (
     <div className="flex items-start justify-between gap-2">
       <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{role.name}</span>
-      {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
+      <span className="flex items-center gap-1.5 shrink-0">
+        {isAssigned && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap bg-white/[0.08] text-gray-400 border border-white/10">{tx('已徵得', '已征得', 'Cast')}</span>}
+        {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
+      </span>
     </div>
   );
 

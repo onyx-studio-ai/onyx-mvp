@@ -74,8 +74,15 @@ export async function GET(request: NextRequest) {
 
     // Derive a non-identifying source flag (platform-posted vs from a client) and
     // STRIP client_email — talents see the source label, never the client identity.
+    // 已徵得的角色(只角色名,不露指派給誰)—— 看板角色卡標「已徵得」。
+    const briefIds = briefs.map((b) => (b as { id: string }).id);
+    const assignedByBrief: Record<string, string[]> = {};
+    if (briefIds.length) {
+      const { data: aos } = await r.db.from('voice_orders').select('brief_id, role_name').in('brief_id', briefIds).not('role_name', 'is', null);
+      for (const o of aos || []) { const k = String(o.brief_id); (assignedByBrief[k] ||= []).push(String(o.role_name)); }
+    }
     const safeBriefs = briefs.map((b) => {
-      const o = { ...b, source: (b as { client_email?: string }).client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client', closed: isClosed(b) } as Record<string, unknown>;
+      const o = { ...b, source: (b as { client_email?: string }).client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client', closed: isClosed(b), assigned_roles: [...new Set(assignedByBrief[(b as { id: string }).id] || [])] } as Record<string, unknown>;
       delete o.client_email;
       return o;
     });
