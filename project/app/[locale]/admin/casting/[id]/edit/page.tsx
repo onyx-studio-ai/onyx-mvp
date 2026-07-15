@@ -11,9 +11,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
+import { LANGUAGES, langLabel } from '@/lib/languages';
 
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
+// 與發案表單同一套選項(編輯頁補齊,讓幾乎全欄位可編)。
+const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
+const TERRITORY_OPTS = ['', '台灣', '大陸', '港澳', '全球', '北美', '東南亞', '其他'];
+const LICENSE_OPTS = ['', '一年', '兩年', '三年', '永久', '買斷', '專案限定'];
+const STYLE_OPTS = ['', '對話自然', '旁白沉穩', '權威 / 正式', '溫暖', '活潑 / 年輕', '角色演繹', '不限', '其他'];
+const AGE_OPTS = ['', '兒童', '青少年', '青年', '中年', '熟齡', '全年齡 / 不限', '其他'];
+const VOICE_COUNTS = ['0', '1', '2', '3', '4', '5+'];
+const countLabel = (v: string) => (v === '5+' ? '5 位以上' : `${v} 位`);
+const buildGenderNeeds = (male: string, female: string) => [male !== '0' && `男聲 ${countLabel(male)}`, female !== '0' && `女聲 ${countLabel(female)}`].filter(Boolean).join('、');
+const parseGenderNeeds = (s?: string | null) => { const t = String(s || ''); const m = /男[聲声]?\s*(\d)/.exec(t); const f = /女[聲声]?\s*(\d)/.exec(t); return { male: m ? m[1] : '0', female: f ? f[1] : '0' }; };
+const optEl = (o: string) => <option key={o || '_'} value={o}>{o || '— 不指定 —'}</option>;
+const optsWith = (opts: string[], val?: string) => (val && !opts.includes(val) ? [...opts, val] : opts);
 
 export default function EditCasting() {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +34,9 @@ export default function EditCasting() {
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [f, setF] = useState({ title: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5' });
+  const [f, setF] = useState({ title: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '' });
+  const [maleVoices, setMaleVoices] = useState('0');
+  const [femaleVoices, setFemaleVoices] = useState('0');
   // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 之前只在發案表單有,編輯頁沒有,導致從客戶請求
   // 帶入時自動勾的(如含唱歌)在此關不掉。補上讓已發佈案件也能改。
   const [hasSinging, setHasSinging] = useState(false);
@@ -88,7 +103,10 @@ export default function EditCasting() {
       rate_note: bf.rate_note || '', audition_deadline: bf.audition_deadline || '', recording_start: bf.recording_start || '',
       deadline: bf.deadline || '', length: bf.length || '', audition_script: bf.audition_script || '',
       base_revisions: String(bf.base_revisions ?? 1), audition_cap: String(bf.audition_cap ?? 5),
+      accent: bf.accent || '', voice_style: bf.voice_style || '', voice_age: bf.voice_age || '',
+      media_scope: bf.media_scope || '', territory: bf.territory || '', license_term: bf.license_term || '',
     });
+    { const g = parseGenderNeeds(bf.gender_needs); setMaleVoices(g.male); setFemaleVoices(g.female); }
     setHasSinging(!!bf.has_singing); setWantsDirector(!!bf.wants_director); setWantsLive(!!bf.wants_live_session);
     setRecMethods({ home: false, studio: false, online: false, ...Object.fromEntries((Array.isArray(bf.recording_methods) ? bf.recording_methods : []).map((k: string) => [k, true])) });
     setRoles(Array.isArray(bf.roles) ? bf.roles : []);
@@ -100,7 +118,7 @@ export default function EditCasting() {
     setMsg(''); setSaving(true);
     const res = await fetch('/api/admin/casting', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ id, edit: { ...f, base_revisions: Number(f.base_revisions) || 0, audition_cap: Number(f.audition_cap) || 5, roles, has_singing: hasSinging, wants_director: wantsDirector, wants_live_session: wantsLive, recording_methods: Object.keys(recMethods).filter((k) => recMethods[k]) } }),
+      body: JSON.stringify({ id, edit: { ...f, base_revisions: Number(f.base_revisions) || 0, audition_cap: Number(f.audition_cap) || 5, roles, has_singing: hasSinging, wants_director: wantsDirector, wants_live_session: wantsLive, recording_methods: Object.keys(recMethods).filter((k) => recMethods[k]), gender_needs: buildGenderNeeds(maleVoices, femaleVoices) } }),
     });
     const j = await res.json().catch(() => ({}));
     setSaving(false);
@@ -120,14 +138,39 @@ export default function EditCasting() {
       <div className="space-y-3 bg-white border border-gray-200 rounded-xl p-5 mb-5">
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">標題</span><input className={input} value={f.title} onChange={(e) => set('title', e.target.value)} /></label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="block"><span className="text-xs text-gray-600 mb-1 block">語言</span><input className={input} value={f.language} onChange={(e) => set('language', e.target.value)} /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">語言</span>
+            <select className={input} value={f.language} onChange={(e) => set('language', e.target.value)}>
+              {f.language && !LANGUAGES.some((o) => o.v === f.language) && <option value={f.language}>{f.language}(舊值)</option>}
+              {LANGUAGES.map((o) => <option key={o.v} value={o.v}>{o.tw}</option>)}
+            </select>
+          </label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">報酬</span><input className={input} value={f.rate_note} onChange={(e) => set('rate_note', e.target.value)} placeholder="例:NT$150 / 句" /></label>
         </div>
+        <div className="grid grid-cols-3 gap-3">
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">類別</span><input className={input} value={f.content_type} onChange={(e) => set('content_type', e.target.value)} placeholder="例:旁白 Narration" /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">需求 男聲</span><select className={input} value={maleVoices} onChange={(e) => setMaleVoices(e.target.value)}>{VOICE_COUNTS.map((v) => <option key={v} value={v}>{v === '0' ? '不指定' : countLabel(v)}</option>)}</select></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">需求 女聲</span><select className={input} value={femaleVoices} onChange={(e) => setFemaleVoices(e.target.value)}>{VOICE_COUNTS.map((v) => <option key={v} value={v}>{v === '0' ? '不指定' : countLabel(v)}</option>)}</select></label>
+        </div>
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">案件說明</span><textarea className={`${input} min-h-[80px] resize-y`} value={f.brief} onChange={(e) => set('brief', e.target.value)} /></label>
+        <div className="grid grid-cols-3 gap-3">
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">口音</span><select className={input} value={f.accent} onChange={(e) => set('accent', e.target.value)}>{optsWith(['', '中文 · 台灣國語', '中文 · 大陸普通話', '粵語', '台語', '英語', '日語', '不限', '其他'], f.accent).map(optEl)}</select></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">聲音風格</span><select className={input} value={f.voice_style} onChange={(e) => set('voice_style', e.target.value)}>{optsWith(STYLE_OPTS, f.voice_style).map(optEl)}</select></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">聲音年齡</span><select className={input} value={f.voice_age} onChange={(e) => set('voice_age', e.target.value)}>{optsWith(AGE_OPTS, f.voice_age).map(optEl)}</select></label>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">使用範圍</span><select className={input} value={f.media_scope} onChange={(e) => set('media_scope', e.target.value)}>{optsWith(USAGE_OPTS, f.media_scope).map(optEl)}</select></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">地區</span><select className={input} value={f.territory} onChange={(e) => set('territory', e.target.value)}>{optsWith(TERRITORY_OPTS, f.territory).map(optEl)}</select></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">授權期</span><select className={input} value={f.license_term} onChange={(e) => set('license_term', e.target.value)}>{optsWith(LICENSE_OPTS, f.license_term).map(optEl)}</select></label>
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音截止</span><input type="date" className={`${input} [color-scheme:light]`} value={f.audition_deadline} onChange={(e) => set('audition_deadline', e.target.value)} /></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">交付截止</span><input type="date" className={`${input} [color-scheme:light]`} value={f.deadline} onChange={(e) => set('deadline', e.target.value)} /></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">規模</span><input className={input} value={f.length} onChange={(e) => set('length', e.target.value)} /></label>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">預計開錄</span><input className={input} value={f.recording_start} onChange={(e) => set('recording_start', e.target.value)} placeholder="例:8月" /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">含修改次數</span><input type="number" min={0} className={input} value={f.base_revisions} onChange={(e) => set('base_revisions', e.target.value)} /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">熱門門檻(人數提示)</span><input type="number" min={1} className={input} value={f.audition_cap} onChange={(e) => set('audition_cap', e.target.value)} /></label>
         </div>
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音方向 / 聲音方向(選填)</span><textarea className={`${input} min-h-[60px] resize-y`} value={f.audition_script} onChange={(e) => set('audition_script', e.target.value)} /></label>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-700 pt-1">
