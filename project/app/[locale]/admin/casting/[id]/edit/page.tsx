@@ -62,6 +62,8 @@ export default function EditCasting() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [pay, setPay] = useState('');
   const [payUnit, setPayUnit] = useState<'per_role' | 'per_line'>('per_role');   // 計價:每角色一口價 / 每句單價×句數(匯台詞時自動算)
+  const [inviteLink, setInviteLink] = useState('');   // 邀請新配音員的設定連結(複製丟 LINE 用)
+  const [linkCopied, setLinkCopied] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const togglePick = (name: string) => setPickRoles((s) => { const n = new Set(s); if (n.has(name)) n.delete(name); else n.add(name); return n; });
 
@@ -92,7 +94,7 @@ export default function EditCasting() {
       load();   // 重載 → 角色卡即時亮「✓ 已指派 · 誰」
       let m = `✓ 已指派 ${j.assigned} 個角色`;
       if (j.skipped?.length) m += `(跳過 ${j.skipped.length}:已指派過)`;
-      if (j.setup_url) m += ` · 已寄設定密碼信給新配音員`;
+      if (j.setup_url) { m += ` · 已寄設定密碼信給新配音員`; setInviteLink(String(j.setup_url)); }
       setMsg(m);
     } finally { setAssigning(false); }
   }
@@ -311,7 +313,18 @@ export default function EditCasting() {
               {payUnit === 'per_line' && <p className="text-[11px] text-violet-700 self-end pb-2.5">酬勞=單價×句數,匯入台詞表時自動算(例:150×10句=1,500)</p>}
               <button onClick={assign} disabled={assigning || !pickRoles.size} className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2 text-sm">{assigning ? '指派中…' : `指派選取的 ${pickRoles.size} 角`}</button>
             </div>
-            {assignMode === 'invite' && <p className="text-[11px] text-gray-500 mt-2">邀請新人:會自動建帳號 + 寄設定密碼信;他登入後就看到被指派的角色,之後也能補完檔案送審成為正式配音員。</p>}
+            {assignMode === 'invite' && <p className="text-[11px] text-gray-500 mt-2">邀請新人:會自動建帳號 + 寄設定密碼信;他登入後就看到被指派的角色,之後也能補完檔案送審成為正式配音員。指派後下方會出現<span className="font-medium text-violet-700">邀請連結</span>,可直接複製丟 LINE。</p>}
+            {inviteLink && (
+              <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3">
+                <p className="text-xs font-medium text-violet-800 mb-1.5">邀請連結(用 LINE / 微信直接丟給他 —— 點開設定密碼就能看到被指派的角色;連結 24 小時內有效,過期再指派一次即可重發)</p>
+                <div className="flex items-center gap-2">
+                  <input readOnly value={inviteLink} onFocus={(e) => e.target.select()}
+                    className="flex-1 bg-white border border-violet-200 rounded px-2 py-1.5 text-xs text-gray-700 font-mono" />
+                  <button onClick={() => { navigator.clipboard?.writeText(inviteLink); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1500); }}
+                    className="text-xs bg-violet-600 hover:bg-violet-500 text-white rounded px-3 py-1.5 whitespace-nowrap">{linkCopied ? '已複製 ✓' : '複製連結'}</button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

@@ -58,6 +58,7 @@ type Brief = {
   brief_number: string;
   kind?: string | null;             // 'casting' = admin casting call
   ai_type?: string | null;          // 'clone' | 'training' = client-side AI/TTS case
+  assigned_roles?: string[] | null; // 已徵得的角色名(不露指派給誰)—— 角色卡標「已徵得」
   source?: 'platform' | 'client';   // who posted it (no client identity leaked)
   title?: string | null;
   roles?: Role[] | null;
@@ -988,6 +989,7 @@ function BriefCard({
                     key={i}
                     brief={brief}
                     role={ro}
+                    assigned={(brief.assigned_roles || []).includes(ro.name || '')}
                     count={roleCounts[ro.name || ''] || 0}
                     popularThreshold={popularThreshold}
                     done={myQuotes.find((q) => (q.role_name || '') === (ro.name || ''))}
@@ -1131,10 +1133,11 @@ const closedFieldCls = 'opacity-50 cursor-not-allowed pointer-events-none';
 // One role's audition: view its line → upload audition → write your price/terms.
 // Full roles are disabled (no count shown); near-full nudges to try another.
 function RoleAudition({
-  brief, role, count, popularThreshold, done, tx, onQuoted, myName, templates, onTemplates,
+  brief, role, count, popularThreshold, done, tx, onQuoted, myName, templates, onTemplates, assigned,
 }: {
   brief: Brief;
   role: Role;
+  assigned?: boolean;     // 此角色已徵得(不露指派給誰)
   count: number;          // how many have auditioned this role (shown to talents)
   popularThreshold: number; // soft nudge threshold — NOT a hard cap
   done?: Quote;
@@ -1211,6 +1214,7 @@ function RoleAudition({
   const nameRow = (
     <div className="flex items-start justify-between gap-2">
       <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{role.name}</span>
+      {assigned && <span className="ml-2 align-middle text-[10px] bg-white/10 border border-white/20 text-gray-300 rounded-full px-2 py-0.5 whitespace-nowrap">{tx('已徵得', '已征得', 'Cast')}</span>}
       <span className="flex items-center gap-1.5 shrink-0">
         {isAssigned && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap bg-white/[0.08] text-gray-400 border border-white/10">{tx('已徵得', '已征得', 'Cast')}</span>}
         {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
