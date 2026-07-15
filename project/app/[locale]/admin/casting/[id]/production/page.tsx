@@ -44,6 +44,8 @@ export default function ProductionPage() {
     const j = await res.json().catch(() => ({}));
     setBriefTitle(j.brief?.title || '');
     const list: Order[] = j.orders || [];
+    // 同一配音員的單排在一起(Wing:一人配多角時跳來跳去很難找),再按單號穩定排序。
+    list.sort((a, b) => (a.talent_name || '').localeCompare(b.talent_name || '', 'zh-Hant') || String(a.order_number || '').localeCompare(String(b.order_number || '')));
     setOrders(list);
     setDraft(Object.fromEntries(list.map((o) => [o.id, { script: o.script_text || '', tp: o.talent_price != null ? String(o.talent_price) : '', price: o.price != null ? String(o.price) : '', notes: o.production_notes || '', deadline: (o.deadline || '').slice(0, 10) }])));
     setPhase('ready');
