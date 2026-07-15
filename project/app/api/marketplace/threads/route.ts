@@ -18,10 +18,13 @@ export async function GET(request: NextRequest) {
       last_at?: string | null; last_sender_type?: string | null; last_preview?: string | null;
     }> = [];
 
-    // Talent side — briefs this talent WON (post-award only: 成單後才開對話).
+    // Talent side — briefs this talent WON (post-award only: 成單後才開對話),
+    // 加上「直接指派」的案(voice_orders 有單但沒 quote —— 如女王百貨的 LINE 邀請者,
+    // 否則 Onyx 從製作管理傳訊息,對方端沒有對話串可看可回)。
     if (c.talentId) {
       const { data: quotes } = await c.db.from('marketplace_quotes').select('brief_id').eq('talent_id', c.talentId).eq('status', 'accepted');
-      const ids = [...new Set((quotes || []).map((q) => q.brief_id))];
+      const { data: assigned } = await c.db.from('voice_orders').select('brief_id').eq('talent_id', c.talentId).is('quote_id', null).not('brief_id', 'is', null);
+      const ids = [...new Set([...(quotes || []), ...(assigned || [])].map((q) => q.brief_id))];
       if (ids.length) {
         const { data: briefs } = await c.db
           .from('marketplace_briefs')

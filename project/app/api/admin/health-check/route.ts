@@ -67,6 +67,19 @@ export async function GET(request: NextRequest) {
     });
     if (badSnap.length) info.push(`發布快照語言為舊格式(重新發布或遷移可清):${cap(badSnap.map((t) => t.name))}`);
 
+    // C2. 同名重複帳號(2026-07-16 Ashley 案例:指派+邀請各建一次 → 單分家、
+    // 開通連結打不開全部角色)。同 normalize 名字 >1 筆就警示;已手動標記
+    // 「已併/勿用」的舊殼不算。
+    const normN = (s: string) => String(s || '').toLowerCase().replace(/\s+/g, '');
+    const byName = new Map<string, string[]>();
+    for (const t of ts) {
+      const n = normN(t.name);
+      if (!n || /已併|勿用/.test(String(t.name))) continue;
+      (byName.get(n) || byName.set(n, []).get(n)!).push(t.name);
+    }
+    const dupNames = [...byName.values()].filter((v) => v.length > 1).map((v) => `${v[0]}×${v.length}`);
+    if (dupNames.length) warn.push(`同名重複帳號(單子可能分家,需合併):${cap(dupNames)}`);
+
     // D. 訪客埋點心跳:48 小時完全零筆 = 幾乎必然是斷了(page_views 曾因缺欄位靜默斷一週)
     if ((pv48.count || 0) === 0) warn.push('訪客埋點 page_views 過去 48 小時 0 筆 —— 埋點很可能又斷了(上次是缺欄位靜默失敗)');
 

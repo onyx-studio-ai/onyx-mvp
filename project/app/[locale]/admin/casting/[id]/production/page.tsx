@@ -205,10 +205,38 @@ export default function ProductionPage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || `發出失敗(HTTP ${res.status})`);
       toast.success(`已發出 ${j.released} 張單給 ${j.talents} 位配音員(寄信 ${j.notified} 封,Telegram 有綁定就會收到)`, { duration: 8000 });
+      if (j.unnotified?.length) toast.warning(`⚠ 這幾位沒有信箱也沒綁 Telegram,系統通知不到,請自行用 LINE 通知:${j.unnotified.join('、')}`, { duration: 15000 });
       load();
     } catch (e) { toast.error(e instanceof Error ? e.message : '發出失敗'); } finally { setBusy(null); }
   }
   const unreleased = orders.filter((o) => !o.released_at && o.talent_id);
+
+  // 💬 與配音員的對話(brief × talent 一串)—— 直接指派沒試音的人在別處沒有入口。
+  type Msg = { id: string; sender_type: string; sender_name?: string | null; body: string; created_at: string };
+  const [msgOrder, setMsgOrder] = useState<Order | null>(null);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [msgText, setMsgText] = useState('');
+  const [msgBusy, setMsgBusy] = useState(false);
+  async function openMsgs(o: Order) {
+    setMsgOrder(o); setMsgs([]); setMsgText('');
+    const res = await fetch(`/api/admin/marketplace/messages?brief_id=${encodeURIComponent(id)}&talent_id=${encodeURIComponent(String(o.talent_id))}`, { credentials: 'include' });
+    const j = await res.json().catch(() => ({}));
+    setMsgs(j.messages || []);
+  }
+  async function sendMsg() {
+    if (!msgOrder || !msgText.trim()) return;
+    setMsgBusy(true);
+    try {
+      const res = await fetch('/api/admin/marketplace/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ brief_id: id, talent_id: msgOrder.talent_id, body: msgText.trim() }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || '送出失敗');
+      setMsgs((m) => [...m, j.message]); setMsgText('');
+      toast.success('已送出(會自動寄信/Telegram 通知對方)');
+    } catch (e) { toast.error(e instanceof Error ? e.message : '送出失敗'); } finally { setMsgBusy(false); }
+  }
 
   if (phase === 'loading') return <div className="p-8 text-gray-500 text-sm">載入中…</div>;
   if (phase === 'notfound') return <div className="p-8 text-gray-500 text-sm">找不到這個案件。</div>;
@@ -278,6 +306,9 @@ export default function ProductionPage() {
                   </>
                 )}
                 <span className="ml-auto text-[11px] text-gray-400">{o.order_number}</span>
+                {o.talent_id && (
+                  <button onClick={() => openMsgs(o)} className="text-[11px] px-2 py-0.5 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100">💬 訊息</button>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-3 mb-2 max-w-2xl">
@@ -334,6 +365,30 @@ export default function ProductionPage() {
           );
         })}
       </div>
+
+      {msgOrder && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setMsgOrder(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg p-4 flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-semibold text-sm">與 {msgOrder.talent_name || '配音員'} 的訊息(整案共用一串)</p>
+              <button onClick={() => setMsgOrder(null)} className="text-gray-400 hover:text-gray-700 text-sm">✕ 關閉</button>
+            </div>
+            <div className="flex-1 overflow-auto space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50 min-h-[160px]">
+              {msgs.length === 0 && <p className="text-xs text-gray-400">還沒有訊息。</p>}
+              {msgs.map((m) => (
+                <div key={m.id} className={`text-sm max-w-[85%] rounded-lg px-3 py-1.5 ${m.sender_type === 'admin' ? 'ml-auto bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-800'}`}>
+                  <p className="whitespace-pre-wrap">{m.body}</p>
+                  <p className={`text-[10px] mt-0.5 ${m.sender_type === 'admin' ? 'text-gray-400' : 'text-gray-400'}`}>{m.sender_type === 'admin' ? 'Onyx' : (m.sender_name || '配音員')} · {String(m.created_at).slice(5, 16).replace('T', ' ')}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex gap-2">
+              <textarea className={`${input} min-h-[44px] resize-y flex-1`} value={msgText} placeholder="輸入訊息…(送出會自動寄信/Telegram 通知對方)" onChange={(e) => setMsgText(e.target.value)} />
+              <button onClick={sendMsg} disabled={msgBusy || !msgText.trim()} className="text-sm bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-4 self-end py-2">{msgBusy ? '送出中…' : '送出'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

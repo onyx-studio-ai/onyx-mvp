@@ -29,9 +29,19 @@ export async function GET(request: NextRequest) {
     // invite token / brief content / any other casting column.
     const { data: castingInvites } = await db
       .from('casting_invites')
-      .select('talent_id')
+      .select('talent_id, name')
       .not('talent_id', 'is', null);
     const castingTalentIds = new Set((castingInvites || []).map((r) => r.talent_id));
+    // 邀請時填的「真名」(如 李語寧 → 藝名 寧靜有聲):進搜尋 haystack + 卡片顯示,
+    // 不然用真名在後台永遠搜不到人(2026-07-15 實際發生)。只給名字,不外洩其他邀請欄位。
+    const inviteNames = new Map<string, string[]>();
+    for (const r of castingInvites || []) {
+      const n = String(r.name || '').trim();
+      if (!n) continue;
+      const arr = inviteNames.get(r.talent_id) || [];
+      if (!arr.includes(n)) arr.push(n);
+      inviteNames.set(r.talent_id, arr);
+    }
 
     const earningsMap: Record<string, { pending: number; paid: number; total: number; count: number }> = {};
     for (const e of (earnings || [])) {
@@ -63,6 +73,7 @@ export async function GET(request: NextRequest) {
         ...clean,
         earnings_summary: earningsMap[t.id] || null,
         is_casting_invite: castingTalentIds.has(t.id),
+        invite_names: (inviteNames.get(t.id) || []).filter((n) => n !== t.name),
       };
     });
 

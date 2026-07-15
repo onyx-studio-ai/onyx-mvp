@@ -59,7 +59,15 @@ export async function POST(request: NextRequest) {
     if (existing) {
       talentId = (existing as { id: string }).id;
       talentName = talentName || (existing as { name?: string }).name || '';
-    } else {
+    } else if (name) {
+      // 同名帳號已存在 → 擋下並提示改用「選現有配音員」指派(2026-07-16 Ashley
+      // 被建了兩個帳號、單分家的根因)。真的是不同人再改個名字邀請即可。
+      const { data: sameName } = await db.from('talents').select('id, name').ilike('name', name).limit(1);
+      if (sameName?.length) {
+        return NextResponse.json({ error: `已有同名配音員「${sameName[0].name}」—— 若是同一人,請改用上方「選現有配音員」指派;確定是不同人,請在姓名加註區別(例:${name}2)再邀請。` }, { status: 409 });
+      }
+    }
+    if (!existing) {
       const { data: t, error: tErr } = await db.from('talents')
         .insert({ name: name || email.split('@')[0], email, type: 'VO', category: 'in_house', is_active: false, sort_order: 0 })
         .select('id').single();

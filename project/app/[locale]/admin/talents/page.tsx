@@ -323,6 +323,7 @@ function SearchableSelect({
 // approval (no blind reviewing). Sensitive/payout fields are intentionally
 // absent here;收款 lives in /admin/payout-details (on-demand decrypt).
 type TalentProfile = Talent & {
+  invite_names?: string[];   // 邀請時填的真名(≠藝名),搜尋+顯示用
   english_name?: string; location?: string; gender?: string;
   voice_traits?: string[]; specialties?: string[]; voice_ages?: string[];
   native_languages?: string[]; years_experience?: number | null;
@@ -373,7 +374,7 @@ function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) 
           <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">{(t.name || '?').charAt(0)}</div>
         )}
         <div className="min-w-0">
-          <p className="font-semibold text-gray-900">{t.name}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}</p>
+          <p className="font-semibold text-gray-900">{t.name}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}{((t as TalentProfile).invite_names || []).length ? <span className="text-gray-400 font-normal text-xs"> (真名:{((t as TalentProfile).invite_names || []).join('、')})</span> : null}</p>
           <p className="text-xs text-gray-500">{[t.gender, t.location ? countryLabel(t.location, locale) : '', typeof t.years_experience === 'number' ? tr('cardYearsExperience', { years: t.years_experience }) : ''].filter(Boolean).join(' · ') || '—'}</p>
           {t.email && <p className="text-xs text-gray-500 truncate">{tr('cardContact')}<a href={`mailto:${t.email}`} className="text-blue-600 hover:underline">{t.email}</a></p>}
         </div>
@@ -991,7 +992,7 @@ export default function AdminTalentsPage() {
       // into one lowercased haystack per row.
       const p = t as TalentProfile;
       const parts: (string | undefined | null)[] = [
-        p.name, p.english_name, p.email, p.bio, p.accent,
+        p.name, p.english_name, ...(p.invite_names || []), p.email, p.bio, p.accent,
         p.special_skills, p.equipment, p.studio_partner, p.turnaround,
         p.clients, p.awards, p.notable_works, p.location,
       ];

@@ -52,9 +52,12 @@ export async function POST(request: NextRequest) {
   }
   const title = (brief.title as string) || (brief.content_type as string) || '配音案件';
   let notified = 0;
+  const unnotified: string[] = [];   // 沒真信箱也沒綁 Telegram → Wing 要自己用 LINE 通知
   const tIds = [...byTalent.keys()];
-  const { data: ts } = await db.from('talents').select('id, email, name').in('id', tIds);
+  const { data: ts } = await db.from('talents').select('id, email, name, telegram_chat_id').in('id', tIds);
   const emailById = new Map((ts || []).map((t) => [String(t.id), String(t.email || '')]));
+  const tgById = new Map((ts || []).map((t) => [String(t.id), !!t.telegram_chat_id]));
+  const nameById = new Map((ts || []).map((t) => [String(t.id), String(t.name || '')]));
   for (const [tid, { roles }] of byTalent) {
     const email = emailById.get(tid) || '';
     const roleList = roles.join('、');
@@ -66,8 +69,10 @@ export async function POST(request: NextRequest) {
         html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>「<strong>${title}</strong>」指派給您的 <strong>${roles.length}</strong> 個角色(${roleList})台詞與參考資料已備妥,請登入後台在「製作中」查看稿件並錄製上傳。</p><p>若時程上無法配合完成日,請直接在後台傳訊息告訴我們可提供的時間。</p><p><a href="${SITE}/talent/opportunities">前往後台 →</a></p></div>`,
       }).catch(() => {});
       notified += 1;
+    } else if (!tgById.get(tid)) {
+      unnotified.push(nameById.get(tid) || tid);
     }
     notifyTalentTelegram(db, tid, `🎬 台詞已就緒,可以開錄了(${title})。您的角色:${roleList}。請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
   }
-  return NextResponse.json({ ok: true, released: ids.length, notified, talents: byTalent.size });
+  return NextResponse.json({ ok: true, released: ids.length, notified, talents: byTalent.size, unnotified });
 }
