@@ -18,7 +18,9 @@ import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; released_at?: string | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; released_at?: string | null };
+// 參考音(大陸版角色參考)與中選聲線(配音員自己的中選示範)分開存、分開傳(Wing 2026-07-15)。
+type AudioField = 'reference_files' | 'voice_sample_files';
 
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 
@@ -69,7 +71,7 @@ export default function ProductionPage() {
     } catch (e) { toast.error(e instanceof Error ? e.message : '儲存失敗'); } finally { setBusy(null); }
   }
 
-  async function uploadRef(o: Order, raw: File) {
+  async function uploadRef(o: Order, raw: File, field: AudioField) {
     setBusy(o.id);
     try {
       // 非 mp3 的音檔/影片自動轉 mp3(Wing 不用手動轉;wav/mp4 太肥,省空間+配音員下載快)
@@ -88,23 +90,23 @@ export default function ProductionPage() {
       if (!u.ok || !uj.path || !uj.token) throw new Error(uj.error || '上傳準備失敗');
       const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (upErr) throw new Error(upErr.message);
-      await pushRef(o, { name: file.name, url: uj.publicUrl });
+      await pushRef(o, { name: file.name, url: uj.publicUrl }, field);
     } catch (e) { toast.error(e instanceof Error ? e.message : '上傳失敗'); } finally { setBusy(null); }
   }
-  async function pushRef(o: Order, f: RefFile) {
-    const next = [...(o.reference_files || []), f];
+  async function pushRef(o: Order, f: RefFile, field: AudioField) {
+    const next = [...(o[field] || []), f];
     const res = await fetch('/api/admin/orders', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ orderId: o.id, orderType: 'voice', updates: { reference_files: next } }),
+      body: JSON.stringify({ orderId: o.id, orderType: 'voice', updates: { [field]: next } }),
     });
-    if (!res.ok) { toast.error('參考音存檔失敗'); return; }
-    toast.success('參考音已加入'); load();
+    if (!res.ok) { toast.error('存檔失敗'); return; }
+    toast.success(field === 'voice_sample_files' ? '中選聲線已加入' : '參考音已加入'); load();
   }
-  async function removeRef(o: Order, idx: number) {
-    const next = (o.reference_files || []).filter((_, i) => i !== idx);
+  async function removeRef(o: Order, idx: number, field: AudioField) {
+    const next = (o[field] || []).filter((_, i) => i !== idx);
     await fetch('/api/admin/orders', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ orderId: o.id, orderType: 'voice', updates: { reference_files: next } }),
+      body: JSON.stringify({ orderId: o.id, orderType: 'voice', updates: { [field]: next } }),
     });
     load();
   }
@@ -256,22 +258,24 @@ export default function ProductionPage() {
               <label className="block mb-2"><span className="text-xs text-gray-600 mb-1 block">台詞 / 製作稿(配音員線上看)</span>
                 <textarea className={`${input} min-h-[120px] resize-y font-mono text-[13px]`} value={d.script} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, script: e.target.value } }))} /></label>
 
-              <div className="mb-3">
-                <span className="text-xs text-gray-600 mb-1 block">參考音(可多檔:角色參考 / 中選聲線)</span>
-                <div className="space-y-1.5">
-                  {(o.reference_files || []).map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5">
-                      <span className="text-xs text-gray-600 truncate max-w-[30%]">{f.name || '參考音'}</span>
-                      <audio controls src={f.url} className="h-8 flex-1 min-w-0" />
-                      <button onClick={() => removeRef(o, i)} className="text-xs text-red-500 hover:text-red-700 shrink-0">移除</button>
-                    </div>
-                  ))}
+              {([['reference_files', '參考音(大陸版角色參考,可多檔)', '+ 上傳參考音'], ['voice_sample_files', '中選聲線(配音員自己的中選示範,可多檔)', '+ 上傳中選聲線']] as [AudioField, string, string][]).map(([field, label, btn]) => (
+                <div className="mb-3" key={field}>
+                  <span className="text-xs text-gray-600 mb-1 block">{label}</span>
+                  <div className="space-y-1.5">
+                    {(o[field] || []).map((f, i) => (
+                      <div key={i} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5">
+                        <span className="text-xs text-gray-600 truncate max-w-[30%]">{f.name || '音檔'}</span>
+                        <audio controls src={f.url} className="h-8 flex-1 min-w-0" />
+                        <button onClick={() => removeRef(o, i, field)} className="text-xs text-red-500 hover:text-red-700 shrink-0">移除</button>
+                      </div>
+                    ))}
+                  </div>
+                  <label className="inline-flex items-center gap-1.5 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 rounded-lg px-3 py-1.5 cursor-pointer mt-1.5">
+                    {busy === o.id ? '處理中…' : btn}
+                    <input type="file" accept="audio/*,video/mp4,video/quicktime,.mp3,.wav,.m4a,.mp4,.mov" className="hidden" disabled={busy === o.id} onChange={(e) => e.target.files?.[0] && uploadRef(o, e.target.files[0], field)} />
+                  </label>
                 </div>
-                <label className="inline-flex items-center gap-1.5 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 rounded-lg px-3 py-1.5 cursor-pointer mt-1.5">
-                  {busy === o.id ? '處理中…' : '+ 上傳參考音'}
-                  <input type="file" accept="audio/*,video/mp4,video/quicktime,.mp3,.wav,.m4a,.mp4,.mov" className="hidden" disabled={busy === o.id} onChange={(e) => e.target.files?.[0] && uploadRef(o, e.target.files[0])} />
-                </label>
-              </div>
+              ))}
 
               <button onClick={() => saveOrder(o)} disabled={busy === o.id}
                 className="text-sm bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-4 py-2">
