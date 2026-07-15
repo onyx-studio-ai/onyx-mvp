@@ -54,21 +54,58 @@ export default function ProductionPage() {
   }, [id]);
   useEffect(() => { load(); }, [load]);
 
+  const buildUpdates = (d: { script: string; tp: string; price: string; notes: string; deadline: string }) => {
+    const updates: Record<string, unknown> = { script_text: d.script, production_notes: d.notes.trim() || null, deadline: d.deadline.trim() || null };
+    if (d.tp.trim() !== '') updates.talent_price = Number(d.tp) || 0;
+    if (d.price.trim() !== '') updates.price = Number(d.price) || 0;
+    return updates;
+  };
+  async function patchOrder(orderId: string, updates: Record<string, unknown>) {
+    const res = await fetch('/api/admin/orders', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ orderId, orderType: 'voice', updates }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || '儲存失敗');
+  }
   async function saveOrder(o: Order) {
     const d = draft[o.id]; if (!d) return;
     setBusy(o.id);
     try {
-      const updates: Record<string, unknown> = { script_text: d.script, production_notes: d.notes.trim() || null, deadline: d.deadline.trim() || null };
-      if (d.tp.trim() !== '') updates.talent_price = Number(d.tp) || 0;
-      if (d.price.trim() !== '') updates.price = Number(d.price) || 0;
-      const res = await fetch('/api/admin/orders', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ orderId: o.id, orderType: 'voice', updates }),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || '儲存失敗');
+      await patchOrder(o.id, buildUpdates(d));
       toast.success(`${o.role_name || '訂單'} 已儲存`);
       load();
     } catch (e) { toast.error(e instanceof Error ? e.message : '儲存失敗'); } finally { setBusy(null); }
+  }
+
+  // 有改但沒按儲存的單(Wing:怕一張張按會漏)—— 發出通知前會自動全部存一遍。
+  const isDirty = (o: Order) => {
+    const d = draft[o.id]; if (!d) return false;
+    return d.script !== (o.script_text || '')
+      || d.notes !== (o.production_notes || '')
+      || d.deadline !== (o.deadline || '').slice(0, 10)
+      || d.tp !== (o.talent_price != null ? String(o.talent_price) : '')
+      || d.price !== (o.price != null ? String(o.price) : '');
+  };
+  const dirtyOrders = orders.filter(isDirty);
+  async function saveMany(list: Order[]) {
+    let ok = 0; const fails: string[] = [];
+    for (let i = 0; i < list.length; i += 6) {
+      await Promise.all(list.slice(i, i + 6).map(async (o) => {
+        const d = draft[o.id]; if (!d) return;
+        try { await patchOrder(o.id, buildUpdates(d)); ok++; } catch { fails.push(o.role_name || o.id); }
+      }));
+    }
+    return { ok, fails };
+  }
+  async function saveAll() {
+    if (!dirtyOrders.length) return;
+    setBusy('saveall');
+    try {
+      const { ok, fails } = await saveMany(dirtyOrders);
+      if (fails.length) toast.error(`已儲存 ${ok} 張,失敗:${fails.join('、')}`);
+      else toast.success(`已儲存全部 ${ok} 張修改`);
+      load();
+    } finally { setBusy(null); }
   }
 
   async function uploadRef(o: Order, raw: File, field: AudioField) {
@@ -152,9 +189,15 @@ export default function ProductionPage() {
   }
 
   // 發出通知:把未 released 的指派單正式開給配音員(可見+寄信+Telegram)。
+  // 發出前自動把「改了但沒按儲存」的單全部存一遍(Wing:一張張按怕漏)。
   async function releaseOrders(orderIds?: string[]) {
     setBusy('release');
     try {
+      if (dirtyOrders.length) {
+        const { ok, fails } = await saveMany(dirtyOrders);
+        if (fails.length) throw new Error(`有 ${fails.length} 張單儲存失敗(${fails.join('、')}),先處理再發出`);
+        if (ok) toast.info(`已自動儲存 ${ok} 張未儲存的修改`);
+      }
       const res = await fetch('/api/admin/casting/release', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ brief_id: id, ...(orderIds?.length ? { order_ids: orderIds } : {}) }),
@@ -181,6 +224,12 @@ export default function ProductionPage() {
           {busy === 'import' ? '匯入中…' : '⬆ 匯入台詞表(xlsx)'}
           <input type="file" accept=".xlsx" className="hidden" disabled={busy === 'import'} onChange={(e) => e.target.files?.[0] && importLines(e.target.files[0])} />
         </label>
+        {dirtyOrders.length > 0 && (
+          <button onClick={saveAll} disabled={busy === 'saveall'}
+            className="text-sm font-medium rounded-lg px-4 py-2 bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white">
+            {busy === 'saveall' ? '儲存中…' : `💾 儲存全部修改(${dirtyOrders.length} 張)`}
+          </button>
+        )}
         {unreleased.length > 0 && (
           <button onClick={() => releaseOrders()} disabled={busy === 'release'}
             className="text-sm font-medium rounded-lg px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black">
@@ -278,8 +327,8 @@ export default function ProductionPage() {
               ))}
 
               <button onClick={() => saveOrder(o)} disabled={busy === o.id}
-                className="text-sm bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-4 py-2">
-                {busy === o.id ? '儲存中…' : '儲存這張單'}
+                className={`text-sm disabled:opacity-50 rounded-lg px-4 py-2 ${isDirty(o) ? 'bg-amber-500 hover:bg-amber-400 text-black font-medium' : 'bg-gray-900 hover:bg-gray-700 text-white'}`}>
+                {busy === o.id ? '儲存中…' : isDirty(o) ? '儲存這張單(有未儲存的修改)' : '儲存這張單'}
               </button>
             </div>
           );
