@@ -45,9 +45,14 @@ export async function POST(request: NextRequest) {
   let talentEmail = '';
   if (!talentId) {
     const name = String(body.invite?.name || '').trim();
-    const email = String(body.invite?.email || '').trim().toLowerCase();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: '請提供配音員 talent_id,或邀請用的 name + email' }, { status: 400 });
-    talentName = name; talentEmail = email;
+    const rawEmail = String(body.invite?.email || '').trim().toLowerCase();
+    if (rawEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail)) return NextResponse.json({ error: 'Email 格式不正確(用 LINE 邀請可留空)' }, { status: 400 });
+    if (!name && !rawEmail) return NextResponse.json({ error: '邀請至少要填姓名(email 可留空,用連結邀請)' }, { status: 400 });
+    // Email 選填(Wing 用 LINE 邀請,不想追問 email):留空時自動生一個佔位帳號,
+    // 純靠設定密碼連結開通;佔位信箱不寄信,對方之後可再補真 email。
+    const isPlaceholder = !rawEmail;
+    const email = rawEmail || `vo-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}@invite.onyxstudios.ai`;
+    talentName = name; talentEmail = isPlaceholder ? '' : email;   // 佔位不寄任何信
 
     // Reuse an existing talent row for this email if any; else create a lightweight one.
     const { data: existing } = await db.from('talents').select('id, name, auth_user_id').eq('email', email).maybeSingle();
@@ -77,8 +82,10 @@ export async function POST(request: NextRequest) {
     const lp = locale && locale !== 'en' ? `/${locale}` : '';
     const { data: link } = await db.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: `${SITE}${lp}/auth/reset-password` } });
     setupUrl = link?.properties?.action_link || `${SITE}${lp}/auth/reset-password`;
-    const mail = talentAccountSetupEmail({ name: talentName, setupUrl, dashboardUrl: `${SITE}/talent`, locale });
-    sendEmail({ category: 'HELLO', to: email, subject: mail.subject, html: mail.html }).catch(() => {});
+    if (!isPlaceholder) {   // 佔位帳號沒有真信箱,不寄;開通全靠 LINE 丟連結
+      const mail = talentAccountSetupEmail({ name: talentName, setupUrl, dashboardUrl: `${SITE}/talent`, locale });
+      sendEmail({ category: 'HELLO', to: email, subject: mail.subject, html: mail.html }).catch(() => {});
+    }
   } else {
     const { data: t } = await db.from('talents').select('name, email').eq('id', talentId).maybeSingle();
     talentName = (t?.name as string) || '';
@@ -157,5 +164,7 @@ export async function POST(request: NextRequest) {
     notifyTalentTelegram(db, talentId, `🎯 您被指派了 ${assigned} 個角色(${title})。請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
   }
 
-  return NextResponse.json({ ok: true, assigned, skipped, talent_id: talentId, setup_url: setupUrl || null });
+  // login_email:給 LINE 邀請訊息用 —— 對方之後登入的帳號(真信箱或佔位帳號)。
+  const { data: tFinal } = await db.from('talents').select('email').eq('id', talentId).maybeSingle();
+  return NextResponse.json({ ok: true, assigned, skipped, talent_id: talentId, setup_url: setupUrl || null, login_email: (tFinal?.email as string) || null });
 }

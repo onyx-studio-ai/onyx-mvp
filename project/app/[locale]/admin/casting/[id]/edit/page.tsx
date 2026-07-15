@@ -63,7 +63,9 @@ export default function EditCasting() {
   const [pay, setPay] = useState('');
   const [payUnit, setPayUnit] = useState<'per_role' | 'per_line'>('per_role');   // 計價:每角色一口價 / 每句單價×句數(匯台詞時自動算)
   const [inviteLink, setInviteLink] = useState('');   // 邀請新配音員的設定連結(複製丟 LINE 用)
+  const [inviteMsgText, setInviteMsgText] = useState('');   // 擬好的整段 LINE 邀請訊息(一鍵複製)
   const [linkCopied, setLinkCopied] = useState(false);
+  const [msgCopied, setMsgCopied] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const togglePick = (name: string) => setPickRoles((s) => { const n = new Set(s); if (n.has(name)) n.delete(name); else n.add(name); return n; });
 
@@ -84,7 +86,7 @@ export default function EditCasting() {
     if (!names.length) { setMsg('請先勾選要指派的角色'); return; }
     const payload: { brief_id: string; role_names: string[]; pay_per_role: number; pay_unit: string; talent_id?: string; invite?: { name: string; email: string } } = { brief_id: id, role_names: names, pay_per_role: Number(pay) || 0, pay_unit: payUnit };
     if (assignMode === 'existing') { if (!assignTalent) { setMsg('請選配音員'); return; } payload.talent_id = assignTalent; }
-    else { if (!inviteEmail.trim()) { setMsg('請填邀請 email'); return; } payload.invite = { name: inviteName.trim(), email: inviteEmail.trim() }; }
+    else { if (!inviteName.trim() && !inviteEmail.trim()) { setMsg('邀請至少填姓名(email 選填,用 LINE 丟連結即可)'); return; } payload.invite = { name: inviteName.trim(), email: inviteEmail.trim() }; }
     setAssigning(true); setMsg('');
     try {
       const res = await fetch('/api/admin/casting/assign', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -94,7 +96,22 @@ export default function EditCasting() {
       load();   // 重載 → 角色卡即時亮「✓ 已指派 · 誰」
       let m = `✓ 已指派 ${j.assigned} 個角色`;
       if (j.skipped?.length) m += `(跳過 ${j.skipped.length}:已指派過)`;
-      if (j.setup_url) { m += ` · 已寄設定密碼信給新配音員`; setInviteLink(String(j.setup_url)); }
+      if (j.setup_url) {
+        m += inviteEmail.trim() ? ` · 已寄設定密碼信` : ` · 邀請連結已產生(下方複製丟 LINE)`;
+        setInviteLink(String(j.setup_url));
+        // 擬好的 LINE 邀請訊息 —— Wing 一鍵複製整段貼給對方。
+        const who = inviteName.trim() ? `${inviteName.trim()} 您好` : '您好';
+        const loginLine = j.login_email && !String(j.login_email).endsWith('@invite.onyxstudios.ai')
+          ? `\n您的登入帳號:${j.login_email}` : '';
+        setInviteMsgText(
+          `${who},這裡是 Onyx Studios 配音平台 🎙\n\n` +
+          `我們已將《${f.title || '配音案'}》的 ${j.assigned} 個配音角色指派給您。\n\n` +
+          `請點下方連結設定密碼開通帳號(24 小時內有效):\n${j.setup_url}\n` +
+          `${loginLine}\n` +
+          `開通後在「製作中」即可看到:角色台詞、參考音(可下載)、完成日;錄好直接在頁面上傳即可。\n\n` +
+          `如連結過期或有任何問題,直接回覆這則訊息就好。謝謝!`
+        );
+      }
       setMsg(m);
     } finally { setAssigning(false); }
   }
@@ -300,7 +317,7 @@ export default function EditCasting() {
               ) : (
                 <>
                   <label className="block"><span className="text-xs text-gray-600 mb-1 block">姓名</span><input className={`${input} w-36`} value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="配音員姓名" /></label>
-                  <label className="block"><span className="text-xs text-gray-600 mb-1 block">Email</span><input className={`${input} w-52`} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="email@example.com" /></label>
+                  <label className="block"><span className="text-xs text-gray-600 mb-1 block">Email(選填 —— 用 LINE 丟連結可留空)</span><input className={`${input} w-52`} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="留空=純用邀請連結" /></label>
                 </>
               )}
               <label className="block"><span className="text-xs text-gray-600 mb-1 block">計價方式</span>
@@ -317,12 +334,20 @@ export default function EditCasting() {
             {inviteLink && (
               <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 p-3">
                 <p className="text-xs font-medium text-violet-800 mb-1.5">邀請連結(用 LINE / 微信直接丟給他 —— 點開設定密碼就能看到被指派的角色;連結 24 小時內有效,過期再指派一次即可重發)</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-2">
                   <input readOnly value={inviteLink} onFocus={(e) => e.target.select()}
                     className="flex-1 bg-white border border-violet-200 rounded px-2 py-1.5 text-xs text-gray-700 font-mono" />
                   <button onClick={() => { navigator.clipboard?.writeText(inviteLink); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1500); }}
-                    className="text-xs bg-violet-600 hover:bg-violet-500 text-white rounded px-3 py-1.5 whitespace-nowrap">{linkCopied ? '已複製 ✓' : '複製連結'}</button>
+                    className="text-xs bg-white hover:bg-violet-100 text-violet-700 border border-violet-300 rounded px-3 py-1.5 whitespace-nowrap">{linkCopied ? '已複製 ✓' : '只複製連結'}</button>
                 </div>
+                {inviteMsgText && (
+                  <>
+                    <textarea readOnly value={inviteMsgText} onFocus={(e) => e.target.select()}
+                      className="w-full bg-white border border-violet-200 rounded px-2.5 py-2 text-xs text-gray-700 min-h-[140px] resize-y mb-1.5" />
+                    <button onClick={() => { navigator.clipboard?.writeText(inviteMsgText); setMsgCopied(true); setTimeout(() => setMsgCopied(false), 1500); }}
+                      className="text-xs bg-violet-600 hover:bg-violet-500 text-white rounded px-4 py-1.5 whitespace-nowrap">{msgCopied ? '已複製 ✓ 直接貼 LINE' : '📋 複製整段 LINE 訊息'}</button>
+                  </>
+                )}
               </div>
             )}
           </div>
