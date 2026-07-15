@@ -107,7 +107,21 @@ export default function ProductionPage() {
     load();
   }
 
+  // 台詞表大小 SOP(Wing 2026-07-15):遊戲檔內嵌上百張高解析角色圖動輒 100MB+,
+  // 線上匯入(storage 50MB / serverless 記憶體)吞不下 → 選檔當下就判斷,直接告訴
+  // Wing 怎麼辦,不讓他傳半天才失敗。20MB 內走線上;超過給三條路。
+  const [bigFileMsg, setBigFileMsg] = useState('');
+
   async function importLines(file: File) {
+    const mb = file.size / 1048576;
+    if (mb > 20) {
+      setBigFileMsg(`這份台詞表有 ${mb.toFixed(0)} MB,超過線上匯入的安全上限(20MB)。大檔幾乎都是內嵌的高解析角色圖造成,三個做法擇一:
+① 最快 —— 檔案直接丟給 Claude 助理,由它在本機幫你匯入(結果跟平台匯入完全一樣,幾分鐘搞定)。
+② 自己瘦身 —— 在 Excel/WPS 開啟後:選任一張圖 →「圖片工具/格式」→「壓縮圖片」→ 解析度選 96dpi、套用到「檔案中所有圖片」→ 另存新檔。通常會縮到十分之一,再回來匯。
+③ 請客戶提供「無圖版」台詞表(圖片另外給)。`);
+      return;
+    }
+    setBigFileMsg('');
     setBusy('import');
     try {
       // xlsx 夾上百張角色圖動輒 10MB+,直接 POST 會撞 Vercel 4.5MB body 上限(之前一直
@@ -174,6 +188,13 @@ export default function ProductionPage() {
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
           有 {unreleased.length} 張指派單「尚未發出」—— 配音員還看不到也沒收到通知。等台詞/參考音/價格都確認好,按上面「發出通知」一次通知(同一人多角色只寄一封);也可以在單卡上逐張發出。
         </p>
+      )}
+      {bigFileMsg && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-900 mb-1">台詞表太大,線上匯不動 —— 照下面做</p>
+          <p className="text-xs text-amber-800 whitespace-pre-wrap leading-relaxed">{bigFileMsg}</p>
+          <button onClick={() => setBigFileMsg('')} className="mt-2 text-xs text-amber-700 underline">知道了</button>
+        </div>
       )}
       {busy === 'import' && (
         <div className="mb-6 rounded-xl border border-green-300 bg-green-50 p-4 flex items-center gap-3">

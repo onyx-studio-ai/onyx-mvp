@@ -438,6 +438,13 @@ function NewCasting() {
   }
 
   async function uploadXlsx(file: File) {
+    // 大檔 SOP:內嵌高解析角色圖的遊戲台詞表動輒 100MB+,線上解析吞不下 →
+    // 選檔當下就擋,直接給做法(丟 Claude 本機匯 / Excel 壓縮圖片 / 要無圖版)。
+    const mb = file.size / 1048576;
+    if (mb > 20) {
+      setErr(`這份表有 ${mb.toFixed(0)} MB,超過線上解析的安全上限(20MB),多半是內嵌高解析角色圖造成。做法擇一:① 檔案直接丟給 Claude 助理本機處理(最快);② Excel/WPS「壓縮圖片」96dpi 套用到所有圖片後另存再上傳;③ 請客戶提供無圖版。`);
+      return;
+    }
     setErr(''); setWorking('上傳中…');
     try {
       // A client xlsx with many images can be tens of MB — too big to POST through
