@@ -3216,7 +3216,7 @@
       "buyoutAmountLabel": "买断金额 (US$) *",
       "buyoutAmountHint": "Wing 一次付给配音员的买断价。付完声音归 Onyx,后续平台收入 Wing 拿 100%。",
       "realClientTotalHint": "客户真正付的金额,配音员看不到",
-      "talentPayoutHint": "配音员实拿(他看得到的)",
+      "talentPayoutHint": "配音员报酬(他看得到的)",
       "pocketsNoteBefore": "收款后自动拆 6 个 Profit First 口袋 — 看 ",
       "pocketsNoteAfter": "",
       "notesPlaceholderBuyout": "e.g. Wing 自己找的 talent,Onyx 录音室录",

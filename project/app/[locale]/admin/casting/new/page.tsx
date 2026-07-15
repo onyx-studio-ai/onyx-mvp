@@ -836,7 +836,7 @@ function NewCasting() {
                 {fromClient.script_file_url && <p>客戶稿件:<a href={fromClient.script_file_url} target="_blank" rel="noopener noreferrer" className="underline">下載檔案</a></p>}
               </div>
             )}
-            <p className="text-amber-700/70 text-[11px] mt-1.5">💡 「報酬」填的是給配音員看的實拿價(可低於客戶預算,差額是你的利潤);發佈後此筆會直接上線,不會新增重複案。</p>
+            <p className="text-amber-700/70 text-[11px] mt-1.5">💡 「報酬」填的是給配音員看的金額(可低於客戶預算,差額是你的利潤);發佈後此筆會直接上線,不會新增重複案。</p>
           </div>
         )}
 

@@ -471,7 +471,7 @@ function JobAgreement({ brief, quote, tx, onAccepted }: {
 
       {/* Payment */}
       <Section title={tx('報酬 Payment', '报酬 Payment', 'Payment')}>
-        {row(tx('您實拿', '您实拿', 'You receive'), <span>{quote.currency} {quote.net_amount}</span>, { gold: true })}
+        {row(tx('報酬', '报酬', 'Fee'), <span>{quote.currency} {quote.net_amount}</span>, { gold: true })}
         {quote.included_revisions != null && row(tx('含修改', '含修改', 'Revisions'), quote.included_revisions >= 99 ? tx('無限', '无限', 'Unlimited') : `${quote.included_revisions} ${tx('次', '次', '×')}`)}
         {row(tx('結算', '结算', 'Settlement'), tx('完成驗收後由 Onyx 平台付款', '完成验收后由 Onyx 平台付款', 'Paid by Onyx after approval'))}
       </Section>
@@ -730,7 +730,7 @@ export default function Opportunities() {
                   })()}
                   {myAccepted.map((q) => (
                     <div key={q.id} className="mb-2">
-                      <div className="text-xs text-gray-300 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('實拿', '实拿', 'You earn')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
+                      <div className="text-xs text-gray-300 mb-1">{q.role_name ? `${q.role_name} · ` : ''}{tx('報酬', '报酬', 'Fee')} <span className="text-[#6FCF97] font-medium">{q.currency} {q.net_amount}</span></div>
                       {(() => {
                         if (w.order_status === 'completed') return null;
                         // Real-person case: nothing happens until the client pays.
