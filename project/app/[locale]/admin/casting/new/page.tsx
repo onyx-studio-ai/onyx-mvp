@@ -484,6 +484,9 @@ function NewCasting() {
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || '發案失敗');
     setDone({ id: j.id, brief_number: j.brief_number, notified: j.notified });
+    // 發佈後重置這些「看不見會殘留」的旗標,避免同頁連續發案時帶到下一個案子。
+    setHasSinging(false); setWantsDirector(false);
+    setMethods({ home: false, studio: false, online: false });
   }
 
   async function invite() {
@@ -592,6 +595,9 @@ function NewCasting() {
               ['使用範圍', mediaScope], ['地區', territory], ['授權', licenseTerm], ['預計開錄', recordingStart],
               ['含修改', Number(baseRev) > 0 ? `${baseRev} 次` : ''],
               ['錄音方式', Object.keys(methods).filter((k) => methods[k]).map(ml).join(' / ')],
+              // 含唱歌/聲音導演 只有 true 才顯示 —— 讓發佈前一定看得到(之前漏顯示,帶入/殘留會神不知鬼不覺發出去)。
+              ['含唱歌', hasSinging ? '是 ⚠' : ''],
+              ['聲音導演', wantsDirector ? '是' : ''],
             ] as [string, string][]).filter((x) => !!x[1]);
             return info.length ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-2 text-sm bg-[#1d1b25] border border-white/[0.08] rounded-xl p-4 mb-4">
