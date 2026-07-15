@@ -27,8 +27,11 @@ function s2t(input: string): string {
   } catch { return input; }
 }
 const normName = (s: string) => s2t(String(s || '')).replace(/\s+/g, '').trim();
+// 主角色 key:皮膚變體「福爾森-寒城謎箋」、附註「林炎(rapper)」「杉浦迎之/禮賓員」都歸回
+// 主名(同一配音員同一張單);變體全名保留在每句標頭,配音員知道是哪個皮膚。
+const mainKey = (s: string) => normName(s).split(/[-—/(（]/)[0];
 
-type Line = { idx: number; role: string; text: string; emotion?: string; speed?: string; func?: string; scene?: string; age?: string; gender?: string; trait?: string; introd?: string };
+type Line = { idx: number; role: string; variant?: string; text: string; emotion?: string; speed?: string; func?: string; scene?: string; age?: string; gender?: string; trait?: string; introd?: string };
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
@@ -88,11 +91,12 @@ export async function POST(request: NextRequest) {
       if (n <= headerRow) return;
       const get = (i?: number) => (i ? s2t(cellStr(row.getCell(i).value)).trim() : '');
       const text = get(col.tw) || get(col.orig);          // 優先 TW 繁中稿,沒有就用原版
-      const role = normName(get(col.role));
-      if (!role || !text) return;
-      const arr = byRole.get(role) || [];
-      arr.push({ idx: arr.length + 1, role, text, emotion: get(col.emotion), speed: get(col.speed), func: get(col.func), scene: get(col.scene), age: get(col.age), gender: get(col.gender), trait: get(col.trait), introd: get(col.introd) });
-      byRole.set(role, arr);
+      const fullRole = normName(get(col.role));
+      if (!fullRole || !text) return;
+      const key = mainKey(fullRole);                       // 皮膚變體歸回主角色(同一張單)
+      const arr = byRole.get(key) || [];
+      arr.push({ idx: arr.length + 1, role: key, variant: fullRole !== key ? fullRole : undefined, text, emotion: get(col.emotion), speed: get(col.speed), func: get(col.func), scene: get(col.scene), age: get(col.age), gender: get(col.gender), trait: get(col.trait), introd: get(col.introd) });
+      byRole.set(key, arr);
     });
   }
   if (!byRole.size) return NextResponse.json({ error: '沒解析到任何台詞(找不到「角色名 + TW/原版臺詞」標題列)' }, { status: 400 });
@@ -100,22 +104,34 @@ export async function POST(request: NextRequest) {
   // ── 匹配該案的角色訂單,寫入製作稿 ──
   const db = getSupabaseServiceClient();
   const { data: orders } = await db.from('voice_orders').select('id, role_name').eq('brief_id', briefId);
-  const orderByName = new Map((orders || []).filter((o) => o.role_name).map((o) => [normName(String(o.role_name)), o]));
+  const orderByName = new Map((orders || []).filter((o) => o.role_name).map((o) => [mainKey(String(o.role_name)), o]));
+  // 無分隔符的皮膚名(顧冶擊劍皮膚、谷川翔一決勝時刻)用「以訂單角色名為前綴」合併;
+  // 長名優先,避免短名訂單誤吞別的角色。
+  const anchors = [...orderByName.entries()].sort((a, b) => b[0].length - a[0].length);
 
-  const matched: { role: string; lines: number }[] = [];
+  const byOrder = new Map<string, { roleName: string; lines: Line[] }>();
   const unmatched: { role: string; lines: number }[] = [];
   for (const [role, lines] of byRole) {
-    const order = orderByName.get(role);
+    let order = orderByName.get(role);
+    if (!order) { const hit = anchors.find(([k]) => k.length >= 2 && role.startsWith(k)); order = hit?.[1]; }
     if (!order) { unmatched.push({ role, lines: lines.length }); continue; }
+    const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), lines: [] };
+    const anchor = mainKey(slot.roleName);
+    for (const l of lines) slot.lines.push({ ...l, variant: l.variant || (role !== anchor ? role : undefined) });
+    byOrder.set(String(order.id), slot);
+  }
+
+  const matched: { role: string; lines: number }[] = [];
+  for (const [orderId, { roleName, lines }] of byOrder) {
     const first = lines[0];
-    const head = [`【角色】${role}`, [first.gender, first.age && `${first.age}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句,請依每句指引錄製。`].filter(Boolean).join('\n');
-    const body = lines.map((l) => {
+    const head = [`【角色】${roleName}`, [first.gender, first.age && `${first.age}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句,請依每句指引錄製(【】內為皮膚/變體名)。`].filter(Boolean).join('\n');
+    const body = lines.map((l, i) => {
       const tags = [l.func, l.emotion && `情緒:${l.emotion}`, l.speed && `語速:${l.speed}`].filter(Boolean).join(' | ');
-      return [`${l.idx}. ${tags ? `(${tags})` : ''}`, l.text, l.scene ? `   ▸ 畫面:${l.scene}` : ''].filter(Boolean).join('\n');
+      return [`${i + 1}. ${l.variant ? `【${l.variant}】` : ''}${tags ? `(${tags})` : ''}`, l.text, l.scene ? `   ▸ 畫面:${l.scene}` : ''].filter(Boolean).join('\n');
     }).join('\n\n');
-    const { error } = await db.from('voice_orders').update({ script_text: `${head}\n\n${body}` }).eq('id', order.id);
-    if (error) unmatched.push({ role, lines: lines.length });
-    else matched.push({ role, lines: lines.length });
+    const { error } = await db.from('voice_orders').update({ script_text: `${head}\n\n${body}` }).eq('id', orderId);
+    if (error) unmatched.push({ role: roleName, lines: lines.length });
+    else matched.push({ role: roleName, lines: lines.length });
   }
   return NextResponse.json({ ok: true, matched, unmatched, totalRoles: byRole.size });
 }
