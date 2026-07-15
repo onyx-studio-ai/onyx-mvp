@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const [{ data: brief }, { data: orders }] = await Promise.all([
     db.from('marketplace_briefs').select('id, title, brief_number, status').eq('id', briefId).maybeSingle(),
     db.from('voice_orders')
-      .select('id, order_number, role_name, talent_id, status, script_text, reference_files, talent_price, price, currency, deadline, created_at, talents(name)')
+      .select('id, order_number, role_name, talent_id, status, script_text, production_notes, reference_files, role_images, talent_price, price, currency, deadline, created_at, talents(name)')
       .eq('brief_id', briefId)
       .order('created_at', { ascending: true }),
   ]);

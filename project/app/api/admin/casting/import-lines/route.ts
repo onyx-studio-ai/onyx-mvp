@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
+import sharp from 'sharp';
 import * as OpenCC from 'opencc-js';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
@@ -31,7 +32,7 @@ const normName = (s: string) => s2t(String(s || '')).replace(/\s+/g, '').trim();
 // 主名(同一配音員同一張單);變體全名保留在每句標頭,配音員知道是哪個皮膚。
 const mainKey = (s: string) => normName(s).split(/[-—/(（]/)[0];
 
-type Line = { idx: number; role: string; variant?: string; text: string; emotion?: string; speed?: string; func?: string; scene?: string; age?: string; gender?: string; trait?: string; introd?: string };
+type Line = { idx: number; role: string; variant?: string; text: string; orig?: string; emotion?: string; speed?: string; func?: string; scene?: string; age?: string; gender?: string; trait?: string; introd?: string };
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
@@ -51,8 +52,9 @@ export async function POST(request: NextRequest) {
   const wb = new ExcelJS.Workbook();
   try { await wb.xlsx.load(buf as unknown as ArrayBuffer); } catch { return NextResponse.json({ error: '不是有效的 xlsx' }, { status: 400 }); }
 
-  // ── 解析:每個角色分頁 → 台詞列 ──
+  // ── 解析:每個角色分頁 → 台詞列(+ 每列嵌入的角色/皮膚圖)──
   const byRole = new Map<string, Line[]>();
+  const imgJobs: { key: string; name: string; imageId: number }[] = [];
   const cellStr = (c: ExcelJS.CellValue): string => {
     if (c == null) return '';
     if (typeof c === 'object' && 'richText' in (c as object)) return ((c as { richText: { text: string }[] }).richText || []).map((r) => r.text).join('');
@@ -87,51 +89,88 @@ export async function POST(request: NextRequest) {
       }
     });
     if (!headerRow || !col.role) continue;
+    const rowInfo: Record<number, { key: string; fullRole: string }> = {};
     ws.eachRow((row, n) => {
       if (n <= headerRow) return;
       const get = (i?: number) => (i ? s2t(cellStr(row.getCell(i).value)).trim() : '');
-      const text = get(col.tw) || get(col.orig);          // 優先 TW 繁中稿,沒有就用原版
+      const tw = get(col.tw);
+      const orig = get(col.orig);
+      const text = tw || orig;                             // 錄的是 TW;沒 TW 先帶原版(標示待翻)
       const fullRole = normName(get(col.role));
       if (!fullRole || !text) return;
       const key = mainKey(fullRole);                       // 皮膚變體歸回主角色(同一張單)
       const arr = byRole.get(key) || [];
-      arr.push({ idx: arr.length + 1, role: key, variant: fullRole !== key ? fullRole : undefined, text, emotion: get(col.emotion), speed: get(col.speed), func: get(col.func), scene: get(col.scene), age: get(col.age), gender: get(col.gender), trait: get(col.trait), introd: get(col.introd) });
+      // 原版與 TW 都保留 —— Wing 要配音員兩個都看得到(對照語氣/斷句)。
+      arr.push({ idx: arr.length + 1, role: key, variant: fullRole !== key ? fullRole : undefined, text, orig: orig && orig !== text ? orig : undefined, emotion: get(col.emotion), speed: get(col.speed), func: get(col.func), scene: get(col.scene), age: get(col.age), gender: get(col.gender), trait: get(col.trait), introd: get(col.introd) });
       byRole.set(key, arr);
+      rowInfo[n] = { key, fullRole };
     });
+    // 該分頁的嵌入圖:錨列對到台詞列 → 掛到該角色(圖名=皮膚/變體全名,配音員好對照)
+    for (const im of ws.getImages()) {
+      const anchorRow = (im.range?.tl?.nativeRow ?? -1) + 1;   // nativeRow 是 0-based
+      let info = rowInfo[anchorRow];
+      if (!info) { for (let k = anchorRow; k <= anchorRow + 1; k++) if (rowInfo[k]) { info = rowInfo[k]; break; } }
+      if (info) imgJobs.push({ key: info.key, name: info.fullRole, imageId: Number(im.imageId) });
+    }
   }
   if (!byRole.size) return NextResponse.json({ error: '沒解析到任何台詞(找不到「角色名 + TW/原版臺詞」標題列)' }, { status: 400 });
 
   // ── 匹配該案的角色訂單,寫入製作稿 ──
   const db = getSupabaseServiceClient();
+
+  // 嵌入圖:壓成 480px jpeg 上傳 casting bucket(8 併發,單張失敗不擋整批),按角色歸集。
+  const imgsByKey = new Map<string, { name: string; url: string }[]>();
+  const pubBase = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '');
+  for (let i = 0; i < imgJobs.length; i += 8) {
+    await Promise.all(imgJobs.slice(i, i + 8).map(async (j) => {
+      try {
+        const media = wb.getImage(j.imageId) as { buffer?: Buffer } | undefined;
+        if (!media?.buffer) return;
+        const small = await sharp(media.buffer as Buffer).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
+        const path = `reference/roleimg/${Date.now()}_${crypto.randomUUID()}.jpg`;
+        const { error } = await db.storage.from('casting').upload(path, small, { contentType: 'image/jpeg', upsert: false });
+        if (error) return;
+        const arr = imgsByKey.get(j.key) || [];
+        arr.push({ name: j.name, url: `${pubBase}/storage/v1/object/public/casting/${path}` });
+        imgsByKey.set(j.key, arr);
+      } catch { /* 單張 best-effort */ }
+    }));
+  }
   const { data: orders } = await db.from('voice_orders').select('id, role_name').eq('brief_id', briefId);
   const orderByName = new Map((orders || []).filter((o) => o.role_name).map((o) => [mainKey(String(o.role_name)), o]));
   // 無分隔符的皮膚名(顧冶擊劍皮膚、谷川翔一決勝時刻)用「以訂單角色名為前綴」合併;
   // 長名優先,避免短名訂單誤吞別的角色。
   const anchors = [...orderByName.entries()].sort((a, b) => b[0].length - a[0].length);
 
-  const byOrder = new Map<string, { roleName: string; lines: Line[] }>();
+  const byOrder = new Map<string, { roleName: string; lines: Line[]; images: { name: string; url: string }[] }>();
   const unmatched: { role: string; lines: number }[] = [];
   for (const [role, lines] of byRole) {
     let order = orderByName.get(role);
     if (!order) { const hit = anchors.find(([k]) => k.length >= 2 && role.startsWith(k)); order = hit?.[1]; }
     if (!order) { unmatched.push({ role, lines: lines.length }); continue; }
-    const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), lines: [] };
+    const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), lines: [], images: [] };
     const anchor = mainKey(slot.roleName);
     for (const l of lines) slot.lines.push({ ...l, variant: l.variant || (role !== anchor ? role : undefined) });
+    for (const img of imgsByKey.get(role) || []) slot.images.push(img);
     byOrder.set(String(order.id), slot);
   }
 
-  const matched: { role: string; lines: number }[] = [];
-  for (const [orderId, { roleName, lines }] of byOrder) {
+  const matched: { role: string; lines: number; images?: number }[] = [];
+  for (const [orderId, { roleName, lines, images }] of byOrder) {
     const first = lines[0];
     const head = [`【角色】${roleName}`, [first.gender, first.age && `${first.age}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句,請依每句指引錄製(【】內為皮膚/變體名)。`].filter(Boolean).join('\n');
     const body = lines.map((l, i) => {
       const tags = [l.func, l.emotion && `情緒:${l.emotion}`, l.speed && `語速:${l.speed}`].filter(Boolean).join(' | ');
-      return [`${i + 1}. ${l.variant ? `【${l.variant}】` : ''}${tags ? `(${tags})` : ''}`, l.text, l.scene ? `   ▸ 畫面:${l.scene}` : ''].filter(Boolean).join('\n');
+      return [
+        `${i + 1}. ${l.variant ? `【${l.variant}】` : ''}${tags ? `(${tags})` : ''}`,
+        l.orig ? `原版:${l.orig}` : '',
+        l.orig ? `台詞:${l.text}` : l.text,   // 有原版就雙語並列;沒有就單行
+        l.scene ? `   ▸ 畫面:${l.scene}` : '',
+      ].filter(Boolean).join('\n');
     }).join('\n\n');
-    const { error } = await db.from('voice_orders').update({ script_text: `${head}\n\n${body}` }).eq('id', orderId);
+    const { error } = await db.from('voice_orders').update({ script_text: `${head}\n\n${body}`, role_images: images.length ? images : null }).eq('id', orderId);
     if (error) unmatched.push({ role: roleName, lines: lines.length });
-    else matched.push({ role: roleName, lines: lines.length });
+    else matched.push({ role: roleName, lines: lines.length, images: images.length });
   }
   return NextResponse.json({ ok: true, matched, unmatched, totalRoles: byRole.size });
 }

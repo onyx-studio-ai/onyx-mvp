@@ -516,7 +516,7 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
-  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; reference_files?: { name?: string; url: string }[] | null; deadline?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; reference_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
 
@@ -635,6 +635,25 @@ export default function Opportunities() {
                 badge={o.status === 'delivered'
                   ? <span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('已交付 · 待驗收', '已交付 · 待验收', 'Delivered · in review')}</span>
                   : <span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('待錄製', '待录制', 'To record')}</span>}>
+                {o.production_notes && (
+                  <div className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/[0.08] px-3 py-2">
+                    <p className="text-[11px] font-semibold text-amber-300 mb-0.5">{tx('製作備註(請先讀)', '制作备注(请先读)', 'Production notes (read first)')}</p>
+                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{o.production_notes}</p>
+                  </div>
+                )}
+                {(o.role_images || []).length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-[11px] text-gray-300 mb-1">{tx('角色 / 皮膚圖(點開看大圖)', '角色 / 皮肤图(点开看大图)', 'Character / skin art')}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(o.role_images || []).map((im, i) => (
+                        <a key={i} href={im.url} target="_blank" rel="noreferrer" title={im.name || ''}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={im.url} alt={im.name || ''} className="h-16 rounded-lg border border-white/10 object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {(o.reference_files || []).length > 0 && (
                   <div className="mb-2">
                     <p className="text-[11px] text-gray-300 mb-1">{tx('參考音(角色參考 / 你的中選聲線,可下載)', '参考音(角色参考 / 你的中选声线,可下载)', 'Reference audio (downloadable)')}</p>
@@ -651,7 +670,14 @@ export default function Opportunities() {
                 )}
                 {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
                 {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('下載稿件檔', '下载稿件档', 'Download script')}</a>}
-                {o.deadline && <p className="text-[11px] text-gray-300 mt-1">{tx('希望交付', '希望交付', 'Due')}: {o.deadline}</p>}
+                {o.deadline && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
+                    <span className="text-gray-200 font-medium">{tx('完成日', '完成日', 'Due')}: <span className="text-amber-300">{String(o.deadline).slice(0, 10)}</span></span>
+                    <span className="text-gray-400">{tx('如無法如期,請提前用訊息告知你可提供的時間。', '如无法如期,请提前用讯息告知你可提供的时间。', 'If you can’t make it, message us your available date in advance.')}</span>
+                    <Link href="/talent/messages" className="text-sky-300 hover:underline">{tx('傳訊息 →', '传讯息 →', 'Message us →')}</Link>
+                  </div>
+                )}
+                <p className="text-[11px] text-gray-400 mt-1.5">{tx('⬇ 只上傳「本角色」的音檔(多句可打包 zip 分軌命名),請勿與其他角色混在同一軌。', '⬇ 只上传「本角色」的音档(多句可打包 zip 分轨命名),请勿与其他角色混在同一轨。', '⬇ Upload THIS role’s audio only (zip multiple lines if needed) — don’t mix roles in one track.')}</p>
                 <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} tx={tx} onChanged={() => load()} />
               </EntityCard>
             ))}

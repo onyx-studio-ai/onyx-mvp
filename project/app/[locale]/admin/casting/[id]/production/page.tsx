@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; reference_files?: RefFile[] | null; talent_price?: number | null; price?: number | null; currency?: string | null; deadline?: string | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; currency?: string | null; deadline?: string | null };
 
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 
@@ -28,7 +28,7 @@ export default function ProductionPage() {
   const [briefTitle, setBriefTitle] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [busy, setBusy] = useState<string | null>(null);   // orderId 或 'import'
-  const [draft, setDraft] = useState<Record<string, { script: string; tp: string; price: string }>>({});
+  const [draft, setDraft] = useState<Record<string, { script: string; tp: string; price: string; notes: string; deadline: string }>>({});
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/casting/production?brief_id=${encodeURIComponent(id)}`, { credentials: 'include' });
@@ -37,7 +37,7 @@ export default function ProductionPage() {
     setBriefTitle(j.brief?.title || '');
     const list: Order[] = j.orders || [];
     setOrders(list);
-    setDraft(Object.fromEntries(list.map((o) => [o.id, { script: o.script_text || '', tp: o.talent_price != null ? String(o.talent_price) : '', price: o.price != null ? String(o.price) : '' }])));
+    setDraft(Object.fromEntries(list.map((o) => [o.id, { script: o.script_text || '', tp: o.talent_price != null ? String(o.talent_price) : '', price: o.price != null ? String(o.price) : '', notes: o.production_notes || '', deadline: (o.deadline || '').slice(0, 10) }])));
     setPhase('ready');
   }, [id]);
   useEffect(() => { load(); }, [load]);
@@ -46,7 +46,7 @@ export default function ProductionPage() {
     const d = draft[o.id]; if (!d) return;
     setBusy(o.id);
     try {
-      const updates: Record<string, unknown> = { script_text: d.script };
+      const updates: Record<string, unknown> = { script_text: d.script, production_notes: d.notes.trim() || null, deadline: d.deadline.trim() || null };
       if (d.tp.trim() !== '') updates.talent_price = Number(d.tp) || 0;
       if (d.price.trim() !== '') updates.price = Number(d.price) || 0;
       const res = await fetch('/api/admin/orders', {
@@ -134,13 +134,30 @@ export default function ProductionPage() {
                 <span className="ml-auto text-[11px] text-gray-400">{o.order_number}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-2 max-w-md">
+              <div className="grid grid-cols-3 gap-3 mb-2 max-w-2xl">
                 <label className="block"><span className="text-xs text-gray-600 mb-1 block">配音員酬勞({o.currency || 'TWD'})</span>
                   <input className={input} inputMode="decimal" value={d.tp} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, tp: e.target.value } }))} /></label>
                 <label className="block"><span className="text-xs text-gray-600 mb-1 block">客戶價(選填)</span>
                   <input className={input} inputMode="decimal" value={d.price} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, price: e.target.value } }))} /></label>
+                <label className="block"><span className="text-xs text-gray-600 mb-1 block">完成日(配音員端會顯示)</span>
+                  <input type="date" className={`${input} [color-scheme:light]`} value={d.deadline} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, deadline: e.target.value } }))} /></label>
               </div>
 
+              {(o.role_images || []).length > 0 && (
+                <div className="mb-2">
+                  <span className="text-xs text-gray-600 mb-1 block">角色圖(匯入台詞表時自動抽出,配音員端可見)</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(o.role_images || []).map((im, i) => (
+                      <a key={i} href={im.url} target="_blank" rel="noreferrer" title={im.name}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={im.url} alt={im.name || ''} className="h-16 rounded-lg border border-gray-200 object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <label className="block mb-2"><span className="text-xs text-gray-600 mb-1 block">製作備註(給配音員的細則,例:台詞語感可微調,但商品名/專有名詞不可改)</span>
+                <textarea className={`${input} min-h-[56px] resize-y`} value={d.notes} placeholder="例:語氣詞可依口語習慣微調;角色名、品牌名、技能名稱一律照稿,不可改。" onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, notes: e.target.value } }))} /></label>
               <label className="block mb-2"><span className="text-xs text-gray-600 mb-1 block">台詞 / 製作稿(配音員線上看)</span>
                 <textarea className={`${input} min-h-[120px] resize-y font-mono text-[13px]`} value={d.script} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, script: e.target.value } }))} /></label>
 

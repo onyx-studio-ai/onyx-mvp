@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     // work item (a talent can have many roles on one project).
     const talentId = (r.talent as { id: string }).id;
     const { data: ao } = await r.db.from('voice_orders')
-      .select('id, brief_id, role_name, project_name, script_text, script_file_url, reference_files, deadline, status, download_url, talent_price, currency, created_at')
+      .select('id, brief_id, role_name, project_name, script_text, script_file_url, production_notes, reference_files, role_images, deadline, status, download_url, talent_price, currency, created_at')
       .eq('talent_id', talentId).is('quote_id', null).neq('status', 'completed')
       .order('created_at', { ascending: true });
     const aoIds = (ao || []).map((o) => o.id as string);
