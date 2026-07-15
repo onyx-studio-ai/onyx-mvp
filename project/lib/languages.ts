@@ -141,3 +141,65 @@ export function langLabel(v: string | null | undefined, locale: string): string 
   if (!o) return v;
   return locale === 'zh-TW' ? o.tw : locale === 'zh-CN' ? o.cn : o.v;
 }
+
+/*
+  normalizeLangValue —— 把「任何來源的語言值」轉成標準值(認不得就原樣保留,不硬猜)。
+  吃三類舊格式:①自助改檔頁 talent-taxonomy 的 `langKey/accentKey`(如 mandarin/taiwan、
+  english/native);②報名表歷史正規值(Chinese · Taiwan);③自由亂打(國語、台灣國語…)。
+  用途:api/talent/me 寫入口統一過這裡 → DB 永遠只進標準值(關掉 2026-07 語言三套格式
+  對不上的髒源頭;DL Merlin 改檔即髒的活案例)。/native、無地區 → 對到「通用」值,不猜地區。
+*/
+const KEY_REGION: Record<string, string> = {
+  'mandarin/taiwan': 'Mandarin · Taiwan', 'mandarin/mainland': 'Mandarin · Mainland', 'mandarin/malaysia': 'Mandarin · Malaysia',
+  'cantonese/hongkong': 'Cantonese · Hong Kong', 'cantonese/guangdong': 'Cantonese · Guangdong',
+  'hokkien/taiwan': 'Taiwanese Hokkien', 'hokkien/native': 'Taiwanese Hokkien',
+  'english/american': 'English · American', 'english/british': 'English · British', 'english/australian': 'English · Australian',
+  'english/canadian': 'English · Canadian', 'english/irish': 'English · Irish', 'english/scottish': 'English · Scottish',
+  'english/indian': 'English · Indian', 'english/singapore': 'English · Singapore', 'english/filipino': 'English · Filipino',
+  'spanish/spain': 'Spanish · Spain', 'spanish/latam': 'Spanish · Latin America', 'spanish/latinamerica': 'Spanish · Latin America', 'spanish/mexican': 'Spanish · Mexican',
+  'french/france': 'French · France', 'french/canadian': 'French · Canadian', 'french/belgian': 'French · Belgian', 'french/swiss': 'French · Swiss',
+  'portuguese/brazil': 'Portuguese · Brazil', 'portuguese/brazilian': 'Portuguese · Brazil', 'portuguese/portugal': 'Portuguese · Portugal',
+  'german/germany': 'German · Germany', 'german/austria': 'German · Austria', 'german/swiss': 'German · Swiss',
+};
+const KEY_BASE: Record<string, string> = {
+  mandarin: 'Mandarin', chinese: 'Mandarin', cantonese: 'Cantonese', hokkien: 'Taiwanese Hokkien', hakka: 'Hakka',
+  english: 'English', spanish: 'Spanish', french: 'French', german: 'German', portuguese: 'Portuguese',
+  arabic: 'Arabic', japanese: 'Japanese', korean: 'Korean', vietnamese: 'Vietnamese', thai: 'Thai',
+  indonesian: 'Indonesian', malay: 'Malay', filipino: 'Filipino / Tagalog', tagalog: 'Filipino / Tagalog',
+  hindi: 'Hindi', bengali: 'Bengali', tamil: 'Tamil', telugu: 'Telugu', urdu: 'Urdu', punjabi: 'Punjabi',
+  nepali: 'Nepali', sinhala: 'Sinhala', italian: 'Italian', dutch: 'Dutch', russian: 'Russian', polish: 'Polish',
+  ukrainian: 'Ukrainian', turkish: 'Turkish', greek: 'Greek', czech: 'Czech', hungarian: 'Hungarian',
+  romanian: 'Romanian', swedish: 'Swedish', norwegian: 'Norwegian', danish: 'Danish', finnish: 'Finnish',
+  hebrew: 'Hebrew', persian: 'Persian · Farsi', farsi: 'Persian · Farsi', burmese: 'Burmese', khmer: 'Khmer',
+  lao: 'Lao', mongolian: 'Mongolian', swahili: 'Swahili', afrikaans: 'Afrikaans', zulu: 'Zulu', amharic: 'Amharic',
+};
+const FREE_TEXT: Record<string, string> = {
+  'chinese · taiwan': 'Mandarin · Taiwan', '國語': 'Mandarin · Taiwan', '台灣國語': 'Mandarin · Taiwan', '華語': 'Mandarin · Taiwan',
+  '中文台灣腔': 'Mandarin · Taiwan', 'taiwanese mandarin': 'Mandarin · Taiwan', '普通話': 'Mandarin · Mainland', '普通话': 'Mandarin · Mainland',
+  '兰银官话': 'Mandarin · Lanyin', '蘭銀官話': 'Mandarin · Lanyin', '廣東話': 'Cantonese · Hong Kong', '广东话': 'Cantonese · Hong Kong',
+  '台語': 'Taiwanese Hokkien', '台语': 'Taiwanese Hokkien', '日語': 'Japanese', '日文': 'Japanese', '英語': 'English', '英文': 'English',
+  '美式英語': 'English · American', 'mandarin (simplified)': 'Mandarin', 'mandarin (traditional)': 'Mandarin',
+};
+
+export function normalizeLangValue(raw: string | null | undefined): string {
+  const v = String(raw || '').trim();
+  if (!v) return '';
+  if (BY_V.has(v)) return v;                       // 已是標準值
+  if (LEGACY[v]) return LEGACY[v];                 // 舊正規值改名
+  const low = v.toLowerCase();
+  if (FREE_TEXT[low]) return FREE_TEXT[low];
+  if (KEY_REGION[low]) return KEY_REGION[low];
+  if (low.includes('/')) {                         // langKey/accent:地區對地區、/native 對通用
+    const [k] = low.split('/');
+    if (KEY_BASE[k]) return KEY_BASE[k];
+    if (FREE_TEXT[k]) return FREE_TEXT[k];         // 亂打字+/native(如 中文台灣腔/native)也接
+  }
+  if (KEY_BASE[low]) return KEY_BASE[low];
+  return v;                                        // 認不得 → 原樣保留(健檢會報,人來判)
+}
+
+/** 陣列版:逐一正規化 + 去空 + 去重。 */
+export function normalizeLangArray(arr: unknown): string[] {
+  if (!Array.isArray(arr)) return [];
+  return [...new Set(arr.map((x) => normalizeLangValue(typeof x === 'string' ? x : '')).filter(Boolean))];
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-server';
 import { USE_CASE_KEYS, VOICE_AGE_KEYS, demoLimit, DEMO_MAX_SECONDS, type DemoItem } from '@/lib/talent-taxonomy';
+import { normalizeLangValue, normalizeLangArray } from '@/lib/languages';
 import { stripContactsAndLinks } from '@/lib/sanitize-text';
 
 /*
@@ -217,7 +218,9 @@ export async function PATCH(request: NextRequest) {
     }
     if ('native_languages' in body) {
       if (!Array.isArray(body.native_languages)) return NextResponse.json({ error: 'native_languages must be an array' }, { status: 400 });
-      updates.native_languages = cleanTags(body.native_languages);
+      // 語言一律正規化成 lib/languages 標準值 —— 自助改檔頁送的是 taxonomy 舊格式
+      // (mandarin/taiwan),不轉的話 DB 又髒回三套格式(2026-07-15 DL Merlin 活案例)。
+      updates.native_languages = normalizeLangArray(cleanTags(body.native_languages));
     }
 
     // Cooperation opt-ins: plain booleans (coerced). Internal-only — they gate what
@@ -268,7 +271,8 @@ export async function PATCH(request: NextRequest) {
           category,
           name: (stripContactsAndLinks(String(d?.name || 'Demo')).replace(/[\s_,、・\-]+$/g, '').trim() || 'Demo').slice(0, 120),
           url,
-          language: typeof d?.language === 'string' ? d.language : undefined,
+          // demo 的語言同步正規化 —— 它要跟 languages(標準值)精確比對,兩邊必須同格式。
+          language: typeof d?.language === 'string' && d.language.trim() ? normalizeLangValue(d.language) : undefined,
           seconds: seconds || undefined,
         });
       }
@@ -286,9 +290,11 @@ export async function PATCH(request: NextRequest) {
     // the demos being saved in this same request (or the existing ones).
     if ('languages' in body) {
       if (!Array.isArray(body.languages)) return NextResponse.json({ error: 'languages must be an array' }, { status: 400 });
-      const langs: string[] = [...new Set((body.languages as unknown[]).filter((l): l is string => typeof l === 'string' && !!l.trim()).map((l) => l.trim()))];
+      // 正規化成標準值再驗證、再存;demo 那邊(不論本次送來或 DB 舊資料)也過同一個
+      // normalize,兩邊同格式,「語言要有 demo」的精確比對才不會被格式差異誤殺。
+      const langs: string[] = normalizeLangArray(body.languages);
       const demosForCheck: DemoItem[] = cleanDemos ?? (Array.isArray(r.talent.demos) ? r.talent.demos : []);
-      const demoLangs = new Set<string>(demosForCheck.map((d) => d.language).filter((x): x is string => !!x));
+      const demoLangs = new Set<string>(demosForCheck.map((d) => (d.language ? normalizeLangValue(d.language) : '')).filter(Boolean));
       // Only enforce the "language needs a demo" rule when SUBMITTING for review
       // — a half-finished draft can be saved with languages still missing demos.
       const missing = langs.filter((l) => !demoLangs.has(l));
