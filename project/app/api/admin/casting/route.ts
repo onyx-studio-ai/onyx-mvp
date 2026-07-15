@@ -154,13 +154,18 @@ export async function GET(request: NextRequest) {
     .select('talent_id, talent_name, role_name, gross_amount, currency, status')
     .eq('brief_id', id).neq('status', 'withdrawn');
   // 已建的角色製作單(給編輯頁標「這角色已指派給誰」)。
+  // 注意:voice_orders.talent_id 沒有 FK 到 talents,PostgREST 的 talents(name) 關聯
+  // 查詢會直接炸(2026-07-15 Wing 指派 N 次標記都不亮的根因)→ 兩步查詢自己拼。
   const { data: ords } = await db.from('voice_orders')
-    .select('role_name, talent_price, pay_unit, pay_rate, status, talents(name)')
+    .select('role_name, talent_id, talent_price, pay_unit, pay_rate, status')
     .eq('brief_id', id).not('role_name', 'is', null);
-  const assigned = (ords || []).map((o) => {
-    const t = o.talents as { name?: string } | { name?: string }[] | null;
-    return { role_name: o.role_name, talent_name: (Array.isArray(t) ? t[0]?.name : t?.name) || null, talent_price: o.talent_price, pay_unit: o.pay_unit, pay_rate: o.pay_rate, status: o.status };
-  });
+  const tIds = [...new Set((ords || []).map((o) => o.talent_id).filter(Boolean))] as string[];
+  const nameById = new Map<string, string>();
+  if (tIds.length) {
+    const { data: ts } = await db.from('talents').select('id, name').in('id', tIds);
+    for (const t of ts || []) nameById.set(String(t.id), String(t.name || ''));
+  }
+  const assigned = (ords || []).map((o) => ({ role_name: o.role_name, talent_name: nameById.get(String(o.talent_id)) || null, talent_price: o.talent_price, pay_unit: o.pay_unit, pay_rate: o.pay_rate, status: o.status }));
   return NextResponse.json({ brief, quotes: quotes || [], assigned });
 }
 
