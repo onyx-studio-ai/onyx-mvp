@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
     const first = lines[0];
     // 每句一律標「錄音台詞:」(要錄的台灣版);有大陸原版就附上當語氣/斷句對照 ——
     // Wing 2026-07-15:不標清楚配音員會不曉得要錄哪行,不能有光禿禿的一行字。
-    const head = [`【角色】${roleName}`, [first.gender, first.age && `${first.age.replace(/[歲岁]/g, '')}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句 —— 每句只錄「錄音台詞:」那一行;「大陸原版:」只是語氣/斷句對照,不用錄。(【】內為皮膚/變體名)`].filter(Boolean).join('\n');
+    const head = [`【角色】${roleName}`, [first.gender, first.age && `${first.age.replace(/[歲岁]/g, '')}歲`, first.trait, first.introd].filter(Boolean).join(' · '), `共 ${lines.length} 句 —— 每句只錄「錄音台詞:」那一行;「大陸原版:」只是語氣/斷句/台詞對照,不用錄。(【】內為皮膚/變體名)`].filter(Boolean).join('\n');
     const body = lines.map((l, i) => {
       const tags = [l.func, l.emotion && `情緒:${l.emotion}`, l.speed && `語速:${l.speed}`].filter(Boolean).join(' | ');
       return [
