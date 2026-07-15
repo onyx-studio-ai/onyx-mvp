@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import * as OpenCC from 'opencc-js';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { extractXlsxImages } from '@/lib/xlsx-images';
 
 /*
   POST /api/admin/casting/import-lines?brief_id=… — 匯入「客戶台詞表 xlsx」到製作單。
@@ -73,7 +74,8 @@ export async function POST(request: NextRequest) {
   // ── 解析:每個角色分頁 → 台詞列(+ 每列嵌入的角色/皮膚圖)──
   const byRole = new Map<string, Line[]>();
   const roleSheet = new Map<string, string>();   // 角色鍵 → 所在分頁(looseKey),做「分頁歸戶」
-  const imgJobs: { key: string; name: string; imageId: number }[] = [];
+  const rowInfoBySheet = new Map<string, Record<number, { key: string; fullRole: string }>>();
+  const imgJobs: { key: string; name: string; buffer: Buffer }[] = [];
   const cellStr = (c: ExcelJS.CellValue): string => {
     if (c == null) return '';
     if (typeof c === 'object' && 'richText' in (c as object)) return ((c as { richText: { text: string }[] }).richText || []).map((r) => r.text).join('');
@@ -126,14 +128,31 @@ export async function POST(request: NextRequest) {
       if (!roleSheet.has(key)) roleSheet.set(key, sheetKey);
       rowInfo[n] = { key, fullRole };
     });
-    // 該分頁的嵌入圖:錨列對到台詞列 → 掛到該角色(圖名=皮膚/變體全名,配音員好對照)
-    for (const im of ws.getImages()) {
-      const anchorRow = (im.range?.tl?.nativeRow ?? -1) + 1;   // nativeRow 是 0-based
-      let info = rowInfo[anchorRow];
-      if (!info) { for (let k = anchorRow; k <= anchorRow + 1; k++) if (rowInfo[k]) { info = rowInfo[k]; break; } }
-      if (info) imgJobs.push({ key: info.key, name: info.fullRole, imageId: Number(im.imageId) });
-    }
+    rowInfoBySheet.set(ws.name, rowInfo);
   }
+  // 嵌入圖:不用 exceljs 的 getImages/getImage(WPS 檔 imageId 對應會錯亂、漏圖 ——
+  // 2026-07-15 女王百貨角色圖張冠李戴的根因)→ 解 drawing XML 拿「錨點列↔圖」。
+  try {
+    const sheetImgs = await extractXlsxImages(buf);
+    // 跨分頁漂浮圖(同一張圖錨在多個分頁,如雜訊圖 image98)→ 該列有替代圖時排除
+    const bufSheets = new Map<Buffer, Set<string>>();
+    for (const [sn, items] of sheetImgs) for (const it of items) { const s = bufSheets.get(it.buffer) || new Set<string>(); s.add(sn); bufSheets.set(it.buffer, s); }
+    for (const [sn, items] of sheetImgs) {
+      if (/分配|分派|說明|说明/.test(sn)) continue;
+      const rowInfo = rowInfoBySheet.get(sn);
+      if (!rowInfo) continue;
+      const byRow = new Map<number, Set<Buffer>>();
+      for (const it of items) { const s = byRow.get(it.row) || new Set<Buffer>(); s.add(it.buffer); byRow.set(it.row, s); }
+      for (const [row, set] of byRow) {
+        const info = rowInfo[row] || rowInfo[row + 1] || rowInfo[row - 1];
+        if (!info) continue;
+        let list = [...set];
+        const nonStray = list.filter((bb) => (bufSheets.get(bb)?.size || 0) < 2);
+        if (nonStray.length) list = nonStray;
+        for (const bb of list) imgJobs.push({ key: info.key, name: info.fullRole, buffer: bb });
+      }
+    }
+  } catch { /* 圖抽不出來就沒圖,台詞照樣匯 */ }
   if (!byRole.size) return NextResponse.json({ error: '沒解析到任何台詞(找不到「角色名 + TW/原版臺詞」標題列)' }, { status: 400 });
 
   // ── 匹配該案的角色訂單,寫入製作稿 ──
@@ -145,9 +164,7 @@ export async function POST(request: NextRequest) {
   for (let i = 0; i < imgJobs.length; i += 8) {
     await Promise.all(imgJobs.slice(i, i + 8).map(async (j) => {
       try {
-        const media = wb.getImage(j.imageId) as { buffer?: Buffer } | undefined;
-        if (!media?.buffer) return;
-        const small = await sharp(media.buffer as Buffer).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
+        const small = await sharp(j.buffer).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
         const path = `reference/roleimg/${Date.now()}_${crypto.randomUUID()}.jpg`;
         const { error } = await db.storage.from('casting').upload(path, small, { contentType: 'image/jpeg', upsert: false });
         if (error) return;

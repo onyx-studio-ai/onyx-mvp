@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import * as OpenCC from 'opencc-js';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { extractXlsxImages } from '@/lib/xlsx-images';
 
 // Client sheets are simplified Chinese; Taiwan voice actors read traditional.
 // Convert role text (name / personality / line) to Traditional (Taiwan). Lazy +
@@ -149,23 +150,31 @@ export async function POST(request: NextRequest) {
   // sharp+upload would blow the function's time budget.
   try {
     const db = getSupabaseServiceClient();
+    // 不用 exceljs 的 getImages/getImage:WPS 產的檔 imageId↔media 對應會錯亂(張冠李戴)、
+    // 還會漏圖 —— 改解 drawing XML 拿「錨點列↔圖」(lib/xlsx-images)。
+    const sheetImgs = await extractXlsxImages(buf);
+    // 跨分頁漂浮圖(同一張圖錨在多個分頁的雜訊圖)→ 該列有替代圖時排除
+    const bufSheets = new Map<Buffer, Set<string>>();
+    for (const [sn, items] of sheetImgs) for (const it of items) { const s = bufSheets.get(it.buffer) || new Set<string>(); s.add(sn); bufSheets.set(it.buffer, s); }
+    const items = sheetImgs.get(ws.name) || [];
+    const byRow = new Map<number, Buffer[]>();
+    for (const it of items) { const a = byRow.get(it.row) || []; if (!a.includes(it.buffer)) a.push(it.buffer); byRow.set(it.row, a); }
     const seen = new Set<number>(); // one image per role (first wins)
-    const jobs: { idx: number; imageId: string | number }[] = [];
-    for (const im of ws.getImages()) {
-      const anchorRow = (im.range?.tl?.nativeRow ?? -1) + 1; // nativeRow is 0-indexed
-      let idx = rowOfRole[anchorRow];
-      if (idx === undefined) { for (let k = anchorRow; k <= anchorRow + 1; k++) if (rowOfRole[k] !== undefined) { idx = rowOfRole[k]; break; } }
+    const jobs: { idx: number; buffer: Buffer }[] = [];
+    for (const [row, bufs] of byRow) {
+      let idx = rowOfRole[row];
+      if (idx === undefined) { for (let k = row; k <= row + 1; k++) if (rowOfRole[k] !== undefined) { idx = rowOfRole[k]; break; } }
       if (idx === undefined || seen.has(idx)) continue;        // skip unmapped / already-claimed
       seen.add(idx);
-      jobs.push({ idx, imageId: im.imageId });
+      const nonStray = bufs.filter((bb) => (bufSheets.get(bb)?.size || 0) < 2);
+      const pick = (nonStray.length ? nonStray : bufs)[0];
+      jobs.push({ idx, buffer: pick });
     }
 
-    await Promise.all(jobs.map(async ({ idx, imageId }) => {
+    await Promise.all(jobs.map(async ({ idx, buffer }) => {
       try {
-        const media = wb.getImage(Number(imageId)) as { buffer?: Buffer } | undefined;
-        if (!media?.buffer) return;
         // Downsize hard — embedded portraits are multi-MB; 480px jpeg ≈ tens of KB.
-        const small = await sharp(media.buffer as Buffer).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
+        const small = await sharp(buffer).resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 78 }).toBuffer();
         const path = `reference/roleimg/${Date.now()}_${crypto.randomUUID()}.jpg`;
         const { error } = await db.storage.from(BUCKET).upload(path, small, { contentType: 'image/jpeg', upsert: false });
         if (!error) roles[idx].image = publicUrl(path);
