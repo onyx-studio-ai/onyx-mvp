@@ -138,6 +138,7 @@ export default function NewCastingPage() {
 function NewCasting() {
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [clientNote, setClientNote] = useState('');   // 內部客戶備註:這案是誰的(只給後台看)
   const [category, setCategory] = useState('遊戲 Video Game');
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('Mandarin · Taiwan');
@@ -220,9 +221,9 @@ function NewCasting() {
     title, category, mode, language, maleVoices, femaleVoices, hasSinging, wantsDirector, brief,
     rateCur, rateAmt, rateUnit, scale, deadline, mediaScope, territory, licenseTerm, accent,
     voiceStyle, voiceAge, baseRev, cap, auditionDeadline, recordingStart, methods, rolesText,
-    parsedRoles, auditionScript, refLinks, refFiles, aiType,
+    parsedRoles, auditionScript, refLinks, refFiles, aiType, clientNote,
   }, (d) => {
-    setTitle(d.title); setCategory(d.category); setMode(d.mode); setLanguage(d.language);
+    setTitle(d.title); setCategory(d.category); setMode(d.mode); setLanguage(d.language); setClientNote(d.clientNote || '');
     setMaleVoices(d.maleVoices); setFemaleVoices(d.femaleVoices); setHasSinging(d.hasSinging); setWantsDirector(d.wantsDirector);
     setBrief(d.brief); setRateCur(d.rateCur); setRateAmt(d.rateAmt); setRateUnit(d.rateUnit); setScale(d.scale);
     setDeadline(d.deadline); setMediaScope(d.mediaScope); setTerritory(d.territory); setLicenseTerm(d.licenseTerm);
@@ -252,6 +253,9 @@ function NewCasting() {
       setFromId(id);
       setFromClient({ name: bf.client_name, company: bf.company, email: bf.client_email, budget: bf.budget, budget_type: bf.budget_type, has_singing: bf.has_singing, wants_director: bf.wants_director, wants_live_session: bf.wants_live_session, gender_needs: bf.gender_needs, requested_talent: bf.requested_talent, local_studio_region: bf.local_studio_region, script_file_url: bf.script_file_url });
       if (bf.title) setTitle(bf.title);
+      // 從客戶請求發佈:客戶身分自動帶進內部備註,發完不會忘記這案是誰的
+      if (bf.internal_client_note) setClientNote(bf.internal_client_note);
+      else if (bf.client_name || bf.client_email) setClientNote([bf.client_name, bf.company, bf.client_email].filter(Boolean).join(' · '));
       { const cat = resolveCategory(bf.content_type); if (cat) pickCategory(cat); }
       if (bf.language) setLanguage(bf.language);
       if (bf.gender_needs) { const g = parseGenderNeeds(bf.gender_needs); setMaleVoices(g.male); setFemaleVoices(g.female); }
@@ -502,6 +506,7 @@ function NewCasting() {
       length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
       accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
       ai_type: aiType, // ''=一般 / 'clone'=聲音變AI / 'training'=訓練素材(客戶端)
+      internal_client_note: clientNote,
       // AI case → invite opted-in applicants by email (免註冊 magic-link);
       // normal case → invite online vetted talents by id (the picker).
       ...(aiType ? { invite_emails: Array.from(selEmails) } : { invite_talent_ids: Array.from(selTalents) }),
@@ -872,6 +877,7 @@ function NewCasting() {
         )}
 
         <Field label="標題 *"><input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例:遊戲角色配音 · 女王百貨" /></Field>
+        <Field label="客戶(內部備註,配音員和前台都看不到)"><input className={input} value={clientNote} onChange={(e) => setClientNote(e.target.value)} placeholder="例:WeChat 客戶 王經理 · 上海XX網絡 · 微信ID xxx" /></Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="類別">

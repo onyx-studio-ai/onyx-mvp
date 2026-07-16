@@ -24,6 +24,7 @@ type Brief = {
   title: string | null;
   client_email: string;
   client_name: string | null;
+  internal_client_note: string | null;   // 內部客戶備註(只給後台)
   company: string | null;
   categories: string[] | null;
   content_type: string | null;
@@ -241,7 +242,7 @@ export default function AdminMarketplace() {
 
   const q = search.trim().toLowerCase();
   const filtered = !q ? briefs : briefs.filter((b) =>
-    [b.title, b.client_name, b.client_email, b.brief_number, caseCode(b), b.language]
+    [b.title, b.client_name, b.client_email, b.internal_client_note, b.brief_number, caseCode(b), b.language]
       .some((v) => (v || '').toString().toLowerCase().includes(q)));
 
   const stats = [
@@ -289,6 +290,9 @@ export default function AdminMarketplace() {
                   </div>
                   <p className="text-sm font-medium text-gray-900 truncate">{b.title || b.client_name || b.client_email || t('dash')}</p>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-500">
+                    {(b.internal_client_note || (b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (b.client_name || b.client_email))) && (
+                      <span className="text-sky-700 font-medium">{t('internalClient')}:{b.internal_client_note || b.client_name || b.client_email}</span>
+                    )}
                     {b.language && <span>{b.language}</span>}
                     {b.rate_note && <span className="text-amber-700">{b.rate_note}</span>}
                     {b.kind === 'casting' && (b.roles || []).length > 0 && <span>{t('rolesCount', { count: (b.roles || []).length })}</span>}

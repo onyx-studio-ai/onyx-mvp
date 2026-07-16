@@ -2986,7 +2986,8 @@
       "downloadAllAuditions": "⬇️ Download All Auditions ({count})",
       "threadEmpty": "No messages yet",
       "threadPlaceholder": "Reply as Onyx…",
-      "send": "Send"
+      "send": "Send",
+      "internalClient": "Client"
     },
     "applications": {
       "title": "Talent Applications",

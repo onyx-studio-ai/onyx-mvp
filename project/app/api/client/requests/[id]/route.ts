@@ -18,6 +18,7 @@ async function ownerBrief(request: NextRequest, id: string) {
   const { data: brief } = await db.from('marketplace_briefs').select('*').eq('id', id).maybeSingle();
   if (!brief) return { error: 'Not found', status: 404 as const };
   if (String(brief.client_email || '').toLowerCase() !== email.toLowerCase()) return { error: 'Not your request', status: 403 as const };
+  delete (brief as Record<string, unknown>).internal_client_note;   // 內部備註不給客戶看
   return { db, brief, email };
 }
 
@@ -85,5 +86,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { data, error } = await r.db.from('marketplace_briefs').update(patch).eq('id', id).select('*').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  delete (data as Record<string, unknown>).internal_client_note;   // 內部備註不給客戶看
   return NextResponse.json({ brief: data });
 }

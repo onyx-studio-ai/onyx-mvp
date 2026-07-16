@@ -2986,7 +2986,8 @@
       "downloadAllAuditions": "⬇️ 下载全部试音 ({count})",
       "threadEmpty": "尚无消息",
       "threadPlaceholder": "以 Onyx 身分回复…",
-      "send": "送出"
+      "send": "送出",
+      "internalClient": "客户"
     },
     "applications": {
       "title": "配音员申请",
