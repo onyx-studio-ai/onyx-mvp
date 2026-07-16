@@ -18,9 +18,15 @@ import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; released_at?: string | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null };
 // 參考音(大陸版角色參考)與中選聲線(配音員自己的中選示範)分開存、分開傳(Wing 2026-07-15)。
 type AudioField = 'reference_files' | 'voice_sample_files';
+
+const AUTH_MSG = '後台登入已逾時 —— 請重新整理頁面並重新登入,再試一次(資料都在,不會丟)。';
+const errText = async (res: Response, fallback: string) => {
+  if (res.status === 401 || res.status === 403) return AUTH_MSG;
+  return (await res.json().catch(() => ({}))).error || fallback;
+};
 
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 
@@ -38,7 +44,7 @@ export default function ProductionPage() {
     return () => clearInterval(t);
   }, [busy]);
   const importStage = importSec < 10 ? '上傳台詞表並解析各角色分頁…' : importSec < 30 ? '抽取角色/皮膚圖並壓縮…' : importSec < 75 ? '上傳角色圖到雲端(上百張,最花時間)…' : '寫入各角色製作稿與酬勞…';
-  const [draft, setDraft] = useState<Record<string, { script: string; tp: string; price: string; notes: string; deadline: string }>>({});
+  const [draft, setDraft] = useState<Record<string, { script: string; tp: string; price: string; notes: string; deadline: string; dtime: string }>>({});
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/casting/production?brief_id=${encodeURIComponent(id)}`, { credentials: 'include' });
@@ -49,13 +55,13 @@ export default function ProductionPage() {
     // 同一配音員的單排在一起(Wing:一人配多角時跳來跳去很難找),再按單號穩定排序。
     list.sort((a, b) => (a.talent_name || '').localeCompare(b.talent_name || '', 'zh-Hant') || String(a.order_number || '').localeCompare(String(b.order_number || '')));
     setOrders(list);
-    setDraft(Object.fromEntries(list.map((o) => [o.id, { script: o.script_text || '', tp: o.talent_price != null ? String(o.talent_price) : '', price: o.price != null ? String(o.price) : '', notes: o.production_notes || '', deadline: (o.deadline || '').slice(0, 10) }])));
+    setDraft(Object.fromEntries(list.map((o) => [o.id, { script: o.script_text || '', tp: o.talent_price != null ? String(o.talent_price) : '', price: o.price != null ? String(o.price) : '', notes: o.production_notes || '', deadline: (o.deadline || '').slice(0, 10), dtime: o.deadline_time || '' }])));
     setPhase('ready');
   }, [id]);
   useEffect(() => { load(); }, [load]);
 
-  const buildUpdates = (d: { script: string; tp: string; price: string; notes: string; deadline: string }) => {
-    const updates: Record<string, unknown> = { script_text: d.script, production_notes: d.notes.trim() || null, deadline: d.deadline.trim() || null };
+  const buildUpdates = (d: { script: string; tp: string; price: string; notes: string; deadline: string; dtime: string }) => {
+    const updates: Record<string, unknown> = { script_text: d.script, production_notes: d.notes.trim() || null, deadline: d.deadline.trim() || null, deadline_time: d.dtime.trim() || null };
     if (d.tp.trim() !== '') updates.talent_price = Number(d.tp) || 0;
     if (d.price.trim() !== '') updates.price = Number(d.price) || 0;
     return updates;
@@ -65,7 +71,7 @@ export default function ProductionPage() {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ orderId, orderType: 'voice', updates }),
     });
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || '儲存失敗');
+    if (!res.ok) throw new Error(await errText(res, '儲存失敗'));
   }
   async function saveOrder(o: Order) {
     const d = draft[o.id]; if (!d) return;
@@ -83,6 +89,7 @@ export default function ProductionPage() {
     return d.script !== (o.script_text || '')
       || d.notes !== (o.production_notes || '')
       || d.deadline !== (o.deadline || '').slice(0, 10)
+      || d.dtime !== (o.deadline_time || '')
       || d.tp !== (o.talent_price != null ? String(o.talent_price) : '')
       || d.price !== (o.price != null ? String(o.price) : '');
   };
@@ -124,7 +131,7 @@ export default function ProductionPage() {
         body: JSON.stringify({ fileName: file.name }),
       });
       const uj = await u.json().catch(() => ({}));
-      if (!u.ok || !uj.path || !uj.token) throw new Error(uj.error || '上傳準備失敗');
+      if (!u.ok || !uj.path || !uj.token) throw new Error((u.status === 401 || u.status === 403) ? AUTH_MSG : (uj.error || '上傳準備失敗'));
       const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (upErr) throw new Error(upErr.message);
       await pushRef(o, { name: file.name, url: uj.publicUrl }, field);
@@ -172,7 +179,7 @@ export default function ProductionPage() {
         body: JSON.stringify({ fileName: file.name }),
       });
       const uj = await u.json().catch(() => ({}));
-      if (!u.ok || !uj.path || !uj.token) throw new Error(uj.error || '台詞表上傳準備失敗');
+      if (!u.ok || !uj.path || !uj.token) throw new Error((u.status === 401 || u.status === 403) ? AUTH_MSG : (uj.error || '台詞表上傳準備失敗'));
       const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (upErr) throw new Error(`台詞表上傳失敗:${upErr.message}`);
       const res = await fetch(`/api/admin/casting/import-lines?brief_id=${encodeURIComponent(id)}`, {
@@ -180,7 +187,7 @@ export default function ProductionPage() {
         body: JSON.stringify({ path: uj.path }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error || `匯入失敗(HTTP ${res.status})`);
+      if (!res.ok) throw new Error((res.status === 401 || res.status === 403) ? AUTH_MSG : (j.error || `匯入失敗(HTTP ${res.status})`));
       const okList = (j.matched || []).map((m: { role: string; lines: number; pay?: string }) => `${m.role}(${m.lines}句${m.pay ? `,酬勞 ${m.pay}` : ''})`).join('、');
       toast.success(`已填入 ${j.matched?.length || 0} 個角色的台詞:${okList || '—'}`, { duration: 8000 });
       if (j.unmatched?.length) toast.warning(`這些角色還沒有製作單,台詞先跳過:${j.unmatched.map((m: { role: string }) => m.role).join('、')} —— 先在案件建單再匯一次即可`, { duration: 12000 });
@@ -203,7 +210,7 @@ export default function ProductionPage() {
         body: JSON.stringify({ brief_id: id, ...(orderIds?.length ? { order_ids: orderIds } : {}) }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error || `發出失敗(HTTP ${res.status})`);
+      if (!res.ok) throw new Error((res.status === 401 || res.status === 403) ? AUTH_MSG : (j.error || `發出失敗(HTTP ${res.status})`));
       toast.success(`已發出 ${j.released} 張單給 ${j.talents} 位配音員(寄信 ${j.notified} 封,Telegram 有綁定就會收到)`, { duration: 8000 });
       if (j.unnotified?.length) toast.warning(`⚠ 這幾位沒有信箱也沒綁 Telegram,系統通知不到,請自行用 LINE 通知:${j.unnotified.join('、')}`, { duration: 15000 });
       load();
@@ -291,7 +298,7 @@ export default function ProductionPage() {
 
       <div className="space-y-4">
         {orders.map((o) => {
-          const d = draft[o.id] || { script: '', tp: '', price: '' };
+          const d = draft[o.id] || { script: '', tp: '', price: '', notes: '', deadline: '', dtime: '' };
           return (
             <div key={o.id} className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -316,8 +323,11 @@ export default function ProductionPage() {
                   <input className={input} inputMode="decimal" value={d.tp} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, tp: e.target.value } }))} /></label>
                 <label className="block"><span className="text-xs text-gray-600 mb-1 block">客戶價(選填)</span>
                   <input className={input} inputMode="decimal" value={d.price} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, price: e.target.value } }))} /></label>
-                <label className="block"><span className="text-xs text-gray-600 mb-1 block">完成日(配音員端會顯示)</span>
-                  <input type="date" className={`${input} [color-scheme:light]`} value={d.deadline} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, deadline: e.target.value } }))} /></label>
+                <label className="block"><span className="text-xs text-gray-600 mb-1 block">完成日+時間(配音員端會標示案件時區並自動換算他的當地時間)</span>
+                  <span className="flex gap-1.5">
+                    <input type="date" className={`${input} [color-scheme:light]`} value={d.deadline} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, deadline: e.target.value } }))} />
+                    <input type="time" className={`${input} [color-scheme:light] max-w-[110px]`} value={d.dtime} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, dtime: e.target.value } }))} />
+                  </span></label>
               </div>
 
               {(o.role_images || []).length > 0 && (

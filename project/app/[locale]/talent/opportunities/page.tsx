@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
+import { deadlineDisplay } from '@/lib/case-time';
 import { caseCode, auditionDeadlinePassed } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
 import ReviewBox from '@/components/marketplace/ReviewBox';
@@ -517,7 +518,7 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
-  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
 
@@ -674,13 +675,13 @@ export default function Opportunities() {
                 ))}
                 {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
                 {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('下載稿件檔', '下载稿件档', 'Download script')}</a>}
-                {o.deadline && (
+                {o.deadline && (() => { const dd = deadlineDisplay(o.deadline, o.deadline_time, o.case_timezone || 'Asia/Taipei'); return (
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-                    <span className="text-gray-200 font-medium">{tx('完成日', '完成日', 'Due')}: <span className="text-amber-300">{String(o.deadline).slice(0, 10)}</span></span>
+                    <span className="text-gray-200 font-medium">{tx('完成期限', '完成期限', 'Due')}: <span className="text-amber-300">{dd.caseText}</span>{dd.localText && <span className="text-gray-400"> ≈ {tx('你的當地時間', '你的当地时间', 'your local time')} {dd.localText}</span>}</span>
                     <span className="text-gray-400">{tx('如無法如期,請提前用訊息告知你可提供的時間。', '如无法如期,请提前用讯息告知你可提供的时间。', 'If you can’t make it, message us your available date in advance.')}</span>
                     <Link href="/talent/messages" className="text-sky-300 hover:underline">{tx('傳訊息 →', '传讯息 →', 'Message us →')}</Link>
                   </div>
-                )}
+                ); })()}
                 <p className="text-[11px] text-gray-400 mt-1.5">{tx('⬇ 只上傳「本角色」的音檔(多句可打包 zip 分軌命名),請勿與其他角色混在同一軌。', '⬇ 只上传「本角色」的音档(多句可打包 zip 分轨命名),请勿与其他角色混在同一轨。', '⬇ Upload THIS role’s audio only (zip multiple lines if needed) — don’t mix roles in one track.')}</p>
                 <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} tx={tx} onChanged={() => load()} />
               </EntityCard>

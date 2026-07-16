@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     // released_at null = Wing 還在備稿(指派了但沒按「發出通知」)→ 配音員先看不到,
     // 免得搶在定稿匯入前就開錄(2026-07-15 女王百貨實際發生過)。
     const { data: ao } = await r.db.from('voice_orders')
-      .select('id, brief_id, role_name, project_name, script_text, script_file_url, production_notes, reference_files, voice_sample_files, role_images, deadline, status, download_url, talent_price, currency, created_at')
+      .select('id, brief_id, role_name, project_name, script_text, script_file_url, production_notes, reference_files, voice_sample_files, role_images, deadline, deadline_time, status, download_url, talent_price, currency, created_at')
       .eq('talent_id', talentId).is('quote_id', null).neq('status', 'completed')
       .not('released_at', 'is', null)
       .order('created_at', { ascending: true });
@@ -146,7 +146,14 @@ export async function GET(request: NextRequest) {
       const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, status').in('voice_order_id', aoIds);
       for (const v of vers || []) (aoVers[v.voice_order_id as string] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null });
     }
-    const assignedOrders = (ao || []).map((o) => ({ ...o, deliveries: aoVers[o.id as string] || [] }));
+    // 案件時區:期限顯示用(配音員端標示案件時區並換算當地時間)。
+    const aoBriefIds = [...new Set((ao || []).map((o) => o.brief_id).filter(Boolean))] as string[];
+    const tzByBrief = new Map<string, string>();
+    if (aoBriefIds.length) {
+      const { data: tzb } = await r.db.from('marketplace_briefs').select('id, timezone').in('id', aoBriefIds);
+      for (const b of tzb || []) tzByBrief.set(String(b.id), String((b as { timezone?: string }).timezone || 'Asia/Taipei'));
+    }
+    const assignedOrders = (ao || []).map((o) => ({ ...o, deliveries: aoVers[o.id as string] || [], case_timezone: tzByBrief.get(String(o.brief_id)) || 'Asia/Taipei' }));
 
     const tt = (r.talent as { name?: string; quote_templates?: { intro?: unknown[]; revision?: unknown[] } });
     return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs, assignedOrders, myName: tt.name || '', templates: tt.quote_templates || {} });

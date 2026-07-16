@@ -3,6 +3,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { zonedTimeToUtc, fmtInTz, tzLabel } from '@/lib/case-time';
 
 /*
   POST /api/admin/casting/release — 正式「發出」指派單給配音員。
@@ -28,11 +29,11 @@ export async function POST(request: NextRequest) {
   const onlyIds = Array.isArray(body.order_ids) ? body.order_ids.map(String).filter(Boolean) : null;
 
   const db = getSupabaseServiceClient();
-  const { data: brief } = await db.from('marketplace_briefs').select('id, title, content_type').eq('id', briefId).maybeSingle();
+  const { data: brief } = await db.from('marketplace_briefs').select('id, title, content_type, timezone').eq('id', briefId).maybeSingle();
   if (!brief) return NextResponse.json({ error: 'Case not found' }, { status: 404 });
 
   let q = db.from('voice_orders')
-    .select('id, role_name, talent_id, deadline')
+    .select('id, role_name, talent_id, deadline, deadline_time')
     .eq('brief_id', briefId).is('released_at', null).not('talent_id', 'is', null);
   if (onlyIds?.length) q = q.in('id', onlyIds);
   const { data: pending, error: qErr } = await q;
@@ -51,6 +52,15 @@ export async function POST(request: NextRequest) {
     byTalent.set(String(o.talent_id), slot);
   }
   const title = (brief.title as string) || (brief.content_type as string) || '配音案件';
+  // 交件期限(案件時區,永遠標名):7/20(一)12:00(台灣時間)
+  const tz = String((brief as { timezone?: string }).timezone || 'Asia/Taipei');
+  const dlOrder = pending.find((o) => o.deadline);
+  let deadlineText = '';
+  if (dlOrder?.deadline) {
+    const hasTime = !!(dlOrder as { deadline_time?: string | null }).deadline_time;
+    const inst = zonedTimeToUtc(String(dlOrder.deadline).slice(0, 10), String((dlOrder as { deadline_time?: string | null }).deadline_time || '00:00'), tz);
+    if (inst) deadlineText = `${fmtInTz(inst, tz, hasTime)}(${tzLabel(tz)})`;
+  }
   let notified = 0;
   const unnotified: string[] = [];   // 沒真信箱也沒綁 Telegram → Wing 要自己用 LINE 通知
   const tIds = [...byTalent.keys()];
@@ -66,13 +76,13 @@ export async function POST(request: NextRequest) {
       sendEmail({
         category: 'PRODUCTION', to: email,
         subject: `台詞已就緒,可以開錄了 — ${title}(${roles.length} 個角色)`,
-        html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>「<strong>${title}</strong>」指派給您的 <strong>${roles.length}</strong> 個角色(${roleList})台詞與參考資料已備妥,請登入後台在「製作中」查看稿件並錄製上傳。</p><p>若時程上無法配合完成日,請直接在後台傳訊息告訴我們可提供的時間。</p><p><a href="${SITE}/talent/opportunities">前往後台 →</a></p></div>`,
+        html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>「<strong>${title}</strong>」指派給您的 <strong>${roles.length}</strong> 個角色(${roleList})台詞與參考資料已備妥,請登入後台在「製作中」查看稿件並錄製上傳。</p>${deadlineText ? `<p><strong>交件期限:${deadlineText}</strong></p>` : ''}<p>若時程上無法配合完成日,請直接在後台傳訊息告訴我們可提供的時間。</p><p><a href="${SITE}/talent/opportunities">前往後台 →</a></p></div>`,
       }).catch(() => {});
       notified += 1;
     } else if (!tgById.get(tid)) {
       unnotified.push(nameById.get(tid) || tid);
     }
-    notifyTalentTelegram(db, tid, `🎬 台詞已就緒,可以開錄了(${title})。您的角色:${roleList}。請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
+    notifyTalentTelegram(db, tid, `🎬 台詞已就緒,可以開錄了(${title})。您的角色:${roleList}。${deadlineText ? `交件期限:${deadlineText}。` : ''}請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
   }
   return NextResponse.json({ ok: true, released: ids.length, notified, talents: byTalent.size, unnotified });
 }

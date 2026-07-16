@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { CASE_TIMEZONES } from '@/lib/case-time';
 import { sendEmail } from '@/lib/mail';
 import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail } from '@/lib/mail-templates';
 import { caseCode } from '@/lib/casting';
@@ -215,9 +216,11 @@ export async function POST(request: NextRequest) {
 
   const fromId = String(b.id || '').trim(); // present = publishing a client request in place
 
+  const tzOk = (v: unknown) => CASE_TIMEZONES.some((t) => t.v === v);
   const row = {
     kind: 'casting',
     title,
+    timezone: tzOk(b.timezone) ? String(b.timezone) : 'Asia/Taipei',   // 案件時區:全案時間溝通以它為準
     content_type: String(b.content_type || '').slice(0, 80) || null, // 類別(廣告/旁白/遊戲…)
     brief: briefText,
     language: String(b.language || '').slice(0, 80) || null,
@@ -325,6 +328,7 @@ export async function PATCH(request: NextRequest) {
     if (e.audition_cap !== undefined) upd.audition_cap = Math.max(1, Math.trunc(Number(e.audition_cap) || 5));
     // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 讓編輯頁能改(修正從客戶請求帶入時自動勾的)。
     for (const k of ['has_singing', 'wants_director', 'wants_live_session']) if (e[k] !== undefined) upd[k] = !!e[k];
+    if (e.timezone !== undefined && CASE_TIMEZONES.some((t) => t.v === e.timezone)) upd.timezone = String(e.timezone);
     if (Array.isArray(e.recording_methods)) upd.recording_methods = (e.recording_methods as unknown[]).map(String).filter((x) => ['home', 'studio', 'online'].includes(x));
     if (Array.isArray(e.roles)) {
       upd.roles = (e.roles as RoleIn[]).filter((r) => r && String(r.name || '').trim()).slice(0, 100).map((r) => ({

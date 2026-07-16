@@ -12,6 +12,7 @@ import { useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGES, langLabel } from '@/lib/languages';
+import { CASE_TIMEZONES } from '@/lib/case-time';
 
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
@@ -34,7 +35,7 @@ export default function EditCasting() {
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [f, setF] = useState({ title: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '' });
+  const [f, setF] = useState({ title: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
   // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 之前只在發案表單有,編輯頁沒有,導致從客戶請求
@@ -153,6 +154,7 @@ export default function EditCasting() {
       title: bf.title || '', content_type: bf.content_type || '', language: bf.language || '', brief: bf.brief || '',
       rate_note: bf.rate_note || '', audition_deadline: bf.audition_deadline || '', recording_start: bf.recording_start || '',
       deadline: bf.deadline || '', length: bf.length || '', audition_script: bf.audition_script || '',
+      timezone: bf.timezone || 'Asia/Taipei',
       base_revisions: String(bf.base_revisions ?? 1), audition_cap: String(bf.audition_cap ?? 5),
       accent: bf.accent || '', voice_style: bf.voice_style || '', voice_age: bf.voice_age || '',
       media_scope: bf.media_scope || '', territory: bf.territory || '', license_term: bf.license_term || '',
@@ -220,6 +222,10 @@ export default function EditCasting() {
         </div>
         <div className="grid grid-cols-3 gap-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">預計開錄</span><input className={input} value={f.recording_start} onChange={(e) => set('recording_start', e.target.value)} placeholder="例:8月" /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">案件時區(全案時間溝通以此為準)</span>
+            <select className={input} value={f.timezone} onChange={(e) => set('timezone', e.target.value)}>
+              {CASE_TIMEZONES.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+            </select></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">含修改次數</span><input type="number" min={0} className={input} value={f.base_revisions} onChange={(e) => set('base_revisions', e.target.value)} /></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">熱門門檻(人數提示)</span><input type="number" min={1} className={input} value={f.audition_cap} onChange={(e) => set('audition_cap', e.target.value)} /></label>
         </div>
