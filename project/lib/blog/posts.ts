@@ -31,7 +31,7 @@ const langQA: BlogPost = {
   slug: 'quality-check-ai-voice-language-you-dont-speak',
   date: '2026-06-14',
   readMins: 4,
-  cover: '/blog/lang-qa-hero.png',
+  cover: '/blog/quality-check-ai-voice-language-you-dont-speak-hero.png',
   tags: ['AI Voice', 'Localization', 'Text-to-Speech', 'Quality Assurance'],
   title: {
     en: 'AI Can Speak 40 Languages. The Data Says It Still Gets Them Wrong.',
@@ -120,7 +120,7 @@ const wilderConsent: BlogPost = {
   slug: 'gene-wilder-ai-voice-what-permission-requires',
   date: '2026-07-16',
   readMins: 6,
-  cover: '/blog/that-ad-voice-might-be-borrowed-hero.png',
+  cover: '/blog/gene-wilder-ai-voice-what-permission-requires-hero.png',
   tags: ['AI Voice', 'Consent', 'Legal', 'Licensing'],
   title: {
     en: "Netflix Recreated Gene Wilder's Voice — With Permission. Permission Is the Hard Part.",
