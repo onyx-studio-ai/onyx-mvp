@@ -51,7 +51,8 @@ export default function EditCasting() {
 
   // ── Direct assignment (managed production): pick roles → assign to a talent
   // (existing or invite by email) with a fixed pay-per-role. Admin-only. ──
-  const [talents, setTalents] = useState<{ id: string; name: string; email: string; active?: boolean }[]>([]);
+  const [talents, setTalents] = useState<{ id: string; name: string; email: string; active?: boolean; no?: number; realNames?: string[] }[]>([]);
+  const [talentQ, setTalentQ] = useState('');   // 指派選人搜尋(名字/編號/信箱/真名)
   // 本案試過音的人(含每人最低報價)—— 指派下拉置頂,選了自動帶報價當派工價。
   const [auditioned, setAuditioned] = useState<{ talent_id: string; name: string; amount?: number; currency?: string }[]>([]);
   // 已指派狀態:角色名 → 指派給誰/酬勞(後台看得到;前台只標「已徵得」不露名)。
@@ -77,7 +78,7 @@ export default function EditCasting() {
       .then((r) => (r.ok ? r.json() : []))
       .then((all) => setTalents((Array.isArray(all) ? all : [])
         .filter((t: { type?: string; voice_id_status?: string }) => ['VO', 'voice_actor', 'Singer'].includes(t.type || '') && t.voice_id_status !== 'verified')
-        .map((t: { id: string; name?: string; email?: string; is_active?: boolean }) => ({ id: t.id, name: t.name || '(未命名)', email: t.email || '', active: !!t.is_active }))
+        .map((t: { id: string; name?: string; email?: string; is_active?: boolean; talent_no?: number; invite_names?: string[] }) => ({ id: t.id, name: t.name || '(未命名)', email: t.email || '', active: !!t.is_active, no: t.talent_no, realNames: t.invite_names || [] }))
         .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))))
       .catch(() => {});
   }, []);
@@ -303,23 +304,50 @@ export default function EditCasting() {
                 ))}
               </div>
               {assignMode === 'existing' ? (
-                <label className="block"><span className="text-xs text-gray-600 mb-1 block">配音員</span>
-                  <select className={`${input} min-w-[220px]`} value={assignTalent} onChange={(e) => {
-                    setAssignTalent(e.target.value);
-                    const a = auditioned.find((x) => x.talent_id === e.target.value);
-                    if (a?.amount != null) setPay(String(a.amount));   // 試音者 → 自動帶他的報價(可改)
-                  }}>
-                    <option value="">— 選一位 —</option>
-                    {auditioned.length > 0 && (
-                      <optgroup label={`⭐ 本案有試音(${auditioned.length})`}>
-                        {auditioned.map((a) => <option key={a.talent_id} value={a.talent_id}>{a.name}{a.amount != null ? ` — 報價 ${a.currency || ''}${a.amount}` : ''}</option>)}
-                      </optgroup>
-                    )}
-                    <optgroup label="其他配音員(未試音,含未上線)">
-                      {talents.filter((t) => !auditioned.some((a) => a.talent_id === t.id)).map((t) => <option key={t.id} value={t.id}>{t.name}{t.active === false ? '(未上線)' : ''}</option>)}
-                    </optgroup>
-                  </select>
-                </label>
+                <div className="block">
+                  <span className="text-xs text-gray-600 mb-1 block">配音員(可搜名字/編號/信箱/真名;⭐試音者置頂)</span>
+                  {(() => {
+                    // 標示格式:名字(T-編號)· 信箱 · 真名 —— 同名(8 個 Ryan)也永遠分得開。
+                    const label = (t: { name: string; email: string; active?: boolean; no?: number; realNames?: string[] }) =>
+                      `${t.name}${t.no ? `(T-${t.no})` : ''} · ${t.email.split('@')[0]}${t.realNames?.length ? ` · 真名:${t.realNames.join('/')}` : ''}${t.active === false ? ' · 未上線' : ''}`;
+                    const hit = (t: { name: string; email: string; no?: number; realNames?: string[] }) => {
+                      const q = talentQ.trim().toLowerCase();
+                      if (!q) return true;
+                      return [t.name, t.email, t.no != null ? `t-${t.no}` : '', String(t.no ?? ''), ...(t.realNames || [])].some((v) => String(v).toLowerCase().includes(q));
+                    };
+                    const byId = new Map(talents.map((t) => [t.id, t]));
+                    const audList = auditioned.filter((a) => hit(byId.get(a.talent_id) || { name: a.name, email: '' }));
+                    const restList = talents.filter((t) => !auditioned.some((a) => a.talent_id === t.id) && hit(t));
+                    const sel = byId.get(assignTalent);
+                    return (
+                      <>
+                        <div className="flex gap-1.5 flex-wrap items-start">
+                          <input className={`${input} w-40`} value={talentQ} placeholder="搜尋…" onChange={(e) => setTalentQ(e.target.value)} />
+                          <select className={`${input} min-w-[300px] max-w-[420px]`} value={assignTalent} onChange={(e) => {
+                            setAssignTalent(e.target.value);
+                            const a = auditioned.find((x) => x.talent_id === e.target.value);
+                            if (a?.amount != null) setPay(String(a.amount));   // 試音者 → 自動帶他的報價(可改)
+                          }}>
+                            <option value="">— 選一位({audList.length + restList.length})—</option>
+                            {audList.length > 0 && (
+                              <optgroup label={`⭐ 本案有試音(${audList.length})`}>
+                                {audList.map((a) => { const t = byId.get(a.talent_id); return <option key={a.talent_id} value={a.talent_id}>{t ? label(t) : a.name}{a.amount != null ? ` — 報價 ${a.currency || ''}${a.amount}` : ''}</option>; })}
+                              </optgroup>
+                            )}
+                            <optgroup label={`其他配音員(未試音,含未上線)(${restList.length})`}>
+                              {restList.map((t) => <option key={t.id} value={t.id}>{label(t)}</option>)}
+                            </optgroup>
+                          </select>
+                        </div>
+                        {sel && (
+                          <div className="mt-1.5 text-[11px] bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1.5 text-violet-900">
+                            即將指派給:<b>{sel.name}</b>{sel.no ? `(T-${sel.no})` : ''} · {sel.email}{sel.realNames?.length ? ` · 真名:${sel.realNames.join('/')}` : ''}{sel.active === false ? ' · 未上線' : ''}{auditioned.some((a) => a.talent_id === sel.id) ? ' · ⭐本案有試音' : ' · ⚠ 本案未試音'}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               ) : (
                 <>
                   <label className="block"><span className="text-xs text-gray-600 mb-1 block">姓名</span><input className={`${input} w-36`} value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="配音員姓名" /></label>

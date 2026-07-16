@@ -374,7 +374,7 @@ function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) 
           <div className="w-16 h-16 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 font-semibold text-xl">{(t.name || '?').charAt(0)}</div>
         )}
         <div className="min-w-0">
-          <p className="font-semibold text-gray-900">{t.name}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}{((t as TalentProfile).invite_names || []).length ? <span className="text-gray-400 font-normal text-xs"> (真名:{((t as TalentProfile).invite_names || []).join('、')})</span> : null}</p>
+          <p className="font-semibold text-gray-900">{t.name}{(t as TalentProfile & { talent_no?: number }).talent_no ? <span className="text-gray-400 font-normal text-xs"> T-{(t as TalentProfile & { talent_no?: number }).talent_no}</span> : null}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}{((t as TalentProfile).invite_names || []).length ? <span className="text-gray-400 font-normal text-xs"> (真名:{((t as TalentProfile).invite_names || []).join('、')})</span> : null}</p>
           <p className="text-xs text-gray-500">{[t.gender, t.location ? countryLabel(t.location, locale) : '', typeof t.years_experience === 'number' ? tr('cardYearsExperience', { years: t.years_experience }) : ''].filter(Boolean).join(' · ') || '—'}</p>
           {t.email && <p className="text-xs text-gray-500 truncate">{tr('cardContact')}<a href={`mailto:${t.email}`} className="text-blue-600 hover:underline">{t.email}</a></p>}
         </div>
