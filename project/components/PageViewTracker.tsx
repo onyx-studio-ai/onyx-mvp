@@ -32,10 +32,19 @@ export default function PageViewTracker() {
     if (lastPath.current === pathname) return;
     lastPath.current = pathname;
 
+    // 匿名訪客標識(localStorage 隨機 id,非個資):有它才能分「一人狂刷 vs 真多人」——
+    // 2026-07-16 suno 文章暴衝時 visitor_id 全空,判不出真假流量。
+    let vid = '';
+    try {
+      vid = localStorage.getItem('onyx-vid') || '';
+      if (!vid) { vid = crypto.randomUUID(); localStorage.setItem('onyx-vid', vid); }
+    } catch { /* 無痕/擋 storage 就送空 */ }
+
     const payload = JSON.stringify({
       path: pathname,
       locale,
       referrer: typeof document !== 'undefined' ? document.referrer : '',
+      visitor_id: vid,
     });
 
     try {

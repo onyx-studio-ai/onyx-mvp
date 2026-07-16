@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const ua = request.headers.get('user-agent') || '';
     if (isBot(ua)) return new NextResponse(null, { status: 204 });
 
-    let body: { path?: unknown; locale?: unknown; referrer?: unknown } = {};
+    let body: { path?: unknown; locale?: unknown; referrer?: unknown; visitor_id?: unknown } = {};
     try {
       body = await request.json();
     } catch {
@@ -101,11 +101,17 @@ export async function POST(request: NextRequest) {
     // fire-and-forget:不 await 的話 serverless 可能提前結束,所以 await。錯誤不擋頁面
     // (仍回 204),但要 console.error 出來 —— 之前純吞錯,害 page_views 缺欄位(PGRST204)
     // 導致每筆寫入靜默失敗、埋點斷了一週都沒人發現(2026-07-13)。留 log 讓 Vercel 看得到。
+    // 匿名訪客標識(前端 localStorage 隨機 uuid):判「一人狂刷 vs 真多人」用。
+    // 只收合法 uuid 格式,其餘存 null(避免髒值/超長注入)。
+    const visitorId = typeof body.visitor_id === 'string' && /^[0-9a-f-]{36}$/i.test(body.visitor_id)
+      ? body.visitor_id : null;
+
     const { error } = await supabase.from('page_views').insert({
       path,
       country,
       referrer,
       locale: normalizeLocale(body.locale),
+      visitor_id: visitorId,
     });
     if (error) console.error('[track] page_views insert failed:', error.code, error.message);
 

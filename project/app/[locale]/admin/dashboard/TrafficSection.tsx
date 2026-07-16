@@ -150,11 +150,12 @@ export default function TrafficSection() {
       <section>
         <SectionHeader title={t('trafficTrendFunnel')} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+          {/* min-w-0:grid 子項預設 min-width:auto,Recharts 量寬時會把格子撐爆 → 右側被裁掉 */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 min-w-0">
             <h3 className="text-gray-900 text-lg font-semibold">{t('dailyPageViews')}</h3>
             <p className="text-gray-600 text-xs mb-4">{t('dailyPageViewsDesc', { days: d.windowDays })}</p>
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={trend}>
+              <LineChart data={trend} margin={{ top: 8, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="day" stroke="#888" tick={{ fill: '#888', fontSize: 11 }} interval="preserveStartEnd" minTickGap={24} />
                 <YAxis stroke="#888" tick={{ fill: '#888' }} allowDecimals={false} />
