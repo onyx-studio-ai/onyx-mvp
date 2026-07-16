@@ -26,6 +26,7 @@ interface Earning {
   commission_rate: number;
   commission_amount: number;
   status: string;
+  currency?: string;   // 由 API 依來源訂單補上(TWD/USD…)
   payout_id: string | null;
   created_at: string;
   cost_breakdown?: Record<string, unknown> | null;
@@ -61,6 +62,7 @@ interface TalentSummary {
   totalEarnings: number;
   pendingEarnings: number;
   paidEarnings: number;
+  byCur: Record<string, { pending: number; paid: number; total: number }>;
   orderCount: number;
   earnings: Earning[];
   paymentMethod: string | null;
@@ -187,6 +189,7 @@ export default function PayoutsPage() {
           totalEarnings: 0,
           pendingEarnings: 0,
           paidEarnings: 0,
+          byCur: {},
           orderCount: 0,
           earnings: [],
           paymentMethod: (e.talents as any)?.payment_method || null,
@@ -194,29 +197,44 @@ export default function PayoutsPage() {
         });
       }
       const s = map.get(key)!;
+      const cur = e.currency || 'TWD';
+      const c = (s.byCur[cur] ||= { pending: 0, paid: 0, total: 0 });
       s.totalEarnings += e.commission_amount;
+      c.total += e.commission_amount;
       s.orderCount += 1;
       s.earnings.push(e);
-      if (e.status === 'pending') s.pendingEarnings += e.commission_amount;
-      if (e.status === 'paid') s.paidEarnings += e.commission_amount;
+      if (e.status === 'pending') { s.pendingEarnings += e.commission_amount; c.pending += e.commission_amount; }
+      if (e.status === 'paid') { s.paidEarnings += e.commission_amount; c.paid += e.commission_amount; }
     });
     return Array.from(map.values()).sort((a, b) => b.pendingEarnings - a.pendingEarnings);
   }, [filteredEarnings]);
 
   const totalPending = summaries.reduce((sum, s) => sum + s.pendingEarnings, 0);
   const totalPaid = summaries.reduce((sum, s) => sum + s.paidEarnings, 0);
+  // 幣別不混加:各幣別分開列(NT$/US$)。money()/joinCur() 是全頁唯一的金額格式化入口。
+  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', CNY: '¥', GBP: '£', EUR: '€' };
+  const money = (n: number, cur = 'TWD') => `${SYM[cur] || `${cur} `}${(Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  const joinCur = (pick: (c: { pending: number; paid: number; total: number }) => number, byCur: Record<string, { pending: number; paid: number; total: number }>) => {
+    const parts = Object.entries(byCur).filter(([, v]) => pick(v) > 0).map(([cur, v]) => money(pick(v), cur));
+    return parts.length ? parts.join(' + ') : money(0);
+  };
+  const allByCur: Record<string, { pending: number; paid: number; total: number }> = {};
+  for (const su of summaries) for (const [cur, v] of Object.entries(su.byCur)) {
+    const c = (allByCur[cur] ||= { pending: 0, paid: 0, total: 0 });
+    c.pending += v.pending; c.paid += v.paid; c.total += v.total;
+  }
 
   const exportCSV = () => {
     const rows = view === 'summary'
       ? [
-          ['Talent', 'Email', 'Orders', 'Pending ($)', 'Paid ($)', 'Total ($)'],
-          ...summaries.map(s => [s.name, s.email, s.orderCount, s.pendingEarnings.toFixed(2), s.paidEarnings.toFixed(2), s.totalEarnings.toFixed(2)])
+          ['Talent', 'Email', 'Orders', 'Pending', 'Paid', 'Total'],
+          ...summaries.map(s => [s.name, s.email, s.orderCount, joinCur((c) => c.pending, s.byCur), joinCur((c) => c.paid, s.byCur), joinCur((c) => c.total, s.byCur)])
         ]
       : [
-          ['Order #', 'Type', 'Tier', 'Talent', 'Order Total ($)', 'Commission Rate', 'Commission ($)', 'Status', 'Date'],
+          ['Order #', 'Type', 'Tier', 'Talent', 'Currency', 'Order Total', 'Commission Rate', 'Commission', 'Status', 'Date'],
           ...displayedEarnings.map(e => [
             e.order_number, e.order_type, e.tier,
-            e.talents?.name || '', e.order_total.toFixed(2),
+            e.talents?.name || '', e.currency || 'TWD', e.order_total.toFixed(2),
             (e.commission_rate * 100).toFixed(0) + '%',
             e.commission_amount.toFixed(2), e.status,
             new Date(e.created_at).toLocaleDateString()
@@ -390,9 +408,9 @@ export default function PayoutsPage() {
                       {e.order_type} / {e.tier}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-gray-700">US${Number(e.order_total).toFixed(2)}</td>
+                  <td className="px-5 py-3 text-gray-700">{money(Number(e.order_total), e.currency)}</td>
                   <td className="px-5 py-3 text-gray-600">{(e.commission_rate * 100).toFixed(0)}%</td>
-                  <td className="px-5 py-3 text-emerald-700 font-medium">US${Number(e.commission_amount).toFixed(2)}</td>
+                  <td className="px-5 py-3 text-emerald-700 font-medium">{money(Number(e.commission_amount), e.currency)}</td>
                   <td className="px-5 py-3">
                     {e.status === 'paid' ? (
                       <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
@@ -501,7 +519,7 @@ export default function PayoutsPage() {
                                 <div key={key} className="bg-white border border-gray-200 rounded px-2 py-1.5">
                                   <div className="text-gray-500 capitalize">{key.replace(/_/g, ' ')}</div>
                                   <div className="text-gray-900 font-medium">
-                                    {typeof val === 'number' ? `US$${val.toFixed(2)}` : String(val)}
+                                    {typeof val === 'number' ? val.toFixed(2) : String(val)}
                                   </div>
                                 </div>
                               ))}
@@ -585,13 +603,13 @@ export default function PayoutsPage() {
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">
                 {monthFilter !== 'all' ? 'Period Pending' : 'Total Pending'}
               </p>
-              <p className="text-2xl font-bold text-amber-700">US${totalPending.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-amber-700">{joinCur((c) => c.pending, allByCur)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">
                 {monthFilter !== 'all' ? 'Period Paid' : 'Total Paid'}
               </p>
-              <p className="text-2xl font-bold text-emerald-700">US${totalPaid.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-emerald-700">{joinCur((c) => c.paid, allByCur)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Active Talents</p>
@@ -607,15 +625,15 @@ export default function PayoutsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Pending</p>
-              <p className="text-xl font-bold text-amber-700">US${activeTalent.pendingEarnings.toFixed(2)}</p>
+              <p className="text-xl font-bold text-amber-700">{joinCur((c) => c.pending, activeTalent.byCur)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Paid</p>
-              <p className="text-xl font-bold text-emerald-700">US${activeTalent.paidEarnings.toFixed(2)}</p>
+              <p className="text-xl font-bold text-emerald-700">{joinCur((c) => c.paid, activeTalent.byCur)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Total</p>
-              <p className="text-xl font-bold text-gray-900">US${activeTalent.totalEarnings.toFixed(2)}</p>
+              <p className="text-xl font-bold text-gray-900">{joinCur((c) => c.total, activeTalent.byCur)}</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Commission Rate</p>
@@ -775,13 +793,13 @@ export default function PayoutsPage() {
                   <td className="px-5 py-3 text-gray-700">{s.orderCount}</td>
                   <td className="px-5 py-3">
                     {s.pendingEarnings > 0 ? (
-                      <span className="text-amber-700 font-medium">US${s.pendingEarnings.toFixed(2)}</span>
+                      <span className="text-amber-700 font-medium">{joinCur((c) => c.pending, s.byCur)}</span>
                     ) : (
                       <span className="text-gray-600">US$0.00</span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-emerald-700">US${s.paidEarnings.toFixed(2)}</td>
-                  <td className="px-5 py-3 text-gray-900 font-semibold">US${s.totalEarnings.toFixed(2)}</td>
+                  <td className="px-5 py-3 text-emerald-700">{joinCur((c) => c.paid, s.byCur)}</td>
+                  <td className="px-5 py-3 text-gray-900 font-semibold">{joinCur((c) => c.total, s.byCur)}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <button

@@ -40,7 +40,17 @@ export async function GET(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ earnings: data });
+  // 幣別跟來源訂單走(talent_earnings 沒存幣別;前端曾寫死 US$,台幣案顯示成美金)。
+  const rows = data || [];
+  const byType: Record<string, string[]> = {};
+  for (const r of rows) if (r.order_id) (byType[r.order_type || 'voice'] ||= []).push(String(r.order_id));
+  const TABLE: Record<string, string> = { voice: 'voice_orders', music: 'music_orders', strings: 'orchestra_orders' };
+  const curById = new Map<string, string>();
+  for (const [ot, ids] of Object.entries(byType)) {
+    const { data: os } = await supabase.from(TABLE[ot] || 'voice_orders').select('id, currency').in('id', ids);
+    for (const o of os || []) curById.set(String(o.id), String(o.currency || 'TWD').toUpperCase());
+  }
+  return NextResponse.json({ earnings: rows.map((r) => ({ ...r, currency: curById.get(String(r.order_id)) || 'TWD' })) });
 }
 
 export async function POST(request: NextRequest) {
