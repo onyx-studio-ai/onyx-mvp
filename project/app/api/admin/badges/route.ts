@@ -97,7 +97,24 @@ export async function GET(request: NextRequest) {
 
     const orchestraPaid = Array.isArray(orchestraRes) ? orchestraRes.length : 0;
 
+    // 未讀訊息串:每串最後一則非 admin 且晚於已讀時間(admin_thread_reads)。
+    let unreadThreads = 0;
+    try {
+      const { data: msgs } = await supabase.from('marketplace_messages')
+        .select('brief_id, talent_id, sender_type, created_at')
+        .order('created_at', { ascending: false }).limit(2000);
+      const lastByThread = new Map<string, { sender: string; at: string }>();
+      for (const m of msgs || []) {
+        const key = `${m.brief_id}:${m.talent_id}`;
+        if (!lastByThread.has(key)) lastByThread.set(key, { sender: String(m.sender_type), at: String(m.created_at) });
+      }
+      const { data: reads } = await supabase.from('admin_thread_reads').select('thread_key, read_at');
+      const readAt = new Map((reads || []).map((r) => [String(r.thread_key), String(r.read_at)]));
+      for (const [key, l] of lastByThread) if (l.sender !== 'admin' && (!readAt.has(key) || l.at > readAt.get(key)!)) unreadThreads++;
+    } catch { /* 表未建先回 0 */ }
+
     return NextResponse.json({
+      messages: unreadThreads,
       orders: (paidVoice || 0) + (paidMusic || 0) + orchestraPaid,
       inquiries: newInquiries || 0,
       applications: pendingApps || 0,

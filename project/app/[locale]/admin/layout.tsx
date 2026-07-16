@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl';
 import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos';
+type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos' | 'messages';
 
 type NavItem = { href: string; labelKey: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey };
 type NavGroup = { titleKey: string; items: NavItem[] };
@@ -19,6 +19,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/orders', labelKey: 'orders', icon: ShoppingCart, badgeKey: 'orders' },
       { href: '/admin/requests', labelKey: 'requests', icon: Inbox, badgeKey: 'requests' },
       { href: '/admin/inquiries', labelKey: 'inquiries', icon: MessageSquare, badgeKey: 'inquiries' },
+      { href: '/admin/messages', labelKey: 'messages', icon: MessageSquare, badgeKey: 'messages' },
       { href: '/admin/marketplace', labelKey: 'marketplace', icon: Megaphone, badgeKey: 'demos' },
     ],
   },
@@ -56,6 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     dashboard: '總覽',
     requests: '客戶請求',
     inquiries: '詢問單',
+    messages: '訊息',
     marketplace: '案件 · 發案',
     people: '人員',
     applications: '申請資料',
@@ -90,6 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     dashboard: 'Dashboard',
     requests: 'Client Requests',
     inquiries: 'Inquiries',
+    messages: 'Messages',
     marketplace: 'Briefs · Casting',
     people: 'People',
     applications: 'Applications',
@@ -127,7 +130,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(true);
-  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0, demos: 0 });
+  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0, demos: 0, messages: 0 });
 
   // Admin panel uses a light theme — explicitly ensure dark class is not set
   // (it may linger from public dark pages on client-side navigation).
@@ -172,6 +175,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const res = await fetch(`/api/admin/badges?${params}`);
         const data = await res.json();
         setBadges({
+          messages: data.messages || 0,
           orders: data.orders || 0,
           inquiries: data.inquiries || 0,
           applications: data.applications || 0,
