@@ -97,6 +97,16 @@ export async function GET(request: NextRequest) {
 
     const orchestraPaid = Array.isArray(orchestraRes) ? orchestraRes.length : 0;
 
+    // 請款單待處理 + 人才自助改檔待審核(Wing:有東西要處理,側欄要亮,不點進去也知道)。
+    let pendingPayouts = 0, pendingTalentReview = 0;
+    try {
+      const [{ count: pp }, { count: pr }] = await Promise.all([
+        supabase.from('payout_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('talents').select('id', { count: 'exact', head: true }).eq('pending_review', true),
+      ]);
+      pendingPayouts = pp || 0; pendingTalentReview = pr || 0;
+    } catch { /* 表缺先回 0 */ }
+
     // 未讀訊息串:每串最後一則非 admin 且晚於已讀時間(admin_thread_reads)。
     let unreadThreads = 0;
     try {
@@ -115,6 +125,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       messages: unreadThreads,
+      payoutRequests: pendingPayouts,
+      talentReview: pendingTalentReview,
       orders: (paidVoice || 0) + (paidMusic || 0) + orchestraPaid,
       inquiries: newInquiries || 0,
       applications: pendingApps || 0,

@@ -218,6 +218,21 @@ export default function ProductionPage() {
   }
   const unreleased = orders.filter((o) => !o.released_at && o.talent_id);
 
+  // 搜尋/過濾(Wing:70+ 張單靠眼睛找會瞎)—— 搜角色名/配音員/單號,狀態一鍵濾。
+  const [q, setQ] = useState('');
+  const [statusF, setStatusF] = useState<'all' | 'unreleased' | 'todo' | 'delivered' | 'completed'>('all');
+  const view = orders.filter((o) => {
+    if (q.trim()) {
+      const t = q.trim().toLowerCase();
+      if (![o.role_name, o.talent_name, o.order_number].some((v) => String(v || '').toLowerCase().includes(t))) return false;
+    }
+    if (statusF === 'unreleased') return !o.released_at && !!o.talent_id;
+    if (statusF === 'todo') return o.status !== 'delivered' && o.status !== 'completed';
+    if (statusF === 'delivered') return o.status === 'delivered';
+    if (statusF === 'completed') return o.status === 'completed';
+    return true;
+  });
+
   // 💬 與配音員的對話(brief × talent 一串)—— 直接指派沒試音的人在別處沒有入口。
   type Msg = { id: string; sender_type: string; sender_name?: string | null; body: string; created_at: string };
   const [msgOrder, setMsgOrder] = useState<Order | null>(null);
@@ -294,10 +309,18 @@ export default function ProductionPage() {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+        <input className={`${input} w-56 max-w-full`} value={q} placeholder="搜角色 / 配音員 / 單號…" onChange={(e) => setQ(e.target.value)} />
+        {([['all', `全部(${orders.length})`], ['unreleased', `未發出(${orders.filter((o) => !o.released_at && o.talent_id).length})`], ['todo', `待錄製(${orders.filter((o) => o.status !== 'delivered' && o.status !== 'completed').length})`], ['delivered', `已交付(${orders.filter((o) => o.status === 'delivered').length})`], ['completed', `已完成(${orders.filter((o) => o.status === 'completed').length})`]] as const).map(([v, label]) => (
+          <button key={v} type="button" onClick={() => setStatusF(v)} className={`text-xs px-3 py-1.5 rounded-full border ${statusF === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300'}`}>{label}</button>
+        ))}
+        {(q || statusF !== 'all') && <span className="text-xs text-gray-500">符合 {view.length} 張</span>}
+      </div>
+
       {orders.length === 0 && <p className="text-sm text-gray-500">這個案子還沒有製作單 —— 先在「編輯案件」用「指派」把角色指派給配音員(每角色一單),再回來這裡。</p>}
 
       <div className="space-y-4">
-        {orders.map((o) => {
+        {view.map((o) => {
           const d = draft[o.id] || { script: '', tp: '', price: '', notes: '', deadline: '', dtime: '' };
           return (
             <div key={o.id} className="bg-white border border-gray-200 rounded-xl p-4">

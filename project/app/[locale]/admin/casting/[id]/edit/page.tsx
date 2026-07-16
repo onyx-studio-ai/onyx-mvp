@@ -53,6 +53,8 @@ export default function EditCasting() {
   // (existing or invite by email) with a fixed pay-per-role. Admin-only. ──
   const [talents, setTalents] = useState<{ id: string; name: string; email: string; active?: boolean; no?: number; realNames?: string[] }[]>([]);
   const [talentQ, setTalentQ] = useState('');   // 指派選人搜尋(名字/編號/信箱/真名)
+  const [roleQ, setRoleQ] = useState('');       // 角色卡搜尋(遊戲案 50+ 角用)
+  const [roleFilter, setRoleFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
   // 本案試過音的人(含每人最低報價)—— 指派下拉置頂,選了自動帶報價當派工價。
   const [auditioned, setAuditioned] = useState<{ talent_id: string; name: string; amount?: number; currency?: string }[]>([]);
   // 已指派狀態:角色名 → 指派給誰/酬勞(後台看得到;前台只標「已徵得」不露名)。
@@ -249,8 +251,18 @@ export default function EditCasting() {
             <h2 className="text-base font-semibold">角色 · 逐角修正台詞</h2>
             <span className="text-xs text-gray-500">共 {roles.length} 角</span>
           </div>
+          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+            <input className={`${input} w-52`} value={roleQ} placeholder="搜角色名…" onChange={(e) => setRoleQ(e.target.value)} />
+            {([['all', '全部'], ['unassigned', '未指派'], ['assigned', '已指派']] as const).map(([v, label]) => (
+              <button key={v} type="button" onClick={() => setRoleFilter(v)} className={`text-xs px-3 py-1.5 rounded-full border ${roleFilter === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300'}`}>{label}</button>
+            ))}
+            {(roleQ || roleFilter !== 'all') && <span className="text-xs text-gray-500">符合 {roles.filter((r) => (!roleQ || String(r.name || '').includes(roleQ.trim())) && (roleFilter === 'all' || (roleFilter === 'assigned') === !!(r.name && assignedRoles[r.name]))).length} 角</span>}
+          </div>
           <div className="space-y-3">
-            {roles.map((r, i) => {
+            {roles.map((r, i) => ({ r, i })).filter(({ r }) =>
+              (!roleQ || String(r.name || '').includes(roleQ.trim()))
+              && (roleFilter === 'all' || (roleFilter === 'assigned') === !!(r.name && assignedRoles[r.name]))
+            ).map(({ r, i }) => {
               const asg = r.name ? assignedRoles[r.name] : undefined;
               return (
               <div key={i} className={`relative flex gap-3 bg-white border rounded-xl p-4 ${asg ? 'border-green-300' : r.name && pickRoles.has(r.name) ? 'border-violet-400 ring-1 ring-violet-200' : 'border-gray-200'}`}>

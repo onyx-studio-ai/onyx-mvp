@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl';
 import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos' | 'messages';
+type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos' | 'messages' | 'payoutRequests' | 'talentReview';
 
 type NavItem = { href: string; labelKey: string; icon: typeof LayoutDashboard; badgeKey?: BadgeKey };
 type NavGroup = { titleKey: string; items: NavItem[] };
@@ -28,10 +28,10 @@ const navGroups: NavGroup[] = [
     items: [
       { href: '/admin/applications', labelKey: 'applications', icon: FileText, badgeKey: 'applications' },
       { href: '/admin/users', labelKey: 'users', icon: Users },
-      { href: '/admin/talents', labelKey: 'talentManagement', icon: Mic },
+      { href: '/admin/talents', labelKey: 'talentManagement', icon: Mic, badgeKey: 'talentReview' },
       { href: '/admin/finance', labelKey: 'finance', icon: TrendingUp },
       { href: '/admin/payouts', labelKey: 'talentPayouts', icon: DollarSign },
-      { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt },
+      { href: '/admin/payout-requests', labelKey: 'payoutRequests', icon: Receipt, badgeKey: 'payoutRequests' },
       { href: '/admin/costs', labelKey: 'costs', icon: Wallet },
       { href: '/admin/pockets', labelKey: 'pockets', icon: Wallet },
     ],
@@ -130,7 +130,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(true);
-  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0, demos: 0, messages: 0 });
+  const [badges, setBadges] = useState<Record<BadgeKey, number>>({ orders: 0, inquiries: 0, applications: 0, requests: 0, demos: 0, messages: 0, payoutRequests: 0, talentReview: 0 });
 
   // Admin panel uses a light theme — explicitly ensure dark class is not set
   // (it may linger from public dark pages on client-side navigation).
@@ -176,6 +176,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const data = await res.json();
         setBadges({
           messages: data.messages || 0,
+          payoutRequests: data.payoutRequests || 0,
+          talentReview: data.talentReview || 0,
           orders: data.orders || 0,
           inquiries: data.inquiries || 0,
           applications: data.applications || 0,
