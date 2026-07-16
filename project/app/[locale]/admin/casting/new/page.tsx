@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
 import { LANGUAGES, langLabel } from '@/lib/languages';
 import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
+import { CASE_TIMEZONES, tzLabel } from '@/lib/case-time';
 import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 
 type RefFile = { name: string; url: string };
@@ -157,6 +158,9 @@ function NewCasting() {
   // Voices-style data fields (most reuse existing brief columns)
   const [scale, setScale] = useState('');        // length: 句數/字數/秒數/時數
   const [deadline, setDeadline] = useState('');  // delivery deadline (vs audition)
+  const [deadlineTime, setDeadlineTime] = useState('');           // 交付截止時間 HH:mm(選填)
+  const [auditionDeadlineTime, setAuditionDeadlineTime] = useState('');   // 試音截止時間 HH:mm(選填)
+  const [caseTz, setCaseTz] = useState('Asia/Taipei');            // 案件時區:全案時間以它為準
   const [mediaScope, setMediaScope] = useState(''); // usage: where it plays
   const [territory, setTerritory] = useState('');   // territory
   const [licenseTerm, setLicenseTerm] = useState(''); // license term
@@ -221,8 +225,9 @@ function NewCasting() {
     title, category, mode, language, maleVoices, femaleVoices, hasSinging, wantsDirector, brief,
     rateCur, rateAmt, rateUnit, scale, deadline, mediaScope, territory, licenseTerm, accent,
     voiceStyle, voiceAge, baseRev, cap, auditionDeadline, recordingStart, methods, rolesText,
-    parsedRoles, auditionScript, refLinks, refFiles, aiType, clientNote,
+    parsedRoles, auditionScript, refLinks, refFiles, aiType, clientNote, deadlineTime, auditionDeadlineTime, caseTz,
   }, (d) => {
+    setDeadlineTime(d.deadlineTime || ''); setAuditionDeadlineTime(d.auditionDeadlineTime || ''); setCaseTz(d.caseTz || 'Asia/Taipei');
     setTitle(d.title); setCategory(d.category); setMode(d.mode); setLanguage(d.language); setClientNote(d.clientNote || '');
     setMaleVoices(d.maleVoices); setFemaleVoices(d.femaleVoices); setHasSinging(d.hasSinging); setWantsDirector(d.wantsDirector);
     setBrief(d.brief); setRateCur(d.rateCur); setRateAmt(d.rateAmt); setRateUnit(d.rateUnit); setScale(d.scale);
@@ -272,7 +277,10 @@ function NewCasting() {
       if (bf.voice_age) setVoiceAge(bf.voice_age);
       if (bf.length) setScale(bf.length);
       if (bf.deadline) setDeadline(bf.deadline);
+      if (bf.deadline_time) setDeadlineTime(bf.deadline_time);
       if (bf.audition_deadline) setAuditionDeadline(bf.audition_deadline);
+      if (bf.audition_deadline_time) setAuditionDeadlineTime(bf.audition_deadline_time);
+      if (bf.timezone) setCaseTz(bf.timezone);
       if (bf.recording_start) setRecordingStart(bf.recording_start);
       // client budget → seed the 報酬 (currency + amount) as a starting point Onyx can adjust.
       if (bf.budget) {
@@ -499,7 +507,8 @@ function NewCasting() {
       gender_needs: buildGenderNeeds(maleVoices, femaleVoices), voices_needed: voicesTotal(maleVoices, femaleVoices) || null,
       has_singing: hasSinging, wants_director: wantsDirector,
       brief, rate_note: buildRateNote(), base_revisions: Number(baseRev) || 0, audition_cap: Number(cap) || 5,
-      audition_deadline: auditionDeadline, recording_start: recordingStart,
+      audition_deadline: auditionDeadline, audition_deadline_time: auditionDeadlineTime, recording_start: recordingStart,
+      deadline_time: deadlineTime, timezone: caseTz,
       recording_methods: Object.keys(methods).filter((k) => methods[k]),
       roles, audition_script: auditionScript,
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
@@ -613,8 +622,8 @@ function NewCasting() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
             {[
               { l: '報酬', v: rn || '面議', gold: true },
-              { l: '試音截止', v: auditionDeadline || '待定' },
-              { l: '交付截止', v: deadline || '待定' },
+              { l: '試音截止', v: auditionDeadline ? `${auditionDeadline}${auditionDeadlineTime ? ' ' + auditionDeadlineTime : ''}(${tzLabel(caseTz)})` : '待定' },
+              { l: '交付截止', v: deadline ? `${deadline}${deadlineTime ? ' ' + deadlineTime : ''}(${tzLabel(caseTz)})` : '待定' },
               { l: '規模', v: scale || '待定' },
             ].map((s, i) => (
               <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
@@ -978,7 +987,17 @@ function NewCasting() {
         <Field label="案件說明 *"><textarea className={`${input} min-h-[90px] resize-y`} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="全劇共 X 條台詞… 先試音,通過後正式錄。試音範圍…" /></Field>
 
         <div className="grid grid-cols-4 gap-3">
-          <Field label="試音截止"><input type="date" className={`${input} [color-scheme:light]`} value={auditionDeadline} onChange={(e) => setAuditionDeadline(e.target.value)} /></Field>
+          <Field label="試音截止">
+            <div className="flex gap-2">
+              <input type="date" className={`${input} [color-scheme:light]`} value={auditionDeadline} onChange={(e) => setAuditionDeadline(e.target.value)} />
+              <input type="time" className={`${input} [color-scheme:light] w-32`} value={auditionDeadlineTime} onChange={(e) => setAuditionDeadlineTime(e.target.value)} title="時間(選填;不填=當天 23:59)" />
+            </div>
+          </Field>
+          <Field label="案件時區(所有時間以它為準,配音員端會自動換算並標明)">
+            <select className={input} value={caseTz} onChange={(e) => setCaseTz(e.target.value)}>
+              {CASE_TIMEZONES.map((z) => <option key={z.v} value={z.v}>{z.label}</option>)}
+            </select>
+          </Field>
           <Field label="預計開錄"><input className={input} value={recordingStart} onChange={(e) => setRecordingStart(e.target.value)} placeholder="7月初" /></Field>
           <Field label="含修改次數"><input type="number" min="0" className={input} value={baseRev} onChange={(e) => setBaseRev(e.target.value)} /></Field>
           <Field label="熱門門檻(人數提示)"><input type="number" min="1" className={input} value={cap} onChange={(e) => setCap(e.target.value)} /></Field>
@@ -1004,7 +1023,12 @@ function NewCasting() {
         <p className="text-xs text-gray-400 -mb-1 pt-1">案件資料(選填,會顯示在配音員看到的卡上)</p>
         <div className="grid grid-cols-2 gap-3">
           <Field label="規模(句數 / 字數 / 秒數 / 時數)"><input className={input} value={scale} onChange={(e) => setScale(e.target.value)} placeholder="例:全劇 129 句 / 30 秒 / 5 小時" /></Field>
-          <Field label="交付截止(最終交件)"><input type="date" className={`${input} [color-scheme:light]`} value={deadline} onChange={(e) => setDeadline(e.target.value)} /></Field>
+          <Field label="交付截止(最終交件)">
+            <div className="flex gap-2">
+              <input type="date" className={`${input} [color-scheme:light]`} value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+              <input type="time" className={`${input} [color-scheme:light] w-32`} value={deadlineTime} onChange={(e) => setDeadlineTime(e.target.value)} title="時間(選填;不填=當天 23:59)" />
+            </div>
+          </Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Field label="使用範圍"><select className={input} value={mediaScope} onChange={(e) => setMediaScope(e.target.value)}>{optsWith(USAGE_OPTS, mediaScope).map(optEl)}</select></Field>

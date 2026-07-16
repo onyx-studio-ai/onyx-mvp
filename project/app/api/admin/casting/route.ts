@@ -232,6 +232,7 @@ export async function POST(request: NextRequest) {
     base_revisions: Number.isFinite(Number(b.base_revisions)) ? Math.max(0, Math.trunc(Number(b.base_revisions))) : 1,
     audition_cap: Number.isFinite(Number(b.audition_cap)) ? Math.max(1, Math.trunc(Number(b.audition_cap))) : 5,
     audition_deadline: String(b.audition_deadline || '').slice(0, 120) || null,
+    audition_deadline_time: /^\d{1,2}:\d{2}$/.test(String(b.audition_deadline_time || '')) ? String(b.audition_deadline_time) : null,
     recording_start: String(b.recording_start || '').slice(0, 120) || null,
     recording_methods: methods,
     roles,
@@ -241,6 +242,7 @@ export async function POST(request: NextRequest) {
     // Voices-style case data (all optional; surfaced on the casting card)
     length: String(b.length || '').slice(0, 120) || null,
     deadline: String(b.deadline || '').slice(0, 120) || null,
+    deadline_time: /^\d{1,2}:\d{2}$/.test(String(b.deadline_time || '')) ? String(b.deadline_time) : null,
     media_scope: String(b.media_scope || '').slice(0, 200) || null,
     territory: String(b.territory || '').slice(0, 120) || null,
     license_term: String(b.license_term || '').slice(0, 200) || null,
@@ -325,7 +327,7 @@ export async function PATCH(request: NextRequest) {
     const e = b.edit as Record<string, unknown>;
     const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
     const setStr = (k: string, max: number) => { if (e[k] !== undefined) upd[k] = String(e[k] ?? '').slice(0, max) || null; };
-    for (const [k, max] of [['title', 200], ['content_type', 80], ['language', 80], ['brief', 20000], ['rate_note', 200], ['audition_deadline', 120], ['recording_start', 120], ['deadline', 120], ['length', 120], ['media_scope', 200], ['territory', 120], ['license_term', 200], ['accent', 120], ['voice_style', 120], ['voice_age', 120], ['audition_script', 20000], ['gender_needs', 120], ['internal_client_note', 300]] as [string, number][]) setStr(k, max);
+    for (const [k, max] of [['title', 200], ['content_type', 80], ['language', 80], ['brief', 20000], ['rate_note', 200], ['audition_deadline', 120], ['recording_start', 120], ['deadline', 120], ['length', 120], ['media_scope', 200], ['territory', 120], ['license_term', 200], ['accent', 120], ['voice_style', 120], ['voice_age', 120], ['audition_script', 20000], ['gender_needs', 120], ['internal_client_note', 300], ['audition_deadline_time', 5], ['deadline_time', 5]] as [string, number][]) setStr(k, max);
     if (e.base_revisions !== undefined) upd.base_revisions = Math.max(0, Math.trunc(Number(e.base_revisions) || 0));
     if (e.audition_cap !== undefined) upd.audition_cap = Math.max(1, Math.trunc(Number(e.audition_cap) || 5));
     // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 讓編輯頁能改(修正從客戶請求帶入時自動勾的)。

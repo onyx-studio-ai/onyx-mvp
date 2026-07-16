@@ -9,7 +9,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 */
 const TALENT_FIELDS =
   'id, brief_number, kind, title, content_type, language, rate_note, status, created_at, ' +
-  'audition_deadline, deadline, length, media_scope, territory, license_term, accent, voice_style, voice_age, ' +
+  'audition_deadline, audition_deadline_time, deadline, deadline_time, timezone, length, media_scope, territory, license_term, accent, voice_style, voice_age, ' +
   'recording_methods, recording_start, base_revisions, brief, audition_script, reference_links, reference_files, roles';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

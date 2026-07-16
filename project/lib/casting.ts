@@ -1,3 +1,5 @@
+import { zonedTimeToUtc } from './case-time';
+
 /*
   Human-readable case code, computed (no DB column) from the brief's category,
   created date and sequence number — e.g. ONYX-GAME-260626-042.
@@ -44,9 +46,15 @@ function deadlineEndTs(raw: string, createdAt?: string | null): number {
   }
   return new Date(`${raw.slice(0, 10)}T23:59:59`).getTime();    // 最後才交給原生 parse
 }
-export function auditionDeadlinePassed(b: { audition_deadline?: string | null; deadline?: string | null; created_at?: string | null }): boolean {
+export function auditionDeadlinePassed(b: { audition_deadline?: string | null; deadline?: string | null; created_at?: string | null; audition_deadline_time?: string | null; timezone?: string | null }): boolean {
   const raw = (b.audition_deadline || b.deadline || '').toString().trim();
   if (!raw) return false; // 沒設截止 = 永不截止
+  // 有設精確時間(HH:mm)→ 以「案件時區」的那一刻為準(只有完整日期才適用)
+  const m = /(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(raw);
+  if (m && b.audition_deadline && b.audition_deadline_time && /^\d{1,2}:\d{2}$/.test(b.audition_deadline_time)) {
+    const inst = zonedTimeToUtc(`${m[1]}-${String(+m[2]).padStart(2, '0')}-${String(+m[3]).padStart(2, '0')}`, b.audition_deadline_time, b.timezone || 'Asia/Taipei');
+    if (inst) return Date.now() > inst.getTime();
+  }
   const ts = deadlineEndTs(raw, b.created_at);
   return Number.isFinite(ts) && Date.now() > ts;
 }

@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { caseCode } from '@/lib/casting';
+import { tzLabel } from '@/lib/case-time';
 
 const serif = { fontFamily: '"Songti TC","Noto Serif TC",serif' } as const;
 const gold = { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 } as const;
@@ -17,7 +18,7 @@ type Role = { name?: string; gender?: string; age?: string; timbre?: string; per
 type Brief = {
   id: string; brief_number?: string | null; title?: string | null; content_type?: string | null; language?: string | null;
   rate_note?: string | null; status?: string | null; created_at?: string | null;
-  audition_deadline?: string | null; deadline?: string | null; length?: string | null;
+  audition_deadline?: string | null; audition_deadline_time?: string | null; deadline?: string | null; deadline_time?: string | null; timezone?: string | null; length?: string | null;
   media_scope?: string | null; territory?: string | null; license_term?: string | null;
   accent?: string | null; voice_style?: string | null; voice_age?: string | null;
   recording_methods?: string[] | null; recording_start?: string | null; base_revisions?: number | null;
@@ -91,8 +92,8 @@ export default function CastingPreview() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
         {[
           { l: '報酬', v: b.rate_note || '面議', g: true },
-          { l: '試音截止', v: b.audition_deadline || '待定' },
-          { l: '交付截止', v: b.deadline || '待定' },
+          { l: '試音截止', v: b.audition_deadline ? `${b.audition_deadline}${b.audition_deadline_time ? ' ' + b.audition_deadline_time : ''}(${tzLabel(b.timezone || 'Asia/Taipei')})` : '待定' },
+          { l: '交付截止', v: b.deadline ? `${b.deadline}${b.deadline_time ? ' ' + b.deadline_time : ''}(${tzLabel(b.timezone || 'Asia/Taipei')})` : '待定' },
           { l: '規模', v: b.length || '待定' },
         ].map((s, i) => (
           <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">

@@ -22,7 +22,7 @@ const CURRENCIES = ['USD', 'TWD'];
 const GUEST_BRIEF_FIELDS = [
   'id', 'brief_number', 'kind', 'content_type', 'title', 'language', 'rate_note', 'status', 'created_at',
   'budget', 'budget_type',
-  'brief', 'audition_script', 'audition_deadline', 'deadline', 'recording_start', 'recording_methods',
+  'brief', 'audition_script', 'audition_deadline', 'audition_deadline_time', 'deadline', 'deadline_time', 'timezone', 'recording_start', 'recording_methods',
   'reference_files', 'reference_links', 'roles', 'audition_cap', 'base_revisions', 'length',
   'media_scope', 'territory', 'license_term', 'accent', 'voice_style', 'voice_age',
 ] as const;

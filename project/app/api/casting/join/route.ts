@@ -26,7 +26,7 @@ async function loadCasting(briefId: string) {
   const db = getSupabaseServiceClient();
   const { data } = await db
     .from('marketplace_briefs')
-    .select('id, title, language, rate_note, kind, status, audition_deadline, deadline, ai_type, created_at')
+    .select('id, title, language, rate_note, kind, status, audition_deadline, audition_deadline_time, timezone, deadline, ai_type, created_at')
     .eq('id', briefId)
     .maybeSingle();
   return { db, brief: data && data.kind === 'casting' ? data : null };

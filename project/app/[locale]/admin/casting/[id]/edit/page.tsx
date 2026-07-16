@@ -35,7 +35,7 @@ export default function EditCasting() {
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [f, setF] = useState({ title: '', internal_client_note: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
+  const [f, setF] = useState({ title: '', internal_client_note: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', audition_deadline_time: '', recording_start: '', deadline: '', deadline_time: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
   // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 之前只在發案表單有,編輯頁沒有,導致從客戶請求
@@ -155,8 +155,8 @@ export default function EditCasting() {
       .map((a) => [String(a.role_name), { talent_name: a.talent_name || null, talent_price: a.talent_price, pay_unit: a.pay_unit, pay_rate: a.pay_rate, status: a.status }])));
     setF({
       title: bf.title || '', internal_client_note: bf.internal_client_note || '', content_type: bf.content_type || '', language: bf.language || '', brief: bf.brief || '',
-      rate_note: bf.rate_note || '', audition_deadline: bf.audition_deadline || '', recording_start: bf.recording_start || '',
-      deadline: bf.deadline || '', length: bf.length || '', audition_script: bf.audition_script || '',
+      rate_note: bf.rate_note || '', audition_deadline: bf.audition_deadline || '', audition_deadline_time: bf.audition_deadline_time || '', recording_start: bf.recording_start || '',
+      deadline: bf.deadline || '', deadline_time: bf.deadline_time || '', length: bf.length || '', audition_script: bf.audition_script || '',
       timezone: bf.timezone || 'Asia/Taipei',
       base_revisions: String(bf.base_revisions ?? 1), audition_cap: String(bf.audition_cap ?? 5),
       accent: bf.accent || '', voice_style: bf.voice_style || '', voice_age: bf.voice_age || '',
@@ -220,8 +220,16 @@ export default function EditCasting() {
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">授權期</span><select className={input} value={f.license_term} onChange={(e) => set('license_term', e.target.value)}>{optsWith(LICENSE_OPTS, f.license_term).map(optEl)}</select></label>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音截止</span><input type="date" className={`${input} [color-scheme:light]`} value={f.audition_deadline} onChange={(e) => set('audition_deadline', e.target.value)} /></label>
-          <label className="block"><span className="text-xs text-gray-600 mb-1 block">交付截止</span><input type="date" className={`${input} [color-scheme:light]`} value={f.deadline} onChange={(e) => set('deadline', e.target.value)} /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音截止(時間選填;不填=當天 23:59,案件時區)</span>
+            <div className="flex gap-2">
+              <input type="date" className={`${input} [color-scheme:light]`} value={f.audition_deadline} onChange={(e) => set('audition_deadline', e.target.value)} />
+              <input type="time" className={`${input} [color-scheme:light] w-32`} value={f.audition_deadline_time} onChange={(e) => set('audition_deadline_time', e.target.value)} />
+            </div></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">交付截止(時間選填)</span>
+            <div className="flex gap-2">
+              <input type="date" className={`${input} [color-scheme:light]`} value={f.deadline} onChange={(e) => set('deadline', e.target.value)} />
+              <input type="time" className={`${input} [color-scheme:light] w-32`} value={f.deadline_time} onChange={(e) => set('deadline_time', e.target.value)} />
+            </div></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">規模</span><input className={input} value={f.length} onChange={(e) => set('length', e.target.value)} /></label>
         </div>
         <div className="grid grid-cols-3 gap-3">

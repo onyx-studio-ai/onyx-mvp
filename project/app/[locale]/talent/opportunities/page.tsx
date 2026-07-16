@@ -18,7 +18,13 @@ import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
-import { deadlineDisplay, zonedTimeToUtc } from '@/lib/case-time';
+import { deadlineDisplay, zonedTimeToUtc, tzLabel } from '@/lib/case-time';
+
+// 案件層級的截止顯示:日期 [+時間](時區標);沒設時間就只給日期(=當天 23:59)
+function briefDeadlineText(date?: string | null, time?: string | null, tz?: string | null): string {
+  if (!date) return '';
+  return `${date}${time ? ` ${time}` : ''}(${tzLabel(tz || 'Asia/Taipei')})`;
+}
 import { caseCode, auditionDeadlinePassed } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
 import ReviewBox from '@/components/marketplace/ReviewBox';
@@ -119,6 +125,9 @@ type Brief = {
   wants_live_session: boolean | null;
   live_session_tool: string | null;
   audition_deadline: string | null;
+  audition_deadline_time?: string | null;   // HH:mm(案件時區);沒設=當天 23:59
+  deadline_time?: string | null;
+  timezone?: string | null;                 // 案件時區,時間顯示以它為準
   language: string | null;
   gender_needs?: string | null;     // 需求人數/性別, e.g. 一男一女
   assigned_roles?: string[] | null; // 已徵得的角色名(不含指派給誰 —— 匿名)
@@ -930,8 +939,8 @@ function BriefCard({
               brief.source === 'client'
                 ? (brief.budget ? { l: tx('客戶預算', '客户预算', 'Budget'), v: `${brief.budget_type ? `${brief.budget_type} ` : ''}${brief.budget}`, gold: true } : null)
                 : (brief.rate_note ? { l: tx('報酬', '报酬', 'Rate'), v: brief.rate_note, gold: true } : null),
-              brief.audition_deadline ? { l: tx('試音截止', '试音截止', 'Audition due'), v: brief.audition_deadline } : null,
-              brief.deadline ? { l: tx('交付截止', '交付截止', 'Delivery'), v: brief.deadline } : null,
+              brief.audition_deadline ? { l: tx('試音截止', '试音截止', 'Audition due'), v: briefDeadlineText(brief.audition_deadline, brief.audition_deadline_time, brief.timezone) } : null,
+              brief.deadline ? { l: tx('交付截止', '交付截止', 'Delivery'), v: briefDeadlineText(brief.deadline, brief.deadline_time, brief.timezone) } : null,
               brief.length ? { l: tx('規模', '规模', 'Scale'), v: brief.length } : null,
             ].filter(Boolean) as { l: string; v: string; gold?: boolean }[];
             return stats.length ? (
@@ -1055,7 +1064,7 @@ function BriefCard({
             {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
             {brief.territory && <span>{tx('地區', '地区', 'Territory')}: {brief.territory}</span>}
             {brief.license_term && <span>{tx('授權', '授权', 'License')}: {brief.license_term}</span>}
-            {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')}: {brief.audition_deadline}</span>}
+            {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')}: {briefDeadlineText(brief.audition_deadline, brief.audition_deadline_time, brief.timezone)}</span>}
             {brief.length && <span>{tx('長度', '长度', 'Length')}: {brief.length}</span>}
             {brief.budget && <span>{tx('預算', '预算', 'Budget')}: {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
           </div>

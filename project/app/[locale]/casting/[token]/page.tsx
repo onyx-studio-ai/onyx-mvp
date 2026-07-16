@@ -14,11 +14,12 @@ import { langLabel } from '@/lib/languages';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { toMp3 } from '@/lib/to-mp3';
+import { tzLabel } from '@/lib/case-time';
 
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
+type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -76,8 +77,8 @@ export default function GuestCasting() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
         {[
           { l: tx('報酬', 'Rate'), v: brief.rate_note || tx('面議', 'TBD'), gold: true },
-          { l: tx('試音截止', 'Audition due'), v: brief.audition_deadline || tx('待定', 'TBD') },
-          { l: tx('交付截止', 'Delivery'), v: brief.deadline || tx('待定', 'TBD') },
+          { l: tx('試音截止', 'Audition due'), v: brief.audition_deadline ? `${brief.audition_deadline}${brief.audition_deadline_time ? ' ' + brief.audition_deadline_time : ''}(${tzLabel(brief.timezone || 'Asia/Taipei')})` : tx('待定', 'TBD') },
+          { l: tx('交付截止', 'Delivery'), v: brief.deadline ? `${brief.deadline}${brief.deadline_time ? ' ' + brief.deadline_time : ''}(${tzLabel(brief.timezone || 'Asia/Taipei')})` : tx('待定', 'TBD') },
           { l: tx('規模', 'Scale'), v: brief.length || tx('待定', 'TBD') },
         ].map((s, i) => (
           <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
