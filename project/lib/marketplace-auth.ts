@@ -26,6 +26,8 @@ export async function resolveCaller(request: NextRequest): Promise<Caller | null
 export async function threadRole(c: Caller, briefId: string, talentId: string): Promise<'client' | 'talent' | null> {
   // POST-AWARD ONLY (成單後才能私訊): the thread opens once this talent's quote on
   // the brief is ACCEPTED — i.e. the client picked them. No DMs before that.
+  // 「直接指派」也算成單(voice_orders 有單但無 quote —— 女王百貨 LINE 邀請者;
+  // 2026-07-16 謝千惠傳訊被 403「Not a participant」的根因)。
   const { data: q } = await c.db
     .from('marketplace_quotes')
     .select('id')
@@ -34,7 +36,17 @@ export async function threadRole(c: Caller, briefId: string, talentId: string): 
     .eq('status', 'accepted')
     .limit(1)
     .maybeSingle();
-  if (!q) return null;
+  if (!q) {
+    const { data: o } = await c.db
+      .from('voice_orders')
+      .select('id')
+      .eq('brief_id', briefId)
+      .eq('talent_id', talentId)
+      .is('quote_id', null)
+      .limit(1)
+      .maybeSingle();
+    if (!o) return null;
+  }
 
   if (c.talentId && c.talentId === talentId) return 'talent';
 
