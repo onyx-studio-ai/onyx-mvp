@@ -68,38 +68,35 @@ export default async function BlogIndex({ params }: { params: Promise<{ locale: 
         </div>
       </section>
 
-      {/* Post list */}
+      {/* Post list — compact rows: small square thumbnail left, text right */}
       <section className="pb-24 px-4">
-        <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-2">
+        <div className="max-w-3xl mx-auto flex flex-col gap-2">
           {posts.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group flex flex-col rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden hover:border-white/20 hover:bg-white/[0.04] transition-colors"
+              className="group flex items-center gap-4 sm:gap-5 rounded-xl border border-transparent p-2.5 sm:p-3 hover:border-white/10 hover:bg-white/[0.03] transition-colors"
             >
-              <div className="aspect-video bg-black/40 overflow-hidden">
+              <div className="shrink-0 w-28 sm:w-44 aspect-video rounded-lg bg-black/40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={post.cover}
                   alt={pick(post.title, locale)}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="text-xs text-gray-500 mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-gray-500 mb-1.5">
                   {fmtDate(post.date)} · {post.readMins} {tx('分鐘閱讀', '分钟阅读', 'min read')}
                 </div>
-                <h2 className="text-lg md:text-xl font-bold leading-snug mb-2.5 group-hover:text-white">
+                <h2 className="text-base sm:text-lg font-bold leading-snug mb-1 line-clamp-2 group-hover:text-white">
                   {pick(post.title, locale)}
                 </h2>
-                <p className="text-gray-400 text-[14px] leading-relaxed line-clamp-3">
+                <p className="text-gray-400 text-[13px] sm:text-[14px] leading-relaxed line-clamp-2">
                   {pick(post.dek, locale)}
                 </p>
-                <span className="mt-auto pt-5 inline-flex items-center gap-1.5 text-sm font-medium text-purple-300">
-                  {tx('閱讀全文', '阅读全文', 'Read article')}
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                </span>
               </div>
+              <ArrowRight className="hidden sm:block shrink-0 w-5 h-5 text-gray-600 transition-all group-hover:text-purple-300 group-hover:translate-x-0.5" />
             </Link>
           ))}
         </div>
