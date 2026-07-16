@@ -25,6 +25,7 @@ interface PocketBalance {
   inflow_total: number;
   outflow_total: number;
   txn_count: number;
+  by_currency?: Record<string, { balance: number; inflow: number; outflow: number }>;
 }
 
 interface PocketTransaction {
@@ -41,6 +42,14 @@ interface PocketTransaction {
 
 function fmtUSD(n: number): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// 幣別分開列,絕不混加(NT$ / US$)。
+const CUR_SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', CNY: '¥', GBP: '£', EUR: '€' };
+const moneyCur = (n: number, cur: string) => `${CUR_SYM[cur] || `${cur} `}${fmtUSD(n)}`;
+function joinByCur(byCur: Record<string, { balance: number; inflow: number; outflow: number }> | undefined, key: 'balance' | 'inflow' | 'outflow'): string {
+  const parts = Object.entries(byCur || {}).filter(([, v]) => v[key] !== 0).map(([cur, v]) => moneyCur(v[key], cur));
+  return parts.length ? parts.join(' + ') : moneyCur(0, 'TWD');
 }
 
 function txnLabel(type: PocketTransaction['type']): { label: string; color: string } {
@@ -106,6 +115,15 @@ export default function PocketsPage() {
     () => pockets.reduce((sum, p) => sum + p.outflow_total, 0),
     [pockets],
   );
+  // 全體各幣別總計(顯示用;totalBalance 等混加值僅保留給既有邏輯)
+  const allByCur = useMemo(() => {
+    const acc: Record<string, { balance: number; inflow: number; outflow: number }> = {};
+    for (const p of pockets) for (const [cur, v] of Object.entries(p.by_currency || {})) {
+      const c = (acc[cur] ||= { balance: 0, inflow: 0, outflow: 0 });
+      c.balance += v.balance; c.inflow += v.inflow; c.outflow += v.outflow;
+    }
+    return acc;
+  }, [pockets]);
 
   const togglePocket = (pocket: PocketBalance) => {
     if (expandedId === pocket.id) {
@@ -159,15 +177,15 @@ export default function PocketsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Total Balance</p>
-          <p className="text-2xl font-bold text-gray-900">US${fmtUSD(totalBalance)}</p>
+          <p className="text-2xl font-bold text-gray-900">{joinByCur(allByCur, 'balance')}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Total Inflow</p>
-          <p className="text-2xl font-bold text-emerald-700">US${fmtUSD(totalInflow)}</p>
+          <p className="text-2xl font-bold text-emerald-700">{joinByCur(allByCur, 'inflow')}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <p className="text-gray-600 text-xs uppercase tracking-wider mb-1">Total Outflow</p>
-          <p className="text-2xl font-bold text-red-700">US${fmtUSD(totalOutflow)}</p>
+          <p className="text-2xl font-bold text-red-700">{joinByCur(allByCur, 'outflow')}</p>
         </div>
       </div>
 
@@ -217,16 +235,16 @@ export default function PocketsPage() {
                         : 'text-gray-500'
                     }`}
                   >
-                    US${fmtUSD(p.balance)}
+                    {joinByCur(p.by_currency, 'balance')}
                   </p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <ArrowUpCircle className="w-3 h-3 text-emerald-600" />
-                      US${fmtUSD(p.inflow_total)}
+                      {joinByCur(p.by_currency, 'inflow')}
                     </span>
                     <span className="flex items-center gap-1">
                       <ArrowDownCircle className="w-3 h-3 text-red-600" />
-                      US${fmtUSD(p.outflow_total)}
+                      {joinByCur(p.by_currency, 'outflow')}
                     </span>
                     <span>{p.txn_count} txns</span>
                   </div>
@@ -264,7 +282,7 @@ export default function PocketsPage() {
                                   }`}
                                 >
                                   {amt > 0 ? '+' : ''}
-                                  US${fmtUSD(amt)}
+                                  {moneyCur(amt, (tx.currency || 'USD').toUpperCase())}
                                 </p>
                               </div>
                             </li>
@@ -320,6 +338,7 @@ function SpendModal({
   const t = useTranslations('admin.pockets');
   const [pocketName, setPocketName] = useState(pockets[0]?.name || '');
   const [amount, setAmount] = useState('');
+  const [spendCur, setSpendCur] = useState('TWD');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -338,7 +357,7 @@ function SpendModal({
       const res = await fetch('/api/admin/pockets/spend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pocketName, amount: amt, description: description.trim() }),
+        body: JSON.stringify({ pocketName, amount: amt, currency: spendCur, description: description.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -382,7 +401,7 @@ function SpendModal({
             >
               {pockets.map((p) => (
                 <option key={p.id} value={p.name}>
-                  {p.emoji} {p.display_name_zh} ({t('balanceLabelPrefix')} US${fmtUSD(p.balance)})
+                  {p.emoji} {p.display_name_zh} ({t('balanceLabelPrefix')} {joinByCur(p.by_currency, 'balance')})
                 </option>
               ))}
             </select>
@@ -455,6 +474,7 @@ function AdjustModal({
   const t = useTranslations('admin.pockets');
   const [pocketName, setPocketName] = useState(pockets[0]?.name || '');
   const [amount, setAmount] = useState('');
+  const [adjCur, setAdjCur] = useState('TWD');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -475,6 +495,7 @@ function AdjustModal({
           action: 'adjust',
           pocketName,
           amount: amt,
+          currency: adjCur,
           description: description.trim(),
         }),
       });
@@ -522,7 +543,7 @@ function AdjustModal({
             >
               {pockets.map((p) => (
                 <option key={p.id} value={p.name}>
-                  {p.emoji} {p.display_name_zh} ({t('balanceLabelPrefix')} US${fmtUSD(p.balance)})
+                  {p.emoji} {p.display_name_zh} ({t('balanceLabelPrefix')} {joinByCur(p.by_currency, 'balance')})
                 </option>
               ))}
             </select>
@@ -530,14 +551,19 @@ function AdjustModal({
 
           <div>
             <label className="block text-xs text-gray-600 mb-1">{t('amountLabel')}</label>
-            <input
-              type="number"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder={t('adjustAmountPlaceholder')}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
-            />
+            <div className="flex gap-2">
+              <select value={adjCur} onChange={(e) => setAdjCur(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-2 text-sm">
+                {['TWD', 'USD'].map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <input
+                type="number"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={t('adjustAmountPlaceholder')}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+              />
+            </div>
           </div>
 
           <div>

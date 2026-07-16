@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
     const txn = await recordSpend({
+      currency: typeof body.currency === 'string' ? body.currency : undefined,
       pocketName,
       amount: Number(amount),
       description,

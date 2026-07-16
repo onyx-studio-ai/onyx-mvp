@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const txn = await recordAdjustment({ pocketName, amount: Number(amount), description });
+    const txn = await recordAdjustment({ pocketName, amount: Number(amount), currency: typeof body.currency === 'string' ? body.currency : undefined, description });
     return NextResponse.json({ transaction: txn });
   } catch (err) {
     return NextResponse.json(

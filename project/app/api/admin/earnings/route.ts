@@ -19,6 +19,14 @@ function getAdminClient() {
   });
 }
 
+// 分潤的幣別跟來源訂單走(pocket 入帳/買斷出帳都要帶正確幣別)。
+async function earningCurrency(db: ReturnType<typeof getAdminClient>, orderType: string | null, orderId: string | null): Promise<string> {
+  if (!orderId) return 'TWD';
+  const TABLE: Record<string, string> = { voice: 'voice_orders', music: 'music_orders', strings: 'orchestra_orders' };
+  const { data } = await db.from(TABLE[orderType || 'voice'] || 'voice_orders').select('currency').eq('id', orderId).maybeSingle();
+  return String(data?.currency || 'TWD').toUpperCase();
+}
+
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminOnly(request);
   if (unauthorized) return unauthorized;
@@ -270,6 +278,7 @@ export async function PATCH(request: NextRequest) {
             await allocateIncome({
               sourceEarningId: priorEarning.id,
               incomeAmount: Number(priorEarning.order_total) || 0,
+              currency: await earningCurrency(supabase, priorEarning.order_type, priorEarning.order_id),
               description: `Income from ${priorEarning.order_number}`,
             });
           } else if (flippedOff) {
@@ -291,6 +300,7 @@ export async function PATCH(request: NextRequest) {
             await recordBuyoutOutflow({
               sourceEarningId: priorEarning.id,
               payoutAmount: Number(priorEarning.commission_amount) || 0,
+              currency: await earningCurrency(supabase, priorEarning.order_type, priorEarning.order_id),
               description: `Buyout payout ${priorEarning.order_number}`,
             });
           } else if (flippedOff) {
@@ -327,7 +337,7 @@ export async function PATCH(request: NextRequest) {
     // Fetch prior states so we can run allocation side-effects correctly
     const { data: priorRows } = await supabase
       .from('talent_earnings')
-      .select('id, tier, order_number, order_total, commission_amount, payment_received')
+      .select('id, tier, order_number, order_total, commission_amount, payment_received, order_type, order_id')
       .in('id', ids);
 
     const { data, error } = await supabase
@@ -354,6 +364,7 @@ export async function PATCH(request: NextRequest) {
             await allocateIncome({
               sourceEarningId: prior.id,
               incomeAmount: Number(prior.order_total) || 0,
+              currency: await earningCurrency(supabase, prior.order_type, prior.order_id),
               description: `Income from ${prior.order_number}`,
             });
           } else if (flippedOff) {

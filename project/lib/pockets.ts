@@ -22,10 +22,11 @@ export interface Pocket {
 }
 
 export interface PocketBalance extends Pocket {
-  balance: number;
+  balance: number;        // 各幣別混加(僅排序用,顯示請用 by_currency)
   inflow_total: number;
   outflow_total: number;
   txn_count: number;
+  by_currency: Record<string, { balance: number; inflow: number; outflow: number }>;
 }
 
 export interface PocketTransaction {
@@ -64,30 +65,41 @@ export async function listPocketBalances(): Promise<PocketBalance[]> {
   const supabase = db();
   const [pocketsRes, txnsRes] = await Promise.all([
     supabase.from('pockets').select('*').order('sort_order', { ascending: true }),
-    supabase.from('pocket_transactions').select('pocket_id, amount'),
+    supabase.from('pocket_transactions').select('pocket_id, amount, currency'),
   ]);
 
   if (pocketsRes.error) throw new Error(pocketsRes.error.message);
   if (txnsRes.error) throw new Error(txnsRes.error.message);
 
-  const aggMap = new Map<string, { inflow: number; outflow: number; count: number }>();
+  // 幣別不混加:每個口袋按幣別各自聚合(歷史資料多為 USD,新台幣單記 TWD)。
+  const aggMap = new Map<string, { count: number; byCur: Record<string, { inflow: number; outflow: number }> }>();
   for (const t of txnsRes.data || []) {
-    const agg = aggMap.get(t.pocket_id) || { inflow: 0, outflow: 0, count: 0 };
+    const agg = aggMap.get(t.pocket_id) || { count: 0, byCur: {} };
+    const cur = String(t.currency || 'USD').toUpperCase();
+    const c = (agg.byCur[cur] ||= { inflow: 0, outflow: 0 });
     const amt = Number(t.amount) || 0;
-    if (amt >= 0) agg.inflow += amt;
-    else agg.outflow += Math.abs(amt);
+    if (amt >= 0) c.inflow += amt;
+    else c.outflow += Math.abs(amt);
     agg.count += 1;
     aggMap.set(t.pocket_id, agg);
   }
 
   return (pocketsRes.data || []).map((p: Pocket) => {
-    const agg = aggMap.get(p.id) || { inflow: 0, outflow: 0, count: 0 };
+    const agg = aggMap.get(p.id) || { count: 0, byCur: {} as Record<string, { inflow: number; outflow: number }> };
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    const by_currency: Record<string, { balance: number; inflow: number; outflow: number }> = {};
+    let inflow = 0, outflow = 0;
+    for (const [cur, c] of Object.entries(agg.byCur)) {
+      by_currency[cur] = { balance: r2(c.inflow - c.outflow), inflow: r2(c.inflow), outflow: r2(c.outflow) };
+      inflow += c.inflow; outflow += c.outflow;
+    }
     return {
       ...p,
-      balance: Math.round((agg.inflow - agg.outflow) * 100) / 100,
-      inflow_total: Math.round(agg.inflow * 100) / 100,
-      outflow_total: Math.round(agg.outflow * 100) / 100,
+      balance: r2(inflow - outflow),
+      inflow_total: r2(inflow),
+      outflow_total: r2(outflow),
       txn_count: agg.count,
+      by_currency,
     };
   });
 }
@@ -103,9 +115,10 @@ export async function listPocketBalances(): Promise<PocketBalance[]> {
 export async function allocateIncome(params: {
   sourceEarningId: string;
   incomeAmount: number;
+  currency?: string;      // 跟來源訂單走;沒給就 TWD
   description?: string;
 }): Promise<{ allocated: boolean; reason?: string }> {
-  const { sourceEarningId, incomeAmount, description } = params;
+  const { sourceEarningId, incomeAmount, currency, description } = params;
   if (!Number.isFinite(incomeAmount) || incomeAmount <= 0) {
     return { allocated: false, reason: 'incomeAmount must be positive' };
   }
@@ -131,7 +144,7 @@ export async function allocateIncome(params: {
   const rows = pockets.map((p) => ({
     pocket_id: p.id,
     amount: Math.round(incomeAmount * Number(p.allocation_percent) * 100) / 100,
-    currency: 'USD',
+    currency: (currency || 'TWD').toUpperCase(),
     type: 'income_allocation' as const,
     source_earning_id: sourceEarningId,
     description: description || `Auto-allocated from earning ${sourceEarningId}`,
@@ -162,9 +175,10 @@ export async function reverseAllocation(sourceEarningId: string): Promise<{ reve
 export async function recordBuyoutOutflow(params: {
   sourceEarningId: string;
   payoutAmount: number;
+  currency?: string;
   description?: string;
 }): Promise<{ recorded: boolean; reason?: string }> {
-  const { sourceEarningId, payoutAmount, description } = params;
+  const { sourceEarningId, payoutAmount, currency, description } = params;
   if (!Number.isFinite(payoutAmount) || payoutAmount <= 0) {
     return { recorded: false, reason: 'payoutAmount must be positive' };
   }
@@ -192,7 +206,7 @@ export async function recordBuyoutOutflow(params: {
   const { error } = await supabase.from('pocket_transactions').insert({
     pocket_id: talentPocket.id,
     amount: -Math.abs(Number(payoutAmount)),
-    currency: 'USD',
+    currency: (currency || 'TWD').toUpperCase(),
     type: 'buyout_outflow',
     source_earning_id: sourceEarningId,
     description: description || `Buyout outflow for earning ${sourceEarningId}`,
@@ -217,10 +231,11 @@ export async function reverseBuyoutOutflow(sourceEarningId: string): Promise<{ r
 export async function recordSpend(params: {
   pocketName: string;
   amount: number;
+  currency?: string;
   description: string;
   occurredAt?: string;
 }): Promise<PocketTransaction> {
-  const { pocketName, amount, description, occurredAt } = params;
+  const { pocketName, amount, currency, description, occurredAt } = params;
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new Error('amount must be positive');
   }
@@ -243,7 +258,7 @@ export async function recordSpend(params: {
     .insert({
       pocket_id: pocket.id,
       amount: -Math.abs(amount),
-      currency: 'USD',
+      currency: (currency || 'TWD').toUpperCase(),
       type: 'spend',
       description: description.trim(),
       occurred_at: occurredAt || new Date().toISOString(),
@@ -258,9 +273,10 @@ export async function recordSpend(params: {
 export async function recordAdjustment(params: {
   pocketName: string;
   amount: number;
+  currency?: string;
   description: string;
 }): Promise<PocketTransaction> {
-  const { pocketName, amount, description } = params;
+  const { pocketName, amount, currency, description } = params;
   if (!Number.isFinite(amount) || amount === 0) {
     throw new Error('amount must be non-zero');
   }
@@ -283,7 +299,7 @@ export async function recordAdjustment(params: {
     .insert({
       pocket_id: pocket.id,
       amount,
-      currency: 'USD',
+      currency: (currency || 'TWD').toUpperCase(),
       type: 'adjustment',
       description: description.trim(),
     })
