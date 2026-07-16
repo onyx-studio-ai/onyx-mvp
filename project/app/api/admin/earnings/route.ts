@@ -20,10 +20,14 @@ function getAdminClient() {
 }
 
 // 分潤的幣別跟來源訂單走(pocket 入帳/買斷出帳都要帶正確幣別)。
-async function earningCurrency(db: ReturnType<typeof getAdminClient>, orderType: string | null, orderId: string | null): Promise<string> {
-  if (!orderId) return 'TWD';
+// manual(手動輸入的客戶案/買斷)沒有真訂單 → 讀 cost_breakdown.currency;
+// 歷史 manual 沒存幣別的當 USD(當年就是以美金輸入/顯示的 TTS 客戶案)。
+type EarningCur = { order_type?: string | null; order_id?: string | null; cost_breakdown?: { currency?: unknown } | null };
+async function earningCurrency(db: ReturnType<typeof getAdminClient>, e: EarningCur): Promise<string> {
+  if (e.order_type === 'manual') return String(e.cost_breakdown?.currency || 'USD').toUpperCase();
+  if (!e.order_id) return 'TWD';
   const TABLE: Record<string, string> = { voice: 'voice_orders', music: 'music_orders', strings: 'orchestra_orders' };
-  const { data } = await db.from(TABLE[orderType || 'voice'] || 'voice_orders').select('currency').eq('id', orderId).maybeSingle();
+  const { data } = await db.from(TABLE[e.order_type || 'voice'] || 'voice_orders').select('currency').eq('id', e.order_id).maybeSingle();
   return String(data?.currency || 'TWD').toUpperCase();
 }
 
@@ -51,14 +55,19 @@ export async function GET(request: NextRequest) {
   // 幣別跟來源訂單走(talent_earnings 沒存幣別;前端曾寫死 US$,台幣案顯示成美金)。
   const rows = data || [];
   const byType: Record<string, string[]> = {};
-  for (const r of rows) if (r.order_id) (byType[r.order_type || 'voice'] ||= []).push(String(r.order_id));
+  for (const r of rows) if (r.order_id && r.order_type !== 'manual') (byType[r.order_type || 'voice'] ||= []).push(String(r.order_id));
   const TABLE: Record<string, string> = { voice: 'voice_orders', music: 'music_orders', strings: 'orchestra_orders' };
   const curById = new Map<string, string>();
   for (const [ot, ids] of Object.entries(byType)) {
     const { data: os } = await supabase.from(TABLE[ot] || 'voice_orders').select('id, currency').in('id', ids);
     for (const o of os || []) curById.set(String(o.id), String(o.currency || 'TWD').toUpperCase());
   }
-  return NextResponse.json({ earnings: rows.map((r) => ({ ...r, currency: curById.get(String(r.order_id)) || 'TWD' })) });
+  return NextResponse.json({ earnings: rows.map((r) => ({
+    ...r,
+    currency: r.order_type === 'manual'
+      ? String((r.cost_breakdown as { currency?: unknown } | null)?.currency || 'USD').toUpperCase()
+      : (curById.get(String(r.order_id)) || 'TWD'),
+  })) });
 }
 
 export async function POST(request: NextRequest) {
@@ -134,7 +143,7 @@ export async function POST(request: NextRequest) {
           commission_rate: computedRate,
           commission_amount: Number(payoutAmount),
           status: 'pending',
-          cost_breakdown: subtype === 'buyout' ? {} : (costBreakdown || {}),
+          cost_breakdown: subtype === 'buyout' ? { currency: (costBreakdown as { currency?: unknown } | undefined)?.currency || 'TWD' } : (costBreakdown || {}),
           local_folder_path: localFolderPath || null,
         })
         .select()
@@ -278,7 +287,7 @@ export async function PATCH(request: NextRequest) {
             await allocateIncome({
               sourceEarningId: priorEarning.id,
               incomeAmount: Number(priorEarning.order_total) || 0,
-              currency: await earningCurrency(supabase, priorEarning.order_type, priorEarning.order_id),
+              currency: await earningCurrency(supabase, priorEarning),
               description: `Income from ${priorEarning.order_number}`,
             });
           } else if (flippedOff) {
@@ -300,7 +309,7 @@ export async function PATCH(request: NextRequest) {
             await recordBuyoutOutflow({
               sourceEarningId: priorEarning.id,
               payoutAmount: Number(priorEarning.commission_amount) || 0,
-              currency: await earningCurrency(supabase, priorEarning.order_type, priorEarning.order_id),
+              currency: await earningCurrency(supabase, priorEarning),
               description: `Buyout payout ${priorEarning.order_number}`,
             });
           } else if (flippedOff) {
@@ -337,7 +346,7 @@ export async function PATCH(request: NextRequest) {
     // Fetch prior states so we can run allocation side-effects correctly
     const { data: priorRows } = await supabase
       .from('talent_earnings')
-      .select('id, tier, order_number, order_total, commission_amount, payment_received, order_type, order_id')
+      .select('id, tier, order_number, order_total, commission_amount, payment_received, order_type, order_id, cost_breakdown')
       .in('id', ids);
 
     const { data, error } = await supabase
@@ -364,7 +373,7 @@ export async function PATCH(request: NextRequest) {
             await allocateIncome({
               sourceEarningId: prior.id,
               incomeAmount: Number(prior.order_total) || 0,
-              currency: await earningCurrency(supabase, prior.order_type, prior.order_id),
+              currency: await earningCurrency(supabase, prior),
               description: `Income from ${prior.order_number}`,
             });
           } else if (flippedOff) {

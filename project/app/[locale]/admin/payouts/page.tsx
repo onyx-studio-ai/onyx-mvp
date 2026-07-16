@@ -864,6 +864,7 @@ function ManualEntryModal({
   const [orderNumberManuallyEdited, setOrderNumberManuallyEdited] = useState(false);
   const [realTotal, setRealTotal] = useState('');
   const [payoutAmount, setPayoutAmount] = useState('');
+  const [dealCur, setDealCur] = useState('TWD');   // 這筆案的幣別(跟客戶談定的幣別走)
   const [notes, setNotes] = useState('');
   const [folderPath, setFolderPath] = useState('');
   const [saving, setSaving] = useState(false);
@@ -938,7 +939,7 @@ function ManualEntryModal({
       // cost_breakdown JSONB now only holds Notes (free-text context).
       // Per-case itemisation removed; real cost allocation lives in
       // Phase 5 pockets system.
-      const costBreakdown: Record<string, number | string> = {};
+      const costBreakdown: Record<string, number | string> = { currency: dealCur };
       if (notes.trim()) costBreakdown.notes = notes.trim();
 
       const res = await fetch('/api/admin/earnings', {
@@ -1059,6 +1060,13 @@ function ManualEntryModal({
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">幣別(這筆案跟客戶談定的幣別)</label>
+            <select value={dealCur} onChange={(e) => setDealCur(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              {['TWD', 'USD'].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
           {isBuyout ? (
             <div>
               <label className="block text-xs text-gray-600 mb-1">{t('buyoutAmountLabel')}</label>
@@ -1108,7 +1116,7 @@ function ManualEntryModal({
               <div className="flex justify-between items-baseline">
                 <span className="text-xs text-gray-600">Wing&apos;s Net:</span>
                 <span className={`text-lg font-bold font-mono ${marginColor.text}`}>
-                  US${wingNet.toFixed(2)}
+                  {(dealCur === 'TWD' ? 'NT$' : 'US$') + wingNet.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-baseline">

@@ -209,7 +209,7 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
 }
 
 // 請款 — 配音員發起請款、系統生成發票、他同意+簽名上傳(或上傳自家發票)。
-function PayoutRequest({ tx, pending }: { tx: (a: string, b: string, c: string) => string; pending: number }) {
+function PayoutRequest({ tx, pending, pendingText }: { tx: (a: string, b: string, c: string) => string; pending: number; pendingText: string }) {
   const [reqs, setReqs] = useState<PayoutReq[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [amount, setAmount] = useState(pending > 0 ? String(pending) : '');
@@ -260,7 +260,7 @@ function PayoutRequest({ tx, pending }: { tx: (a: string, b: string, c: string) 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-8">
       <h2 className="text-sm font-semibold text-white mb-1">{tx('請款', '请款', 'Request a payout')}</h2>
-      <p className="text-xs text-gray-300 mb-4">{tx(`可請款餘額參考:US$${pending}。填金額 → 系統生成發票 → 您確認後簽名上傳(或上傳個人/公司發票)。`, `可请款余额参考:US$${pending}。填金额 → 系统生成发票 → 您确认后签名上传(或上传个人/公司发票)。`, `Pending balance ref: US$${pending}. Enter an amount → we generate an invoice → confirm, sign & upload (or upload your personal/company invoice).`)}</p>
+      <p className="text-xs text-gray-300 mb-4">{tx(`可請款餘額參考:${pendingText}。填金額 → 系統生成發票 → 您確認後簽名上傳(或上傳個人/公司發票)。`, `可请款余额参考:${pendingText}。填金额 → 系统生成发票 → 您确认后签名上传(或上传个人/公司发票)。`, `Pending balance ref: ${pendingText}. Enter an amount → we generate an invoice → confirm, sign & upload (or upload your personal/company invoice).`)}</p>
       <p className="text-[11px] text-gray-300 mb-4">{tx('※ 款項每月結算,核准後約 30–45 天內撥付。', '※ 款项每月结算,核准后约 30–45 天内拨付。', '※ Payouts settle monthly — about 30–45 days after approval.')}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
@@ -431,7 +431,7 @@ export default function TalentEarningsPage() {
 
         <PayoutSettings tx={tx} locale={locale} pending={totals.pending} />
 
-        <PayoutRequest tx={tx} pending={totals.pending} />
+        <PayoutRequest tx={tx} pending={totals.pending} pendingText={[...new Set(['TWD', 'USD', ...Object.keys(curTotals)])].map((c) => money(curTotals[c]?.pending || 0, c)).join(' , ')} />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
           <StatModule icon={DollarSign} label={tx('累計', '累计', 'Total')} value={moneyByCur('total')} />
