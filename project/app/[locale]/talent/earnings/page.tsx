@@ -16,7 +16,8 @@ import { StatModule } from '@/components/dashboard/cards';
 import { taxNotice, computeDeductions } from '@/lib/payout-policy';
 import { validatePayout, type PayoutInput } from '@/lib/payout-validation';
 
-type Earning = { id: string; order_type: string | null; commission_amount: number | null; status: string | null; created_at: string };
+type Earning = { id: string; order_type: string | null; commission_amount: number | null; status: string | null; created_at: string; currency?: string };
+type CurTotals = Record<string, { paid: number; pending: number; total: number }>;
 type Totals = { paid: number; pending: number; total: number };
 type PayoutReq = { id: string; invoice_number: string; amount: number; currency: string; note: string | null; invoice_type: string; invoice_url: string | null; consent_at: string | null; status: string; created_at: string };
 
@@ -212,7 +213,7 @@ function PayoutRequest({ tx, pending }: { tx: (a: string, b: string, c: string) 
   const [reqs, setReqs] = useState<PayoutReq[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [amount, setAmount] = useState(pending > 0 ? String(pending) : '');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('TWD');   // 平台配音酬勞以台幣為主,預設 TWD
   const [note, setNote] = useState('');
   const [feeInfo, setFeeInfo] = useState<{ usdMethod: string; taxLoc: 'TW' | 'overseas'; twResident: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -265,7 +266,7 @@ function PayoutRequest({ tx, pending }: { tx: (a: string, b: string, c: string) 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
         <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
         <div><label className={lbl}>{tx('幣別', '币别', 'Currency')}</label>
-          <select className={`${inputCls} cursor-pointer`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
+          <select className={`${inputCls} cursor-pointer`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['TWD', 'USD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
         </div>
         <div className="sm:col-span-2"><label className={lbl}>{tx('備註(選填)', '备注(选填)', 'Note (optional)')}</label><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></div>
       </div>
@@ -374,6 +375,7 @@ export default function TalentEarningsPage() {
   const [state, setState] = useState<'loading' | 'unauth' | 'ready'>('loading');
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [totals, setTotals] = useState<Totals>({ paid: 0, pending: 0, total: 0 });
+  const [curTotals, setCurTotals] = useState<CurTotals>({});
 
   useEffect(() => {
     (async () => {
@@ -387,12 +389,20 @@ export default function TalentEarningsPage() {
         const j = await r.json();
         setEarnings(Array.isArray(j.earnings) ? j.earnings : []);
         setTotals(j.totals || { paid: 0, pending: 0, total: 0 });
+        setCurTotals(j.totalsByCurrency || {});
         setState('ready');
       } catch { setState('unauth'); }
     })();
   }, []);
 
-  const money = (n: number) => `US$${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  // 幣別跟訂單走(之前寫死 US$,台幣案被顯示成美金)。
+  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', CNY: '¥', GBP: '£', EUR: '€' };
+  const money = (n: number, cur = 'TWD') => `${SYM[cur] || `${cur} `}${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  // 各幣別分開列,不混加(例:NT$1,650 + US$300)
+  const moneyByCur = (key: 'paid' | 'pending' | 'total') => {
+    const parts = Object.entries(curTotals).filter(([, v]) => v[key] > 0).map(([cur, v]) => money(v[key], cur));
+    return parts.length ? parts.join(' + ') : money(0, Object.keys(curTotals)[0] || 'TWD');
+  };
   const fmtDate = (s: string) => { try { return new Date(s).toLocaleDateString(); } catch { return s; } };
   const statusLabel = (s: string | null) =>
     s === 'paid' ? tx('已付款', '已付款', 'Paid') : s === 'pending' ? tx('待付款', '待付款', 'Pending') : (s || tx('處理中', '处理中', 'Processing'));
@@ -424,9 +434,9 @@ export default function TalentEarningsPage() {
         <PayoutRequest tx={tx} pending={totals.pending} />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-          <StatModule icon={DollarSign} label={tx('累計', '累计', 'Total')} value={money(totals.total)} />
-          <StatModule icon={CheckCircle2} label={tx('已付款', '已付款', 'Paid')} value={money(totals.paid)} />
-          <StatModule icon={Clock} label={tx('待付款', '待付款', 'Pending')} value={money(totals.pending)} />
+          <StatModule icon={DollarSign} label={tx('累計', '累计', 'Total')} value={moneyByCur('total')} />
+          <StatModule icon={CheckCircle2} label={tx('已付款', '已付款', 'Paid')} value={moneyByCur('paid')} />
+          <StatModule icon={Clock} label={tx('待付款', '待付款', 'Pending')} value={moneyByCur('pending')} />
         </div>
 
         {earnings.length === 0 ? (
@@ -449,7 +459,7 @@ export default function TalentEarningsPage() {
                   <tr key={e.id} className="border-t border-white/5">
                     <td className="px-4 py-3 text-gray-300">{fmtDate(e.created_at)}</td>
                     <td className="px-4 py-3 text-gray-300">{e.order_type || '—'}</td>
-                    <td className="px-4 py-3 text-right text-white font-medium">{money(e.commission_amount || 0)}</td>
+                    <td className="px-4 py-3 text-right text-white font-medium">{money(e.commission_amount || 0, e.currency)}</td>
                     <td className="px-4 py-3 text-right">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${e.status === 'paid' ? 'bg-green-500/15 text-green-300' : 'bg-amber-500/15 text-amber-300'}`}>{statusLabel(e.status)}</span>
                     </td>

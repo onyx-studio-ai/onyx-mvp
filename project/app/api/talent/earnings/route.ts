@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Only the columns the talent should see — their cut, the type, status, date.
     const { data: rows, error } = await db
       .from('talent_earnings')
-      .select('id, order_type, commission_amount, status, created_at')
+      .select('id, order_id, order_type, commission_amount, status, created_at')
       .eq('talent_id', talent.id)
       .order('created_at', { ascending: false });
     if (error) {
@@ -36,16 +36,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ earnings: [], totals: { paid: 0, pending: 0, total: 0 } });
     }
 
-    const earnings = rows || [];
-    const sum = (pred: (s: string) => boolean) =>
-      Math.round(earnings.filter((e) => pred(e.status || '')).reduce((a, e) => a + (Number(e.commission_amount) || 0), 0) * 100) / 100;
+    // 幣別跟著「來源訂單」走(talent_earnings 沒存幣別;之前前端寫死 US$,台幣案
+    // 全被顯示成美金 —— 2026-07-16 女王百貨配音員回報)。查不到訂單就當 TWD
+    //(平台配音酬勞以台幣為主)。
+    const curById = new Map<string, string>();
+    const byType: Record<string, string[]> = {};
+    for (const r of rows || []) if (r.order_id) (byType[r.order_type || 'voice'] ||= []).push(String(r.order_id));
+    const TABLE: Record<string, string> = { voice: 'voice_orders', music: 'music_orders', strings: 'orchestra_orders' };
+    for (const [ot, ids] of Object.entries(byType)) {
+      const table = TABLE[ot] || 'voice_orders';
+      const { data: os } = await db.from(table).select('id, currency').in('id', ids);
+      for (const o of os || []) curById.set(String(o.id), String(o.currency || 'TWD').toUpperCase());
+    }
+    const earnings = (rows || []).map((r) => ({ ...r, currency: curById.get(String(r.order_id)) || 'TWD' }));
+
+    const sum = (pred: (e: { status?: string | null; currency: string }) => boolean) =>
+      Math.round(earnings.filter(pred).reduce((a, e) => a + (Number(e.commission_amount) || 0), 0) * 100) / 100;
     const totals = {
-      paid: sum((s) => s === 'paid'),
-      pending: sum((s) => s !== 'paid'),
+      paid: sum((e) => e.status === 'paid'),
+      pending: sum((e) => e.status !== 'paid'),
       total: Math.round(earnings.reduce((a, e) => a + (Number(e.commission_amount) || 0), 0) * 100) / 100,
     };
+    // 各幣別分開總計(不同幣別的金額不能加在一起)
+    const totalsByCurrency: Record<string, { paid: number; pending: number; total: number }> = {};
+    for (const cur of new Set(earnings.map((e) => e.currency))) {
+      totalsByCurrency[cur] = {
+        paid: sum((e) => e.status === 'paid' && e.currency === cur),
+        pending: sum((e) => e.status !== 'paid' && e.currency === cur),
+        total: sum((e) => e.currency === cur),
+      };
+    }
 
-    return NextResponse.json({ earnings, totals });
+    return NextResponse.json({ earnings, totals, totalsByCurrency });
   } catch (err) {
     return supabaseErrorResponse(err, 'api/talent/earnings:GET');
   }
