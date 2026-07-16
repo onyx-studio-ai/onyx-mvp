@@ -53,13 +53,6 @@ export async function POST(request: NextRequest) {
     const role = await threadRole(c, briefId, talentId);
     if (!role) return NextResponse.json({ error: 'Not a participant in this thread' }, { status: 403 });
 
-    // Block off-platform contact details outright (Wing: 即時擋下不送出 — no routing
-    // around Onyx). The client + talent may only message once the job is awarded.
-    if (sanitizeMessage(raw).redacted) {
-      return NextResponse.json({ error: '訊息含聯絡方式(電話 / email / LINE / 微信 / 網址 等),平台不允許交換私下聯絡資料。請移除後再送出。' }, { status: 400 });
-    }
-    const body = raw;
-
     // Sender display name + the counterpart to notify.
     const { data: brief } = await c.db
       .from('marketplace_briefs')
@@ -67,6 +60,16 @@ export async function POST(request: NextRequest) {
       .eq('id', briefId)
       .maybeSingle();
     const { data: talent } = await c.db.from('talents').select('name, email').eq('id', talentId).maybeSingle();
+    // 平台自發案(對話對象是 Onyx 自己,如女王百貨的指派/補錄溝通)
+    const isPlatformBrief = (brief?.client_email || '') === 'casting@onyxstudios.ai';
+
+    // Block off-platform contact details outright (Wing: 即時擋下不送出 — no routing
+    // around Onyx). The client + talent may only message once the job is awarded.
+    // 平台案不擋 —— 對象是 Onyx,配音員留電話/LINE 給我們是正常溝通(謝千惠案)。
+    if (!isPlatformBrief && sanitizeMessage(raw).redacted) {
+      return NextResponse.json({ error: '訊息含聯絡方式(電話 / email / LINE / 微信 / 網址 等),平台不允許交換私下聯絡資料。請移除後再送出。' }, { status: 400 });
+    }
+    const body = raw;
 
     const senderName = role === 'talent' ? talent?.name || 'Talent' : brief?.client_name || 'Client';
 
@@ -78,7 +81,11 @@ export async function POST(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     // Notify the counterpart (best-effort, non-blocking, branded + localized).
-    const to = role === 'talent' ? brief?.client_email : talent?.email;
+    // 平台案的「客戶」= casting@onyxstudios.ai(識別值,沒人收)→ 改通知 ADMIN_EMAIL,
+    // 不然配音員的回覆(交期調整等)Wing 永遠不知道。
+    const to = role === 'talent'
+      ? (isPlatformBrief ? (process.env.ADMIN_EMAIL || 'admin@onyxstudios.ai') : brief?.client_email)
+      : talent?.email;
     if (to) {
       const note = newMessageEmail({ briefNumber: brief?.brief_number, url: `${SITE}/messages`, locale: brief?.locale });
       sendEmail({ category: 'PRODUCTION', to, subject: note.subject, html: note.html }).catch(() => {});
