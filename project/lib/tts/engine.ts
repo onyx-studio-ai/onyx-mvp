@@ -49,6 +49,79 @@ function preprocess(text: string, code: string): string {
   return code.toLowerCase().startsWith('zh') ? toSimplified(text) : text;
 }
 
+// ── Long-text chunking ────────────────────────────────────────────────────────
+// fal Qwen3 caps generation at `max_new_tokens` codec tokens (12.5Hz) and its
+// DEFAULT is tiny — measured 2026-07-16: 616-char zh input → 15.84s audio, i.e.
+// audio silently truncates at ~16s no matter the text length (「長劇後面斷掉」).
+// Fix = always pass max_new_tokens explicitly AND synthesize long scripts as
+// sentence-boundary chunks stitched server-side (VOICE_LAB B5 SOP). Chunks end
+// at sentence-final punctuation, so the join lands where a natural pause
+// belongs — no crossfade needed at this layer.
+const MAX_CHUNK_CHARS = 150;   // zh ~4.7 chars/s → ≈32s audio ≈ 400 codec tokens
+const MAX_NEW_TOKENS = 1600;   // ≥2min headroom per chunk; verified accepted by fal
+const CHUNK_CONCURRENCY = 6;   // measured ~50s wall per chunk → 6-wide keeps a
+                               // 2500-char script within Vercel's 300s maxDuration
+
+/** Split text into sentence-boundary chunks of ≤ maxChars (hard-split only when
+ *  a single sentence itself exceeds the limit). Exported for tests. */
+export function splitIntoChunks(text: string, maxChars = MAX_CHUNK_CHARS): string[] {
+  const sentences = text.split(/(?<=[。!?！？.;；\n…])/).filter((s) => s.trim());
+  const chunks: string[] = [];
+  let cur = '';
+  for (let s of sentences) {
+    while (s.length > maxChars) {           // pathological no-punctuation run
+      if (cur) { chunks.push(cur); cur = ''; }
+      chunks.push(s.slice(0, maxChars));
+      s = s.slice(maxChars);
+    }
+    if (cur.length + s.length > maxChars) { chunks.push(cur); cur = s; }
+    else cur += s;
+  }
+  if (cur.trim()) chunks.push(cur);
+  return chunks;
+}
+
+/** Clean an MP3 segment for byte-concat: strip ID3v2 header / ID3v1 trailer and
+ *  the Xing/Info metadata frame (its frame count only covers ONE segment, so a
+ *  stitched file would report a wrong total duration). Same encoder + params
+ *  (24kHz mono) → decoders play the joined stream; each seam sits at a sentence
+ *  pause where a tiny gap is natural. Known cosmetic limit: VBR without Xing
+ *  means some players estimate duration slightly short until fully buffered —
+ *  audio content itself is complete (verified by full decode). */
+function cleanSegment(buf: Buffer): Buffer {
+  let out = buf;
+  if (out.length > 10 && out.toString('latin1', 0, 3) === 'ID3') {
+    const size = ((out[6] & 0x7f) << 21) | ((out[7] & 0x7f) << 14) | ((out[8] & 0x7f) << 7) | (out[9] & 0x7f);
+    out = out.subarray(10 + size);
+  }
+  if (out.length > 128 && out.toString('latin1', out.length - 128, out.length - 125) === 'TAG') {
+    out = out.subarray(0, out.length - 128);
+  }
+  const head = out.subarray(0, 2048).toString('latin1');
+  const xing = head.indexOf('Xing') >= 0 ? head.indexOf('Xing') : head.indexOf('Info');
+  if (xing >= 0) {
+    for (let i = xing; i < out.length - 1; i++) {
+      if (out[i] === 0xff && (out[i + 1] & 0xe0) === 0xe0) return out.subarray(i);
+    }
+  }
+  return out;
+}
+
+/** Upload a stitched deliverable to Supabase storage; returns its public URL.
+ *  Mirrors the service-client pattern used across app/api. */
+async function uploadDeliverable(mp3: Buffer): Promise<string> {
+  const { createClient } = await import('@supabase/supabase-js');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!url || !key) throw new TtsError('Supabase not configured for long-text stitching', 'upstream');
+  const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  await sb.storage.createBucket('tts-audio', { public: true }).catch(() => {}); // idempotent
+  const path = `long/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.mp3`;
+  const { error } = await sb.storage.from('tts-audio').upload(path, mp3, { contentType: 'audio/mpeg' });
+  if (error) throw new TtsError(`storage upload failed: ${error.message}`, 'upstream');
+  return sb.storage.from('tts-audio').getPublicUrl(path).data.publicUrl;
+}
+
 // 3 delivery styles. NOTE: Qwen3 voice-clone has no style param → each style is a
 // DIFFERENT speaker embedding (e.g. Eric confident/warm/neutral ref). The caller
 // supplies the embedding for the chosen style; this just validates the key.
@@ -79,6 +152,8 @@ export interface GenerateResult {
   language: string;
   preview: boolean;
   charsBilled: number;
+  /** how many sentence-chunks were synthesized (1 = single call, unchanged path). */
+  chunks: number;
 }
 
 export class TtsError extends Error {
@@ -122,25 +197,53 @@ export async function generateVoice(input: GenerateInput): Promise<GenerateResul
   const key = process.env.FAL_KEY;
   if (!key) throw new TtsError('FAL_KEY not configured', 'no_key');
 
-  const body = preprocess(input.preview ? truncateForPreview(text) : text, input.language);
-  const args: Record<string, unknown> = {
-    text: body,
-    language: QWEN3_FAL_LANG[input.language] || QWEN3_FAL_LANG[input.language.toLowerCase()] || 'Auto',
-    temperature: input.temperature ?? 0.7,
-  };
-  if (input.voice) args.voice = input.voice;                                  // preset (native quality)
-  else { args.speaker_voice_embedding_file_url = input.embeddingUrl; args.reference_text = input.refText || ''; } // cloned talent
-  const res = await fetch('https://fal.run/fal-ai/qwen-3-tts/text-to-speech/' + (input.modelSize === '0.6B' ? '0.6b' : '1.7b'), {
-    method: 'POST',
-    headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(args),
-  });
-  if (!res.ok) {
-    throw new TtsError(`fal Qwen3 error ${res.status}: ${(await res.text()).slice(0, 200)}`, 'upstream');
-  }
-  const data = (await res.json()) as { audio?: { url?: string } };
-  const audioUrl = data.audio?.url;
-  if (!audioUrl) throw new TtsError('fal returned no audio url', 'upstream');
+  const full = preprocess(input.preview ? truncateForPreview(text) : text, input.language);
+  const falLang = QWEN3_FAL_LANG[input.language] || QWEN3_FAL_LANG[input.language.toLowerCase()] || 'Auto';
+  const model = input.modelSize === '0.6B' ? '0.6b' : '1.7b';
 
-  return { audioUrl, engine, language: input.language, preview: !!input.preview, charsBilled: body.length };
+  const callFal = async (chunk: string, retried = false): Promise<string> => {
+    const args: Record<string, unknown> = {
+      text: chunk,
+      language: falLang,
+      temperature: input.temperature ?? 0.7,
+      // ⚠️ 必傳:fal 預設 max_new_tokens 極小 → 音訊 ~16s 就被硬切(長劇斷掉的根因)
+      max_new_tokens: MAX_NEW_TOKENS,
+    };
+    if (input.voice) args.voice = input.voice;                                  // preset (native quality)
+    else { args.speaker_voice_embedding_file_url = input.embeddingUrl; args.reference_text = input.refText || ''; } // cloned talent
+    const res = await fetch('https://fal.run/fal-ai/qwen-3-tts/text-to-speech/' + model, {
+      method: 'POST',
+      headers: { Authorization: `Key ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+    if (!res.ok) {
+      if (!retried && (res.status === 429 || res.status >= 500)) return callFal(chunk, true); // transient → one retry
+      throw new TtsError(`fal Qwen3 error ${res.status}: ${(await res.text()).slice(0, 200)}`, 'upstream');
+    }
+    const data = (await res.json()) as { audio?: { url?: string } };
+    if (!data.audio?.url) throw new TtsError('fal returned no audio url', 'upstream');
+    return data.audio.url;
+  };
+
+  // Short text (and every preview): single call, return fal's URL directly — unchanged path.
+  if (full.length <= MAX_CHUNK_CHARS) {
+    const audioUrl = await callFal(full);
+    return { audioUrl, engine, language: input.language, preview: !!input.preview, charsBilled: full.length, chunks: 1 };
+  }
+
+  // Long script: sentence-boundary chunks → bounded-concurrency fal calls → ordered
+  // byte-stitch → our storage (fal URLs are temp; deliverables need a stable home).
+  const parts = splitIntoChunks(full);
+  const bufs: Buffer[] = new Array(parts.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < parts.length) {
+      const i = next++;
+      const url = await callFal(parts[i]);
+      bufs[i] = cleanSegment(Buffer.from(await (await fetch(url)).arrayBuffer()));
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CHUNK_CONCURRENCY, parts.length) }, worker));
+  const audioUrl = await uploadDeliverable(Buffer.concat(bufs));
+  return { audioUrl, engine, language: input.language, preview: false, charsBilled: full.length, chunks: parts.length };
 }

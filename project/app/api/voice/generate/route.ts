@@ -11,6 +11,17 @@ import { getVoiceEmbedding } from '@/lib/tts/voice-embeddings';
 // ⚠️ TODO before真上線:① 接訂單/付款狀態(完整版要驗 paid)② 每 talent+style 的
 // speaker embedding 存 talents 表(目前由 caller 傳 embeddingUrl)③ 強化 auth。
 
+// Long scripts synthesize as parallel sentence-chunks (see lib/tts/engine) — a
+// 2500-char script takes ~3-4 min of fal calls, so this route needs the full
+// Vercel Pro window instead of the default seconds-scale timeout.
+export const maxDuration = 300;
+
+// Hard input cap for the SYNCHRONOUS path: ~2500 zh chars ≈ 9 min of audio ≈
+// what reliably fits inside maxDuration at measured fal throughput. Beyond this
+// we REFUSE loudly (the old `.slice(0, 5000)` silently dropped the tail — that
+// plus fal's tiny default max_new_tokens was the「長劇後面斷掉」bug).
+const MAX_SYNC_CHARS = 2500;
+
 const RATE_PER_MIN = 12;
 const hits = new Map<string, { n: number; t: number }>();
 function rateLimited(ip: string): boolean {
@@ -47,6 +58,12 @@ export async function POST(request: NextRequest) {
   if (!body.text || !body.language || (!body.voiceId && !body.voice)) {
     return NextResponse.json({ error: 'text, language and (voiceId OR voice) are required' }, { status: 400 });
   }
+  if (!body.preview && body.text.length > MAX_SYNC_CHARS) {
+    return NextResponse.json(
+      { error: `Script too long for instant generation (${body.text.length} chars, max ${MAX_SYNC_CHARS}). Split it into scenes and generate each part.`, code: 'too_long' },
+      { status: 413 },
+    );
+  }
 
   let embeddingUrl: string | undefined;
   let refText: string | undefined;
@@ -65,7 +82,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await generateVoice({
-      text: String(body.text).slice(0, 5000),
+      text: String(body.text),
       language: String(body.language),
       voice: !body.voiceId && body.voice ? String(body.voice) : undefined,
       embeddingUrl,
