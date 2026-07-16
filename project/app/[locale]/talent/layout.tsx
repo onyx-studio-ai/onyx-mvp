@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
+import { briefMatchesTalentLangs } from '@/lib/languages';
 import { User, Briefcase, MessageSquare, DollarSign, LogOut, Bell, ArrowLeftRight } from 'lucide-react';
 
 export default function TalentLayout({ children }: { children: React.ReactNode }) {
@@ -54,13 +55,17 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
         if (r.ok) {
           const j = await r.json();
           if (!cancelled) { setName(j.talent?.name || ''); setHeadshot(j.talent?.headshot_url || ''); setIsClient(!!j.isClient); }
+          const myLangs: string[] = [...(j.talent?.languages || []), ...(j.talent?.native_languages || [])];
           // Derive notifications from the briefs feed (real data, no extra table).
           try {
             const br = await fetch('/api/talent/briefs', { headers: { Authorization: `Bearer ${token}` } });
             if (br.ok) {
               const bj = await br.json();
               const quoted = new Set((bj.myQuotes || []).map((q: { brief_id: string }) => q.brief_id));
-              const opps = (bj.briefs || []).filter((b: { id: string }) => !quoted.has(b.id)).length;
+              // 只數「跟他語系相符」的案(Wing 2026-07-16:不相干的案不用提醒;
+              // 看板本身照樣列出全部,他想看還是看得到)。
+              const opps = (bj.briefs || []).filter((b: { id: string; language?: string }) =>
+                !quoted.has(b.id) && briefMatchesTalentLangs(String(b.language || ''), myLangs)).length;
               const upd = (bj.myQuotes || []).filter((q: { status: string }) => ['shortlisted', 'accepted', 'awarded'].includes(q.status)).length;
               if (!cancelled) { setOppCount(opps); setQuoteUpdates(upd); }
             }
