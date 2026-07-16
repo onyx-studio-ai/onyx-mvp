@@ -35,7 +35,7 @@ export default function EditCasting() {
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [f, setF] = useState({ title: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
+  const [f, setF] = useState({ title: '', internal_client_note: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', recording_start: '', deadline: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
   // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 之前只在發案表單有,編輯頁沒有,導致從客戶請求
