@@ -2558,7 +2558,12 @@
       "errLoadOrchestra": "Failed to load orchestra orders: {msg}",
       "errLoadOrders": "Failed to load orders: {msg}",
       "errUpdateFailed": "Failed to update order",
-      "errUnknown": "Unknown error"
+      "errUnknown": "Unknown error",
+      "zipDeliveries": "Download deliveries (zip)",
+      "zipBusy": "Zipping…",
+      "zipDone": "Zip downloaded",
+      "zipSkipped": "Done, but files failed for: {orders}",
+      "zipNoVoice": "No voice orders selected (only voice orders have delivery audio)"
     },
     "talents": {
       "title": "Talent Management",

@@ -2558,7 +2558,12 @@
       "errLoadOrchestra": "加载弦乐订单失败:{msg}",
       "errLoadOrders": "加载订单失败:{msg}",
       "errUpdateFailed": "更新订单失败",
-      "errUnknown": "未知错误"
+      "errUnknown": "未知错误",
+      "zipDeliveries": "下载交付音频(zip)",
+      "zipBusy": "打包中…",
+      "zipDone": "zip 已下载",
+      "zipSkipped": "完成,但这些单的文件抓取失败:{orders}",
+      "zipNoVoice": "勾选里没有语音订单(只有语音单有交付音频)"
     },
     "talents": {
       "title": "人才管理",

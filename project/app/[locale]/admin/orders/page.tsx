@@ -348,6 +348,7 @@ export default function AdminOrdersPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDate, setBulkDate] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [zipBusy, setZipBusy] = useState(false);
 
   const [stringsOrders, setStringsOrders] = useState<StringsOrder[]>([]);
 
@@ -442,6 +443,29 @@ export default function AdminOrdersPage() {
     const a = document.createElement('a');
     a.href = url; a.download = `onyx-orders-${rows.length}.csv`; a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // 勾選的語音訂單 → 一鍵打包下載配音員最新交付檔(zip;伺服器端抓檔,大 WAV 也行)
+  async function downloadDeliveries() {
+    const voiceIds = selectedOrders.filter(o => o.type === 'voice').map(o => o.id);
+    if (!voiceIds.length) { toast.error(t('zipNoVoice')); return; }
+    setZipBusy(true);
+    try {
+      const res = await fetch('/api/admin/orders/download-deliveries', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: voiceIds }),
+      });
+      if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || `HTTP ${res.status}`); }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `onyx-deliveries-${voiceIds.length}.zip`; a.click();
+      URL.revokeObjectURL(url);
+      const skipped = res.headers.get('X-Skipped-Orders');
+      if (skipped) toast.error(t('zipSkipped', { orders: decodeURIComponent(skipped) }));
+      else toast.success(t('zipDone'));
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'zip 失敗'); }
+    finally { setZipBusy(false); }
   }
 
   async function applyBulkDate() {
@@ -572,6 +596,7 @@ export default function AdminOrdersPage() {
             <>
               <span className="text-gray-700 font-medium">{t('selectedCount', { count: selected.size })}</span>
               <button onClick={exportCsv} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"><Download className="w-3.5 h-3.5" /> {t('exportCsv')}</button>
+              <button onClick={downloadDeliveries} disabled={zipBusy} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50 transition-colors"><Download className="w-3.5 h-3.5" /> {zipBusy ? t('zipBusy') : t('zipDeliveries')}</button>
               <span className="inline-flex items-center gap-1.5">
                 <input type="date" value={bulkDate} onChange={e => setBulkDate(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-900" />
                 <button onClick={applyBulkDate} disabled={!bulkDate || bulkBusy} className="px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-50">{bulkBusy ? '…' : t('setEstDelivery')}</button>

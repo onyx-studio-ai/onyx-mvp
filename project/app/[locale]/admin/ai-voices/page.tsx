@@ -34,6 +34,7 @@ export default function AiVoicesPage() {
   const [temp, setTemp] = useState('');
   const [busy, setBusy] = useState('');          // 'upload' | 'transcribe' | 'clone' | rowId…
   const [testAudio, setTestAudio] = useState(''); // 最近一次試聽音檔
+  const [testRowId, setTestRowId] = useState(''); // 試聽音檔屬於哪一列(播放器長在該列,Safari 擋 autoplay 也看得到)
   const [testText, setTestText] = useState('您好,歡迎來到 Onyx Studios,很高興為您服務。');
 
   const load = useCallback(async () => {
@@ -94,7 +95,7 @@ export default function AiVoicesPage() {
   }
 
   async function testRow(r: VoiceRow) {
-    setBusy(r.id); setTestAudio('');
+    setBusy(r.id); setTestAudio(''); setTestRowId(r.id);
     try {
       const res = await fetch('/api/admin/ai-voices', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'test', id: r.id, text: testText }) });
       const j = await res.json().catch(() => ({}));
@@ -175,7 +176,6 @@ export default function AiVoicesPage() {
       <div className="flex items-center gap-3 mb-3">
         <h2 className="text-base font-semibold">聲音庫({rows.length} 列)</h2>
         <input className={`${input} max-w-xs`} value={testText} onChange={(e) => setTestText(e.target.value)} placeholder="試聽用短句…" />
-        {testAudio && <audio controls autoPlay src={testAudio} className="h-8" />}
       </div>
       {!loaded ? <p className="text-sm text-gray-500">載入中…</p>
         : rows.length === 0 ? <p className="text-sm text-gray-500">還沒有聲音 —— 表尚未建立或還沒 clone 過。跑完 migration 後,Eric/阿宏 的既有聲音會出現在這裡。</p>
@@ -184,18 +184,26 @@ export default function AiVoicesPage() {
             <p className="font-semibold text-sm mb-2">{rows.find((r) => r.voice_key === vk)?.label || vk} <span className="text-xs text-gray-400 font-normal">voiceId: {vk}</span></p>
             <div className="space-y-2">
               {rows.filter((r) => r.voice_key === vk).map((r) => (
-                <div key={r.id} className="flex flex-wrap items-center gap-2 border border-gray-100 rounded-lg px-3 py-2">
-                  <span className="text-sm font-medium w-40">{TONE_LABEL[r.tone] || r.tone}{r.is_default_tone ? ' ⭐預設' : ''}</span>
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full border ${r.status === 'live' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>{r.status === 'live' ? '已上架' : '未上架'}</span>
-                  <span className="text-[11px] text-gray-400">temp {r.temperature ?? '預設'}</span>
-                  <span className="text-[11px] text-gray-400 truncate max-w-[240px]" title={r.ref_text}>ref:{r.ref_text.slice(0, 24)}…</span>
-                  <span className="ml-auto flex gap-1.5">
-                    <button onClick={() => testRow(r)} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-lg border border-gray-300 hover:bg-gray-100">{busy === r.id ? '生成中…' : '試聽'}</button>
-                    {r.status === 'live'
-                      ? <button onClick={() => patchRow(r.id, { status: 'off' }, '已下架')} className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">下架</button>
-                      : <button onClick={() => patchRow(r.id, { status: 'live' }, '已上架,客戶端立即可用')} className="text-xs px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-500">上架</button>}
-                    {!r.is_default_tone && <button onClick={() => patchRow(r.id, { is_default_tone: true }, '已設為預設 tone')} className="text-xs px-3 py-1 rounded-lg border border-gray-300 hover:bg-gray-100">設預設</button>}
-                  </span>
+                <div key={r.id} className="border border-gray-100 rounded-lg px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium w-40">{TONE_LABEL[r.tone] || r.tone}{r.is_default_tone ? ' ⭐預設' : ''}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full border ${r.status === 'live' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>{r.status === 'live' ? '已上架' : '未上架'}</span>
+                    <span className="text-[11px] text-gray-400">temp {r.temperature ?? '預設'}</span>
+                    <span className="text-[11px] text-gray-400 truncate max-w-[240px]" title={r.ref_text}>ref:{r.ref_text.slice(0, 24)}…</span>
+                    <span className="ml-auto flex gap-1.5">
+                      <button onClick={() => testRow(r)} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-lg border border-gray-300 hover:bg-gray-100">{busy === r.id ? '生成中…' : '試聽'}</button>
+                      {r.status === 'live'
+                        ? <button onClick={() => patchRow(r.id, { status: 'off' }, '已下架')} className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">下架</button>
+                        : <button onClick={() => patchRow(r.id, { status: 'live' }, '已上架,客戶端立即可用')} className="text-xs px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-500">上架</button>}
+                      {!r.is_default_tone && <button onClick={() => patchRow(r.id, { is_default_tone: true }, '已設為預設 tone')} className="text-xs px-3 py-1 rounded-lg border border-gray-300 hover:bg-gray-100">設預設</button>}
+                    </span>
+                  </div>
+                  {testRowId === r.id && testAudio && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-[11px] text-gray-400 flex-shrink-0">試聽(按 ▶ 播放):</span>
+                      <audio controls src={testAudio} className="h-8 w-full max-w-md" />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

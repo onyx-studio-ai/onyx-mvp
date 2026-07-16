@@ -7,9 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import {
   Upload, Play, CheckCircle2, Loader2, Trash2,
   Send, FileAudio, RefreshCw, Lock, Plus, X, Mic,
-  UserPlus, User, CalendarClock,
+  UserPlus, User, CalendarClock, Download,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+// Supabase 公開網址加 ?download=<檔名> 會回 Content-Disposition: attachment,瀏覽器直接下載
+const downloadUrl = (url: string, name: string) =>
+  `${url}${url.includes('?') ? '&' : '?'}download=${encodeURIComponent(name)}`;
 
 interface Version {
   id: string;
@@ -672,6 +676,10 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                         className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
                         <Play className="w-3 h-3" /> Play
                       </a>
+                      <a href={downloadUrl(ver.file_url, ver.file_name)}
+                        className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                        <Download className="w-3 h-3" /> 下載
+                      </a>
                       <button onClick={() => handleDeleteVersion(ver.id)} className="text-zinc-600 hover:text-red-400 transition-colors p-1">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -792,6 +800,9 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <a href={deliv.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
                       <Play className="w-3 h-3" /> Play
+                    </a>
+                    <a href={downloadUrl(deliv.file_url, deliv.file_name)} className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                      <Download className="w-3 h-3" /> 下載
                     </a>
                     <button onClick={() => handleDeleteDeliverable(deliv.id)} className="text-zinc-600 hover:text-red-400 p-1 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
