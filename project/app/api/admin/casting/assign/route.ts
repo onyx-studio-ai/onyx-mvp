@@ -88,7 +88,10 @@ export async function POST(request: NextRequest) {
     const locale = emailLocaleForTalent('zh-TW', undefined);
     const lp = locale && locale !== 'en' ? `/${locale}` : '';
     const { data: link } = await db.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: `${SITE}${lp}/auth/reset-password` } });
-    setupUrl = link?.properties?.action_link || `${SITE}${lp}/auth/reset-password`;
+    // 不給 action_link(GET 即消耗的一次性連結,貼 LINE 會被預覽爬蟲用掉 → 真人點開
+    // 永遠過期)→ 改給自家開通頁,真人按按鈕才兌換 token_hash。
+    const th = link?.properties?.hashed_token;
+    setupUrl = th ? `${SITE}${lp}/auth/activate?th=${encodeURIComponent(th)}` : (link?.properties?.action_link || `${SITE}${lp}/auth/reset-password`);
     if (!isPlaceholder) {   // 佔位帳號沒有真信箱,不寄;開通全靠 LINE 丟連結
       const mail = talentAccountSetupEmail({ name: talentName, setupUrl, dashboardUrl: `${SITE}/talent`, locale });
       sendEmail({ category: 'HELLO', to: email, subject: mail.subject, html: mail.html }).catch(() => {});
