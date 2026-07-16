@@ -70,14 +70,14 @@ export default async function BlogIndex({ params }: { params: Promise<{ locale: 
 
       {/* Post list — compact rows: small square thumbnail left, text right */}
       <section className="pb-24 px-4">
-        <div className="max-w-3xl mx-auto flex flex-col gap-2">
+        <div className="max-w-6xl mx-auto flex flex-col gap-2">
           {posts.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
               className="group flex items-center gap-4 sm:gap-5 rounded-xl border border-transparent p-2.5 sm:p-3 hover:border-white/10 hover:bg-white/[0.03] transition-colors"
             >
-              <div className="shrink-0 w-28 sm:w-44 aspect-video rounded-lg bg-black/40 overflow-hidden">
+              <div className="shrink-0 w-28 sm:w-44 lg:w-60 aspect-video rounded-lg bg-black/40 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={post.cover}
