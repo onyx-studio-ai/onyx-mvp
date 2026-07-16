@@ -56,7 +56,8 @@ export default function AiVoicesPage() {
   }
 
   async function uploadRef(file: File) {
-    setBusy('upload'); setAudioUrl(''); setRefText('');
+    const pasted = refText.trim();   // 先貼好的逐字稿優先,不自動轉稿也不蓋掉
+    setBusy('upload'); setAudioUrl('');
     try {
       const u = await fetch('/api/admin/casting/upload', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json().catch(() => ({}));
@@ -64,6 +65,7 @@ export default function AiVoicesPage() {
       const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
       if (error) throw new Error(error.message);
       setAudioUrl(uj.publicUrl); setAudioName(file.name);
+      if (pasted) { toast.success('錄音已上傳。已沿用你貼的逐字稿(未自動轉稿)—— 請確認它跟這段錄音一字不差!'); return; }
       toast.success('錄音已上傳,開始自動轉逐字稿…');
       // 自動轉稿(refText 鐵律:必須是這個音檔的真實逐字稿)
       setBusy('transcribe');
@@ -152,12 +154,11 @@ export default function AiVoicesPage() {
           {audioUrl && <audio controls src={audioUrl} className="h-8 mt-2 w-full max-w-md" />}
         </div>
 
-        {refText !== '' && (
-          <div className="mb-3">
-            <span className="text-xs text-red-600 font-medium mb-1 block">③ 逐字稿 —— 請逐字核對後修正,轉錯字會毀掉 clone(這段文字必須跟錄音內容一模一樣)</span>
-            <textarea rows={8} className={`${input} min-h-[200px] resize-y text-sm leading-relaxed`} value={refText} onChange={(e) => setRefText(e.target.value)} />
-          </div>
-        )}
+        <div className="mb-3">
+          <span className="text-xs text-red-600 font-medium mb-1 block">③ 逐字稿 —— 必須跟錄音內容一模一樣,轉錯字會毀掉 clone</span>
+          <textarea rows={8} className={`${input} min-h-[200px] resize-y text-sm leading-relaxed`} value={refText} onChange={(e) => setRefText(e.target.value)}
+            placeholder={'兩種用法:\n· 手上有逐字稿 → 直接貼在這裡,再上傳錄音(就不會自動轉稿)\n· 沒有逐字稿 → 留空,上傳錄音後會自動轉出來,再逐字核對修正'} />
+        </div>
 
         <div className="flex flex-wrap items-end gap-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">Temperature(選填,0.5 穩~0.9 活;空=預設 0.7)</span>
