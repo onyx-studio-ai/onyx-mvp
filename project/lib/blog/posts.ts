@@ -116,6 +116,73 @@ const langQA: BlogPost = {
   ],
 };
 
+const wilderConsent: BlogPost = {
+  slug: 'gene-wilder-ai-voice-what-permission-requires',
+  date: '2026-07-16',
+  readMins: 6,
+  cover: '/blog/that-ad-voice-might-be-borrowed-hero.png',
+  tags: ['AI Voice', 'Consent', 'Legal', 'Licensing'],
+  title: {
+    en: "Netflix Recreated Gene Wilder's Voice — With Permission. Permission Is the Hard Part.",
+    'zh-TW': 'Netflix 重建了金·懷德的聲音——而且拿到了授權。難的正是「授權」這兩個字。',
+    'zh-CN': 'Netflix 重建了金·怀德的声音——而且拿到了授权。难的正是「授权」这两个字。',
+  },
+  dek: {
+    en: "The estate said yes, and that made headlines. But under the rules now taking hold, a yes only counts if it names the use, the scope, and who had standing to give it.",
+    'zh-TW': '家屬點頭了,於是上了新聞。但在如今逐漸成形的規則下,一句「好」要算數,得寫明用途、範圍,以及誰有資格說這句話。',
+    'zh-CN': '家属点头了,于是上了新闻。但在如今逐渐成形的规则下,一句「好」要算数,得写明用途、范围,以及谁有资格说这句话。',
+  },
+  body: [
+    { t: 'p', text: {
+      en: "On September 23, a Netflix competition series called Wonka's The Golden Ticket premieres with a voice nobody recorded. Gene Wilder died in 2016. Netflix and Eureka Productions worked with the AI voice company ElevenLabs to re-create the voice he gave Willy Wonka in 1971, and it narrates a show in which 12 golden ticket winners and their chosen partners compete through a version of the chocolate factory — with Rusty Goffe, who played an Oompa Loompa in the original film, appearing alongside them. Almost every AI voice story that reaches the news is a story about someone who never agreed. This one is the opposite: Wilder's estate granted permission. \"We are delighted that Wonka's The Golden Ticket celebrates the warmth and imagination that he brought to the role,\" Karen B. Wilder said on the estate's behalf. Which makes it the more useful story to study — because the interesting part isn't the cloning. It's the paperwork.",
+      'zh-TW': '9 月 23 日,Netflix 一檔叫《Wonka\'s The Golden Ticket》的競賽節目要上線了,而裡頭有一把沒有人錄過的聲音。金·懷德(Gene Wilder)已於 2016 年過世。Netflix 與 Eureka Productions 找上 AI 語音公司 ElevenLabs,重建了他在 1971 年賦予威利·旺卡的那把聲音,並讓它為節目擔任旁白——節目裡,12 位金彩券得主與他們各自挑選的夥伴,在一座重現的巧克力工廠裡闖關,而在 1971 年原片中飾演奧柏倫柏人的 Rusty Goffe 也一同現身。幾乎每一則登上新聞的 AI 語音故事,講的都是「某個人從沒答應過」。這一則正好相反:懷德的家屬,授權了。「我們很高興《Wonka\'s The Golden Ticket》頌揚了他為這個角色帶來的溫暖與想像力,」Karen B. Wilder 代表家屬如此表示。也正因如此,這則故事更值得研究——因為真正有意思的不是克隆這件事,而是那疊文件。',
+      'zh-CN': '9 月 23 日,Netflix 一档叫《Wonka\'s The Golden Ticket》的竞赛节目要上线了,而里头有一把没有人录过的声音。金·怀德(Gene Wilder)已于 2016 年过世。Netflix 与 Eureka Productions 找上 AI 语音公司 ElevenLabs,重建了他在 1971 年赋予威利·旺卡的那把声音,并让它为节目担任旁白——节目里,12 位金彩券得主与他们各自挑选的伙伴,在一座重现的巧克力工厂里闯关,而在 1971 年原片中饰演奥柏伦柏人的 Rusty Goffe 也一同现身。几乎每一则登上新闻的 AI 语音故事,讲的都是「某个人从没答应过」。这一则正好相反:怀德的家属,授权了。「我们很高兴《Wonka\'s The Golden Ticket》颂扬了他为这个角色带来的温暖与想象力,」Karen B. Wilder 代表家属如此表示。也正因如此,这则故事更值得研究——因为真正有意思的不是克隆这件事,而是那叠文件。',
+    } },
+    { t: 'p', text: {
+      en: "Most coverage stops at four words: the estate approved it. But \"approved\" is carrying an enormous amount of weight in that sentence. Approved for this one series, or for any Wonka project that follows? For how long? Approved to generate entirely new lines, or only to reassemble ones he actually spoke? Approved for the show itself, or for the trailers, the social clips, the merchandising, the theme park tie-in? And — the question people forget to ask about anyone who has died — who exactly held the right to say yes at all? These are not pedantic. They are, increasingly, the precise questions that the law and the union contracts now require to be answered in writing, before anything is generated.",
+      'zh-TW': '多數報導停在一句話:家屬同意了。但「同意」這兩個字,在這句話裡扛了極重的份量。是同意這一檔節目,還是往後任何一個旺卡專案?期限多久?是同意生成全新的台詞,還是只准重組他真正說過的句子?是同意用在節目本身,還是連預告、社群短片、周邊商品、主題樂園聯名都算?還有一個大家最常忘記問的問題——對一個已經過世的人來說,究竟是誰,有資格說出這句「好」?這些都不是吹毛求疵。它們正逐漸成為法律與工會合約明文要求、必須在任何東西被生成之前就白紙黑字寫清楚的問題。',
+      'zh-CN': '多数报道停在一句话:家属同意了。但「同意」这两个字,在这句话里扛了极重的份量。是同意这一档节目,还是往后任何一个旺卡项目?期限多久?是同意生成全新的台词,还是只准重组他真正说过的句子?是同意用在节目本身,还是连预告、社群短片、周边商品、主题乐园联名都算?还有一个大家最常忘记问的问题——对一个已经过世的人来说,究竟是谁,有资格说出这句「好」?这些都不是吹毛求疵。它们正逐渐成为法律与工会合约明文要求、必须在任何东西被生成之前就白纸黑字写清楚的问题。',
+    } },
+    { t: 'p', text: {
+      en: "California answered the last one first. **AB 1836, which took effect on January 1, 2025**, amended Civil Code section 3344.1 to prohibit producing or distributing a digital replica of a deceased personality's voice or likeness in an expressive audiovisual work or sound recording **without prior consent from the estate**. It defines a digital replica as a highly realistic representation \"readily identifiable as the voice or visual likeness\" of the person, in which they either did not actually perform or the fundamental character of their performance has been materially altered. Get it wrong and the floor for damages is **$10,000, or actual damages, whichever is greater**. The statute even spells out who inherits the right to consent, in order: a surviving spouse, then children and grandchildren, then parents. There are carve-outs — news, comment, criticism, satire, parody, scholarship, documentary and historical works, fleeting uses — but a reality show narrated by the dead man's voice is not one of them.",
+      'zh-TW': '加州先回答了最後那一題。**於 2025 年 1 月 1 日生效的 AB 1836**,修訂了民法第 3344.1 條,明文禁止在表達性視聽作品或錄音中,製作或散布已故名人聲音或肖像的數位複製品,**除非事先取得其家屬(estate)的同意**。該法將「數位複製品」定義為一種高度擬真、「可輕易辨識為該人聲音或視覺形象」的再現,而其中本人要麼根本沒有實際演出,要麼其演出的根本特質已被實質改變。違反的損害賠償下限是 **1 萬美元,或實際損害額,取其高者**。法條甚至明列了同意權的繼承順位:先是配偶,其次是子女與孫子女,再來是父母。法律留了豁免空間——新聞、評論、批評、諷刺、戲仿、學術研究、紀錄片與歷史作品、一閃而過的使用——但一檔由逝者聲音擔任旁白的實境節目,不在其中。',
+      'zh-CN': '加州先回答了最后那一题。**于 2025 年 1 月 1 日生效的 AB 1836**,修订了民法第 3344.1 条,明文禁止在表达性视听作品或录音中,制作或散布已故名人声音或肖像的数字复制品,**除非事先取得其家属(estate)的同意**。该法将「数字复制品」定义为一种高度拟真、「可轻易辨识为该人声音或视觉形象」的再现,而其中本人要么根本没有实际演出,要么其演出的根本特质已被实质改变。违反的损害赔偿下限是 **1 万美元,或实际损害额,取其高者**。法条甚至明列了同意权的继承顺位:先是配偶,其次是子女与孙子女,再来是父母。法律留了豁免空间——新闻、评论、批评、讽刺、戏仿、学术研究、纪录片与历史作品、一闪而过的使用——但一档由逝者声音担任旁白的实境节目,不在其中。',
+    } },
+    { t: 'p', text: {
+      en: "The union contracts answer the rest — and they are far more specific than most buyers realize. Under SAG-AFTRA's 2025 Interactive Media Agreement, consent for a digital replica must be **\"clear and conspicuous,\" set out in a separate document or a specifically signed rider** — not buried as a blanket clause in an initial employment contract. The employer has to supply a **\"reasonably specific description\" of the intended use**, including whether the replica will be used for real-time generation, and whether the performer will be asked to handle sensitive material such as profanity or slurs. Crucially, studios **cannot grab consent up front for games that don't exist yet**; they have to come back and negotiate again. Vocal replica compensation is metered on generated lines, with **one \"line\" defined as roughly ten words**, and the employer owes a usage report **within 90 days of release**. The Commercials Contract runs on the same logic: consent through a Digital Replica Rider or a separate signed writing, based on a reasonably specific description of the intended use, with distinct forms for creating a new replica, using an existing one, and authorizing commercial use.",
+      'zh-TW': '其餘的問題,則由工會合約回答——而它們比多數買家想像的要具體得多。依 SAG-AFTRA 的《2025 年互動媒體協議》,數位複製品的同意必須**「清楚且顯著」,並載於一份獨立文件或一份經特別簽署的附約**,不能被埋成聘僱合約裡的一條概括條款。雇主必須提供**一份「合理具體的描述」,說明預定用途**,包括該複製品是否會用於即時生成,以及是否會要求表演者處理髒話、歧視性字眼等敏感素材。關鍵在於,片商**不能為了尚未存在的作品,預先一把抓走同意權**;他們得回頭重新談。語音複製品的報酬按生成的台詞句數計算,而**一「句」定義為大約十個字**,雇主並須在**作品發行後 90 天內**提交使用報告。《廣告合約》走的是同一套邏輯:透過「數位複製品附約」或一份獨立簽署的書面文件取得同意,並以合理具體的用途描述為基礎,且針對「建立新複製品」、「使用既有複製品」與「授權商業使用」分列不同的同意書。',
+      'zh-CN': '其余的问题,则由工会合约回答——而它们比多数买家想象的要具体得多。依 SAG-AFTRA 的《2025 年互动媒体协议》,数字复制品的同意必须**「清楚且显著」,并载于一份独立文件或一份经特别签署的附约**,不能被埋成聘雇合约里的一条概括条款。雇主必须提供**一份「合理具体的描述」,说明预定用途**,包括该复制品是否会用于实时生成,以及是否会要求表演者处理脏话、歧视性字眼等敏感素材。关键在于,片商**不能为了尚未存在的作品,预先一把抓走同意权**;他们得回头重新谈。语音复制品的报酬按生成的台词句数计算,而**一「句」定义为大约十个字**,雇主并须在**作品发行后 90 天内**提交使用报告。《广告合约》走的是同一套逻辑:通过「数字复制品附约」或一份独立签署的书面文件取得同意,并以合理具体的用途描述为基础,且针对「建立新复制品」、「使用既有复制品」与「授权商业使用」分列不同的同意书。',
+    } },
+    { t: 'p', text: {
+      en: "Read those two frameworks side by side and a pattern emerges. Consent is being redefined from an event into a document with fields. The question is no longer \"did they say yes\" — it is yes to what, for how long, in which medium, generated by what method, and on whose authority. That is why a tickbox can never satisfy it: a tickbox records that a click happened, not what was agreed. And it is why the Wilder project is worth studying rather than just arguing about. Whatever anyone thinks of resurrecting a performance, a major studio did the one thing the emerging rulebook actually asks for — it went and got a documented yes from the people entitled to give one, before generating a single line.",
+      'zh-TW': '把這兩套框架並排來讀,一個模式就浮現了:「同意」正從一個「事件」,被重新定義成一份「有欄位的文件」。問題不再是「他們有沒有說好」,而是——同意什麼、多久、用在哪種媒介、以什麼方法生成、由誰的權限做主。這正是勾選方框永遠無法滿足它的原因:方框記錄的是「有人點了一下」,而不是「雙方談定了什麼」。這也是為什麼懷德這個案子值得研究,而不只是拿來吵。不論你怎麼看待「讓一段表演復活」這件事,一家大片商確實做到了這套逐漸成形的規則真正要求的那件事:在生成任何一句台詞之前,先去向有資格點頭的人,拿到一份有紀錄的同意。',
+      'zh-CN': '把这两套框架并排来读,一个模式就浮现了:「同意」正从一个「事件」,被重新定义成一份「有栏位的文件」。问题不再是「他们有没有说好」,而是——同意什么、多久、用在哪种媒介、以什么方法生成、由谁的权限做主。这正是勾选方框永远无法满足它的原因:方框记录的是「有人点了一下」,而不是「双方谈定了什么」。这也是为什么怀德这个案子值得研究,而不只是拿来吵。不论你怎么看待「让一段表演复活」这件事,一家大片商确实做到了这套逐渐成形的规则真正要求的那件事:在生成任何一句台词之前,先去向有资格点头的人,拿到一份有记录的同意。',
+    } },
+    { t: 'p', text: {
+      en: "Here is where it lands on you. Netflix has a legal department; your campaign probably doesn't. But the exposure travels the same direction — downstream. The synthetic voice in your ad sits on your brand, in your channels, under your name, and \"the vendor said it was fine\" is not a document. Notice too that the Wilder case had to clear two independent gates: state law required the estate's consent, and the applicable union agreement required its own. A supplier who can satisfy neither is not offering you a cheaper voice; they are offering you an unpriced liability with a very specific damages floor attached. The practical test is unglamorous and completely decisive: ask your voice supplier to produce the consent. Not describe it — produce it. Who is the person, what did they sign, what does it cover, and does it cover what you are about to do?",
+      'zh-TW': '而這一切,最後會落到你身上。Netflix 有法務部門,你的行銷專案大概沒有。但風險流動的方向是同一個——往下游。你廣告裡那把合成聲音,貼在你的品牌上、跑在你的頻道裡、掛在你的名字下,而「供應商說沒問題」不是一份文件。另外請注意,懷德這個案子必須同時通過兩道各自獨立的關卡:州法要求家屬同意,適用的工會協議也要求它自己的那一份。一個兩道都過不了的供應商,賣給你的不是比較便宜的聲音,而是一筆沒有標價、卻附帶明確賠償下限的負債。而實務上的檢驗方法一點都不華麗,卻完全決定性:請你的聲音供應商把授權拿出來。不是「描述」授權——是「拿出來」。那個人是誰、他簽了什麼、涵蓋範圍到哪、以及那個範圍涵不涵蓋你正要做的事?',
+      'zh-CN': '而这一切,最后会落到你身上。Netflix 有法务部门,你的营销项目大概没有。但风险流动的方向是同一个——往下游。你广告里那把合成声音,贴在你的品牌上、跑在你的渠道里、挂在你的名字下,而「供应商说没问题」不是一份文件。另外请注意,怀德这个案子必须同时通过两道各自独立的关卡:州法要求家属同意,适用的工会协议也要求它自己的那一份。一个两道都过不了的供应商,卖给你的不是比较便宜的声音,而是一笔没有标价、却附带明确赔偿下限的负债。而实务上的检验方法一点都不华丽,却完全决定性:请你的声音供应商把授权拿出来。不是「描述」授权——是「拿出来」。那个人是谁、他签了什么、涵盖范围到哪、以及那个范围涵不涵盖你正要做的事?',
+    } },
+    { t: 'p', text: {
+      en: "That question is one we built Onyx Studios to be able to answer. Every AI voice in our library traces back to a named professional who walked into a session, recorded under an explicit Voice ID authorization, and signed a contract that stays on file — scope, medium and term written down, per project, the way the new rulebook assumes. We don't scrape, we don't quietly promote a \"test\" recording into a product, and we don't ship a voice whose selling point is that it resembles someone famous. The actor is paid and credited; the document exists; we can show you both. And because we came up as a Taiwan voice studio — since 2008, with more than 1,500 professional actors — a native speaker still verifies every delivery before it reaches you. That is what \"AI-Generated. Human-Perfected.\" means in practice: provenance you can produce, and a read you can ship.",
+      'zh-TW': '而這個問題,正是我們打造 Onyx Studios 時,就要求自己必須答得出來的。我們聲音庫裡的每一把 AI 聲音,都能追溯回一位有名有姓的專業配音員:他走進錄音室,在明確的 Voice ID 授權書下錄音,並簽下一份留存在案的合約——範圍、媒介與期限白紙黑字寫明,逐案簽署,正如這套新規則所預設的那樣。我們不爬資料、不把一段「測試用」的錄音悄悄扶正成商品,也不會交付一把賣點是「聽起來像某個名人」的聲音。配音員拿到報酬、掛上署名;文件確實存在;這兩樣我們都能拿給你看。而由於我們是從台灣的配音公司一路走過來的——2008 年至今,擁有超過 1,500 位專業配音員——每一份交付在送到你手上之前,仍會由一位母語人士親耳把關。這才是「AI 生成,真人把關(AI-Generated. Human-Perfected.)」在實務上的意思:拿得出來的來源,以及可以直接上線的成品。',
+      'zh-CN': '而这个问题,正是我们打造 Onyx Studios 时,就要求自己必须答得出来的。我们声音库里的每一把 AI 声音,都能追溯回一位有名有姓的专业配音员:他走进录音室,在明确的 Voice ID 授权书下录音,并签下一份留存在案的合约——范围、媒介与期限白纸黑字写明,逐案签署,正如这套新规则所预设的那样。我们不爬数据、不把一段「测试用」的录音悄悄扶正成商品,也不会交付一把卖点是「听起来像某个名人」的声音。配音员拿到报酬、挂上署名;文件确实存在;这两样我们都能拿给你看。而由于我们是从台湾的配音公司一路走过来的——2008 年至今,拥有超过 1,500 位专业配音员——每一份交付在送到你手上之前,仍会由一位母语人士亲耳把关。这才是「AI 生成,真人把关(AI-Generated. Human-Perfected.)」在实务上的意思:拿得出来的来源,以及可以直接上线的成品。',
+    } },
+    { t: 'p', text: {
+      en: "The Wonka show will divide people, and reasonably so — an estate can consent on a performer's behalf, but it cannot ask him what he would have wanted. That argument is worth having. What isn't in dispute is the smaller, more portable lesson sitting underneath it: the projects that survive contact with the new rules are the ones where somebody can produce the document. If you are buying voice, make that your first question rather than your last. Tell us what you need voiced — and ask us to show you the paperwork behind it. We'd consider that a fair test.",
+      'zh-TW': '這檔旺卡節目一定會讓人分成兩派,而這很合理——家屬可以代表表演者同意,卻無法回頭問他:你當初會希望這樣嗎?這場爭論值得好好吵。但底下那個更小、也更能帶著走的教訓,並沒有爭議:能在這套新規則下存活的專案,是那些「有人拿得出文件」的專案。如果你正要採購聲音,請把這件事當成你的第一個問題,而不是最後一個。告訴我們你要配什麼——然後,要求我們把背後的授權文件拿給你看。我們認為,這是個公道的考驗。',
+      'zh-CN': '这档旺卡节目一定会让人分成两派,而这很合理——家属可以代表表演者同意,却无法回头问他:你当初会希望这样吗?这场争论值得好好吵。但底下那个更小、也更能带着走的教训,并没有争议:能在这套新规则下存活的项目,是那些「有人拿得出文件」的项目。如果你正要采购声音,请把这件事当成你的第一个问题,而不是最后一个。告诉我们你要配什么——然后,要求我们把背后的授权文件拿给你看。我们认为,这是个公道的考验。',
+    } },
+  ],
+  sources: [
+    { label: "The Hollywood Reporter — Netflix's Wonka's The Golden Ticket uses an AI-recreated Gene Wilder voice, made with ElevenLabs and the estate's permission (premieres September 23)", url: "https://www.hollywoodreporter.com/tv/tv-news/netflix-willy-wonka-reality-show-ai-gene-wilder-voice-1236633800/" },
+    { label: "California AB 1836 — amends Civil Code 3344.1 to require estate consent for digital replicas of a deceased personality's voice or likeness; $10,000 or actual damages, whichever is greater", url: "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB1836" },
+    { label: "Cowan, DeBaets, Abrahams & Sheppard — AB 1836 took effect January 1, 2025; damages floor and statutory exemptions explained", url: "https://cdas.com/california-expands-its-post-mortem-right-of-publicity-law-to-cover-ai-digital-replicas/" },
+    { label: "Frankfurt Kurnit Klein & Selz — SAG-AFTRA 2025 Interactive Media Agreement: \"clear and conspicuous\" separate consent, \"reasonably specific description\" of use, ten-word line metering, 90-day usage report", url: "https://technologylaw.fkks.com/post/102mewu/inside-the-new-sag-aftra-interactive-media-agreement-new-standards-for-ai-and-di" },
+    { label: "Davis+Gilbert — Digital replica consent under the SAG-AFTRA Commercials Contract: rider or separate signed writing, based on a reasonably specific description of intended use", url: "https://www.dglaw.com/importance-of-digital-replica-consents-under-the-sag-aftra-commercials-contract/" },
+  ],
+};
+
 const morePosts: BlogPost[] = [
   {
     slug: "ai-voice-tool-landscape-2026",
@@ -318,7 +385,7 @@ const morePosts: BlogPost[] = [
   },
 ];
 
-export const posts: BlogPost[] = [langQA, ...morePosts];
+export const posts: BlogPost[] = [wilderConsent, langQA, ...morePosts];
 
 // Server-evaluated "today" in Asia/Taipei (UTC+8) so posts go live on their
 // date in Taiwan time. With ISR revalidate on the pages, future-dated posts
