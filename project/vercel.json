@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/health-check",
       "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/delivery-reminders",
+      "schedule": "0 * * * *"
     }
   ]
 }

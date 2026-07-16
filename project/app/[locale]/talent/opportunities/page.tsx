@@ -18,13 +18,48 @@ import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
-import { deadlineDisplay } from '@/lib/case-time';
+import { deadlineDisplay, zonedTimeToUtc } from '@/lib/case-time';
 import { caseCode, auditionDeadlinePassed } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
 import ReviewBox from '@/components/marketplace/ReviewBox';
 import { StatModule, EntityCard, InfoPills } from '@/components/dashboard/cards';
 
 const COMMISSION = 0.2; // display rate; server (net_amount) is source of truth
+
+// ── Fiverr 式交件倒數(掛在指派卡最上面)──
+// 沒填時間的期限,以案件時區當天 18:00(下班)計 —— 與自動催件同口徑。
+function DeliveryCountdown({ deadline, deadlineTime, tz, tx }: {
+  deadline: string; deadlineTime?: string | null; tz: string;
+  tx: (zhTW: string, zhCN: string, en: string) => string;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t); }, []);
+  const target = zonedTimeToUtc(deadline.slice(0, 10), deadlineTime || '18:00', tz);
+  if (!target) return null;
+  const diff = target.getTime() - now;
+  const overdue = diff <= 0;
+  const abs = Math.abs(diff);
+  const d = Math.floor(abs / 86_400_000);
+  const h = Math.floor((abs % 86_400_000) / 3_600_000);
+  const m = Math.floor((abs % 3_600_000) / 60_000);
+  const parts = d > 0
+    ? tx(`${d} 天 ${h} 小時`, `${d} 天 ${h} 小时`, `${d}d ${h}h`)
+    : tx(`${h} 小時 ${m} 分`, `${h} 小时 ${m} 分`, `${h}h ${m}m`);
+  const style = overdue
+    ? 'border-red-500/50 bg-red-500/15 text-red-300'
+    : diff < 86_400_000
+      ? 'border-red-500/40 bg-red-500/10 text-red-300'
+      : diff < 2 * 86_400_000
+        ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+        : 'border-emerald-500/30 bg-emerald-500/[0.08] text-emerald-300';
+  return (
+    <div className={`mb-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border px-3 py-2 ${style}`}>
+      <span className="text-[11px] uppercase tracking-wide opacity-80">{overdue ? tx('已逾期', '已逾期', 'Overdue') : tx('剩餘交件時間', '剩余交件时间', 'Time left to deliver')}</span>
+      <span className="text-xl font-bold leading-none tabular-nums">{overdue ? tx(`逾期 ${parts}`, `逾期 ${parts}`, `${parts} over`) : parts}</span>
+      {!deadlineTime && <span className="text-[11px] opacity-70">{tx('(當日 18:00 計)', '(当日 18:00 计)', '(counts to 18:00 that day)')}</span>}
+    </div>
+  );
+}
 
 // The deal currency is fixed by what the CLIENT set at posting — the talent quotes
 // in it (no picking a different one), so order + checkout bill that currency.
@@ -637,6 +672,9 @@ export default function Opportunities() {
                 badge={o.status === 'delivered'
                   ? <span className="text-xs px-2.5 py-1 rounded-full border bg-sky-500/15 text-sky-200 border-sky-500/30 whitespace-nowrap">{tx('已交付 · 待驗收', '已交付 · 待验收', 'Delivered · in review')}</span>
                   : <span className="text-xs px-2.5 py-1 rounded-full border bg-violet-500/15 text-violet-200 border-violet-500/30 whitespace-nowrap">{tx('待錄製', '待录制', 'To record')}</span>}>
+                {o.deadline && o.status !== 'delivered' && (
+                  <DeliveryCountdown deadline={o.deadline} deadlineTime={o.deadline_time} tz={o.case_timezone || 'Asia/Taipei'} tx={tx} />
+                )}
                 {o.production_notes && (
                   <div className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/[0.08] px-3 py-2">
                     <p className="text-[11px] font-semibold text-amber-300 mb-0.5">{tx('製作備註(請先讀)', '制作备注(请先读)', 'Production notes (read first)')}</p>
