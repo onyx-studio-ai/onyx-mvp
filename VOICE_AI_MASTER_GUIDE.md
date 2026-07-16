@@ -21,8 +21,8 @@
 ### ✅ 每季 Review Checklist(每 3 個月跑一次)
 - [ ] **FunAudioLLM/CosyVoice** GitHub 看是否有 CV4 或新版
 - [ ] **RVC-Boss/GPT-SoVITS** 看是否有 v5 或粵語/方言加強
-- [ ] **fishaudio/fish-speech** 看是否改授權成可商用
-- [ ] **boson-ai/higgs-audio** 看是否出 v3 / 新方言
+- [x] **fishaudio/fish-speech** 看是否改授權成可商用 —— 2026-07-16 查:**沒改成免費商用,反而更緊**(無 1.6;新版 S2 從 Apache 收成 Research License)。但官方有付費商用窗口($10k/月起)→ 判 🟡 非死路。見 X4
+- [x] **boson-ai/higgs-audio** 看是否出 v3 / 新方言 —— 2026-07-16 查:v3 已出(`bosonai/higgs-tts-3-4b`)但**權重 Research & Non-Commercial 禁商用**(主檔原誤標 Apache✅,已改 🔴)。見 X4
 - [ ] **Resemble AI Chatterbox** 看是否加 Cantonese
 - [ ] **Hugging Face TTS Trending** 看當月排名前 5
 - [ ] **TTS Arena leaderboard**(https://huggingface.co/spaces/TTS-AGI/TTS-Arena) 看排名變化
@@ -49,6 +49,9 @@
 |---|---|---|
 | v1.0 | 2026-05-23 | 初版,涵蓋當天踩過所有坑 + 2026 業界全梯隊整理 |
 | v1.1 | 2026-06-23 | 新增 **Qwen3-TTS**(第一梯隊,Apache 2.0,3秒克隆,中文 WER 業界最低)+ **Fish Audio S2**(帳面強但 Research License 非商用,跳過)+ Higgs 升 **v3**;授權矩陣同步。配套實驗:`VOICE_LAB/experiments/2026-06-23_eric-wing_zeroshot-engine-shootout.md`(zero-shot 打敗訓練模型) |
+| v1.4 | 2026-07-16 | **X4 授權矩陣全數複驗回寫(Wing 2026-07-16 拍板)**:剩下 8 列用五步 SOP 逐條驗完,授權矩陣 11 列至此**全數複驗**。①🚨 **Higgs Audio v3 從「第一梯隊 Apache ✅ 可商用」改判 🔴** —— 權重是 Research & Non-Commercial(禁商用),Apache 只蓋 code;主檔從 v1.1 首記就抓錯徽章(比 XTTS/F5 危險因在第一梯隊)②**Fish Speech 紅→🟡** —— 官方點名有付費商用窗口($10k/月),非死路;順手結掉季 review 待辦(沒改、更緊)③**Fish S2「只能買 API」改寫** —— Enterprise 有 on-prem 可談;🚨 API 預設拿聲音訓練、ZDR 只 Enterprise 有④**OpenVoice v2 梯隊補授權行**(原缺)⑤**Chatterbox 補 PerTh 浮水印註記 + GPT-SoVITS 補兩保留**(底模資料源未公開 / g2p_en→distance GPL 傳遞依賴,僅散布軟體時需換);⑥三色對照黃燈定義擴充「非商用但有活的付費窗口」。生產主力 CV3/GPT-SoVITS 複驗綠燈;乾淨綠燈骨幹 = Qwen3/CV3/GPT-SoVITS/Chatterbox/OpenVoice v2。配套:`VOICE_LAB/research/daily/2026-07-16.md`。後續 X5(掃第三梯隊)/X6(浮水印 vs AI 標示法規、底模透明度) |
+| v1.3 | 2026-07-15 | **授權地雷回寫(Wing 2026-07-15 拍板)**:①**修正兩列判定 ⚠️→❌** —— XTTS-v2(權重 CPML 非商用 + Coqui 2024-01 倒閉無人能賣)、F5-TTS(權重 CC-BY-NC 源自 Emilia、**微調洗不掉**、官方不發授權);②新增**三色對照**(綠=標準 Apache/MIT 才進 IP 保證交付 / 黃=可出成品但不當訓練料 / 紅=不進商用交付);③新增**選型五步查核 SOP**;④「絕不再踩」加 **#16 徽章≠權重授權 / #17 禁改進他模型的別當訓練料 / #18 微調洗不掉授權**。查證後確認生產線未使用 XTTS/F5(現行 GPT-SoVITS MIT + CV3 Apache 皆綠)=潛在地雷非事故。配套:`VOICE_LAB/授權地雷清單_提案稿.md`、`VOICE_LAB/research/daily/2026-07-15.md`。✅其餘 8 列權重授權已由 v1.4(X4)複驗完成 |
+| v1.2 | 2026-07-06 | Voice Lab 自學 B1/B2 回寫:**`zero_shot`=身份最像 / `instruct2`=表情但犧牲音色**(兩者 trade-off、疊不起來,Issue #1314);instruct2 三陷阱(唸出指令 #1802、表情↔咬字 CER trade-off、控不了音色)進 CosyVoice 踩坑表;粵語 instruct2 標「待實聽驗證、護城河仍押 RVC」。配套:`VOICE_LAB/research/daily/2026-07-06.md`、`VOICE_LAB/REF_CHECKLIST.md` |
 
 ---
 
@@ -170,20 +173,26 @@ rsync -avhP -e "ssh -p <PORT>" \
   - **v2Pro/v2ProPlus**: **v4 等級品質 + v2 速度**(2026 推薦)
   - v3: 24kHz 輸出有金屬感,v4 已修
 - **架構**: GPT 模組(語音 token)+ SoVITS 模組(聲學)+ HiFi-GAN vocoder
-- **授權**: MIT(免費商用)
+- **授權**: 🟢 **MIT(免費商用)** —— 權重(`lj1995/GPT-SoVITS`)標準未改動 MIT,LICENSE 史上零加料;內建 vocoder/HuBERT/RoBERTa/SV 全 MIT 或 Apache,已複驗
+  - ⚠️ 兩個保留(不改判色):①底模訓練資料來源官方**從未公開**(無法自證乾淨,屬透明度風險)②`g2p_en` 傳遞依賴 GPL 套件 `distance`(issue #2776 未解)—— **只在「打包散布軟體」時觸發 GPL,pod 上跑推論當服務不受影響**,哪天要把引擎打包給客戶再換掉 → 見 X6
 - **官方**: https://github.com/RVC-Boss/GPT-SoVITS
 
 #### 3. **Chatterbox / Chatterbox-Turbo**(Resemble AI)— 黑馬
 - **盲測**: **65.3% 聽眾偏好 Chatterbox-Turbo > ElevenLabs**(24.5%)
-- **授權**: **MIT,可商用,無 royalty**
+- **授權**: 🟢 **MIT,可商用,無 royalty**(六版權重全標準未改動 MIT,已複驗)
+  - ⚠️ **輸出硬編碼嵌入 PerTh 神經浮水印**(程式碼無開關):只是 1-bit「AI 生成」旗標,**不含 Resemble 品牌、不含可回溯 ID**,對客戶交付實務無影響。授權沒禁移除、可 fork 刪掉;但**移除前先確認 AI 標示法規**(歐盟 AI Act 下保留浮水印可能反而是合規資產)→ 見 X6
 - **語言**: 英文主力,中文/法文/西班牙文 beta
 - **粵語**: ❌ 沒有
 - **官方**: https://github.com/resemble-ai/chatterbox
 
 #### 4. **Higgs Audio v3**(Boson AI)— 新銳(2026 升 v3,原 v2 已過)
-- **特色**: **10M+ 小時訓練**,zero-shot 表現極強;v3 = `bosonai/higgs-audio-v3-tts-4b`(4B)
+- **授權**: 🔴 **程式碼 Apache 2.0 / 權重 Research & Non-Commercial ❌ 禁商用**(權重 LICENSE「BOSON HIGGS TTS 3 RESEARCH AND NON-COMMERCIAL LICENSE」2026-07-08 版)
+  - 🚨 **Apache 徽章只蓋 GitHub code,不蓋權重**;`bosonai/higgs-tts-3-4b` 權重公開不用申請,但商用全面禁止(v2 曾有 10 萬 AAU 免費門檻,v3 直接取消)
+  - 🚨 §IV(b)(i) **禁拿它/衍生/輸出去 train/fine-tune/distill/improve 任何 foundational 生成模型** → 連當自家模型訓練料都不行
+  - 商用唯一路徑 = contact@boson.ai 另簽付費授權。**帳面 zero-shot 極強但不能上線,別被 SOTA 沖昏頭**
+  - ⚠️ **位置待重排**(X5):權重禁商用,不符「第一梯隊=可上線等級」定義,應下移
+- **特色**: **10M+ 小時訓練**,zero-shot 表現極強;v3 = `bosonai/higgs-tts-3-4b`(4B,舊 ID `higgs-audio-v3-tts-4b` 已 307 重導)
 - **語言**: 100+ 語言;v2 原生四川話/粵語(v3 方言待 pod 上實測確認)
-- **授權**: **Apache 2.0 ✅**
 - **缺點**: 自架要跑 `sgl-omni serve`(SGLang),比 pip 安裝重;或直接用 Boson API
 - **官方**: https://github.com/boson-ai/higgs-audio
 
@@ -199,33 +208,43 @@ rsync -avhP -e "ssh -p <PORT>" \
 ### 🥈 第二梯隊(可用但有限制)
 
 #### 6. **IndexTTS-2**(Bilibili)— 工業級 + 情緒/時長控制
+- **授權**: 🟡 **程式碼 Apache 2.0 / 權重 Bilibili 自訂**(門檻式:MAU<1億 且 年營收<¥10億 可商用,Onyx 遠低於→落在允許區)
+  - ⚠️ §4.1c **不得用它/其衍生去改進其他商用 AI 模型** → **只能當推論端出成品的工具,不能當自家模型的訓練料**
+  - ⚠️ §9 **中文版為準**;§6 陸法 + 上海仲裁。**客戶要 IP 保證時避開**
 - **特色**: 精準控制每段的「時長」(影視配音用)、emotion 可獨立指定
 - **語言**: 中、英、日
 - **粵語**: ❌ 未來會加
-- **官方**: https://github.com/index-tts/index-tts2
+- **官方**: https://github.com/index-tts/index-tts2 · 評估:[IndexTTS-2_商用評估.md](VOICE_LAB/IndexTTS-2_商用評估.md)
 
 #### 7. **F5-TTS**— 學術 SOTA
+- **授權**: 🔴 **程式碼 MIT / 權重 CC-BY-NC ❌ 非商用** —— 限制源自訓練資料 **Emilia**(爬來的)
+  - 🚨 **微調洗不掉**(維護者原話:finetune 後照樣不能商用);官方**不發**商用授權
+  - 唯一商用解 = 自有可商用資料**從零重訓**。**品質頂尖但不能碰,別被 SOTA 沖昏頭**
 - **品質**: 純 voice clone 品質頂尖
 - **語言**: 中、英
 - **粵語**: ❌
 - **缺點**: 長文有 chunking seam,速度慢
 
 #### 8. **XTTS-v2**(Coqui)— 多語老牌
+- **授權**: 🔴 **程式碼 MPL 2.0 / 權重 CPML ❌ 非商用**
+  - 🚨 Coqui 公司 **2024-01 倒閉 → 無人能賣商用授權**,「待洽談」是死路(2023 年曾賣 ~$365/年,窗口已不存在)
+  - 社群 fork 仍能跑,但**授權不因 fork 而改變**;網路上「XTTS 免費商用」的教學文是錯的
 - **語言**: 17 種語言
 - **粵語**: ❌(歸類在「中文」)
 - **6 秒 reference 就能 clone**
 
 #### 9. **Fish Speech V1.5**(fishaudio)
 - **品質**: TTS Arena ELO 1339(top tier)
-- **授權**: **CC-BY-NC-SA-4.0(不可商用!)**❌
+- **授權**: 🟡 **權重 CC-BY-NC-SA-4.0(自架非商用,下載須勾 non-commercial ONLY)** —— 但官方點名有付費商用授權窗口($10k/月起,business@fish.audio)→ 可談非死路;無 1.6,新版 S2 更緊
 - **語言**: 中英日
 
 #### 10. **Fish Audio S2 / S2 Pro**(fishaudio,2026 新)— 帳面最強,但授權是坑
 - **客觀**: Seed-TTS WER 0.54%(中)、MiniMax 24 語測 11 語 WER 第一、17 語 sim 第一,**含粵語贏 ElevenLabs/MiniMax**
-- **授權**: ❌ **Fish Audio Research License** —— 研究/非商用免費,**商用只能走它官方 API**(自架不能商用)。跟 Fish Speech 同一個坑,**自架方案直接跳過**
+- **授權**: 🔴 **權重 Fish Audio Research License** —— 自架非商用;商用需另簽(Enterprise 有 on-prem 可談,business@fish.audio,非「只能買 API」)。🚨 **API 預設拿上傳聲音訓練模型,ZDR 只有 Enterprise 有 → 拿到書面 ZDR 前,客戶/配音員聲音禁進 API(含免費測試)**。**自架方案直接跳過**
 - **官方**: https://fish.audio/blog/fish-audio-open-sources-s2/
 
 #### 11. **OpenVoice v2**(MyShell)— 情緒/風格轉換強
+- **授權**: 🟢 **MIT ✅**(v1+v2 於 2024-04 從 CC-BY-NC 改判,權重+程式碼皆商用免費;相依 base speaker **MeloTTS 亦全 MIT,不污染**,已複驗)
 - **特色**: cross-lingual clone + 風格/情緒轉換
 - **粵語**: ❌
 
@@ -265,7 +284,7 @@ rsync -avhP -e "ssh -p <PORT>" \
 ### 粵語支援度排行
 1. **CosyVoice 3** ✅ 原生支援(18+ 方言,粵語明確列入)
 2. **Qwen3-TTS** 🆕 官稱 9 方言含粵語(**README 未明列 → 6/23 shootout 實測確認**)
-3. **Higgs Audio v3** ✅ v2 原生支援(v3 待實測)
+3. **Higgs Audio v3** ✅ v2 原生支援(v3 待實測)—— ⚠️ 粵語能力歸能力,**權重禁商用,交付不能用**
 4. **GPT-SoVITS v2+** ✅ 2024/08 起支援
 5. F5-TTS / XTTS-v2 / Chatterbox ❌ 無原生粵語
 
@@ -289,6 +308,8 @@ instruction: "请用广东话表达"
 - 用簡體中文輸入(因為 ttsfrd 訓練資料偏簡)
 - 別中英混排太多
 
+> 🧪 **待實聽驗證(Voice Lab B2, 2026-07-06):** instruct2 的方言清單「有列粵語」≠「道地」。翻遍 CosyVoice3 論文**找不到任何粵語/方言品質數字或專門優化**,CV3 重點是擴多語資料量。所以上面「CV3 + instruct2 粵語」是**候選路線,不是已證明道地**——道不道地要靠實聽 A/B(已登記 GPU 實驗)。**護城河結論維持:道地粵語仍押 RVC/口音專訓,別因為清單有列就下線 RVC。**
+
 ---
 
 ## 🧠 各引擎踩坑清單(我們踩過的)
@@ -304,6 +325,10 @@ instruction: "请用广东话表达"
 | Checkpoint 寫 MFS 卡 | symlink 到 `/dev/shm` RAM disk | 自己想的 |
 | 50 分鐘資料 fine-tune 沒效 | 跳過 fine-tune,**直接用 RL base + 對的設定** | 今天實測 |
 | Cantonese zero-shot 飄 | 用 `inference_instruct2` + 「请用广东话表达」 | example.py CV3 |
+| 🚩 instruct2 **會犧牲音色相似度**(身份掉) | 鎖招牌身份(Eric/Wing/客戶指定)用 `zero_shot`;instruct2 只在「情緒>像本人」時用。**別以為 zero_shot+instruct2 能疊加**(音色會讓給風格) | GitHub Issue #1314(open/stale);Voice Lab B1 |
+| 🚩 instruct2 **把指令文字唸出來**(3s→6s) | 上線前先測一句確認指令沒被唸出;中招=踩到 `frontend_instruct2` 誤把 instruct_text 當 prompt_text 的版本,更新 commit | GitHub Issue #1802;Voice Lab B1 |
+| 🚩 instruct2 **越用力控情緒、字錯率越高**(表情↔咬字 trade-off) | 每次 instruct2 產出**必過 CER 關**(whisper 轉回比稿);細膩/中間強度情緒改走「挑帶該情緒的 ref」(A3),別硬用指令 | Voice Lab B2(EmoInstruct-TTS arXiv 2606.20650) |
+| instruct2 **控不了音色/嗓子** | 音色只能靠 ref;文字指令對 timbre 的顯式控制「尚未實現」 | Voice Lab B2(CosyVoice2 官方) |
 | Use `AutoModel` 不是 `CosyVoice2` | 官方 example.py 標準 | example.py |
 | ttsfrd > wetext | 裝 `ttsfrd-0.4.2`(需下載 CosyVoice-ttsfrd 資源)| README |
 | **fp16=True**(短文穩定)| `AutoModel` 預設處理,不用顯式設 | — |
@@ -381,12 +406,12 @@ Content-Type: application/json
 | 場景 | 引擎 | 為什麼 |
 |---|---|---|
 | 一般中文配音 | **Qwen3-TTS** 或 **CV3** | Qwen3 中文 WER 業界最低,3秒克隆;CV3 已部署當對照(待 6/23 shootout 定案) |
-| 粵語配音 | **CV3 + instruct2** | 18 方言原生支援;Qwen3 粵語待實測、Higgs 是備案 |
+| 粵語配音 | **CV3 + instruct2** | 18 方言原生支援;Qwen3 粵語待實測。~~Higgs 備案~~ **Higgs 禁商用不能當交付備案**,粵語備案改走 GPT-SoVITS v2+ |
 | 多情緒 Eric | **CV3 + 7 個情緒 ref** | 直接從 416 訓練檔挑,zero-shot |
 | 已錄音換 Eric 聲 | **GPT-SoVITS RVC**(舊 pod)| 唯一做 voice conversion 的 |
 | 客戶要 ElevenLabs 同等 | **Qwen3-TTS / CV3 + sentence-split** | Qwen3 客觀贏 ElevenLabs;CV3 + ttsfrd 已驗證夠用 |
-| 不能商用的場景 | ❌ Fish Speech / Fish Audio S2(非商用授權,自架不能商用) | — |
-| 想試最新 SOTA | **Qwen3-TTS**(中文)/ **Higgs v3**(多語) | Qwen3 中文最強;Higgs 10M 小時、100+ 語 |
+| 商用交付**避開**的引擎 | ❌ Higgs v3 / F5-TTS / XTTS-v2 / Fish Speech / Fish Audio S2(自架皆非商用) | Higgs v3 帳面最強但**禁商用**;綠燈骨幹見商用授權清單 |
+| 想試最新 SOTA(**僅內部評估,不上線**) | **Qwen3-TTS**(中文,🟢 可商用)/ **Higgs v3**(多語,🔴 禁商用只能內部試) | Qwen3 中文最強且可上線;Higgs 10M 小時、100+ 語但**權重禁商用,交付要另簽 contact@boson.ai** |
 
 ---
 
@@ -406,7 +431,7 @@ Content-Type: application/json
 
 ### Phase C — 試新引擎
 - [ ] 🔥 **Qwen3-TTS vs CV3 vs 訓練模型 shootout**(`VOICE_LAB/experiments/2026-06-23_...`)← **最高優先,解機器人感的正解**
-- [ ] **Higgs Audio v3** 部署測試(10M 小時、100+ 語,SGLang 自架或 Boson API)
+- [ ] **Higgs Audio v3** 部署測試(10M 小時、100+ 語,SGLang 自架或 Boson API)—— ⚠️ **僅內部評估,權重禁商用,不得進客戶交付**(見授權矩陣)
 - [ ] **Chatterbox** 英文場景測試(MIT 商用 + 盲測贏 ElevenLabs)
 - [ ] **IndexTTS-2** 情緒控制測試(影視配音用)
 
@@ -418,17 +443,43 @@ Content-Type: application/json
 
 | 引擎 | 授權 | 商用 | 注意 |
 |---|---|---|---|
-| **Qwen3-TTS** 🆕 | Apache 2.0 | ✅ | 無 royalty,中文最強 |
-| **CosyVoice 3** | Apache 2.0 | ✅ | 無 royalty |
-| **GPT-SoVITS** | MIT | ✅ | 無 royalty |
-| **Chatterbox** | MIT | ✅ | 無 royalty,可 self-host + 改 weights |
-| **Higgs Audio v3** | Apache 2.0 | ✅ | 無 royalty(v2→v3) |
-| **Fish Audio S2 / S2 Pro** 🆕 | Fish Audio Research License | ❌ | **自架非商用!**商用只能買它 API |
-| **XTTS-v2** | Coqui Public License | ⚠️ | 商用要看條款 |
-| **F5-TTS** | 學術用途 | ⚠️ | 商用要洽談 |
-| **Fish Speech V1.5** | CC-BY-NC-SA-4.0 | ❌ | **非商用!** |
+| **Qwen3-TTS** 🆕 | Apache 2.0 | ✅ | 無 royalty,中文最強(權重標準未改動,已複驗) |
+| **CosyVoice 3** | Apache 2.0 | ✅ | 無 royalty(權重標準未改動,已複驗;「academic」免責只針對 demo 樣本) |
+| **GPT-SoVITS** | MIT | ✅ | 無 royalty(權重標準未改動,已複驗)。保留:底模資料源未公開 + `g2p_en→distance` GPL 傳遞依賴(僅散布軟體時需換,pod 推論不受影響) |
+| **Chatterbox** | MIT | ✅ | 無 royalty,可 self-host + 改 weights。輸出內建 PerTh 浮水印(AI 生成旗標非品牌,可 fork 移除,移除前先確認 AI 標示法規) |
+| **Higgs Audio v3** | 程式碼 Apache 2.0 / **權重 Research & Non-Commercial**(2026-07-08 版) | ❌ | **權重禁商用**;Apache 只蓋 code。v2 曾有 10 萬 AAU 免費門檻,v3 取消;§IV(b)(i) 禁拿輸出訓練/改進他模型。商用需 contact@boson.ai 另簽 |
+| **Fish Audio S2 / S2 Pro** 🆕 | 權重 Fish Audio Research License | ❌ | 自架非商用;商用需另簽(Enterprise 有 on-prem 可談,business@fish.audio)。🚨 **API 預設拿上傳聲音訓練模型,ZDR 只有 Enterprise 有 → 拿到書面 ZDR 前,客戶/配音員聲音禁進 API(含免費測試)** |
+| **XTTS-v2** | 程式碼 MPL 2.0 / **權重 CPML** | ❌ | **權重非商用**;Coqui 公司 **2024-01 倒閉,無人能賣商用授權**→「待洽談」是死路。社群 fork 能跑,但**授權不因 fork 而改變** |
+| **F5-TTS** | 程式碼 MIT / **權重 CC-BY-NC** | ❌ | 限制源自訓練資料 **Emilia**;**微調也洗不掉**(維護者原話);官方不發商用授權,唯一解是自有資料**從零重訓** |
+| **Fish Speech V1.5** | 權重 CC-BY-NC-SA-4.0(下載須勾 non-commercial ONLY) | 🟡 | 自架非商用;**但官方點名有付費商用授權**(自架 $10k/月起,business@fish.audio)→ 可談非死路。無 1.6,新版 S2 更緊 |
 | **OpenVoice v2** | MIT | ✅ | — |
 | **ElevenLabs** | 商業 | ✅ | 月費 $22-99,有條款限制 |
+
+> ✅ **全 11 列權重授權已於 2026-07-15(XTTS/F5)+ 2026-07-16(其餘 8 列,X4)用下方 SOP 逐條複驗完成。** X4 抓到:Higgs v3 主檔原標「第一梯隊 Apache ✅」實為權重禁商用(已改 ❌)、Fish Speech 有付費商用窗口(紅→🟡)、Fish S2「只能買 API」不精確(已補 on-prem/ZDR)。乾淨綠燈骨幹 = Qwen3-TTS / CosyVoice 3 / GPT-SoVITS / Chatterbox / OpenVoice v2 五支。
+
+### 🚩 三色對照(判定標準)
+
+| 燈 | 定義 | 能不能進客戶交付 | 例 |
+|---|---|---|---|
+| 🟢 **綠** | 權重掛**標準未改動**的 Apache 2.0 / MIT,無附加限制 | ✅ 可,含 IP 保證 | CosyVoice 3、GPT-SoVITS、Qwen3-TTS、Chatterbox |
+| 🟡 **黃** | 權重可商用**但有自訂條款**(規模門檻 / 外國法管轄 / 禁改進他模型),**或非商用但有活的付費商用窗口** | ⚠️ 可出成品,**不得**當自家模型訓練料;**客戶要 IP 保證時避開** | IndexTTS-2(Bilibili 門檻式)、Fish Speech(自架非商用但官方有付費授權窗口) |
+| 🔴 **紅** | 權重非商用**且**商用窗口不存在(死路) | ❌ 不進任何商用交付,內部評估可 | XTTS-v2(Coqui 倒閉)、F5-TTS(不發授權)、Higgs v3(禁商用)、Fish Audio S2(自架) |
+
+### 🔍 選型五步查核 SOP(判「能不能商用」照這個跑)
+
+1. **權重在哪?** 找到實際下載的那包(HF repo / `model_dir`),**不是** GitHub 首頁。
+2. **讀權重 LICENSE 全文** —— 不是徽章、不是 README 摘要。
+   - 反例① 別被徽章騙成「可商用」:XTTS-v2 掛 MPL 2.0 但權重是 CPML 非商用。
+   - 反例② 也別被免責聲明嚇成「非商用」:CV3 的 README「for academic purposes only」只在講 demo 樣本,不是模型本體(差點誤殺)。
+3. **搜四個關鍵詞**:`commercial` / `improve any` / `prevail` / `training data`。
+   - `improve any` → 有沒有「不得用於改進其他 AI 模型」(IndexTTS-2 §4.1c、CPML、Llama 系都有)
+   - `prevail` → 以哪個語言版本為準(IndexTTS-2 §9「中文版為準」→ 英文判讀只算初判)
+   - `training data` → 限制是不是訓練資料傳染來的(F5-TTS 因 Emilia)→ **這種微調洗不掉**
+4. **非綠燈的話,確認窗口還活著嗎** —— 有沒有活著的公司/團隊真的能簽給你?(Coqui 已倒 / F5-TTS 明說不發 → 兩者「待洽談」都是死路)
+5. **判色 + 記錄**:綠/黃/紅寫進上面矩陣,黃燈要註明限制範圍。
+
+> 📋 完整通則與案例:[VOICE_LAB/授權地雷清單_提案稿.md](VOICE_LAB/授權地雷清單_提案稿.md)
+> ⚠️ 非律師意見。對客戶簽 IP 保證前仍應由法務複核。
 
 ---
 
@@ -520,9 +571,12 @@ Content-Type: application/json
 10. ❌ **不要忘記 strip metadata key** — `epoch / step` 要剝才能當 inference llm.pt
 11. ❌ **不要用 nohup** — 用 `tmux` 對抗 SSH 斷線
 12. ❌ **不要 polling 太頻繁** — SSH 連線高頻可能被 RunPod 殺
-13. ❌ **不要用 Fish Speech 做商用** — CC-BY-NC 不可商用
+13. ❌ **不要用 Fish Speech / Fish Audio S2 / Higgs v3 自架做商用** — 皆非商用權重(Fish Speech CC-BY-NC 有付費窗口=🟡 / Higgs v3 Research&NC 禁商用=🔴,雖帳面最強);要用先另簽授權
 14. ❌ **Reference transcript 不要漏字** — embedding 會崩
 15. ❌ **不要混用簡繁中文** — ttsfrd 會混亂
+16. ❌ **不要看 GitHub 徽章判商用** — **程式碼授權 ≠ 權重授權**,要讀**權重**那份 LICENSE 全文(XTTS-v2 = MPL 2.0 配 CPML 非商用;F5-TTS = MIT 配 CC-BY-NC)
+17. ❌ **不要拿「禁止改進其他 AI 模型」的模型輸出去訓自家商用模型** — IndexTTS-2 §4.1c / Llama 系都有這條;它們只能當**推論端出成品的工具**,不能當造自家模型的原料
+18. ❌ **不要相信「微調就能洗掉非商用授權」** — 訓練資料傳染的限制(F5-TTS/Emilia)**微調後照樣非商用**,唯一解是用自有可商用資料**從零重訓**
 
 ---
 
