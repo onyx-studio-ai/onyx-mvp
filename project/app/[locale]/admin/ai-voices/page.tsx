@@ -122,6 +122,11 @@ export default function AiVoicesPage() {
       {/* ── 建立新聲音 ── */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-8">
         <h2 className="text-base font-semibold mb-3">建立新聲音</h2>
+        <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+          選單列的是全名冊,「選配音員」只是把聲音<b>掛在誰名下</b> —— 名字本身不會產生聲音。
+          必須在②上傳<b>那位配音員本人的錄音</b>(30 秒~1 分鐘乾淨人聲就夠,不需要大量語料、不需要訓練),才會建立出他的 AI 聲音。
+          沒上傳過錄音的人,前台就不會有他的 AI 聲音。
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">① 配音員</span>
             <select className={input} value={talentId} onChange={(e) => pickTalent(e.target.value)}>
@@ -150,7 +155,7 @@ export default function AiVoicesPage() {
         {refText !== '' && (
           <div className="mb-3">
             <span className="text-xs text-red-600 font-medium mb-1 block">③ 逐字稿 —— 請逐字核對後修正,轉錯字會毀掉 clone(這段文字必須跟錄音內容一模一樣)</span>
-            <textarea className={`${input} min-h-[72px] resize-y`} value={refText} onChange={(e) => setRefText(e.target.value)} />
+            <textarea rows={8} className={`${input} min-h-[200px] resize-y text-sm leading-relaxed`} value={refText} onChange={(e) => setRefText(e.target.value)} />
           </div>
         )}
 
