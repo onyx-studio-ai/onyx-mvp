@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
   if (body.voiceId) {
     // tone = the UI tone value (e.g. "Professional"); resolves to that register's
     // embedding, falling back to the voice's default register if not recorded.
-    const v = getVoiceEmbedding(String(body.voiceId), body.tone ? String(body.tone) : undefined);
+    const v = await getVoiceEmbedding(String(body.voiceId), body.tone ? String(body.tone) : undefined);
     if (!v) return NextResponse.json({ error: `Unknown voiceId "${body.voiceId}"` }, { status: 404 });
     embeddingUrl = v.embeddingUrl;
     refText = v.refText;

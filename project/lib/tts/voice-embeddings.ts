@@ -8,9 +8,9 @@
 // the clip's audio or the clone breaks ("很奇怪" — see feedback memory); refText is reused
 // at inference time as Qwen3's reference_text.
 //
-// ⚠️ Flow-test stopgap. Production should move these onto talent DB columns so every
-// onboarded talent is generatable, and (quality = fal-clone "像也不像") eventually swap to
-// BreezyVoice (self-host pod) for production-grade our-voice.
+// 2026-07-16 Phase 1:正式來源改為 DB 表 `talent_voice_embeddings`(後台「AI 聲音」頁
+// 管理);本檔硬編碼降級為「後備」—— DB 空/表未建時仍可生成,不斷線。快取 60 秒。
+// (quality = fal-clone "像也不像") eventually swap to BreezyVoice (self-host pod).
 export interface ToneEmbedding {
   embeddingUrl: string;
   refText: string;
@@ -106,18 +106,47 @@ export const VOICE_EMBEDDINGS: Record<string, VoiceEmbedding> = {
   },
 };
 
-// Resolve a voiceId (+ optional UI tone value) to a concrete embedding. Unknown/unrecorded
-// tone falls back to the voice's defaultTone so the voice still generates, just in its
-// default register. Returns the resolved tone key too (so callers can tell the customer
-// which register they actually got).
-export function getVoiceEmbedding(
+// ── DB 來源(Phase 1)───────────────────────────────────────────────────────
+// talent_voice_embeddings:voice_key / tone / embedding_url / ref_text / temperature /
+// is_default_tone / status('live'|'off')。只取 live。60 秒記憶體快取(serverless 實例內)。
+type DbRow = { voice_key: string; tone: string; embedding_url: string; ref_text: string; temperature: number | null; is_default_tone: boolean | null; status: string };
+let _cache: { at: number; map: Map<string, DbRow[]> } | null = null;
+
+async function loadDbVoices(): Promise<Map<string, DbRow[]>> {
+  if (_cache && Date.now() - _cache.at < 60_000) return _cache.map;
+  const map = new Map<string, DbRow[]>();
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '', { auth: { autoRefreshToken: false, persistSession: false } });
+    const { data } = await db.from('talent_voice_embeddings').select('voice_key, tone, embedding_url, ref_text, temperature, is_default_tone, status').eq('status', 'live');
+    for (const r of (data || []) as DbRow[]) {
+      const arr = map.get(r.voice_key) || [];
+      arr.push(r); map.set(r.voice_key, arr);
+    }
+  } catch { /* 表未建/DB 掛 → 空 map,走硬編碼後備 */ }
+  _cache = { at: Date.now(), map };
+  return map;
+}
+
+/** 讓「建立聲音/上下架」立刻生效(clone 完馬上能試聽,不用等 60 秒)。 */
+export function invalidateVoiceCache() { _cache = null; }
+
+// Resolve a voiceId (+ optional UI tone value) to a concrete embedding. DB 優先,
+// 查無此 voice 才落回硬編碼後備;tone 沒錄的落回該聲音的預設 tone。
+export async function getVoiceEmbedding(
   id: string,
   uiTone?: string,
-): (ToneEmbedding & { tone: string }) | null {
-  // (return shape: embeddingUrl, refText, optional temperature, resolved tone key)
+): Promise<(ToneEmbedding & { tone: string }) | null> {
+  const toneKey = (uiTone && UI_TONE_MAP[uiTone]) || '';
+  const rows = (await loadDbVoices()).get(id);
+  if (rows && rows.length) {
+    const pick = (rows.find((r) => toneKey && r.tone === toneKey))
+      || rows.find((r) => r.is_default_tone)
+      || rows[0];
+    return { embeddingUrl: pick.embedding_url, refText: pick.ref_text, temperature: pick.temperature ?? undefined, tone: pick.tone };
+  }
   const voice = VOICE_EMBEDDINGS[id];
   if (!voice) return null;
-  const toneKey = (uiTone && UI_TONE_MAP[uiTone]) || '';
   const key = toneKey && voice.tones[toneKey] ? toneKey : voice.defaultTone;
   const emb = voice.tones[key];
   if (!emb) return null;

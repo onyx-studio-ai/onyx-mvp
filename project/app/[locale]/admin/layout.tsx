@@ -42,8 +42,13 @@ const navGroups: NavGroup[] = [
       { href: '/admin/certificates', labelKey: 'certificates', icon: Award },
       { href: '/admin/promos', labelKey: 'promos', icon: Tag },
       { href: '/admin/showcases', labelKey: 'audioShowcases', icon: Volume2 },
-      { href: '/admin/voices', labelKey: 'voiceLibrary', icon: Waves },
-      { href: '/admin/sovits', labelKey: 'sovits', icon: Wand2 },
+      { href: '/admin/ai-voices', labelKey: 'aiVoices', icon: Waves },
+      // 2026-07-16 藏(頁面程式都留著):admin/voices(CosyVoice pod)與 admin/sovits
+      // (GPT-SoVITS/RVC pod)的後端 pod 已不存在(RunPod 帳上零 pod;模型全量備份在
+      // SSD Onyx_語音資產/_RunPod_volume_rescue_2026-07-16/)。pod 線回歸(BreezyVoice/
+      // wing-e8)時把下面兩行解註解即可復活。
+      // { href: '/admin/voices', labelKey: 'voiceLibrary', icon: Waves },
+      // { href: '/admin/sovits', labelKey: 'sovits', icon: Wand2 },
     ],
   },
 ];
@@ -74,6 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     audioShowcases: '音訊作品',
     voiceLibrary: 'AI Voice 庫',
     sovits: 'GPT-SoVITS / RVC',
+    aiVoices: 'AI 聲音',
     invalidAdminCode: '管理員代碼無效',
     authFailed: '驗證失敗，請再試一次。',
     loading: '載入中...',
@@ -109,6 +115,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     audioShowcases: 'Audio Showcases',
     voiceLibrary: 'AI Voice Library',
     sovits: 'GPT-SoVITS / RVC',
+    aiVoices: 'AI Voices',
     invalidAdminCode: 'Invalid admin code',
     authFailed: 'Authentication failed. Please try again.',
     loading: 'Loading...',
