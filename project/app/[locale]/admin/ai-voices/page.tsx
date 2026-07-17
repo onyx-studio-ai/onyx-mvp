@@ -74,7 +74,8 @@ export default function AiVoicesPage() {
       const tj = await tr.json().catch(() => ({}));
       if (!tr.ok) throw new Error(tj.error || '轉稿失敗');
       setRefText(tj.text);
-      toast.success('逐字稿完成 —— 請逐字核對,轉錯字會毀掉 clone!');
+      if (tj.warning) toast.error(tj.warning, { duration: 12000 });
+      else toast.success('逐字稿完成 —— 請逐字核對,轉錯字會毀掉 clone!');
     } catch (e) { toast.error(e instanceof Error ? e.message : '失敗'); } finally { setBusy(''); }
   }
 

@@ -56,7 +56,10 @@ export async function POST(request: NextRequest) {
     if (!res.ok) return NextResponse.json({ error: `轉稿失敗:${j?.detail || res.status}` }, { status: 502 });
     const text = String(j.text || (Array.isArray(j.chunks) ? j.chunks.map((c: { text?: string }) => c.text || '').join('') : '')).trim();
     if (!text) return NextResponse.json({ error: '轉稿結果為空,請確認音檔' }, { status: 422 });
-    return NextResponse.json({ text });
+    // 防呆:30 秒以上的錄音只轉出一兩句 = 轉稿失敗(Delta 第一次 clone 壞在這:
+    // 27 秒只轉出 8 個字,refText 對不上音檔 → 輸出只剩呼吸聲)。轉稿太短就警告。
+    const warning = text.length < 25 ? '⚠ 轉稿疑似不完整(字數太少)!請聽一遍錄音逐字核對;若錄音明明講了很多話,請手動把完整逐字稿貼進去再建立,不然 clone 出來會是壞的。' : undefined;
+    return NextResponse.json({ text, warning });
   }
 
   // ── clone:建立聲音(存 off,試聽滿意才上架)──
