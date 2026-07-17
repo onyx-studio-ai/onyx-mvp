@@ -52,7 +52,7 @@ export default function AdminMessages() {
   const bcReach = bcCounts ? (bcAudience === 'both' ? bcCounts.talents + bcCounts.clients : bcCounts[bcAudience]) : 0;
   async function bcSend() {
     if (!bcText.trim() || !bcReach) return;
-    if (!window.confirm(`確定發送給 ${bcReach} 人?(會吃 ${bcReach} 則推播額度,發出後收不回)`)) return;
+    if (!window.confirm(`確定發送給 ${bcReach} 人?(LINE 綁定者會吃推播額度,發出後收不回)`)) return;
     setBcBusy(true);
     try {
       const res = await fetch('/api/admin/line-broadcast', {
@@ -108,12 +108,12 @@ export default function AdminMessages() {
 
       <div className="bg-white border border-gray-200 rounded-xl mb-4 max-w-6xl">
         <button onClick={() => setBcOpen((o) => !o)} className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-gray-50">
-          <span className="text-sm font-semibold">LINE 群發(推廣 / 公告)</span>
+          <span className="text-sm font-semibold">訊息群發 LINE / Telegram(推廣 / 公告)</span>
           <span className="text-xs text-gray-400">{bcOpen ? '收合 ▲' : '展開 ▼'}</span>
         </button>
         {bcOpen && (
           <div className="px-4 pb-4 space-y-3">
-            <p className="text-xs text-gray-500">發給「綁定過 LINE」的人(沒綁定的收不到 —— 想全好友觸及要用 LINE 官方後台的群發,但那個分不了對象)。每人算 1 則推播額度。</p>
+            <p className="text-xs text-gray-500">發給「綁定過 LINE 或 Telegram」的人,每人只發一次(有 LINE 推 LINE,只綁 Telegram 的推 Telegram),不寄 email。LINE 每人吃 1 則推播額度,Telegram 免費。沒綁定的收不到 —— 想全好友觸及要用 LINE 官方後台的群發。</p>
             <div className="flex flex-wrap gap-2">
               {([['talents', '配音員'], ['clients', '客戶'], ['both', '全部']] as const).map(([v, l]) => (
                 <button key={v} onClick={() => setBcAudience(v)}
