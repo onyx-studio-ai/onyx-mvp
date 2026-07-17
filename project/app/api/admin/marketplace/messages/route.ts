@@ -3,6 +3,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { sendEmail } from '@/lib/mail';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentLine } from '@/lib/line';
 
 /*
   Admin view into any marketplace thread (Onyx sees every conversation).
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
           html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>Onyx 在「<strong>${title}</strong>」留了新訊息給您:</p><blockquote style="border-left:3px solid #f59e0b;margin:8px 0;padding:6px 12px;color:#444;white-space:pre-wrap">${body.slice(0, 600)}</blockquote><p><a href="https://www.onyxstudios.ai/talent/opportunities">前往後台查看與回覆 →</a></p></div>` }).catch(() => {});
       }
       notifyTalentTelegram(db, talentId, `💬 Onyx 新訊息(${title}):${body.slice(0, 200)}${body.length > 200 ? '…' : ''}\nhttps://www.onyxstudios.ai/talent/opportunities`);
+      notifyTalentLine(db, talentId, `💬 Onyx 新訊息(${title}):${body.slice(0, 200)}${body.length > 200 ? '…' : ''}${attachments.length ? `(含 ${attachments.length} 個附件)` : ''}\nhttps://www.onyxstudios.ai/talent/opportunities`);
     } catch { /* 通知失敗不影響訊息已送 */ }
     return NextResponse.json({ message: data });
   } catch {

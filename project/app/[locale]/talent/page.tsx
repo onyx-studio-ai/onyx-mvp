@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
 import Turnstile from '@/components/Turnstile';
 import TelegramConnect from '@/components/talent/TelegramConnect';
+import LineConnect from '@/components/talent/LineConnect';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share, Heart } from 'lucide-react';
 import {
   VOICE_TRAITS, USE_CASES, TRAIT_KEYS, USE_CASE_KEYS, BASE_LANGUAGES, AVAILABILITY, COUNTRIES, VOICE_AGES, TURNAROUNDS, turnaroundLabel,
@@ -536,6 +537,7 @@ export default function TalentDashboard() {
                 <Share className="w-3 h-3" /> {shareCopied ? tx('已複製連結 ✓', '已复制链接 ✓', 'Copied ✓') : tx('分享主頁', '分享主页', 'Share profile')}
               </button>
             )}
+            <LineConnect tx={tx} />
             <TelegramConnect tx={tx} />
           </div>
           <input className="w-full bg-transparent text-2xl font-bold focus:outline-none focus:border-b focus:border-white/20 pb-0.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tx('顯示名稱', '显示名称', 'Display name')} />

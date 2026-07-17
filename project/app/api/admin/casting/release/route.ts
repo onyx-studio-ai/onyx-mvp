@@ -3,6 +3,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentLine } from '@/lib/line';
 import { zonedTimeToUtc, fmtInTz, tzLabel } from '@/lib/case-time';
 
 /*
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
       unnotified.push(nameById.get(tid) || tid);
     }
     notifyTalentTelegram(db, tid, `🎬 台詞已就緒,可以開錄了(${title})。您的角色:${roleList}。${deadlineText ? `交件期限:${deadlineText}。` : ''}請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
+    notifyTalentLine(db, tid, `🎬 台詞已就緒,可以開錄了(${title})。您的角色:${roleList}。${deadlineText ? `交件期限:${deadlineText}。` : ''}請到後台「製作中」查看稿件並錄製上傳。${SITE}/talent/opportunities`);
   }
   return NextResponse.json({ ok: true, released: ids.length, notified, talents: byTalent.size, unnotified });
 }
