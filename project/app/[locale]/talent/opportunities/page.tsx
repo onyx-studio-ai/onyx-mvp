@@ -261,6 +261,20 @@ function AssignedDelivery({ orderId, deliveries, tx, onChanged }: {
         <div key={d.id} className="flex items-center gap-2 text-xs bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-lg px-3 py-1.5">
           <span className="text-[#6FCF97]">✓</span><span className="text-gray-200 truncate flex-1">{d.file_name}</span>
           <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-300 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
+          {d.status !== 'approved' && (
+            <button type="button" disabled={busy}
+              onClick={async () => {
+                if (!window.confirm(tx(`刪除「${d.file_name}」?(傳錯/重複的檔可刪,刪了可再重傳)`, `删除「${d.file_name}」?(传错/重复的档可删,删了可再重传)`, `Delete "${d.file_name}"? You can re-upload after.`))) return;
+                setBusy(true); setErr('');
+                try {
+                  const res = await authedFetch('/api/talent/assigned-deliver', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, version_id: d.id }) });
+                  const j = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(j.error || tx('刪除失敗', '删除失败', 'Delete failed'));
+                  onChanged();
+                } catch (e) { setErr(e instanceof Error ? e.message : tx('刪除失敗', '删除失败', 'Delete failed')); } finally { setBusy(false); }
+              }}
+              className="text-red-400/80 hover:text-red-300 shrink-0">{tx('刪除', '删除', 'Delete')}</button>
+          )}
         </div>
       ))}
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
