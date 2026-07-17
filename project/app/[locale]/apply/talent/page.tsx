@@ -325,6 +325,7 @@ export default function TalentApply() {
     if (s === 0) {
       if (!form.display_name || !form.full_name || !form.email) return tx('請填寫顯示名稱、真實姓名與 Email', '请填写显示名称、真实姓名与 Email', 'Please fill in your display name, legal name and email');
       if (!form.phone.trim()) return tx('請填寫聯絡電話(僅供我們聯繫,不公開)', '请填写联系电话(仅供我们联系,不公开)', 'Please provide a contact phone number (private, only for us to reach you)');
+      if (!/^\+\d[\d\s\-()]{5,}$/.test(form.phone.trim())) return tx('電話請用國際格式,以 + 和國碼開頭,例:+886 912 345 678(台灣)、+852 9123 4567(香港)', '电话请用国际格式,以 + 和国码开头,例:+886 912 345 678(台湾)、+852 9123 4567(香港)', 'Please use international format starting with + and country code, e.g. +886 912 345 678 (Taiwan), +44 7911 123456 (UK)');
       if (!emailVerified) return tx('請先完成 Email 驗證', '请先完成 Email 验证', 'Please verify your email first');
     }
     if (s === 1) {
@@ -414,7 +415,7 @@ export default function TalentApply() {
                 )}
                 {codeMsg && <p className="text-xs mt-1.5 text-gray-400">{codeMsg}</p>}
               </div>
-              <div className="mt-4"><Label req hint={tx('只留存,不公開', '只留存,不公开', 'Private, never public')}>{tx('手機', '手机', 'Phone')}</Label><input className={inputCls} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+886 …" /></div>
+              <div className="mt-4"><Label req hint={tx('只留存,不公開', '只留存,不公开', 'Private, never public')}>{tx('手機', '手机', 'Phone')}</Label><input className={inputCls} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder={tx('+886 912 345 678(含國碼)', '+886 912 345 678(含国码)', '+44 7911 123456 (with country code)')} /></div>
               <div className="mt-4">
                 <Label hint={tx('選填,填任一即可', '选填,填任一即可', 'Optional — any one is fine')}>{tx('通訊軟體 ID', '通讯软体 ID', 'Messaging ID')}</Label>
                 <div className="grid grid-cols-3 gap-2">
