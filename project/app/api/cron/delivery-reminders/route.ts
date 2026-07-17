@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
+import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
 import { notifyTalentLine } from '@/lib/line';
 import { zonedTimeToUtc, fmtInTz, tzLabel } from '@/lib/case-time';
@@ -105,11 +106,15 @@ export async function GET(request: NextRequest) {
     // email(占位邀請信箱收不到,跳過)
     const email = t?.email || '';
     if (email && !email.endsWith('@invite.onyxstudios.ai')) {
-      await sendEmail({
-        category: 'PRODUCTION', to: email,
+      const note = plainNoticeEmail({
         subject: `【${g.project}】交件提醒 —— ${g.deadlineText} 截止`,
-        html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>${name} 您好,</p><p>「<strong>${g.project}</strong>」以下 <strong>${g.roles.length}</strong> 個角色即將於 <strong>${g.deadlineText}</strong> 截止,目前尚未收到音檔:</p><p>${g.roles.join('、')}</p><p>再麻煩您於截止前至後台各製作單上傳音檔。若時間上有困難,請在後台傳訊息告知您最快可交件的時間。</p><p><a href="${SITE}/talent/opportunities">前往後台 →</a></p><p>Onyx Studios 製作部</p></div>`,
+        headline: '交件提醒', sub: `${g.project} · ${g.deadlineText} 截止`, cardTitle: `${g.roles.length} 個角色尚未交件`,
+        paragraphs: [`${name} 您好,`, `「${g.project}」以下角色即將於 ${g.deadlineText} 截止,目前尚未收到音檔:`],
+        quote: g.roles.join('、'),
+        ctaText: '前往後台上傳', ctaUrl: `${SITE}/talent/opportunities`,
+        footnote: '若時間上有困難,請在後台傳訊息告知您最快可交件的時間。— Onyx Studios 製作部',
       });
+      await sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html });
     }
     // Telegram(有綁才發;helper 內部自己判斷)
     await notifyTalentTelegram(db, g.talentId, `⏰ 交件提醒(${g.project}):${g.roles.join('、')} 將於 ${g.deadlineText} 截止,尚未收到音檔。請盡快到後台上傳,來不及請在後台留言。${SITE}/talent/opportunities`);

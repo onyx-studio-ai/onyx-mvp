@@ -2029,3 +2029,23 @@ export function payoutPaidEmail(p: PayoutPaidPayload): { subject: string; html: 
     html: baseLayout(content, 'Studios', BRAND_GREEN, ll),
   };
 }
+
+// ---------------------------------------------------------------------------
+// 一般通知信(品牌殼)— 新訊息/交件催件/開錄等系統通知共用,取代路由裡的裸 HTML。
+// paragraphs 傳純文字(內部會 escape);quote 是引用區塊(訊息內容等)。
+// ---------------------------------------------------------------------------
+export function plainNoticeEmail(p: {
+  subject: string; headline: string; sub?: string; cardTitle?: string;
+  paragraphs: string[]; quote?: string; ctaText?: string; ctaUrl?: string; footnote?: string;
+}): { subject: string; html: string } {
+  const body = [
+    ...p.paragraphs.map((t) => mp(mpEsc(t))),
+    p.quote ? `<div style="border-left:3px solid ${BRAND_GREEN};background:#111827;border-radius:0 8px 8px 0;padding:10px 14px;margin:0 0 16px;color:#e5e7eb;font-size:14px;line-height:1.7;white-space:pre-wrap;">${mpEsc(p.quote)}</div>` : '',
+    p.footnote ? `<p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;">${mpEsc(p.footnote)}</p>` : '',
+  ].join('');
+  const content = `
+    ${headlineBlock(p.headline, p.sub || '', BRAND_GREEN)}
+    ${bodyCard(p.cardTitle || '', body)}
+    ${p.ctaText && p.ctaUrl ? ctaRow(p.ctaText, p.ctaUrl, BRAND_GREEN) : ''}`;
+  return { subject: p.subject, html: baseLayout(content) };
+}

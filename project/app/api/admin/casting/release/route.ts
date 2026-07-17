@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
+import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
 import { notifyTalentLine } from '@/lib/line';
 import { zonedTimeToUtc, fmtInTz, tzLabel } from '@/lib/case-time';
@@ -74,11 +75,15 @@ export async function POST(request: NextRequest) {
     const roleList = roles.join('、');
     // 佔位帳號(LINE 邀請沒真信箱)不寄 email,只發 Telegram(有綁才會到)
     if (email && !email.endsWith('@invite.onyxstudios.ai')) {
-      sendEmail({
-        category: 'PRODUCTION', to: email,
+      const note = plainNoticeEmail({
         subject: `台詞已就緒,可以開錄了 — ${title}(${roles.length} 個角色)`,
-        html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>「<strong>${title}</strong>」指派給您的 <strong>${roles.length}</strong> 個角色(${roleList})台詞與參考資料已備妥,請登入後台在「製作中」查看稿件並錄製上傳。</p>${deadlineText ? `<p><strong>交件期限:${deadlineText}</strong></p>` : ''}<p>若時程上無法配合完成日,請直接在後台傳訊息告訴我們可提供的時間。</p><p><a href="${SITE}/talent/opportunities">前往後台 →</a></p></div>`,
-      }).catch(() => {});
+        headline: '台詞已就緒,可以開錄了', sub: title, cardTitle: `您的 ${roles.length} 個角色`,
+        paragraphs: [`您好,`, `「${title}」指派給您的角色台詞與參考資料已備妥,請登入後台在「製作中」查看稿件並錄製上傳。`],
+        quote: roleList + (deadlineText ? `\n\n交件期限:${deadlineText}` : ''),
+        ctaText: '前往後台開錄', ctaUrl: `${SITE}/talent/opportunities`,
+        footnote: '若時程上無法配合完成日,請直接在後台傳訊息告訴我們可提供的時間。— Onyx Studios 製作部',
+      });
+      sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
       notified += 1;
     } else if (!tgById.get(tid)) {
       unnotified.push(nameById.get(tid) || tid);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { sendEmail } from '@/lib/mail';
+import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
 import { notifyTalentLine } from '@/lib/line';
 
@@ -65,8 +66,14 @@ export async function POST(request: NextRequest) {
       const title = (b?.title as string) || '配音案件';
       const email = String(t?.email || '');
       if (email && !email.endsWith('@invite.onyxstudios.ai')) {
-        sendEmail({ category: 'PRODUCTION', to: email, subject: `Onyx 有新訊息 — ${title}`,
-          html: `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.7;color:#222"><p>您好,</p><p>Onyx 在「<strong>${title}</strong>」留了新訊息給您:</p><blockquote style="border-left:3px solid #f59e0b;margin:8px 0;padding:6px 12px;color:#444;white-space:pre-wrap">${body.slice(0, 600)}</blockquote><p><a href="https://www.onyxstudios.ai/talent/opportunities">前往後台查看與回覆 →</a></p></div>` }).catch(() => {});
+        const note = plainNoticeEmail({
+          subject: `Onyx 有新訊息 — ${title}`, headline: '您有一則新訊息', sub: title, cardTitle: '案件訊息',
+          paragraphs: [`${t?.name ? t.name + ' ' : ''}您好,`, `Onyx 在「${title}」留了新訊息給您:`],
+          quote: body.slice(0, 600) + (attachments.length ? `
+(含 ${attachments.length} 個附件)` : ''),
+          ctaText: '前往後台查看與回覆', ctaUrl: 'https://www.onyxstudios.ai/talent/opportunities',
+        });
+        sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
       }
       notifyTalentTelegram(db, talentId, `💬 Onyx 新訊息(${title}):${body.slice(0, 200)}${body.length > 200 ? '…' : ''}\nhttps://www.onyxstudios.ai/talent/opportunities`);
       notifyTalentLine(db, talentId, `💬 Onyx 新訊息(${title}):${body.slice(0, 200)}${body.length > 200 ? '…' : ''}${attachments.length ? `(含 ${attachments.length} 個附件)` : ''}\nhttps://www.onyxstudios.ai/talent/opportunities`);
