@@ -29,13 +29,15 @@ export async function GET(request: NextRequest) {
 
     const { data: messages } = await c.db
       .from('marketplace_messages')
-      .select('id, sender_type, sender_name, body, created_at')
+      .select('id, sender_type, sender_name, body, attachments, created_at')
       .eq('brief_id', briefId)
       .eq('talent_id', talentId)
       .order('created_at', { ascending: true })
       .limit(500);
 
-    return NextResponse.json({ role, messages: messages || [] });
+    // 附件只開放 talent 端看(後台上傳給配音員的圖/文件);客戶端還沒開放 → 剝掉。
+    const out = (messages || []).map((m) => role === 'client' ? { ...m, attachments: null } : m);
+    return NextResponse.json({ role, messages: out });
   } catch {
     return NextResponse.json({ role: null, messages: [], unavailable: true });
   }

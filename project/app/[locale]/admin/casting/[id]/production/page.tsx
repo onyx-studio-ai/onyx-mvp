@@ -234,28 +234,41 @@ export default function ProductionPage() {
   });
 
   // 💬 與配音員的對話(brief × talent 一串)—— 直接指派沒試音的人在別處沒有入口。
-  type Msg = { id: string; sender_type: string; sender_name?: string | null; body: string; created_at: string };
+  type Msg = { id: string; sender_type: string; sender_name?: string | null; body: string; attachments?: { name: string; url: string }[] | null; created_at: string };
   const [msgOrder, setMsgOrder] = useState<Order | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [msgText, setMsgText] = useState('');
   const [msgBusy, setMsgBusy] = useState(false);
+  const [msgFiles, setMsgFiles] = useState<{ name: string; url: string }[]>([]);   // 待送附件(圖片/文件;音檔走正式交付,不開)
+  const [msgUploading, setMsgUploading] = useState(false);
+  async function uploadMsgFile(file: File) {
+    setMsgUploading(true);
+    try {
+      const u = await fetch('/api/admin/casting/upload', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok || !uj.path) throw new Error(uj.error || '上傳準備失敗');
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setMsgFiles((f) => [...f, { name: file.name, url: uj.publicUrl }]);
+    } catch (e) { toast.error(e instanceof Error ? e.message : '附件上傳失敗'); } finally { setMsgUploading(false); }
+  }
   async function openMsgs(o: Order) {
-    setMsgOrder(o); setMsgs([]); setMsgText('');
+    setMsgOrder(o); setMsgs([]); setMsgText(''); setMsgFiles([]);
     const res = await fetch(`/api/admin/marketplace/messages?brief_id=${encodeURIComponent(id)}&talent_id=${encodeURIComponent(String(o.talent_id))}`, { credentials: 'include' });
     const j = await res.json().catch(() => ({}));
     setMsgs(j.messages || []);
   }
   async function sendMsg() {
-    if (!msgOrder || !msgText.trim()) return;
+    if (!msgOrder || (!msgText.trim() && !msgFiles.length)) return;
     setMsgBusy(true);
     try {
       const res = await fetch('/api/admin/marketplace/messages', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ brief_id: id, talent_id: msgOrder.talent_id, body: msgText.trim() }),
+        body: JSON.stringify({ brief_id: id, talent_id: msgOrder.talent_id, body: msgText.trim(), attachments: msgFiles }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || '送出失敗');
-      setMsgs((m) => [...m, j.message]); setMsgText('');
+      setMsgs((m) => [...m, j.message]); setMsgText(''); setMsgFiles([]);
       toast.success('已送出(會自動寄信/Telegram 通知對方)');
     } catch (e) { toast.error(e instanceof Error ? e.message : '送出失敗'); } finally { setMsgBusy(false); }
   }
@@ -411,13 +424,33 @@ export default function ProductionPage() {
               {msgs.map((m) => (
                 <div key={m.id} className={`text-sm max-w-[85%] rounded-lg px-3 py-1.5 ${m.sender_type === 'admin' ? 'ml-auto bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-800'}`}>
                   <p className="whitespace-pre-wrap">{m.body}</p>
+                  {(m.attachments || []).length > 0 && (
+                    <div className="mt-1.5 space-y-1">
+                      {(m.attachments || []).map((a, i) => /\.(png|jpe?g|gif|webp)(\?|$)/i.test(a.url)
+                        ? <a key={i} href={a.url} target="_blank" rel="noreferrer" className="block">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={a.url} alt={a.name} className="max-h-32 rounded-lg border border-white/20" /></a>
+                        : <a key={i} href={`${a.url}${a.url.includes('?') ? '&' : '?'}download=${encodeURIComponent(a.name)}`} className={`block text-xs underline ${m.sender_type === 'admin' ? 'text-sky-300' : 'text-sky-600'}`}>⇩ {a.name}</a>)}
+                    </div>
+                  )}
                   <p className={`text-[10px] mt-0.5 ${m.sender_type === 'admin' ? 'text-gray-400' : 'text-gray-400'}`}>{m.sender_type === 'admin' ? 'Onyx' : (m.sender_name || '配音員')} · {String(m.created_at).slice(5, 16).replace('T', ' ')}</p>
                 </div>
               ))}
             </div>
+            {msgFiles.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {msgFiles.map((f, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 text-xs bg-gray-100 border border-gray-300 rounded-full px-2.5 py-1">
+                    {f.name}<button onClick={() => setMsgFiles((x) => x.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500">✕</button>
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="mt-2 flex gap-2">
+              <label className={`self-end text-xs rounded-lg px-3 py-2.5 cursor-pointer border border-gray-300 whitespace-nowrap ${msgUploading ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>
+                {msgUploading ? '上傳中…' : '+ 附件'}
+                <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" className="hidden" disabled={msgUploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMsgFile(f); e.target.value = ''; }} />
+              </label>
               <textarea className={`${input} min-h-[44px] resize-y flex-1`} value={msgText} placeholder="輸入訊息…(送出會自動寄信/Telegram 通知對方)" onChange={(e) => setMsgText(e.target.value)} />
-              <button onClick={sendMsg} disabled={msgBusy || !msgText.trim()} className="text-sm bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-4 self-end py-2">{msgBusy ? '送出中…' : '送出'}</button>
+              <button onClick={sendMsg} disabled={msgBusy || (!msgText.trim() && !msgFiles.length)} className="text-sm bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-4 self-end py-2">{msgBusy ? '送出中…' : '送出'}</button>
             </div>
           </div>
         </div>

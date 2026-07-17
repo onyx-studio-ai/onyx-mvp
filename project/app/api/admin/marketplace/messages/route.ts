@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const db = getSupabaseServiceClient();
     const { data } = await db
       .from('marketplace_messages')
-      .select('id, sender_type, sender_name, body, created_at')
+      .select('id, sender_type, sender_name, body, attachments, created_at')
       .eq('brief_id', briefId)
       .eq('talent_id', talentId)
       .order('created_at', { ascending: true })
@@ -37,13 +37,20 @@ export async function POST(request: NextRequest) {
   if (unauthorized) return unauthorized;
   try {
     const db = getSupabaseServiceClient();
-    const { brief_id: briefId, talent_id: talentId, body: rawBody } = await request.json();
+    const { brief_id: briefId, talent_id: talentId, body: rawBody, attachments: rawAtt } = await request.json();
     const body = String(rawBody || '').trim().slice(0, 4000);
-    if (!briefId || !talentId || !body) return NextResponse.json({ error: 'brief_id, talent_id and body are required' }, { status: 400 });
+    // 附件:只有後台能上傳(talent 端 API 完全不收這個欄位;客戶端白名單也不回)。
+    // 圖片/文件為主;音檔/影片擋掉 —— 試音、完成檔必須走正式交付流程,不能塞聊天室。
+    const STORE_PREFIX = `${(process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '')}/storage/v1/object/public/`;
+    const BLOCKED_EXT = /\.(mp3|wav|m4a|aac|flac|ogg|opus|mp4|mov|avi|mkv|webm)(\?|$)/i;
+    const attachments = (Array.isArray(rawAtt) ? rawAtt : []).slice(0, 5)
+      .map((a: { name?: unknown; url?: unknown }) => ({ name: String(a?.name || '檔案').slice(0, 120), url: String(a?.url || '') }))
+      .filter((a) => a.url.startsWith(STORE_PREFIX) && !BLOCKED_EXT.test(a.url));
+    if (!briefId || !talentId || (!body && !attachments.length)) return NextResponse.json({ error: 'brief_id, talent_id and body are required' }, { status: 400 });
     const { data, error } = await db
       .from('marketplace_messages')
-      .insert({ brief_id: briefId, talent_id: talentId, sender_type: 'admin', sender_name: 'Onyx', body })
-      .select('id, sender_type, sender_name, body, created_at')
+      .insert({ brief_id: briefId, talent_id: talentId, sender_type: 'admin', sender_name: 'Onyx', body: body || '(附件)', attachments: attachments.length ? attachments : null })
+      .select('id, sender_type, sender_name, body, attachments, created_at')
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     // 主動通知配音員(2026-07-16 Wing:催補錄貼了沒人看到等於沒貼)——

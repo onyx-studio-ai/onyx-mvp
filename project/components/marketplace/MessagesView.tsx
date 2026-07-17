@@ -21,7 +21,7 @@ type Thread = {
   brief_number: string; title: string; brief_status: string; counterpart: string;
   last_at?: string | null; last_sender_type?: string | null; last_preview?: string | null;
 };
-type Msg = { id: string; sender_type: string; sender_name: string | null; body: string; created_at: string };
+type Msg = { id: string; sender_type: string; sender_name: string | null; body: string; attachments?: { name: string; url: string }[] | null; created_at: string };
 
 const inputCls =
   'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60 transition';
@@ -156,6 +156,13 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
                 <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'bg-green-500/20 text-green-50' : m.sender_type === 'admin' ? 'bg-blue-500/15 text-blue-100' : 'bg-white/10 text-gray-100'}`}>
                   {!mine && <p className="text-[10px] text-gray-400 mb-0.5">{m.sender_type === 'admin' ? 'Onyx' : m.sender_name}</p>}
                   <p className="whitespace-pre-wrap">{m.body}</p>
+                  {(m.attachments || []).length > 0 && (
+                    <div className="mt-1.5 space-y-1">
+                      {(m.attachments || []).map((a, i) => /\.(png|jpe?g|gif|webp)(\?|$)/i.test(a.url)
+                        ? <a key={i} href={a.url} target="_blank" rel="noreferrer" className="block">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={a.url} alt={a.name} className="max-h-40 rounded-lg border border-white/20" /></a>
+                        : <a key={i} href={`${a.url}${a.url.includes('?') ? '&' : '?'}download=${encodeURIComponent(a.name)}`} className="block text-xs underline text-sky-300">⇩ {a.name}</a>)}
+                    </div>
+                  )}
                 </div>
               </div>
             );
