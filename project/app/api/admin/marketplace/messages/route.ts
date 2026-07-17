@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
     if (!briefId || !talentId || (!body && !attachments.length)) return NextResponse.json({ error: 'brief_id, talent_id and body are required' }, { status: 400 });
     const { data, error } = await db
       .from('marketplace_messages')
-      .insert({ brief_id: briefId, talent_id: talentId, sender_type: 'admin', sender_name: 'Onyx', body: body || '(附件)', attachments: attachments.length ? attachments : null })
+      // 有附件才帶欄位 —— migration(attachments 欄)沒跑之前,純文字訊息照常能發。
+      .insert({ brief_id: briefId, talent_id: talentId, sender_type: 'admin', sender_name: 'Onyx', body: body || '(附件)', ...(attachments.length ? { attachments } : {}) })
       .select('id, sender_type, sender_name, body, attachments, created_at')
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
