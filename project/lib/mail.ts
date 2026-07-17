@@ -67,6 +67,16 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     console.log(
       `[Mail:${category}] SENT | to=${options.to} | subject="${options.subject}" | id=${data?.id} | ${timestamp}`
     );
+    // LINE 鏡像:收件人有綁 LINE(客戶端綁定)就同步推「有新通知」提醒。
+    // fire-and-forget,絕不影響寄信結果;動態 import 避免 lib 相依環。
+    try {
+      const tos = (Array.isArray(options.to) ? options.to : [options.to]).filter(Boolean);
+      const [{ notifyEmailLine }, { getSupabaseServiceClient }] = await Promise.all([
+        import('./line'), import('./supabase-server'),
+      ]);
+      const db = getSupabaseServiceClient();
+      for (const to of tos) notifyEmailLine(db, to, options.subject).catch(() => {});
+    } catch { /* 鏡像失敗不影響寄信 */ }
     return { success: true, messageId: data?.id };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

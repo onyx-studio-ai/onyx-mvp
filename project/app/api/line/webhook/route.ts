@@ -68,8 +68,9 @@ export async function POST(request: NextRequest) {
         continue;
       }
       if (ev.type === 'unfollow' && userId) {
-        // 封鎖 = 解綁,推播額度不浪費在送不到的人身上
+        // 封鎖 = 解綁,推播額度不浪費在送不到的人身上(配音員與客戶兩邊都清)
         await db.from('talents').update({ line_user_id: null }).eq('line_user_id', userId);
+        await db.from('line_email_bindings').update({ line_user_id: null }).eq('line_user_id', userId).then(() => {}, () => {});
         continue;
       }
       if (ev.type === 'message' && ev.message?.type === 'text' && ev.replyToken) {
@@ -83,7 +84,14 @@ export async function POST(request: NextRequest) {
             await replyLine(ev.replyToken, `✅ 已綁定 Onyx Studios 通知${talent.name ? `(${talent.name})` : ''}。\n之後開錄通知、案件訊息、交件提醒都會推送到這裡。\n\n⚠️ 此帳號為自動服務,請勿在此回覆案件內容 —— 要回覆請到平台後台的「訊息」頁,我們會在那邊看到。`);
             continue;
           }
-          await replyLine(ev.replyToken, '這組綁定碼對不上或已使用過。請回到配音員後台重新按「綁定 LINE 通知」拿一組新的碼,再傳過來。');
+          // 客戶端綁定碼(line_email_bindings;客戶儀表板發的)
+          const { data: client } = await db.from('line_email_bindings').select('email').eq('link_token', code).maybeSingle().then((r) => r, () => ({ data: null }));
+          if (client) {
+            await db.from('line_email_bindings').update({ line_user_id: userId, link_token: null }).eq('email', client.email);
+            await replyLine(ev.replyToken, `✅ 已綁定 Onyx Studios 通知(${client.email})。\n之後試音進度、交付驗收、案件通知寄 Email 的同時,也會在這裡提醒您。\n\n⚠️ 此帳號為自動服務 —— 案件溝通請至客戶後台 https://www.onyxstudios.ai/dashboard`);
+            continue;
+          }
+          await replyLine(ev.replyToken, '這組綁定碼對不上或已使用過。請回到平台後台重新按「綁定 LINE 通知」拿一組新的碼,再傳過來。');
           continue;
         }
         await replyLine(ev.replyToken, AUTO_REPLY);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import LineConnectClient from '@/components/client/LineConnectClient';
 import { supabase, Order } from '@/lib/supabase';
 import { useDashboardUser } from '@/contexts/DashboardContext';
 import { getMusicTierLabel } from '@/lib/config/pricing.config';
@@ -838,10 +839,13 @@ export default function DashboardPage() {
   return (
     <div className="text-white p-6 lg:p-10">
       <div className="max-w-5xl">
-        <div className="mb-8">
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-medium">{t('studioPortal')}</p>
-          <h1 className="text-3xl font-bold tracking-tight">{t('yourProjects')}</h1>
-          <p className="text-gray-500 text-sm mt-1">{user.user_metadata?.full_name || user.email}</p>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 font-medium">{t('studioPortal')}</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t('yourProjects')}</h1>
+            <p className="text-gray-500 text-sm mt-1">{user.user_metadata?.full_name || user.email}</p>
+          </div>
+          <LineConnectClient tx={(a, b, c) => { const l = String(dashLocale); return l === 'zh-TW' ? a : l === 'zh-CN' ? b : c; }} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">

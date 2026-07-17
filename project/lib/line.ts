@@ -54,3 +54,15 @@ export async function notifyTalentLine(db: SupabaseClient, talentId: string | nu
     await sendLine(data.line_user_id as string, text);
   } catch { /* skip silently */ }
 }
+
+// 「Email 鏡像」:任何 sendEmail 寄出的信,若收件人在 line_email_bindings 綁過
+// LINE(客戶端綁定入口),同步推一則「有新通知」到 LINE。只推主旨不推內文 ——
+// 信件可能含敏感連結(重設密碼等),LINE 只當提醒鈴。表沒建/沒綁 = 安靜跳過。
+export async function notifyEmailLine(db: SupabaseClient, email: string | null | undefined, subject: string) {
+  if (!lineConfigured() || !email) return;
+  try {
+    const { data, error } = await db.from('line_email_bindings').select('line_user_id').eq('email', email.toLowerCase()).maybeSingle();
+    if (error || !data?.line_user_id) return;
+    await sendLine(data.line_user_id as string, `📩 ${subject}\n\n詳情請查看 Email,或前往 https://www.onyxstudios.ai/dashboard`);
+  } catch { /* skip silently */ }
+}
