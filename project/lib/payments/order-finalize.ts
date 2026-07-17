@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { plainNoticeEmail } from '@/lib/mail-templates';
 import { sendEmail } from '@/lib/mail';
 import {
   newOrderNotificationEmail,
@@ -316,9 +317,13 @@ export async function finalizeProjectPayment(params: {
 
   try {
     const link = await generateDashboardMagicLink(email);
-    sendEmail({ category: 'PRODUCTION', to: email,
+    const note = plainNoticeEmail({
       subject: `付款成功 · ${pending.length} 個角色已進入製作`,
-      html: `<p>已收到您的付款,本專案 ${pending.length} 個角色的配音已開始製作。</p><p><a href="${link}">查看製作進度</a></p>` }).catch(() => {});
+      headline: '付款成功', sub: `${pending.length} 個角色已進入製作`, cardTitle: '製作已啟動',
+      paragraphs: ['您好,', `已收到您的付款,本專案 ${pending.length} 個角色的配音已開始製作。完成後我們會在後台通知您試聽與驗收。`],
+      ctaText: '查看製作進度', ctaUrl: link,
+    });
+    sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
     sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai',
       subject: `專案已付款 · ${pending.length} 子單`,
       html: `<p>Brief ${briefId}: ${pending.length} sub-orders paid (txn ${transactionId}).</p>` }).catch(() => {});
