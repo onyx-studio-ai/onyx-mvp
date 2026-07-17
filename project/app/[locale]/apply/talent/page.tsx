@@ -415,7 +415,10 @@ export default function TalentApply() {
                 )}
                 {codeMsg && <p className="text-xs mt-1.5 text-gray-400">{codeMsg}</p>}
               </div>
-              <div className="mt-4"><Label req hint={tx('只留存,不公開', '只留存,不公开', 'Private, never public')}>{tx('手機', '手机', 'Phone')}</Label><input className={inputCls} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder={tx('+886 912 345 678(含國碼)', '+886 912 345 678(含国码)', '+44 7911 123456 (with country code)')} /></div>
+              <div className="mt-4"><Label req hint={tx('只留存,不公開', '只留存,不公开', 'Private, never public')}>{tx('手機', '手机', 'Phone')}</Label><input className={inputCls} value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder={tx('+886 912 345 678(含國碼)', '+886 912 345 678(含国码)', '+44 7911 123456 (with country code)')} />
+                {form.phone.trim() !== '' && !form.phone.trim().startsWith('+') && (
+                  <p className="text-xs text-amber-300 mt-1">{tx('請在最前面加上「+」和您的國碼,例:台灣 +886、香港 +852(0 開頭的手機號,去掉 0 接在國碼後,如 0912→+886 912)', '请在最前面加上「+」和您的国码,例:台湾 +886、香港 +852(0 开头的手机号,去掉 0 接在国码后,如 0912→+886 912)', 'Add “+” and your country code first — e.g. +1 (US), +44 (UK), +886 (Taiwan). Drop any leading 0 of your local number.')}</p>
+                )}</div>
               <div className="mt-4">
                 <Label hint={tx('選填,填任一即可', '选填,填任一即可', 'Optional — any one is fine')}>{tx('通訊軟體 ID', '通讯软体 ID', 'Messaging ID')}</Label>
                 <div className="grid grid-cols-3 gap-2">
