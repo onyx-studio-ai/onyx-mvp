@@ -18,7 +18,9 @@ export async function resolveCaller(request: NextRequest): Promise<Caller | null
   const { data, error } = await db.auth.getUser(token);
   if (error || !data?.user) return null;
   const user = data.user;
-  const { data: t } = await db.from('talents').select('id').eq('auth_user_id', user.id).eq('is_active', true).maybeSingle();
+  // 不閘 is_active —— 未上線配音員(試音者/受邀者預設 false)也要能收發訊息
+  // (2026-07-17 xinyu 案例:交檔正常、訊息永遠 403 的根因)。真要封鎖走 suspended 欄。
+  const { data: t } = await db.from('talents').select('id').eq('auth_user_id', user.id).maybeSingle();
   return { db, userId: user.id, email: (user.email || '').toLowerCase(), talentId: (t as { id: string } | null)?.id || null };
 }
 

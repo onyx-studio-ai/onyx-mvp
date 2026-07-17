@@ -33,7 +33,8 @@ async function resolve(request: NextRequest) {
   const { data, error } = await db.auth.getUser(token);
   const email = (data?.user?.email || '').toLowerCase();
   if (error || !email) return null;
-  const { data: talent } = await db.from('talents').select('id').eq('email', email).eq('is_active', true).maybeSingle();
+  // 不閘 is_active(同 marketplace-auth 2026-07-17 修法:未上線配音員也是有效身分)。
+  const { data: talent } = await db.from('talents').select('id').eq('email', email).maybeSingle();
   return { db, email, userId: data.user.id, talentId: (talent as { id: string } | null)?.id || null };
 }
 
