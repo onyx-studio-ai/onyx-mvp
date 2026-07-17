@@ -32,6 +32,26 @@ export async function sendLine(userId: string | null | undefined, text: string) 
   } catch { /* best-effort */ }
 }
 
+// 群發(multicast:一次最多 500 個 userId;額度按「收到的人數」計)。回實際送出人數。
+export async function multicastLine(userIds: string[], text: string): Promise<number> {
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (!token || !ids.length) return 0;
+  let sent = 0;
+  for (let i = 0; i < ids.length; i += 500) {
+    const batch = ids.slice(i, i + 500);
+    try {
+      const r = await fetch(`${API}/message/multicast`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: batch, messages: [{ type: 'text', text: text.slice(0, 4900) }] }),
+      });
+      if (r.ok) sent += batch.length;
+    } catch { /* 該批失敗就跳過,回報實際數 */ }
+  }
+  return sent;
+}
+
 // 回覆訊息(用 replyToken,免費、不吃推播額度)—— webhook 自動回覆走這條。
 export async function replyLine(replyToken: string, text: string) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;

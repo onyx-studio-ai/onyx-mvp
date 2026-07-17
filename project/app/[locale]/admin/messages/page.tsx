@@ -37,6 +37,35 @@ export default function AdminMessages() {
     } catch (e) { toast.error(e instanceof Error ? e.message : '附件上傳失敗'); } finally { setUploading(false); }
   }
 
+  // ── LINE 群發(推廣文案一鍵發給綁定用戶,分客戶/配音員)──
+  const [bcOpen, setBcOpen] = useState(false);
+  const [bcAudience, setBcAudience] = useState<'talents' | 'clients' | 'both'>('talents');
+  const [bcText, setBcText] = useState('');
+  const [bcCounts, setBcCounts] = useState<{ talents: number; clients: number } | null>(null);
+  const [bcBusy, setBcBusy] = useState(false);
+  useEffect(() => {
+    if (!bcOpen || bcCounts) return;
+    fetch('/api/admin/line-broadcast', { credentials: 'include' })
+      .then((r) => r.json()).then((j) => setBcCounts({ talents: j.talents || 0, clients: j.clients || 0 }))
+      .catch(() => {});
+  }, [bcOpen, bcCounts]);
+  const bcReach = bcCounts ? (bcAudience === 'both' ? bcCounts.talents + bcCounts.clients : bcCounts[bcAudience]) : 0;
+  async function bcSend() {
+    if (!bcText.trim() || !bcReach) return;
+    if (!window.confirm(`確定發送給 ${bcReach} 人?(會吃 ${bcReach} 則推播額度,發出後收不回)`)) return;
+    setBcBusy(true);
+    try {
+      const res = await fetch('/api/admin/line-broadcast', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audience: bcAudience, text: bcText.trim() }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || '發送失敗');
+      toast.success(`已發送 ${j.sent}/${j.targeted} 人`);
+      setBcText(''); setBcOpen(false);
+    } catch (e) { toast.error(e instanceof Error ? e.message : '發送失敗'); } finally { setBcBusy(false); }
+  }
+
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/messages-inbox', { credentials: 'include' });
     const j = await res.json().catch(() => ({}));
@@ -76,6 +105,35 @@ export default function AdminMessages() {
     <div className="p-6 lg:p-10 text-gray-900">
       <h1 className="text-xl font-semibold mb-1">訊息</h1>
       <p className="text-gray-500 text-sm mb-4">全部對話一頁看完:配音員或客戶回了,這裡會亮紅點,也會寄信通知你。點開即回,回覆會自動通知對方。</p>
+
+      <div className="bg-white border border-gray-200 rounded-xl mb-4 max-w-6xl">
+        <button onClick={() => setBcOpen((o) => !o)} className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+          <span className="text-sm font-semibold">LINE 群發(推廣 / 公告)</span>
+          <span className="text-xs text-gray-400">{bcOpen ? '收合 ▲' : '展開 ▼'}</span>
+        </button>
+        {bcOpen && (
+          <div className="px-4 pb-4 space-y-3">
+            <p className="text-xs text-gray-500">發給「綁定過 LINE」的人(沒綁定的收不到 —— 想全好友觸及要用 LINE 官方後台的群發,但那個分不了對象)。每人算 1 則推播額度。</p>
+            <div className="flex flex-wrap gap-2">
+              {([['talents', '配音員'], ['clients', '客戶'], ['both', '全部']] as const).map(([v, l]) => (
+                <button key={v} onClick={() => setBcAudience(v)}
+                  className={`text-xs px-3 py-1.5 rounded-full border ${bcAudience === v ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-300 text-gray-600 hover:bg-gray-100'}`}>
+                  {l}{bcCounts ? `(${v === 'both' ? bcCounts.talents + bcCounts.clients : bcCounts[v]} 人)` : ''}
+                </button>
+              ))}
+            </div>
+            <textarea rows={6} className={`${input} resize-y`} value={bcText} onChange={(e) => setBcText(e.target.value)}
+              placeholder={'貼上推廣文案…(純文字;連結直接貼網址)'} />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">{bcText.trim().length} 字 · 可觸及 {bcReach} 人</span>
+              <button onClick={bcSend} disabled={bcBusy || !bcText.trim() || !bcReach}
+                className="text-sm bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg px-5 py-2">
+                {bcBusy ? '發送中…' : `發送給 ${bcReach} 人`}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 max-w-6xl">
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden self-start">
