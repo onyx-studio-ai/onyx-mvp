@@ -24,7 +24,10 @@ export async function GET(request: NextRequest) {
     if (c.talentId) {
       const { data: quotes } = await c.db.from('marketplace_quotes').select('brief_id').eq('talent_id', c.talentId).eq('status', 'accepted');
       const { data: assigned } = await c.db.from('voice_orders').select('brief_id').eq('talent_id', c.talentId).is('quote_id', null).not('brief_id', 'is', null);
-      const ids = [...new Set([...(quotes || []), ...(assigned || [])].map((q) => q.brief_id))];
+      // 第三來源:這串裡已經有訊息(admin 可對任何 brief+talent 開串;沒單沒報價
+      // 的對象也要看得到、能回 —— 否則收到通知點進來卻是空的)。
+      const { data: msged } = await c.db.from('marketplace_messages').select('brief_id').eq('talent_id', c.talentId).limit(500);
+      const ids = [...new Set([...(quotes || []), ...(assigned || []), ...(msged || [])].map((q) => q.brief_id))];
       if (ids.length) {
         const { data: briefs } = await c.db
           .from('marketplace_briefs')

@@ -45,7 +45,18 @@ export async function threadRole(c: Caller, briefId: string, talentId: string): 
       .is('quote_id', null)
       .limit(1)
       .maybeSingle();
-    if (!o) return null;
+    if (!o) {
+      // 第三種成立方式:admin 已對這個 (brief, talent) 開過串(沒單沒報價的對象
+      // 也要能看能回;2026-07-17 WING 測試帳號看不到串的根因,與 threads 列表同步)。
+      const { data: m } = await c.db
+        .from('marketplace_messages')
+        .select('id')
+        .eq('brief_id', briefId)
+        .eq('talent_id', talentId)
+        .limit(1)
+        .maybeSingle();
+      if (!m) return null;
+    }
   }
 
   if (c.talentId && c.talentId === talentId) return 'talent';
