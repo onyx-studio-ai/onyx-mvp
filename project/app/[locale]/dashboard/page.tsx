@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import LineConnectClient from '@/components/client/LineConnectClient';
+import TelegramConnectClient from '@/components/client/TelegramConnectClient';
 import { supabase, Order } from '@/lib/supabase';
 import { useDashboardUser } from '@/contexts/DashboardContext';
 import { getMusicTierLabel } from '@/lib/config/pricing.config';
@@ -845,7 +846,10 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold tracking-tight">{t('yourProjects')}</h1>
             <p className="text-gray-500 text-sm mt-1">{user.user_metadata?.full_name || user.email}</p>
           </div>
-          <LineConnectClient tx={(a, b, c) => { const l = String(dashLocale); return l === 'zh-TW' ? a : l === 'zh-CN' ? b : c; }} />
+          <span className="flex flex-wrap items-center gap-2">
+            <LineConnectClient tx={(a, b, c) => { const l = String(dashLocale); return l === 'zh-TW' ? a : l === 'zh-CN' ? b : c; }} />
+            <TelegramConnectClient tx={(a, b, c) => { const l = String(dashLocale); return l === 'zh-TW' ? a : l === 'zh-CN' ? b : c; }} />
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">

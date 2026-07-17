@@ -32,8 +32,15 @@ export async function POST(request: NextRequest) {
         await sendTelegram(chatId, `✅ 已綁定 Onyx Studios 通知${talent.name ? `(${talent.name})` : ''}。\n之後有得標、客戶訊息、修改要求,都會在這裡通知您。\n\n⚠️ 這裡是單向通知,請勿在此回覆 —— 要回覆客戶或我們,請到平台的「訊息」頁。`);
         return NextResponse.json({ ok: true });
       }
+      // 客戶端綁定(line_email_bindings.telegram_link_token;客戶儀表板發的 deep-link)
+      const { data: client } = await db.from('line_email_bindings').select('email').eq('telegram_link_token', linkToken).maybeSingle().then((r) => r, () => ({ data: null }));
+      if (client) {
+        await db.from('line_email_bindings').update({ telegram_chat_id: String(chatId), telegram_link_token: null }).eq('email', client.email);
+        await sendTelegram(chatId, `✅ 已綁定 Onyx Studios 通知(${client.email})。\n之後平台寄通知信給您的同時,也會在這裡提醒您。\n\n⚠️ 這裡是單向通知 —— 案件溝通請至客戶後台 https://www.onyxstudios.ai/dashboard`);
+        return NextResponse.json({ ok: true });
+      }
     }
-    await sendTelegram(chatId, '請從 Onyx Studios 配音員後台點「綁定 Telegram」進來,才能對應到您的帳號。');
+    await sendTelegram(chatId, '請從 Onyx Studios 平台後台點「綁定 Telegram」進來,才能對應到您的帳號。');
     return NextResponse.json({ ok: true });
   }
   // Notification-only bot: anything the talent types here goes nowhere useful

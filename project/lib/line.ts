@@ -56,13 +56,18 @@ export async function notifyTalentLine(db: SupabaseClient, talentId: string | nu
 }
 
 // 「Email 鏡像」:任何 sendEmail 寄出的信,若收件人在 line_email_bindings 綁過
-// LINE(客戶端綁定入口),同步推一則「有新通知」到 LINE。只推主旨不推內文 ——
-// 信件可能含敏感連結(重設密碼等),LINE 只當提醒鈴。表沒建/沒綁 = 安靜跳過。
+// LINE 或 Telegram(客戶端綁定入口),同步推一則「有新通知」提醒。只推主旨不推
+// 內文 —— 信件可能含敏感連結(重設密碼等),推播只當提醒鈴。表沒建/沒綁 = 安靜跳過。
 export async function notifyEmailLine(db: SupabaseClient, email: string | null | undefined, subject: string) {
-  if (!lineConfigured() || !email) return;
+  if (!email) return;
   try {
-    const { data, error } = await db.from('line_email_bindings').select('line_user_id').eq('email', email.toLowerCase()).maybeSingle();
-    if (error || !data?.line_user_id) return;
-    await sendLine(data.line_user_id as string, `📩 ${subject}\n\n詳情請查看 Email,或前往 https://www.onyxstudios.ai/dashboard`);
+    const { data, error } = await db.from('line_email_bindings').select('line_user_id, telegram_chat_id').eq('email', email.toLowerCase()).maybeSingle();
+    if (error || !data) return;
+    const text = `📩 ${subject}\n\n詳情請查看 Email,或前往 https://www.onyxstudios.ai/dashboard`;
+    if (data.line_user_id && lineConfigured()) await sendLine(data.line_user_id as string, text);
+    if (data.telegram_chat_id) {
+      const { sendTelegram } = await import('./telegram');
+      await sendTelegram(data.telegram_chat_id as string, text);
+    }
   } catch { /* skip silently */ }
 }
