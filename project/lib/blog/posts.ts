@@ -183,6 +183,70 @@ const wilderConsent: BlogPost = {
   ],
 };
 
+const mapsMaori: BlogPost = {
+  slug: 'google-maps-maori-what-it-took-to-say-a-name',
+  date: '2026-07-17',
+  readMins: 5,
+  cover: '/blog/why-ai-mandarin-sounds-mainland-hero.png',
+  tags: ['AI Voice', 'Localization', 'Text-to-Speech', 'Quality Assurance'],
+  title: {
+    en: 'Google Spent Four Years Teaching Maps to Say One Name Right',
+    'zh-TW': 'Google 花了四年,只為了讓地圖把一個名字唸對',
+    'zh-CN': 'Google 花了四年,只为了让地图把一个名字念对',
+  },
+  dek: {
+    en: 'The company with the most AI in the world fixed its pronunciation problem the same way a studio would: a language authority, a native voice actor, and a very long checklist.',
+    'zh-TW': '全世界 AI 最多的那家公司,解決發音問題的方法,跟一間錄音室會用的方法一模一樣:一個語言權威機構、一位母語配音員,和一份很長的檢查表。',
+    'zh-CN': '全世界 AI 最多的那家公司,解决发音问题的方法,跟一间录音棚会用的方法一模一样:一个语言权威机构、一位母语配音员,和一份很长的检查表。',
+  },
+  body: [
+    { t: 'p', text: {
+      en: "In early July, Google Maps started speaking to New Zealanders in a new voice. It reads navigation prompts in a Kiwi English accent and — this is the actual point — pronounces Māori place names correctly while doing it. The rollout landed on Android, iOS, Android Auto and CarPlay for anyone whose app language is set to English (New Zealand). As product launches go, it is a small one. What makes it worth your attention is not the feature. It is the receipt: Google began the project in 2022, signed a partnership with Te Taura Whiri i te reo Māori — the Māori Language Commission — in 2023, and spent roughly six months training the text-to-speech model. Four years, for a voice that says names properly.",
+      'zh-TW': '七月初,Google 地圖開始用一把新的聲音對紐西蘭人說話。它以紐西蘭腔的英語唸出導航指示,而且——這才是重點——在唸的同時,把毛利語(Māori)地名唸對了。這次更新已推送到 Android、iOS、Android Auto 與 CarPlay,只要 App 語言設定為英語(紐西蘭)即可。以產品發表來說,這是一件小事。真正值得你注意的不是這個功能,而是它的帳單:Google 從 2022 年就啟動這個專案,2023 年與毛利語言委員會 Te Taura Whiri i te reo Māori 簽下合作,並花了大約六個月訓練語音合成模型。四年,只為了一把會好好唸名字的聲音。',
+      'zh-CN': '七月初,Google 地图开始用一把新的声音对新西兰人说话。它以新西兰腔的英语念出导航指示,而且——这才是重点——在念的同时,把毛利语(Māori)地名念对了。这次更新已推送到 Android、iOS、Android Auto 与 CarPlay,只要 App 语言设定为英语(新西兰)即可。以产品发布来说,这是一件小事。真正值得你注意的不是这个功能,而是它的账单:Google 从 2022 年就启动这个项目,2023 年与毛利语言委员会 Te Taura Whiri i te reo Māori 签下合作,并花了大约六个月训练语音合成模型。四年,只为了一把会好好念名字的声音。',
+    } },
+    { t: 'p', text: {
+      en: "Consider what was broken. The old voice handled English sentences fine. It fell over on the proper nouns embedded inside them — the suburb, the street, the turn you were actually listening for. Ngahiwi Apanui-Barr, chief executive of Te Taura Whiri, has described being thrown off on his own drive home when the Wellington suburb of Ngaio came out sounding like \"N-gayo\" — the Māori digraph \"ng\" flattened into an English one. Everything around the name was correct. Only the name was wrong. And in a navigation prompt, the name is the entire payload; the rest is packaging.",
+      'zh-TW': '想想壞掉的是什麼。舊的那把聲音,唸英文句子沒問題。它跌倒的地方,是嵌在句子裡的專有名詞——那個郊區、那條街、那個你其實正豎起耳朵在等的轉彎。Te Taura Whiri 執行長 Ngahiwi Apanui-Barr 就講過,他自己開車回家的路上被搞糊塗:威靈頓的 Ngaio 郊區,被唸成了近似「N-gayo」的音——毛利語裡的雙字母「ng」,被壓平成了英語的唸法。名字周圍的一切都是對的,只有名字錯了。而在一句導航指示裡,名字就是全部的內容,其餘的都只是包裝。',
+      'zh-CN': '想想坏掉的是什么。旧的那把声音,念英文句子没问题。它跌倒的地方,是嵌在句子里的专有名词——那个郊区、那条街、那个你其实正竖起耳朵在等的转弯。Te Taura Whiri 首席执行官 Ngahiwi Apanui-Barr 就讲过,他自己开车回家的路上被搞糊涂:惠灵顿的 Ngaio 郊区,被念成了近似「N-gayo」的音——毛利语里的双字母「ng」,被压平成了英语的念法。名字周围的一切都是对的,只有名字错了。而在一句导航指示里,名字就是全部的内容,其余的都只是包装。',
+    } },
+    { t: 'p', text: {
+      en: "So how did the company with more compute than almost anyone on earth solve it? Not by scaling a model until the problem went away. It went and found a person. The new voice was trained on recordings of a New Zealand voice actor chosen for a specific and rare combination: a native Kiwi English accent, plus genuinely correct te reo Māori pronunciation. Google paired those recordings with publicly available data from the New Zealand Geographic Board, and leaned on the Language Commission for the standard. In other words, the fix was a native speaker who already knew how the names should sound, and an authority that could say definitively when the machine had it right.",
+      'zh-TW': '那麼,這家擁有全球數一數二算力的公司,是怎麼解決的?不是把模型一路放大到問題自己消失。它去找了一個人。這把新聲音,是用一位紐西蘭配音員的錄音訓練出來的,而挑中他的原因是一組相當罕見的組合:道地的紐西蘭英語口音,加上真正正確的毛利語發音。Google 把這些錄音,搭配紐西蘭地理委員會(New Zealand Geographic Board)的公開資料,再由語言委員會來定標準。換句話說,解方是一位本來就知道這些名字該怎麼唸的母語者,以及一個能一槌定音、判定機器有沒有唸對的權威機構。',
+      'zh-CN': '那么,这家拥有全球数一数二算力的公司,是怎么解决的?不是把模型一路放大到问题自己消失。它去找了一个人。这把新声音,是用一位新西兰配音员的录音训练出来的,而挑中他的原因是一组相当罕见的组合:地道的新西兰英语口音,加上真正正确的毛利语发音。Google 把这些录音,搭配新西兰地理委员会(New Zealand Geographic Board)的公开数据,再由语言委员会来定标准。换句话说,解方是一位本来就知道这些名字该怎么念的母语者,以及一个能一锤定音、判定机器有没有念对的权威机构。',
+    } },
+    { t: 'p', text: {
+      en: "There is a second half to the story that most coverage skated past, and it is the more interesting half. Google did not simply take the lexicon and walk away with it. Te Taura Whiri is the kaitiaki — the guardian — of the te reo Māori lexicon that came out of the work, and the stated long-term plan is to hand custody to a dedicated group of Māori language and IT specialists, so that Māori researchers and communities can access and benefit from the data. That is a provenance decision, not a quality decision. Someone asked not only whether the pronunciation was right, but who the language belongs to and who gets to decide that in future.",
+      'zh-TW': '這則故事還有下半段,多數報導一筆帶過,但那才是更有意思的一半。Google 並沒有把這套詞庫拿走就算了。從這項工作產出的毛利語詞庫,由 Te Taura Whiri 擔任 kaitiaki——守護者——而官方說明的長期規劃,是把保管權交給一個由毛利語言與資訊專家組成的專責小組,好讓毛利族的研究者與社群能取用這份資料並從中受益。這是一個關於「來源歸屬」的決定,不是關於「品質」的決定。有人問的不只是「發音對不對」,而是「這個語言屬於誰、未來由誰說了算」。',
+      'zh-CN': '这则故事还有下半段,多数报道一笔带过,但那才是更有意思的一半。Google 并没有把这套词库拿走就算了。从这项工作产出的毛利语词库,由 Te Taura Whiri 担任 kaitiaki——守护者——而官方说明的长期规划,是把保管权交给一个由毛利语言与信息专家组成的专责小组,好让毛利族的研究者与社群能取用这份数据并从中受益。这是一个关于「来源归属」的决定,不是关于「质量」的决定。有人问的不只是「发音对不对」,而是「这门语言属于谁、未来由谁说了算」。',
+    } },
+    { t: 'p', text: {
+      en: "Now bring it back to whatever you are about to ship. Your project has proper nouns in it too. A brand name. A product line. A street address in a spot ad. A character name in a game. These are exactly the tokens a general-purpose model has the least reason to get right, because they are rare, they break the phonetic rules the model learned, and they often come from a language other than the one the sentence is in — which is precisely the Ngaio problem, wearing different clothes. Mandarin makes it worse rather than better: polyphones mean a single character can be read two ways, and the wrong reading in a name doesn't sound like an accent, it sounds like a different word.",
+      'zh-TW': '現在,把這件事拉回你手上正要出的那支案子。你的專案裡也有專有名詞:一個品牌名、一條產品線、廣告裡的一個地址、遊戲裡的一個角色名。這些正好是通用模型最沒有理由唸對的字——它們罕見、它們打破模型學到的拼讀規則,而且它們常常來自跟句子本身不同的語言,這正是 Ngaio 問題換了一身衣服而已。中文只會讓情況更糟而不是更好:多音字意味著同一個字有兩種讀法,而名字裡讀錯的那一下,聽起來不像口音,聽起來像另一個詞。',
+      'zh-CN': '现在,把这件事拉回你手上正要出的那支案子。你的项目里也有专有名词:一个品牌名、一条产品线、广告里的一个地址、游戏里的一个角色名。这些正好是通用模型最没有理由念对的字——它们罕见、它们打破模型学到的拼读规则,而且它们常常来自跟句子本身不同的语言,这正是 Ngaio 问题换了一身衣服而已。中文只会让情况更糟而不是更好:多音字意味着同一个字有两种读法,而名字里读错的那一下,听起来不像口音,听起来像另一个词。',
+    } },
+    { t: 'p', text: {
+      en: "And the model will not flag any of it. It reads the mangled name with exactly the same fluent confidence it reads the rest of the line, because it has no concept of having made a mistake. If nobody in your pipeline speaks the language, the error simply ships. Apanui-Barr's framing of why this matters is worth borrowing: place names carry stories, and \"the first step to unlocking those stories is correct pronunciation.\" Swap in your own noun. A customer hearing their own suburb, their own language, or your brand name said wrong is not thinking about your model. They are thinking that you didn't check.",
+      'zh-TW': '而模型不會替你標出任何一個。它唸壞掉的名字時,用的是跟唸其他句子完全一樣的流暢與自信,因為它根本沒有「我犯錯了」這個概念。如果你的流程裡沒有人懂那個語言,錯誤就這樣直接出貨。Apanui-Barr 說明這件事為何重要的角度值得借用:地名承載著故事,而「解鎖這些故事的第一步,就是正確的發音」。把你自己的名詞代進去。一位聽到自己住的郊區、自己的語言,或你的品牌名被唸錯的客戶,腦中想的不是你的模型。他想的是:你根本沒檢查。',
+      'zh-CN': '而模型不会替你标出任何一个。它念坏掉的名字时,用的是跟念其他句子完全一样的流畅与自信,因为它根本没有「我犯错了」这个概念。如果你的流程里没有人懂那门语言,错误就这样直接出货。Apanui-Barr 说明这件事为何重要的角度值得借用:地名承载着故事,而「解锁这些故事的第一步,就是正确的发音」。把你自己的名词代进去。一位听到自己住的郊区、自己的语言,或你的品牌名被念错的客户,脑中想的不是你的模型。他想的是:你根本没检查。',
+    } },
+    { t: 'p', text: {
+      en: "This is the shape of how Onyx Studios works, and we did not arrive at it because we were clever — we arrived at it because we ran a voice studio in Taiwan first, since 2008, with more than 1,500 professional actors. Every delivery is verified by a native speaker before it reaches the client, and proper nouns are the checkpoint we are strictest about: names, brands, numbers, and every polyphone read in context. If it passes, it ships; if it doesn't, we fix it before you ever hear it. Same for provenance — every AI voice in our library traces to a named professional who recorded under an explicit authorization that stays on file, and we can show you the document.",
+      'zh-TW': '這正是 Onyx Studios 的運作形狀,而我們會走到這裡,不是因為我們聰明——是因為我們先是一間台灣的配音公司,從 2008 年做到現在,旗下超過 1,500 位專業配音員。每一份交付在送到客戶手上前,都會經過一位母語人士驗證,而專有名詞正是我們把關最嚴的檢查點:人名、品牌、數字,以及每一個要看語境才能定讀音的多音字。過了就出貨;沒過,我們在你聽到之前就修掉。來源歸屬也是同一套——我們聲音庫裡的每一把 AI 聲音,都能追溯到一位有名有姓的專業配音員,他在明確的授權書下錄音,文件留存在案,而我們拿得出來給你看。',
+      'zh-CN': '这正是 Onyx Studios 的运作形状,而我们会走到这里,不是因为我们聪明——是因为我们先是一家台湾的配音公司,从 2008 年做到现在,旗下超过 1,500 位专业配音员。每一份交付在送到客户手上前,都会经过一位母语人士验证,而专有名词正是我们把关最严的检查点:人名、品牌、数字,以及每一个要看语境才能定读音的多音字。过了就出货;没过,我们在你听到之前就修掉。来源归属也是同一套——我们声音库里的每一把 AI 声音,都能追溯到一位有名有姓的专业配音员,他在明确的授权书下录音,文件留存在案,而我们拿得出来给你看。',
+    } },
+    { t: 'p', text: {
+      en: "The lesson here is cheap to learn from someone else's four years. Google had every reason to believe a big enough model would eventually say Ngaio correctly, and it still hired a native speaker and asked an authority to hold the standard. Your campaign has a smaller budget and a shorter deadline, and exactly the same failure mode sitting inside it. So the question is not whether AI can read your script — it can, quickly and cheaply. The question is who checks the names before your customer hears them. Send us the script; that part is already covered.",
+      'zh-TW': '這個教訓很划算,因為那四年是別人花的。Google 完全有理由相信,模型只要夠大,終究會把 Ngaio 唸對——但它還是請了一位母語者,並找一個權威機構來把標準守住。你的行銷案預算更小、期限更短,而裡面藏著的,是一模一樣的失效模式。所以問題不是 AI 能不能唸你的稿子——它能,又快又便宜。問題是:在你的客戶聽見之前,是誰在檢查那些名字?把稿子交給我們,這一段我們已經包了。',
+      'zh-CN': '这个教训很划算,因为那四年是别人花的。Google 完全有理由相信,模型只要够大,终究会把 Ngaio 念对——但它还是请了一位母语者,并找一个权威机构来把标准守住。你的营销案预算更小、期限更短,而里面藏着的,是一模一样的失效模式。所以问题不是 AI 能不能念你的稿子——它能,又快又便宜。问题是:在你的客户听见之前,是谁在检查那些名字?把稿子交给我们,这一段我们已经包了。',
+    } },
+  ],
+  sources: [
+    { label: "Google — Google Maps has an authentic new voice in New Zealand: built with Te Taura Whiri (the Māori Language Commission) and New Zealand Geographic Board data; Android, iOS, Android Auto and CarPlay", url: "https://blog.google/products-and-platforms/products/maps/te-reo-maori/" },
+    { label: "1News — Google Maps learns to pronounce Māori place names: project began 2022, partnership signed 2023, ~6 months training on a Kiwi voice actor's recordings; Te Taura Whiri as guardians of the lexicon", url: "https://www.1news.co.nz/2026/07/03/google-maps-learns-to-pronounce-maori-place-names/" },
+  ],
+};
+
 const morePosts: BlogPost[] = [
   {
     slug: "ai-voice-tool-landscape-2026",
@@ -385,7 +449,7 @@ const morePosts: BlogPost[] = [
   },
 ];
 
-export const posts: BlogPost[] = [wilderConsent, langQA, ...morePosts];
+export const posts: BlogPost[] = [mapsMaori, wilderConsent, langQA, ...morePosts];
 
 // Server-evaluated "today" in Asia/Taipei (UTC+8) so posts go live on their
 // date in Taiwan time. With ISR revalidate on the pages, future-dated posts
