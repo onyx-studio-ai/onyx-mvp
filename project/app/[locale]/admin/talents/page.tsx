@@ -377,6 +377,14 @@ function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) 
           <p className="font-semibold text-gray-900">{t.name}{(t as TalentProfile & { talent_no?: number }).talent_no ? <span className="text-gray-400 font-normal text-xs"> T-{(t as TalentProfile & { talent_no?: number }).talent_no}</span> : null}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}{((t as TalentProfile).invite_names || []).length ? <span className="text-gray-400 font-normal text-xs"> (真名:{((t as TalentProfile).invite_names || []).join('、')})</span> : null}</p>
           <p className="text-xs text-gray-500">{[t.gender, t.location ? countryLabel(t.location, locale) : '', typeof t.years_experience === 'number' ? tr('cardYearsExperience', { years: t.years_experience }) : ''].filter(Boolean).join(' · ') || '—'}</p>
           {t.email && <p className="text-xs text-gray-500 truncate">{tr('cardContact')}<a href={`mailto:${t.email}`} className="text-blue-600 hover:underline">{t.email}</a></p>}
+          <p className="text-xs text-gray-500 flex flex-wrap gap-x-2 gap-y-0.5 items-center">
+            {(t as TalentProfile & { phone?: string | null }).phone
+              ? <button type="button" title="點擊複製電話" onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(String((t as TalentProfile & { phone?: string | null }).phone)); }} className="text-blue-600 hover:underline">{(t as TalentProfile & { phone?: string | null }).phone}</button>
+              : <span className="text-gray-400">無電話</span>}
+            {(t as TalentProfile & { line_user_id?: string | null }).line_user_id && <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5">LINE</span>}
+            {(t as TalentProfile & { telegram_chat_id?: string | null }).telegram_chat_id && <span className="text-[11px] text-sky-700 bg-sky-50 border border-sky-200 rounded-full px-1.5">TG</span>}
+            {!(t as TalentProfile & { line_user_id?: string | null }).line_user_id && !(t as TalentProfile & { telegram_chat_id?: string | null }).telegram_chat_id && !(t as TalentProfile & { phone?: string | null }).phone && <span className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-full px-1.5">⚠ 僅 email</span>}
+          </p>
         </div>
         <div className="ml-auto flex flex-col items-end gap-1 shrink-0">
           {t.pending_review && <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">{tr('cardPendingDraft')}</span>}

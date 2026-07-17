@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
         paragraphs: [`${name} 您好,`, `「${g.project}」以下角色即將於 ${g.deadlineText} 截止,目前尚未收到音檔:`],
         quote: g.roles.join('、'),
         ctaText: '前往後台上傳', ctaUrl: `${SITE}/talent/opportunities`,
-        footnote: '若時間上有困難,請在後台傳訊息告知您最快可交件的時間。— Onyx Studios 製作部',
+        footnote: '若時間上有困難,請在後台傳訊息告知您最快可交件的時間。小提醒:到後台首頁點「綁定 LINE / Telegram」,之後通知即時推送、不漏接。 — Onyx Studios 製作部',
       });
       await sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html });
     }

@@ -27,10 +27,17 @@ export async function GET(request: NextRequest) {
 
   const tIds = [...new Set((orders || []).map((o) => o.talent_id).filter(Boolean))] as string[];
   const nameById = new Map<string, string>();
+  type TInfo = { id: string; name?: string | null; phone?: string | null; line_user_id?: string | null; telegram_chat_id?: string | null };
+  const infoById = new Map<string, TInfo>();
   if (tIds.length) {
-    const { data: ts } = await db.from('talents').select('id, name').in('id', tIds);
-    for (const t of ts || []) nameById.set(String(t.id), String(t.name || ''));
+    const { data: ts } = await db.from('talents').select('id, name, phone, line_user_id, telegram_chat_id').in('id', tIds);
+    for (const t of (ts || []) as TInfo[]) { nameById.set(String(t.id), String(t.name || '')); infoById.set(String(t.id), t); }
   }
-  const flat = (orders || []).map((o) => ({ ...o, talent_name: nameById.get(String(o.talent_id)) || null }));
+  const flat = (orders || []).map((o) => {
+    const ti = infoById.get(String(o.talent_id));
+    return { ...o, talent_name: nameById.get(String(o.talent_id)) || null,
+      talent_phone: ti?.phone || null,
+      talent_reach: ti ? [ti.line_user_id ? 'LINE' : '', ti.telegram_chat_id ? 'TG' : ''].filter(Boolean).join('/') : '' };
+  });
   return NextResponse.json({ brief, orders: flat });
 }

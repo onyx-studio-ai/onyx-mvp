@@ -60,7 +60,7 @@ const SERVICE_LABEL: Record<string, { tw: string; cn: string; en: string }> = {
 };
 
 type Talent = {
-  id: string; name: string; english_name: string | null; bio: string | null; languages: string[] | null;
+  id: string; name: string; english_name: string | null; phone?: string | null; bio: string | null; languages: string[] | null;
   gender: string | null; tags: string[] | null;
   voice_traits: string[] | null; specialties: string[] | null; voice_ages: string[] | null; demos: DemoItem[] | null;
   headshot_url: string | null; location: string | null; availability_note: string | null;
@@ -77,7 +77,7 @@ const COOP_KEYS = ['coop_accept_jobs', 'coop_open_buyout', 'coop_ai_clone', 'coo
 type CoopKey = typeof COOP_KEYS[number];
 type ListField = 'voice_traits' | 'specialties' | 'availability' | 'voice_ages';
 type Form = {
-  name: string; english_name: string; bio: string; gender: string; location: string; studio_partner: string; portfolio_url: string;
+  name: string; english_name: string; phone: string; bio: string; gender: string; location: string; studio_partner: string; portfolio_url: string;
   equipment: string; clients: string; awards: string; notable_works: string; special_skills: string;
   turnaround: string; years_experience: string; native_languages: string[];
   availability: string[]; languages: string[]; voice_traits: string[]; specialties: string[]; voice_ages: string[];
@@ -159,7 +159,7 @@ export default function TalentDashboard() {
   const [phase, setPhase] = useState<'loading' | 'login' | 'dashboard' | 'notalent'>('loading');
   const [t, setT] = useState<Talent | null>(null);
   const [form, setForm] = useState<Form>({
-    name: '', english_name: '', bio: '', gender: '', location: '', studio_partner: '', portfolio_url: '', equipment: '',
+    name: '', english_name: '', phone: '', bio: '', gender: '', location: '', studio_partner: '', portfolio_url: '', equipment: '',
     clients: '', awards: '', notable_works: '', special_skills: '', turnaround: '', years_experience: '', native_languages: [],
     availability: [], languages: [], voice_traits: [], specialties: [], voice_ages: [], headshot_url: '', demos: [],
     coop: { ...EMPTY_COOP }, rates: { ...EMPTY_RATES },
@@ -199,7 +199,7 @@ export default function TalentDashboard() {
     setFavoriteCount(typeof favs === 'number' ? favs : 0);
     setT(talent);
     setForm({
-      name: talent.name || '', english_name: talent.english_name || '', bio: talent.bio || '', gender: talent.gender || '',
+      name: talent.name || '', english_name: talent.english_name || '', phone: talent.phone || '', bio: talent.bio || '', gender: talent.gender || '',
       location: talent.location || '', studio_partner: talent.studio_partner || '', portfolio_url: talent.portfolio_url || '', equipment: talent.equipment || '',
       clients: talent.clients || '', awards: talent.awards || '', notable_works: talent.notable_works || '', special_skills: talent.special_skills || '',
       turnaround: talent.turnaround || '', years_experience: talent.years_experience != null ? String(talent.years_experience) : '',
@@ -291,7 +291,7 @@ export default function TalentDashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         submit,
-        name: form.name, english_name: form.english_name, bio: form.bio, gender: form.gender, location: form.location,
+        name: form.name, english_name: form.english_name, phone: form.phone, bio: form.bio, gender: form.gender, location: form.location,
         availability_note: form.availability.join(','), studio_partner: form.studio_partner, portfolio_url: form.portfolio_url, equipment: form.equipment,
         clients: form.clients, awards: form.awards, notable_works: form.notable_works, special_skills: form.special_skills,
         turnaround: form.turnaround, years_experience: form.years_experience ? parseInt(form.years_experience, 10) : null,
@@ -542,6 +542,7 @@ export default function TalentDashboard() {
           </div>
           <input className="w-full bg-transparent text-2xl font-bold focus:outline-none focus:border-b focus:border-white/20 pb-0.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tx('顯示名稱', '显示名称', 'Display name')} />
           <input className="w-full bg-transparent text-sm text-gray-300 focus:outline-none focus:border-b focus:border-white/20 pb-0.5 mt-1" value={form.english_name} onChange={(e) => setForm({ ...form, english_name: e.target.value })} placeholder={tx('英文 / 羅馬拼音名(選填,英文頁顯示)', '英文 / 罗马拼音名(选填,英文页显示)', 'English / Romanized name (optional, shown on English site)')} />
+          <input className="w-full bg-transparent text-sm text-gray-300 focus:outline-none focus:border-b focus:border-white/20 pb-0.5 mt-1" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={tx('聯絡電話(只供 Onyx 聯繫,不公開)', '联系电话(只供 Onyx 联系,不公开)', 'Phone (private — only Onyx can see it)')} />
           <p className="text-xs text-gray-300 mt-1.5">{t?.email}</p>
         </div>
       </div>

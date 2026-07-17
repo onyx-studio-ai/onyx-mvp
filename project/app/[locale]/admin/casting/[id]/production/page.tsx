@@ -18,7 +18,7 @@ import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null };
 // 參考音(大陸版角色參考)與中選聲線(配音員自己的中選示範)分開存、分開傳(Wing 2026-07-15)。
 type AudioField = 'reference_files' | 'voice_sample_files';
 
@@ -340,6 +340,9 @@ export default function ProductionPage() {
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="font-semibold">{o.role_name || '(未命名角色)'}</span>
                 <span className="text-xs text-gray-500">{o.talent_name || '(未指派)'}</span>
+                {o.talent_phone && <button type="button" title="點擊複製電話" onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(String(o.talent_phone)); toast.success('電話已複製'); }} className="text-[11px] text-blue-600 hover:underline">{o.talent_phone}</button>}
+                {o.talent_reach && <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5">✓{o.talent_reach}</span>}
+                {o.talent_name && !o.talent_reach && !o.talent_phone && <span className="text-[10px] text-red-700 bg-red-50 border border-red-200 rounded-full px-1.5">⚠ 僅 email</span>}
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border ${o.status === 'delivered' ? 'bg-sky-50 text-sky-700 border-sky-200' : o.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-violet-50 text-violet-700 border-violet-200'}`}>{o.status === 'delivered' ? '已交付·待驗收' : o.status === 'completed' ? '已完成' : '待錄製'}</span>
                 {!o.released_at && o.talent_id && (
                   <>

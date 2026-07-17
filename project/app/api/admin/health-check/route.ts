@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     // 需要的資料一次撈
     const [{ data: talents }, pv48, { data: openCasting }] = await Promise.all([
-      db.from('talents').select('id, name, type, gender, is_active, voice_id_status, application_id, published_snapshot, languages, native_languages, demos, demo_urls, sample_url'),
+      db.from('talents').select('id, name, type, gender, is_active, voice_id_status, application_id, published_snapshot, languages, native_languages, demos, demo_urls, sample_url, phone, line_user_id, telegram_chat_id'),
       db.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 48 * 3600_000).toISOString()),
       db.from('marketplace_briefs').select('brief_number, audition_deadline').eq('kind', 'casting').eq('status', 'open'),
     ]);
@@ -84,6 +84,14 @@ export async function GET(request: NextRequest) {
     if ((pv48.count || 0) === 0) warn.push('訪客埋點 page_views 過去 48 小時 0 筆 —— 埋點很可能又斷了(上次是缺欄位靜默失敗)');
 
     // E. 上線但性別空白(男/女篩選、發案配對都算不到他)
+    // C5. 聯絡黑洞:上線真人配音員,無電話且無 LINE/Telegram —— 只有 email 一條線,
+    // 催件/急件找不到人(2026-07-17 Erica Chang 案例)。目標是這名單歸零。
+    const unreachable = ts.filter((t) => t.is_active && isVO(t) && !isAI(t)
+      && !String((t as { phone?: string | null }).phone || '').trim()
+      && !(t as { line_user_id?: string | null }).line_user_id
+      && !(t as { telegram_chat_id?: string | null }).telegram_chat_id).map((t) => t.name);
+    if (unreachable.length) info.push(`聯絡黑洞(無電話且未綁 LINE/Telegram,只剩 email):${cap(unreachable)}`);
+
     const noGender = ts.filter((t) => t.is_active && isVO(t) && !isAI(t) && !String(t.gender || '').trim()).map((t) => t.name);
     if (noGender.length) info.push(`上線但沒填性別:${cap(noGender)}`);
 

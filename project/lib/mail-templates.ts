@@ -1010,7 +1010,7 @@ export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; da
       l1: '您的配音員檔案已在 Onyx Studios 平台上線。我們為您開設了專屬後台,您可隨時登入、自行更新個人簡介、語言、口音等資料。',
       l2: '請點下方按鈕設定您的登入密碼:',
       cta: '設定密碼',
-      l3: `設定完成後,日後可隨時於 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音員後台</a> 登入管理。`,
+      l3: `設定完成後,日後可隨時於 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音員後台</a> 登入管理。登入後請順手點首頁上方的「綁定 LINE 通知 / Telegram」—— 之後開錄通知、案件訊息、交件提醒都會即時推送給您,不會漏接。`,
       note: '此連結 24 小時內有效;若已過期,請至登入頁點「忘記密碼」、輸入此 Email 即可重新索取。若您並未報名 Onyx Studios,請忽略此信。',
     },
     cn: {
@@ -1022,7 +1022,7 @@ export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; da
       l1: '您的配音员资料已在 Onyx Studios 平台上线。我们为您开设了专属后台,您可随时登录、自行更新个人简介、语言、口音等资料。',
       l2: '请点下方按钮设置您的登录密码:',
       cta: '设置密码',
-      l3: `设置完成后,日后可随时在 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音员后台</a> 登录管理。`,
+      l3: `设置完成后,日后可随时在 <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">配音员后台</a> 登录管理。登录后请顺手点首页上方的「绑定 LINE 通知 / Telegram」—— 之后开录通知、案件消息、交件提醒都会即时推送给您,不会漏接。`,
       note: '此链接 24 小时内有效;若已过期,请至登录页点「忘记密码」、输入此 Email 即可重新索取。若您并未报名 Onyx Studios,请忽略此邮件。',
     },
     en: {
@@ -1034,7 +1034,7 @@ export function talentAccountSetupEmail(p: { name?: string; setupUrl: string; da
       l1: 'Your talent profile is now live on the Onyx Studios platform. We have created a personal dashboard where you can log in anytime to update your bio, languages, accent and other details.',
       l2: 'Click the button below to set your login password:',
       cta: 'Set Password',
-      l3: `Once set, you can log in anytime at your <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">Talent Dashboard</a>.`,
+      l3: `Once set, you can log in anytime at your <a href="${p.dashboardUrl}" style="color:${BRAND_GREEN};text-decoration:none;">Talent Dashboard</a>. After signing in, tap “Connect LINE / Telegram” at the top of your dashboard — recording calls, case messages and delivery reminders will then reach you instantly.`,
       note: 'This link is valid for 24 hours; if it expires, go to the sign-in page, click “Forgot password” and enter this email to get a new one. If you did not apply to Onyx Studios, please ignore this email.',
     },
   }[L];

@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
           quote: body.slice(0, 600) + (attachments.length ? `
 (含 ${attachments.length} 個附件)` : ''),
           ctaText: '前往後台查看與回覆', ctaUrl: 'https://www.onyxstudios.ai/talent/opportunities',
+          footnote: '小提醒:到後台首頁點「綁定 LINE / Telegram」,之後通知即時推送、不漏接。',
         });
         sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
       }

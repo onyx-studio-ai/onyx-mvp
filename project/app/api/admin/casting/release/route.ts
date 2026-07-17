@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         paragraphs: [`您好,`, `「${title}」指派給您的角色台詞與參考資料已備妥,請登入後台在「製作中」查看稿件並錄製上傳。`],
         quote: roleList + (deadlineText ? `\n\n交件期限:${deadlineText}` : ''),
         ctaText: '前往後台開錄', ctaUrl: `${SITE}/talent/opportunities`,
-        footnote: '若時程上無法配合完成日,請直接在後台傳訊息告訴我們可提供的時間。— Onyx Studios 製作部',
+        footnote: '若時程上無法配合完成日,請直接在後台傳訊息告訴我們可提供的時間。小提醒:到後台首頁點「綁定 LINE / Telegram」,之後通知即時推送、不漏接。 — Onyx Studios 製作部',
       });
       sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
       notified += 1;

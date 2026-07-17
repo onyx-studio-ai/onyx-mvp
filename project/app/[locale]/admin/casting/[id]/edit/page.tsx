@@ -51,7 +51,7 @@ export default function EditCasting() {
 
   // ── Direct assignment (managed production): pick roles → assign to a talent
   // (existing or invite by email) with a fixed pay-per-role. Admin-only. ──
-  const [talents, setTalents] = useState<{ id: string; name: string; email: string; active?: boolean; no?: number; realNames?: string[] }[]>([]);
+  const [talents, setTalents] = useState<{ id: string; name: string; email: string; active?: boolean; no?: number; realNames?: string[]; reach?: string }[]>([]);
   const [talentQ, setTalentQ] = useState('');   // 指派選人搜尋(名字/編號/信箱/真名)
   const [roleQ, setRoleQ] = useState('');       // 角色卡搜尋(遊戲案 50+ 角用)
   const [roleFilter, setRoleFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
@@ -80,7 +80,7 @@ export default function EditCasting() {
       .then((r) => (r.ok ? r.json() : []))
       .then((all) => setTalents((Array.isArray(all) ? all : [])
         .filter((t: { type?: string; voice_id_status?: string }) => ['VO', 'voice_actor', 'Singer'].includes(t.type || '') && t.voice_id_status !== 'verified')
-        .map((t: { id: string; name?: string; email?: string; is_active?: boolean; talent_no?: number; invite_names?: string[] }) => ({ id: t.id, name: t.name || '(未命名)', email: t.email || '', active: !!t.is_active, no: t.talent_no, realNames: t.invite_names || [] }))
+        .map((t: { id: string; name?: string; email?: string; is_active?: boolean; talent_no?: number; invite_names?: string[]; phone?: string | null; line_user_id?: string | null; telegram_chat_id?: string | null }) => ({ id: t.id, name: t.name || '(未命名)', email: t.email || '', active: !!t.is_active, no: t.talent_no, realNames: t.invite_names || [], reach: [t.line_user_id ? 'LINE' : '', t.telegram_chat_id ? 'TG' : '', t.phone ? '電話' : ''].filter(Boolean).join('/') }))
         .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))))
       .catch(() => {});
   }, []);
@@ -329,8 +329,8 @@ export default function EditCasting() {
                   <span className="text-xs text-gray-600 mb-1 block">配音員(可搜名字/編號/信箱/真名;⭐試音者置頂)</span>
                   {(() => {
                     // 標示格式:名字(T-編號)· 信箱 · 真名 —— 同名(8 個 Ryan)也永遠分得開。
-                    const label = (t: { name: string; email: string; active?: boolean; no?: number; realNames?: string[] }) =>
-                      `${t.name}${t.no ? `(T-${t.no})` : ''} · ${t.email.split('@')[0]}${t.realNames?.length ? ` · 真名:${t.realNames.join('/')}` : ''}${t.active === false ? ' · 未上線' : ''}`;
+                    const label = (t: { name: string; email: string; active?: boolean; no?: number; realNames?: string[]; reach?: string }) =>
+                      `${t.name}${t.no ? `(T-${t.no})` : ''} · ${t.email.split('@')[0]}${t.realNames?.length ? ` · 真名:${t.realNames.join('/')}` : ''}${t.active === false ? ' · 未上線' : ''}${t.reach ? ` · ✓${t.reach}` : ' · ⚠僅email'}`;
                     const hit = (t: { name: string; email: string; no?: number; realNames?: string[] }) => {
                       const q = talentQ.trim().toLowerCase();
                       if (!q) return true;
