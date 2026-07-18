@@ -9,5 +9,7 @@ import LayoutShell from './LayoutShell';
 export const dynamic = 'force-dynamic';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <LayoutShell>{children}</LayoutShell>;
+  // 版本自證:側欄顯示執行中的 commit(除錯「使用者端到底跑哪版」不再用猜的)
+  const buildTag = (process.env.VERCEL_GIT_COMMIT_SHA || 'local').slice(0, 7);
+  return <LayoutShell buildTag={buildTag}>{children}</LayoutShell>;
 }

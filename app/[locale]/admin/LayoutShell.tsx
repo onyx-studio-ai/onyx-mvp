@@ -53,7 +53,7 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children, buildTag }: { children: React.ReactNode; buildTag?: string }) {
   const pathname = usePathname();
   const locale = useLocale();
   const isZhTW = locale === 'zh-TW';
@@ -403,6 +403,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-gray-200">
+          <p className="text-[10px] text-gray-400 px-3 pb-1">v-{buildTag || '?'}</p>
           <button
             onClick={async () => {
               await fetch('/api/admin/auth', { method: 'DELETE' }).catch(() => {});
