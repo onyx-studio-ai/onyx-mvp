@@ -17,6 +17,7 @@ import { useLocale } from 'next-intl';
 import { Check, X, ArrowRight, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGES } from '@/lib/languages';
+import { COUNTRIES } from '@/lib/talent-taxonomy';
 import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
 
 const STEPS = [
@@ -138,7 +139,7 @@ export default function TalentApply() {
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    display_name: '', english_name: '', full_name: '', email: '', phone: '',
+    display_name: '', english_name: '', full_name: '', email: '', phone: '', country: '',
     msg_line: '', msg_whatsapp: '', msg_telegram: '',
     gender: '', age_range: '',
     years_experience: '', turnaround: '',
@@ -273,7 +274,7 @@ export default function TalentApply() {
         english_name: form.english_name,
         email: form.email,
         phone: form.phone,
-        country: '',
+        country: form.country,
         messaging_contacts: { line: form.msg_line, whatsapp: form.msg_whatsapp, telegram: form.msg_telegram },
         gender: form.gender,
         age_range: form.age_range,
@@ -326,6 +327,7 @@ export default function TalentApply() {
       if (!form.display_name || !form.full_name || !form.email) return tx('請填寫顯示名稱、真實姓名與 Email', '请填写显示名称、真实姓名与 Email', 'Please fill in your display name, legal name and email');
       if (!form.phone.trim()) return tx('請填寫聯絡電話(僅供我們聯繫,不公開)', '请填写联系电话(仅供我们联系,不公开)', 'Please provide a contact phone number (private, only for us to reach you)');
       if (!/^\+\d[\d\s\-()]{5,}$/.test(form.phone.trim())) return tx('電話請用國際格式,以 + 和國碼開頭,例:+886 912 345 678(台灣)、+852 9123 4567(香港)', '电话请用国际格式,以 + 和国码开头,例:+886 912 345 678(台湾)、+852 9123 4567(香港)', 'Please use international format starting with + and country code, e.g. +886 912 345 678 (Taiwan), +44 7911 123456 (UK)');
+      if (!form.country) return tx('請選擇所在地', '请选择所在地', 'Please select where you are based');
       if (!emailVerified) return tx('請先完成 Email 驗證', '请先完成 Email 验证', 'Please verify your email first');
     }
     if (s === 1) {
@@ -419,6 +421,11 @@ export default function TalentApply() {
                 {form.phone.trim() !== '' && !form.phone.trim().startsWith('+') && (
                   <p className="text-xs text-amber-300 mt-1">{tx('請在最前面加上「+」和您的國碼,例:台灣 +886、香港 +852(0 開頭的手機號,去掉 0 接在國碼後,如 0912→+886 912)', '请在最前面加上「+」和您的国码,例:台湾 +886、香港 +852(0 开头的手机号,去掉 0 接在国码后,如 0912→+886 912)', 'Add “+” and your country code first — e.g. +1 (US), +44 (UK), +886 (Taiwan). Drop any leading 0 of your local number.')}</p>
                 )}</div>
+              <div className="mt-4"><Label req hint={tx('接案安排與時差溝通用', '接案安排与时差沟通用', 'For scheduling & time zones')}>{tx('所在地', '所在地', 'Where are you based?')}</Label>
+                <select className={inputCls} value={form.country} onChange={(e) => set('country', e.target.value)}>
+                  <option value="">{tx('請選擇國家/地區', '请选择国家/地区', 'Select a country / region')}</option>
+                  {COUNTRIES.map((c) => <option key={c.key} value={c.key}>{isZhCN ? c.cn : isZh ? c.tw : c.en}</option>)}
+                </select></div>
               <div className="mt-4">
                 <Label hint={tx('選填,填任一即可', '选填,填任一即可', 'Optional — any one is fine')}>{tx('通訊軟體 ID', '通讯软体 ID', 'Messaging ID')}</Label>
                 <div className="grid grid-cols-3 gap-2">
