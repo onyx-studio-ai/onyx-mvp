@@ -26,7 +26,7 @@ export async function notifyBriefClosed(
     ]);
     const title = (bf?.title as string) || (bf?.content_type as string) || '配音案件';
     const reasonText = '客戶已定案,這次未採用您的試音。';
-    const bodyText = `【${title}】結案通知:感謝您提交試音。${reasonText}您的表現我們都有紀錄,之後有合適的案件會優先考慮您。— Onyx Studios 製作部`;
+    const bodyText = `【${title}】結案通知:感謝您提交試音。${reasonText}未來有新案件上架,歡迎您隨時試音。— Onyx Studios 製作部`;
     const tids = [...new Set((qs || []).map((q) => q.talent_id as string).filter((t) => t && !exclude.has(t)))];
     if (!tids.length) return;
     const { data: ts } = await db.from('talents').select('id, name, email').in('id', tids);
@@ -37,12 +37,12 @@ export async function notifyBriefClosed(
         const note = plainNoticeEmail({
           subject: `結案通知 — ${title}`, headline: '結案通知', sub: title, cardTitle: '感謝您的試音',
           paragraphs: [`${t.name ? t.name + ' ' : ''}您好,`, `感謝您為「${title}」提交試音。${reasonText}`],
-          footnote: '您的表現我們都有紀錄,之後有合適的案件會優先考慮您。— Onyx Studios 製作部',
+          footnote: '未來有新案件上架,歡迎您隨時試音。— Onyx Studios 製作部',
         });
         sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
       }
-      notifyTalentTelegram(db, t.id as string, `【${title}】結案通知:${reasonText}感謝您的試音,之後有合適案件會優先考慮您。`);
-      notifyTalentLine(db, t.id as string, `【${title}】結案通知:${reasonText}感謝您的試音,之後有合適案件會優先考慮您。`);
+      notifyTalentTelegram(db, t.id as string, `【${title}】結案通知:${reasonText}感謝您的試音,未來有新案件歡迎再來試音。`);
+      notifyTalentLine(db, t.id as string, `【${title}】結案通知:${reasonText}感謝您的試音,未來有新案件歡迎再來試音。`);
     }
   } catch { /* 通知 best-effort */ }
 }
