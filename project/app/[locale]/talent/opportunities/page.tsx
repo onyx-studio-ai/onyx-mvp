@@ -11,7 +11,7 @@
   client-facing auction here. Tri-lingual via the useLocale()+tx() idiom.
 */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import { langLabel } from '@/lib/languages';
 import Link from 'next/link';
@@ -579,6 +579,10 @@ export default function Opportunities() {
   const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
+  // 分頁式看板(Voices 心智模型):待處理=欠的工作;案件機會=可應徵;已結束=歸檔
+  const [tab, setTab] = useState<'todo' | 'open' | 'ended'>('todo');
+  const [jobQ, setJobQ] = useState('');
+  const tabInitRef = useRef(false);
 
   const load = useCallback(async () => {
     const res = await authedFetch('/api/talent/briefs');
@@ -635,11 +639,31 @@ export default function Opportunities() {
         <Link href="/talent" className="text-xs text-gray-300 hover:text-white transition whitespace-nowrap shrink-0 pt-1">{tx('← 我的檔案', '← 我的资料', '← My profile')}</Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-        <StatModule icon={Briefcase} label={tx('開放中', '开放中', 'Open')} value={briefs.length} />
-        <StatModule icon={CheckCircle2} label={tx('我接到的', '我接到的', 'Won')} value={wonBriefs.length} />
-        <StatModule icon={Archive} label={tx('已結束', '已结束', 'Ended')} value={endedBriefs.length} />
-      </div>
+      {(() => {
+        const todoCount = quotes.filter((q) => q.reaudition_requested_at).length
+          + quotes.filter((q) => q.more_demos_requested_at).length
+          + assignedOrders.length + wonBriefs.length;
+        // 首次載入完:有待辦停在「待處理」,沒有就落到「案件機會」
+        if (!tabInitRef.current && phase === 'ready') { tabInitRef.current = true; if (todoCount === 0) setTab('open'); }
+        const tabCls = (t: string) => `text-left rounded-xl transition ring-2 ${tab === t ? 'ring-[#6FCF97]' : 'ring-transparent hover:ring-white/20'}`;
+        return (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+              <button type="button" className={tabCls('todo')} onClick={() => setTab('todo')}>
+                <StatModule icon={CheckCircle2} label={tx('待處理', '待处理', 'To do')} value={todoCount} /></button>
+              <button type="button" className={tabCls('open')} onClick={() => setTab('open')}>
+                <StatModule icon={Briefcase} label={tx('案件機會', '案件机会', 'Open cases')} value={briefs.length} /></button>
+              <button type="button" className={tabCls('ended')} onClick={() => setTab('ended')}>
+                <StatModule icon={Archive} label={tx('已結束', '已结束', 'Ended')} value={endedBriefs.length} /></button>
+            </div>
+            <input value={jobQ} onChange={(e) => setJobQ(e.target.value)}
+              placeholder={tx('搜尋案名 / 角色…', '搜索案名 / 角色…', 'Search cases / roles…')}
+              className="w-full sm:max-w-sm bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#6FCF97]/60 mb-8" />
+          </>
+        );
+      })()}
+
+      <div className={tab === 'todo' ? '' : 'hidden'}>
 
       {(() => {
         const reaudits = quotes.filter((q) => q.reaudition_requested_at);
@@ -689,7 +713,7 @@ export default function Opportunities() {
         <div className="mb-8">
           <h2 className="text-sm font-semibold text-violet-300 mb-3">{tx('我被指派的角色', '我被指派的角色', 'My assigned roles')}</h2>
           <div className="grid grid-cols-1 gap-4">
-            {assignedOrders.map((o) => (
+            {assignedOrders.filter((o) => { const q = jobQ.trim().toLowerCase(); if (!q) return true; return [o.role_name, o.project_name].some((v) => String(v || '').toLowerCase().includes(q)); }).map((o) => (
               <EntityCard key={o.id} icon={Briefcase} accent="violet" code={o.role_name || undefined}
                 title={o.project_name || o.role_name || tx('指派角色', '指派角色', 'Assigned role')}
                 badge={o.status === 'delivered'
@@ -829,6 +853,9 @@ export default function Opportunities() {
         </div>
       )}
 
+      </div>
+
+      <div className={tab === 'ended' ? '' : 'hidden'}>
       {endedBriefs.length > 0 && (
         <div className="mb-8">
           <h2 className="text-sm font-semibold text-gray-300 mb-3">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
@@ -854,16 +881,17 @@ export default function Opportunities() {
         </div>
       )}
 
-      {briefs.length > 0 && (wonBriefs.length > 0 || endedBriefs.length > 0) && (
-        <h2 className="text-sm font-semibold text-white mb-3">{tx('開放中的案件', '开放中的案件', 'Open cases')}</h2>
-      )}
+      {endedBriefs.length === 0 && <p className="text-gray-400 text-sm text-center py-16">{tx('還沒有已結束的紀錄。', '还没有已结束的记录。', 'Nothing here yet.')}</p>}
+      </div>
+
+      <div className={tab === 'open' ? '' : 'hidden'}>
 
       {briefs.length === 0 && wonBriefs.length === 0 && endedBriefs.length === 0 && (
         <p className="text-gray-300 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
       )}
 
       <div className="space-y-3">
-        {briefs.map((b) => (
+        {briefs.filter((b) => { const q = jobQ.trim().toLowerCase(); if (!q) return true; return [b.title, b.brief_number, b.content_type, b.language].some((v) => String(v || '').toLowerCase().includes(q)); }).map((b) => (
           <BriefCard
             key={b.id}
             brief={b}
@@ -878,6 +906,7 @@ export default function Opportunities() {
             onQuoted={(q) => setQuotes((prev) => [q, ...prev])}
           />
         ))}
+      </div>
       </div>
     </>
   );
