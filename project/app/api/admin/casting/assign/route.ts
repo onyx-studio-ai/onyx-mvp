@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail, emailLocaleForTalent } from '@/lib/mail';
+import { mintOnboardingLink } from '@/lib/onboarding';
 import { talentAccountSetupEmail } from '@/lib/mail-templates';
 
 /*
@@ -87,11 +88,9 @@ export async function POST(request: NextRequest) {
     }
     const locale = emailLocaleForTalent('zh-TW', undefined);
     const lp = locale && locale !== 'en' ? `/${locale}` : '';
-    const { data: link } = await db.auth.admin.generateLink({ type: 'recovery', email, options: { redirectTo: `${SITE}${lp}/auth/reset-password` } });
-    // 不給 action_link(GET 即消耗的一次性連結,貼 LINE 會被預覽爬蟲用掉 → 真人點開
-    // 永遠過期)→ 改給自家開通頁,真人按按鈕才兌換 token_hash。
-    const th = link?.properties?.hashed_token;
-    setupUrl = th ? `${SITE}${lp}/auth/activate?th=${encodeURIComponent(th)}` : (link?.properties?.action_link || `${SITE}${lp}/auth/reset-password`);
+    // 平台自控開通碼(30 天、重發沿用不作廢、不被爬蟲消耗)—— 取代 Supabase 一次性
+    // recovery token(會過期、重生作廢;謝依純/佑芷/Ashley 反覆踩)。見 lib/onboarding.ts。
+    setupUrl = await mintOnboardingLink(db, talentId, `${SITE}${lp}`) || `${SITE}${lp}/auth`;
     if (!isPlaceholder) {   // 佔位帳號沒有真信箱,不寄;開通全靠 LINE 丟連結
       const mail = talentAccountSetupEmail({ name: talentName, setupUrl, dashboardUrl: `${SITE}/talent`, locale });
       sendEmail({ category: 'HELLO', to: email, subject: mail.subject, html: mail.html }).catch(() => {});
