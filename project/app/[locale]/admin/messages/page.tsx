@@ -11,7 +11,7 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
-type Thread = { thread_key: string; brief_id: string; talent_id: string; brief_title: string; brief_number: string; talent_name: string; last_body: string; last_at: string; last_sender: string; count: number; unread: boolean };
+type Thread = { thread_key: string; brief_id: string; talent_id: string; brief_title: string; brief_number: string; talent_name: string; last_body: string; last_at: string; last_sender: string; count: number; unread: boolean; blob?: string };
 type Msg = { id: string; sender_type: string; sender_name?: string | null; body: string; attachments?: { name: string; url: string }[] | null; created_at: string };
 
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
@@ -20,6 +20,14 @@ const fmtT = (s: string) => String(s).slice(5, 16).replace('T', ' ');
 export default function AdminMessages() {
   const search = useSearchParams();
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [q, setQ] = useState('');
+  // 人才名冊(搜到還沒對話過的人 → 一鍵開直訊;對話的人會越來越多,Wing 2026-07-18)
+  const [roster, setRoster] = useState<{ id: string; name: string; email?: string }[]>([]);
+  useEffect(() => {
+    fetch('/api/admin/talents', { credentials: 'include' }).then((r) => r.json())
+      .then((j) => setRoster(((j.talents || j) as { id: string; name?: string; email?: string }[]).map((t) => ({ id: t.id, name: t.name || '(未命名)', email: t.email }))))
+      .catch(() => {});
+  }, []);
   const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState<Thread | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -147,9 +155,34 @@ export default function AdminMessages() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 max-w-6xl">
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden self-start">
+          <div className="p-2 border-b border-gray-100">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜名字 / 案名 / 案號 / 訊息內容…"
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-gray-400" />
+          </div>
+          {(() => {
+            const kw = q.trim().toLowerCase();
+            if (!kw) return null;
+            const inThreads = new Set(threads.filter((t) => t.brief_id === 'direct').map((t) => t.talent_id));
+            const hits = roster.filter((r) => !inThreads.has(r.id) && (r.name.toLowerCase().includes(kw) || (r.email || '').toLowerCase().includes(kw))).slice(0, 5);
+            return hits.length ? (
+              <div className="border-b border-gray-100">
+                {hits.map((r) => (
+                  <button key={r.id} onClick={() => { window.location.href = `/admin/messages?talent=${r.id}`; }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-emerald-50 flex items-center justify-between">
+                    <span className="text-gray-800">{r.name}</span>
+                    <span className="text-xs text-emerald-600">開新對話 →</span>
+                  </button>
+                ))}
+              </div>
+            ) : null;
+          })()}
           {!loaded ? <p className="p-4 text-sm text-gray-500">載入中…</p>
             : threads.length === 0 ? <p className="p-4 text-sm text-gray-500">還沒有任何對話。從案件的 💬 或製作管理的訂單卡發第一則即可。</p>
-            : threads.map((t) => (
+            : threads.filter((t) => {
+                const kw = q.trim().toLowerCase();
+                if (!kw) return true;
+                return [t.talent_name, t.brief_title, t.brief_number, t.last_body, t.blob || ''].some((v) => (v || '').toLowerCase().includes(kw));
+              }).map((t) => (
               <button key={t.thread_key} onClick={() => open(t)}
                 className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${active?.thread_key === t.thread_key ? 'bg-green-50' : ''}`}>
                 <div className="flex items-center gap-2">

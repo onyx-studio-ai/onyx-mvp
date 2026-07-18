@@ -18,12 +18,12 @@ export async function GET(request: NextRequest) {
   const { data: msgs } = await db.from('marketplace_messages')
     .select('brief_id, talent_id, sender_type, sender_name, body, created_at')
     .order('created_at', { ascending: false }).limit(2000);
-  const threads = new Map<string, { brief_id: string; talent_id: string; last_body: string; last_at: string; last_sender: string; last_sender_name: string; count: number }>();
+  const threads = new Map<string, { brief_id: string; talent_id: string; last_body: string; last_at: string; last_sender: string; last_sender_name: string; count: number; blob: string }>();
   for (const m of msgs || []) {
     const key = `${m.brief_id || 'direct'}:${m.talent_id}`;
     const t = threads.get(key);
-    if (t) { t.count += 1; continue; }   // 已有最後一則(desc 排序,首見即最新)
-    threads.set(key, { brief_id: m.brief_id ? String(m.brief_id) : 'direct', talent_id: String(m.talent_id), last_body: String(m.body || ''), last_at: String(m.created_at), last_sender: String(m.sender_type), last_sender_name: String(m.sender_name || ''), count: 1 });
+    if (t) { t.count += 1; if (t.blob.length < 3000) t.blob += '\n' + String(m.body || '').slice(0, 300); continue; }   // 已有最後一則(desc 排序,首見即最新)
+    threads.set(key, { brief_id: m.brief_id ? String(m.brief_id) : 'direct', talent_id: String(m.talent_id), last_body: String(m.body || ''), last_at: String(m.created_at), last_sender: String(m.sender_type), last_sender_name: String(m.sender_name || ''), count: 1, blob: String(m.body || '').slice(0, 300) });
   }
 
   const { data: reads } = await db.from('admin_thread_reads').select('thread_key, read_at');
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
   const list = [...threads.entries()].map(([key, t]) => ({
     thread_key: key,
     ...t,
+    blob: t.blob,
     brief_title: t.brief_id === 'direct' ? '平台直訊' : (briefById.get(t.brief_id)?.title || '(案件)'),
     brief_number: t.brief_id === 'direct' ? 'ONYX' : (briefById.get(t.brief_id)?.brief_number || ''),
     talent_name: talentById.get(t.talent_id)?.name || '(配音員)',
