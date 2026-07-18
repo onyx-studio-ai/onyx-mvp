@@ -175,7 +175,7 @@ export default function MessagesView({ embedded = false, filterRole }: { embedde
             className={inputCls}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+            onKeyDown={(e) => { if (!e.nativeEvent.isComposing && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder={tx('輸入訊息…', '输入消息…', 'Type a message…')}
           />
           <button onClick={send} disabled={busy || !draft.trim()} className="shrink-0 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 text-sm transition">

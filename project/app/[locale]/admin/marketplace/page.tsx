@@ -377,7 +377,7 @@ export default function AdminMarketplace() {
                   {editRate?.id === b.id ? (
                     <>
                       <input value={editRate.val} onChange={(e) => setEditRate({ id: b.id, val: e.target.value })} autoFocus
-                        onKeyDown={(e) => { if (e.key === 'Enter') saveRate(b.id, editRate.val); if (e.key === 'Escape') setEditRate(null); }}
+                        onKeyDown={(e) => { if (!e.nativeEvent.isComposing && e.key === 'Enter') saveRate(b.id, editRate.val); if (e.key === 'Escape') setEditRate(null); }}
                         placeholder={t('ratePlaceholder')} className="bg-white border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 w-44" />
                       <button onClick={() => saveRate(b.id, editRate.val)} className="text-xs bg-green-600 hover:bg-green-500 text-white rounded px-2.5 py-1">{t('save')}</button>
                       <button onClick={() => setEditRate(null)} className="text-xs text-gray-500 hover:text-gray-700">{t('cancel')}</button>
@@ -710,7 +710,7 @@ function AdminThread({ briefId, talentId }: { briefId: string; talentId: string 
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (!e.nativeEvent.isComposing && e.key === 'Enter') {
               e.preventDefault();
               send();
             }

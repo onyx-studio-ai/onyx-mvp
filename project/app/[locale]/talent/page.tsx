@@ -589,7 +589,7 @@ export default function TalentDashboard() {
             ))}
           </div>
           <div className="flex gap-2 mb-5">
-            <input className={inputCls} value={traitCustom} onChange={(e) => setTraitCustom(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom('voice_traits', traitCustom); } }} placeholder={tx('其他特質,例如:沙啞、童聲', '其他特质,例如:沙哑、童声', 'Other trait, e.g. Raspy, Childlike')} />
+            <input className={inputCls} value={traitCustom} onChange={(e) => setTraitCustom(e.target.value)} onKeyDown={(e) => { if (!e.nativeEvent.isComposing && e.key === 'Enter') { e.preventDefault(); addCustom('voice_traits', traitCustom); } }} placeholder={tx('其他特質,例如:沙啞、童聲', '其他特质,例如:沙哑、童声', 'Other trait, e.g. Raspy, Childlike')} />
             <button type="button" onClick={() => addCustom('voice_traits', traitCustom)} className="shrink-0 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-4 transition">{tx('加入', '加入', 'Add')}</button>
           </div>
 
@@ -604,7 +604,7 @@ export default function TalentDashboard() {
             ))}
           </div>
           <div className="flex gap-2">
-            <input className={inputCls} value={specCustom} onChange={(e) => setSpecCustom(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom('specialties', specCustom); } }} placeholder={tx('其他專長,例如:ASMR、有聲漫畫', '其他专长,例如:ASMR、有声漫画', 'Other specialty, e.g. ASMR')} />
+            <input className={inputCls} value={specCustom} onChange={(e) => setSpecCustom(e.target.value)} onKeyDown={(e) => { if (!e.nativeEvent.isComposing && e.key === 'Enter') { e.preventDefault(); addCustom('specialties', specCustom); } }} placeholder={tx('其他專長,例如:ASMR、有聲漫畫', '其他专长,例如:ASMR、有声漫画', 'Other specialty, e.g. ASMR')} />
             <button type="button" onClick={() => addCustom('specialties', specCustom)} className="shrink-0 text-sm bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-4 transition">{tx('加入', '加入', 'Add')}</button>
           </div>
         </div>

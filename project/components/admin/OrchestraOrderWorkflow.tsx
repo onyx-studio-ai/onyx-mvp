@@ -320,7 +320,7 @@ export default function OrchestraOrderWorkflow({ order, onRefresh }: OrchestraOr
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+              onKeyDown={(e) => !e.nativeEvent.isComposing && e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
               placeholder="Type a message to the client..."
               className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-amber-500/40"
             />

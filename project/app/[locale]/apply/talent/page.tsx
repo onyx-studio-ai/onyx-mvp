@@ -485,7 +485,7 @@ export default function TalentApply() {
                   {feels.filter((f) => !FEELS.some((o) => o.v === f)).map((f) => <Chip key={f} active onClick={() => setFeels(feels.filter((x) => x !== f))}>{f} <X className="w-3 h-3" /></Chip>)}
                 </div>
                 <input className={inputCls} value={feelQ} onChange={(e) => setFeelQ(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const v = feelQ.trim(); if (v && !feels.includes(v)) setFeels([...feels, v]); setFeelQ(''); } }}
+                  onKeyDown={(e) => { if (!e.nativeEvent.isComposing && e.key === 'Enter') { e.preventDefault(); const v = feelQ.trim(); if (v && !feels.includes(v)) setFeels([...feels, v]); setFeelQ(''); } }}
                   placeholder={tx('其他?自己打,按 Enter 新增', '其他?自己打,按 Enter 新增', 'Other? Type it and press Enter')} />
               </div>
             </div>

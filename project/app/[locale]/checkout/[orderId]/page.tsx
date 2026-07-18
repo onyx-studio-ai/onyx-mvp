@@ -778,7 +778,7 @@ export default function CheckoutPage() {
                         type="text"
                         value={promoInput}
                         onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoState('idle'); }}
-                        onKeyDown={e => e.key === 'Enter' && applyPromo()}
+                        onKeyDown={e => !e.nativeEvent.isComposing && e.key === 'Enter' && applyPromo()}
                         placeholder={t('promoPlaceholder')}
                         className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50"
                       />

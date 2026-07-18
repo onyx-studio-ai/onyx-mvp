@@ -89,7 +89,7 @@ export default function CastingJoin() {
           <label className="block mb-3">
             <span className="text-xs text-gray-400 mb-1 block">Email *</span>
             <input className={cls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
-              onKeyDown={(e) => { if (e.key === 'Enter') go(); }} />
+              onKeyDown={(e) => { if (!e.nativeEvent.isComposing && e.key === 'Enter') go(); }} />
           </label>
           {err && <p className="text-red-400 text-xs mb-2">{err}</p>}
           <button onClick={go} disabled={busy} className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2.5 text-sm">

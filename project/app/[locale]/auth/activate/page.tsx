@@ -92,7 +92,7 @@ function ActivateInner() {
                 <p className="text-gray-400 text-sm leading-relaxed">{tx('請為', '请为', 'Set a password for')} <span className="text-white">{otName || otEmail}</span> {tx('設定登入密碼:', '设置登录密码:', '')}</p>
                 <input type="password" className={inputCls} value={pw} onChange={(e) => setPw(e.target.value)} placeholder={tx('新密碼(至少 8 個字)', '新密码(至少 8 个字)', 'New password (min 8 chars)')} autoComplete="new-password" />
                 <input type="password" className={inputCls} value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder={tx('再輸入一次', '再输入一次', 'Confirm password')} autoComplete="new-password"
-                  onKeyDown={(e) => { if (e.key === 'Enter') setPassword(); }} />
+                  onKeyDown={(e) => { if (!e.nativeEvent.isComposing && e.key === 'Enter') setPassword(); }} />
                 <button onClick={setPassword} disabled={busy}
                   className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg text-sm inline-flex items-center justify-center gap-2">
                   {busy && <Loader2 className="w-4 h-4 animate-spin" />}

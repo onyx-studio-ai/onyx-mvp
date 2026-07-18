@@ -699,7 +699,7 @@ export default function OrchestraOrderDetailPage() {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                  onKeyDown={(e) => !e.nativeEvent.isComposing && e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                   placeholder={t('typeMessage')}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-amber-500/40"
                 />
