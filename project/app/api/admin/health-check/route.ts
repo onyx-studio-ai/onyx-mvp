@@ -92,6 +92,10 @@ export async function GET(request: NextRequest) {
       && !(t as { telegram_chat_id?: string | null }).telegram_chat_id).map((t) => t.name);
     if (unreachable.length) info.push(`聯絡黑洞(無電話且未綁 LINE/Telegram,只剩 email):${cap(unreachable)}`);
 
+    // C6. C2PA 合規金鑰載入狀態(AI 標示,EU 死線 2026-08-02)
+    if (!process.env.C2PA_CERT_PEM || !process.env.C2PA_KEY_PEM) warn.push('C2PA 簽署金鑰未載入(C2PA_CERT_PEM/C2PA_KEY_PEM)—— AI 交付物只剩 fal 原生標記,無 Onyx 簽章');
+    else info.push('C2PA 金鑰已載入 ✓');
+
     const noGender = ts.filter((t) => t.is_active && isVO(t) && !isAI(t) && !String(t.gender || '').trim()).map((t) => t.name);
     if (noGender.length) info.push(`上線但沒填性別:${cap(noGender)}`);
 
