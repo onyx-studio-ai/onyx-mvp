@@ -65,7 +65,8 @@ export async function PATCH(request: NextRequest) {
       const patch: Record<string, unknown> = { status, updated_at: now };
       if (['open', 'reviewing', 'cancelled'].includes(status)) patch.awarded_quote_id = null;
       // 結案理由(Wing 2026-07-18:投過的人要有交代)。有值才帶欄位,migration 前不擋。
-      const closeReason = ['not_awarded', 'client_cancelled', 'other'].includes(String(body.close_reason)) ? String(body.close_reason) : null;
+      // no_auditions=零試音的未成案;decided=有試音但未採用(配音員端一律顯示「已定案」)
+      const closeReason = ['no_auditions', 'decided', 'other'].includes(String(body.close_reason)) ? String(body.close_reason) : null;
       if (['closed', 'cancelled'].includes(status) && closeReason) patch.close_reason = closeReason;
       const { error } = await db.from('marketplace_briefs').update(patch).eq('id', id);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -78,10 +79,9 @@ export async function PATCH(request: NextRequest) {
             db.from('marketplace_quotes').select('talent_id').eq('brief_id', id).in('status', ['submitted', 'shortlisted']),
           ]);
           const title = (bf?.title as string) || (bf?.content_type as string) || '配音案件';
-          const reasonText = closeReason === 'client_cancelled' || status === 'cancelled'
-            ? '因客戶端計畫變更,本案已結束。'
-            : '本案最終未進入製作。';
-          const bodyText = `【${title}】結案通知:您好,感謝您為本案提交試音。${reasonText}您的表現我們都有紀錄,之後有合適的案件會優先考慮您。期待下次合作!— Onyx Studios 製作部`;
+          // Wing 拍板:對配音員統一「已定案」口徑,不提取消/未成案(真實理由只在後台)。
+          const reasonText = '本案已定案,這次未採用您的試音。';
+          const bodyText = `【${title}】結案通知:感謝您提交試音。${reasonText}您的表現我們都有紀錄,之後有合適的案件會優先考慮您。— Onyx Studios 製作部`;
           const tids = [...new Set((qs || []).map((q) => q.talent_id as string).filter(Boolean))];
           if (tids.length) {
             const { data: ts } = await db.from('talents').select('id, name, email').in('id', tids);
@@ -92,7 +92,7 @@ export async function PATCH(request: NextRequest) {
                 const note = plainNoticeEmail({
                   subject: `結案通知 — ${title}`, headline: '結案通知', sub: title, cardTitle: '感謝您的試音',
                   paragraphs: [`${t.name ? t.name + ' ' : ''}您好,`, `感謝您為「${title}」提交試音。${reasonText}`],
-                  footnote: '您的表現我們都有紀錄,之後有合適的案件會優先考慮您。期待下次合作!— Onyx Studios 製作部',
+                  footnote: '您的表現我們都有紀錄,之後有合適的案件會優先考慮您。— Onyx Studios 製作部',
                 });
                 sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
               }

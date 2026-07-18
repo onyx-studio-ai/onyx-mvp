@@ -861,14 +861,10 @@ export default function Opportunities() {
           <h2 className="text-sm font-semibold text-gray-300 mb-3">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {endedBriefs.map((e) => {
-              // Voices 式短標籤(Wing 2026-07-18:別囉嗦,標籤就好)
-              const label = e.close_reason === 'not_awarded'
-                ? tx('未成案', '未成案', 'Not filled')
-                : (e.close_reason === 'client_cancelled' || e.status === 'cancelled')
-                  ? tx('已取消', '已取消', 'Cancelled')
-                  : e.status === 'awarded'
-                    ? tx('已定案', '已定案', 'Awarded')
-                    : tx('已結束', '已结束', 'Closed');
+              // Wing 2026-07-18 拍板:配音員端一律「已定案」—— 取消/未成案不外顯
+              // (投過的人看到「取消」會失落;「已定案」= 客戶有結果了,可能選了其他來源)。
+              // 真實理由只存後台 close_reason。
+              const label = tx('已定案', '已定案', 'Decided');
               return (
                 <EntityCard
                   key={e.id}

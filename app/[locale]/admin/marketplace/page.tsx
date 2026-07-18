@@ -214,7 +214,7 @@ export default function AdminMarketplace() {
 
   // 結案對話框:選理由+通知投遞者(Voices 式標籤,防「投了沒下文」觀感)
   const [closeFor, setCloseFor] = useState<{ id: string; status: string; quoteCount: number } | null>(null);
-  const [closeReason, setCloseReason] = useState<'not_awarded' | 'client_cancelled' | 'other'>('not_awarded');
+  const [closeReason, setCloseReason] = useState<'no_auditions' | 'decided' | 'other'>('decided');
   const [closeNotify, setCloseNotify] = useState(true);
   const [closeBusy, setCloseBusy] = useState(false);
   async function confirmClose() {
@@ -230,7 +230,7 @@ export default function AdminMarketplace() {
   async function patch(kind: 'brief' | 'quote', id: string, status: string) {
     // 關閉/取消 brief → 走結案對話框;其他狀態照舊直改
     if (kind === 'brief' && (status === 'closed' || status === 'cancelled')) {
-      setCloseReason(status === 'cancelled' ? 'client_cancelled' : 'not_awarded');
+      setCloseReason(quotesFor(id).length === 0 ? 'no_auditions' : 'decided');
       setCloseNotify(true);
       setCloseFor({ id, status, quoteCount: quotesFor(id).length });
       return;
@@ -570,9 +570,10 @@ export default function AdminMarketplace() {
       {closeFor && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setCloseFor(null)}>
           <div className="bg-white rounded-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <p className="font-semibold text-sm mb-3">{closeFor.status === 'cancelled' ? '取消案件' : '結束案件'}</p>
+            <p className="font-semibold text-sm mb-1">{closeFor.status === 'cancelled' ? '取消案件' : '結束案件'}</p>
+            <p className="text-xs text-gray-400 mb-3">理由只記在後台;配音員端一律顯示「已定案」。</p>
             <div className="space-y-1.5 mb-3">
-              {([['not_awarded', '未成案(客戶沒選人)'], ['client_cancelled', '客戶取消'], ['other', '其他']] as const).map(([v, l]) => (
+              {([['no_auditions', '未成案(沒有任何試音)'], ['decided', '已定案(有試音,客戶未採用/另有安排)'], ['other', '其他']] as const).map(([v, l]) => (
                 <label key={v} className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
                   <input type="radio" name="closeReason" checked={closeReason === v} onChange={() => setCloseReason(v)} className="accent-gray-900" />
                   <span>{l}</span>
