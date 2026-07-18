@@ -97,7 +97,8 @@ export async function GET(request: NextRequest) {
     else {
       try {
         const { LocalSigner } = await import('@contentauth/c2pa-node');
-        LocalSigner.newSigner(Buffer.from(process.env.C2PA_CERT_PEM), Buffer.from(process.env.C2PA_KEY_PEM), 'es256');
+        const { normalizePem } = await import('@/lib/c2pa');
+        LocalSigner.newSigner(Buffer.from(normalizePem(process.env.C2PA_CERT_PEM)!), Buffer.from(normalizePem(process.env.C2PA_KEY_PEM)!), 'es256');
         info.push('C2PA 金鑰+模組+簽章器全通 ✓');
       } catch (e) {
         warn.push(`C2PA 簽署在此環境不可用:${e instanceof Error ? e.message.slice(0, 200) : e}`);

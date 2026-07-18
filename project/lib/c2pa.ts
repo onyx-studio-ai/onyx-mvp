@@ -10,9 +10,25 @@ import 'server-only';
   浮水印層(AudioSeal)為 fast-follow,另案。
 */
 
+/** 修復被貼進單行輸入框而失去換行的 PEM(Vercel env 常見):
+ *  支援三種毀損:字面 \n、CRLF、完全單行(BEGIN/END 黏在 base64 上)。 */
+export function normalizePem(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  let s = raw.replace(/\\n/g, '\n').replace(/\r/g, '').trim();
+  if (s.includes('\n')) return s;
+  // 單行:把每個 -----BEGIN X-----base64-----END X----- 拆回多行、base64 每 64 字換行
+  const blocks = [...s.matchAll(/-----BEGIN ([A-Z0-9 ]+)-----\s*([A-Za-z0-9+/=\s]+?)\s*-----END \1-----/g)];
+  if (!blocks.length) return s;
+  return blocks.map(([, label, body]) => {
+    const b64 = body.replace(/\s+/g, '');
+    const wrapped = b64.match(/.{1,64}/g)?.join('\n') || b64;
+    return `-----BEGIN ${label}-----\n${wrapped}\n-----END ${label}-----`;
+  }).join('\n');
+}
+
 export async function markAiAudio(buf: Buffer, mimeType = 'audio/mpeg'): Promise<Buffer> {
-  const certPem = process.env.C2PA_CERT_PEM;
-  const keyPem = process.env.C2PA_KEY_PEM;
+  const certPem = normalizePem(process.env.C2PA_CERT_PEM);
+  const keyPem = normalizePem(process.env.C2PA_KEY_PEM);
   if (!certPem || !keyPem) return buf;   // 金鑰未設 → 原樣通過(先上程式後補 env 不會壞)
   try {
     // 動態載入:原生模組很重,只在真的要簽時才載
