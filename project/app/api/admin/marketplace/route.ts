@@ -3,6 +3,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { requireAdmin, requireAdminOnly } from '@/app/api/admin/_utils/requireAdmin';
 import { sendEmail } from '@/lib/mail';
 import { castingAwardedTalentEmail, castingAwardedClientEmail } from '@/lib/mail-templates';
+import { notifyBriefClosed } from '@/lib/brief-close';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
 
@@ -62,8 +63,17 @@ export async function PATCH(request: NextRequest) {
       // Reopening/cancelling clears the stale award pointer so it can't linger.
       const patch: Record<string, unknown> = { status, updated_at: now };
       if (['open', 'reviewing', 'cancelled'].includes(status)) patch.awarded_quote_id = null;
+      // 結案理由(Wing 2026-07-18:投過的人要有交代)。有值才帶欄位,migration 前不擋。
+      // no_auditions=零試音的未成案;decided=有試音但未採用(配音員端一律顯示「已定案」)
+      const closeReason = ['no_auditions', 'decided', 'other'].includes(String(body.close_reason)) ? String(body.close_reason) : null;
+      if (['closed', 'cancelled'].includes(status) && closeReason) patch.close_reason = closeReason;
       const { error } = await db.from('marketplace_briefs').update(patch).eq('id', id);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // 結案一鍵通知(共用 lib/brief-close;口徑統一「客戶已定案」,理由只記後台)
+      if (['closed', 'cancelled'].includes(status) && body.notify_talents !== false) {
+        await notifyBriefClosed(db, id);
+      }
       return NextResponse.json({ ok: true });
     }
 

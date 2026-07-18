@@ -375,7 +375,7 @@ function TalentProfileCard({ t, locale }: { t: TalentProfile; locale: string }) 
         )}
         <div className="min-w-0">
           <p className="font-semibold text-gray-900">{t.name}{(t as TalentProfile & { talent_no?: number }).talent_no ? <span className="text-gray-400 font-normal text-xs"> T-{(t as TalentProfile & { talent_no?: number }).talent_no}</span> : null}{t.english_name ? <span className="text-gray-400 font-normal"> · {t.english_name}</span> : null}{((t as TalentProfile).invite_names || []).length ? <span className="text-gray-400 font-normal text-xs"> (真名:{((t as TalentProfile).invite_names || []).join('、')})</span> : null}</p>
-          <p className="text-xs text-gray-500">{[t.gender, t.location ? countryLabel(t.location, locale) : '', typeof t.years_experience === 'number' ? tr('cardYearsExperience', { years: t.years_experience }) : ''].filter(Boolean).join(' · ') || '—'}</p>
+          <p className="text-xs text-gray-500">{[t.gender, ((t as TalentProfile & { country?: string }).country || t.location) ? countryLabel(((t as TalentProfile & { country?: string }).country || t.location) as string, locale) : '', typeof t.years_experience === 'number' ? tr('cardYearsExperience', { years: t.years_experience }) : ''].filter(Boolean).join(' · ') || '—'}</p>
           {t.email && <p className="text-xs text-gray-500 truncate">{tr('cardContact')}<a href={`mailto:${t.email}`} className="text-blue-600 hover:underline">{t.email}</a></p>}
           <p className="text-xs text-gray-500 flex flex-wrap gap-x-2 gap-y-0.5 items-center">
             {(t as TalentProfile & { phone?: string | null }).phone

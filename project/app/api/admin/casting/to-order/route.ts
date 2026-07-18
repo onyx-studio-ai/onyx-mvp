@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { createOrderFromAward } from '@/lib/casting-to-order';
+import { notifyBriefClosed } from '@/lib/brief-close';
 
 /*
   POST /api/admin/casting/to-order — turn an AWARDED casting brief into a production
@@ -69,7 +70,9 @@ export async function POST(request: NextRequest) {
   const awardedRoles = new Set((accepted || []).map((qq) => qq.role_name).filter(Boolean));
   const allCast = briefRoles.length === 0 || briefRoles.every((rn) => awardedRoles.has(rn));
   if (allCast) {
-    await db.from('marketplace_briefs').update({ status: 'closed', updated_at: new Date().toISOString() }).eq('id', briefId);
+    await db.from('marketplace_briefs').update({ status: 'closed', close_reason: 'decided', updated_at: new Date().toISOString() }).eq('id', briefId);
+    // 一鍵通知未中選者「客戶已定案」(中選者另收採用通知,排除)—— Wing 2026-07-18
+    await notifyBriefClosed(db, briefId, { excludeTalentIds: (accepted || []).map((qq) => qq.talent_id as string).filter(Boolean) });
   }
 
   return NextResponse.json({ ok: true, order_number: created[0].order_number, id: created[0].id, count: created.length, closed: allCast });

@@ -25,6 +25,13 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         ],
       },
+      // 後台/配音員頁殼禁止 CDN+瀏覽器快取(2026-07-18 根因:Vercel CDN 對 admin 頁
+      // 殼留了部署前的舊版,Wing 連無痕都拿到舊 JS,新功能永遠看不到)。
+      // 只擋 HTML 殼;chunks 本身帶 hash 不受影響,對外行銷頁照常快取。
+      ...['/:locale/admin/:path*', '/:locale/admin', '/:locale/talent/:path*', '/:locale/talent', '/:locale/dashboard/:path*', '/:locale/dashboard'].map((source) => ({
+        source,
+        headers: [{ key: 'Cache-Control', value: 'no-store, must-revalidate' }],
+      })),
     ];
   },
   typescript: {

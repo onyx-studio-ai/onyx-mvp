@@ -575,7 +575,7 @@ export default function Opportunities() {
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
-  const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string }[]>([]);
+  const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
   const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
@@ -861,11 +861,10 @@ export default function Opportunities() {
           <h2 className="text-sm font-semibold text-gray-300 mb-3">{tx('我應徵過 · 已結束', '我应征过 · 已结束', 'Auditioned · ended')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {endedBriefs.map((e) => {
-              const label = e.status === 'cancelled'
-                ? tx('此案已取消', '此案已取消', 'Cancelled')
-                : e.status === 'awarded'
-                  ? tx('已選定其他配音員', '已选定其他配音员', 'Another talent was chosen')
-                  : tx('此案已結束', '此案已结束', 'Closed');
+              // Wing 2026-07-18 拍板:配音員端一律「已定案」—— 取消/未成案不外顯
+              // (投過的人看到「取消」會失落;「已定案」= 客戶有結果了,可能選了其他來源)。
+              // 真實理由只存後台 close_reason。
+              const label = tx('已定案', '已定案', 'Decided');
               return (
                 <EntityCard
                   key={e.id}
@@ -1189,7 +1188,9 @@ function CaseHeader({
             {isCasting && auditionCount > 0 && <span className="text-[#E4CB94]">{tx(`${auditionCount} 人已試`, `${auditionCount} 人已试`, `${auditionCount} auditioned`)}</span>}
             {!isCasting && brief.budget && <span className="text-gray-300">{tx('預算', '预算', 'Budget')} {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
             {due && (auditionClosed(brief)
-              ? <span className="text-red-300 font-medium">{tx('已截止', '已截止', 'Closed')}</span>
+              ? (hasMine
+                  ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30 font-medium">{tx('決選中', '决选中', 'Deciding')}</span>
+                  : <span className="text-gray-400 font-medium">{tx('已截止', '已截止', 'Closed')}</span>)
               : <span className="text-amber-300/80">{tx('截止', '截止', 'Due')} {due}</span>)}
           </div>
         </div>
@@ -1216,7 +1217,7 @@ function auditionClosed(brief: Brief): boolean {
 function ClosedNotice({ tx }: { tx: (tw: string, cn: string, en: string) => string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-gray-300">
-      {tx('這個案子的試音已截止,以下動作已停用。', '这个案子的试音已截止,以下动作已停用。', 'Auditions for this case have closed — the actions below are disabled.')}
+      {tx('試音已截止,客戶決選中,有結果會通知您。', '试音已截止,客户决选中,有结果会通知您。', 'Auditions closed — client deciding. We\'ll notify you.')}
     </div>
   );
 }

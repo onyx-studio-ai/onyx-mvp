@@ -14,9 +14,10 @@
 
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
-import { Check, X, Plus, ArrowRight, Upload } from 'lucide-react';
+import { Check, X, ArrowRight, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGES } from '@/lib/languages';
+import { COUNTRIES } from '@/lib/talent-taxonomy';
 import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
 
 const STEPS = [
@@ -138,7 +139,7 @@ export default function TalentApply() {
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    display_name: '', english_name: '', full_name: '', email: '', phone: '',
+    display_name: '', english_name: '', full_name: '', email: '', phone: '', country: '',
     msg_line: '', msg_whatsapp: '', msg_telegram: '',
     gender: '', age_range: '',
     years_experience: '', turnaround: '',
@@ -228,8 +229,8 @@ export default function TalentApply() {
     setA(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
   const trimmed = q.trim();
-  const matches = trimmed ? LANG_OPTIONS.filter((o) => !langs.includes(o.v) && lbl(o).includes(trimmed)) : [];
-  const canAddCustom = !!trimmed && !LANG_OPTIONS.some((o) => lbl(o) === trimmed) && !langs.includes(trimmed);
+  // 三語標籤全比對(sara 案:簡中用戶搜「普通话」在英文語系下搜不到 → 誤走自訂)
+  const matches = trimmed ? LANG_OPTIONS.filter((o) => !langs.includes(o.v) && [o.v, o.tw, o.cn].some((l) => l && l.toLowerCase().includes(trimmed.toLowerCase()))) : [];
   const addLang = (v: string) => { if (!langs.includes(v)) setLangs([...langs, v]); setQ(''); };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,7 +274,7 @@ export default function TalentApply() {
         english_name: form.english_name,
         email: form.email,
         phone: form.phone,
-        country: '',
+        country: form.country,
         messaging_contacts: { line: form.msg_line, whatsapp: form.msg_whatsapp, telegram: form.msg_telegram },
         gender: form.gender,
         age_range: form.age_range,
@@ -326,6 +327,7 @@ export default function TalentApply() {
       if (!form.display_name || !form.full_name || !form.email) return tx('請填寫顯示名稱、真實姓名與 Email', '请填写显示名称、真实姓名与 Email', 'Please fill in your display name, legal name and email');
       if (!form.phone.trim()) return tx('請填寫聯絡電話(僅供我們聯繫,不公開)', '请填写联系电话(仅供我们联系,不公开)', 'Please provide a contact phone number (private, only for us to reach you)');
       if (!/^\+\d[\d\s\-()]{5,}$/.test(form.phone.trim())) return tx('電話請用國際格式,以 + 和國碼開頭,例:+886 912 345 678(台灣)、+852 9123 4567(香港)', '电话请用国际格式,以 + 和国码开头,例:+886 912 345 678(台湾)、+852 9123 4567(香港)', 'Please use international format starting with + and country code, e.g. +886 912 345 678 (Taiwan), +44 7911 123456 (UK)');
+      if (!form.country) return tx('請選擇所在地', '请选择所在地', 'Please select where you are based');
       if (!emailVerified) return tx('請先完成 Email 驗證', '请先完成 Email 验证', 'Please verify your email first');
     }
     if (s === 1) {
@@ -419,6 +421,11 @@ export default function TalentApply() {
                 {form.phone.trim() !== '' && !form.phone.trim().startsWith('+') && (
                   <p className="text-xs text-amber-300 mt-1">{tx('請在最前面加上「+」和您的國碼,例:台灣 +886、香港 +852(0 開頭的手機號,去掉 0 接在國碼後,如 0912→+886 912)', '请在最前面加上「+」和您的国码,例:台湾 +886、香港 +852(0 开头的手机号,去掉 0 接在国码后,如 0912→+886 912)', 'Add “+” and your country code first — e.g. +1 (US), +44 (UK), +886 (Taiwan). Drop any leading 0 of your local number.')}</p>
                 )}</div>
+              <div className="mt-4"><Label req hint={tx('接案安排與時差溝通用', '接案安排与时差沟通用', 'For scheduling & time zones')}>{tx('所在地', '所在地', 'Where are you based?')}</Label>
+                <select className={inputCls} value={form.country} onChange={(e) => set('country', e.target.value)}>
+                  <option value="">{tx('請選擇國家/地區', '请选择国家/地区', 'Select a country / region')}</option>
+                  {COUNTRIES.map((c) => <option key={c.key} value={c.key}>{isZhCN ? c.cn : isZh ? c.tw : c.en}</option>)}
+                </select></div>
               <div className="mt-4">
                 <Label hint={tx('選填,填任一即可', '选填,填任一即可', 'Optional — any one is fine')}>{tx('通訊軟體 ID', '通讯软体 ID', 'Messaging ID')}</Label>
                 <div className="grid grid-cols-3 gap-2">
@@ -460,14 +467,13 @@ export default function TalentApply() {
                   </select></div>
               </div>
               <div className="mt-4">
-                <Label req hint={tx('至少 1 項;可搜尋或自訂', '至少 1 项;可搜寻或自订', 'At least 1; search or add your own')}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</Label>
+                <Label req hint={tx('至少 1 項;輸入關鍵字搜尋', '至少 1 项;输入关键字搜寻', 'At least 1; type to search')}>{tx('可配語言與口音', '可配语言与口音', 'Languages & accents')}</Label>
                 <div className="mb-2">{langs.map((v) => (<Chip key={v} active onClick={() => setLangs(langs.filter((x) => x !== v))}>{langLabel(v)} <X className="w-3 h-3" /></Chip>))}</div>
                 <input className={inputCls} value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx('搜尋語言或口音…', '搜寻语言或口音…', 'Search a language or accent…')} />
                 {trimmed && (
                   <div className="mt-1.5 border border-zinc-700 rounded-lg p-1 bg-zinc-900">
                     {matches.map((m) => (<button key={m.v} type="button" onClick={() => addLang(m.v)} className="block w-full text-left px-2.5 py-1.5 text-sm text-gray-200 rounded-md hover:bg-zinc-800">{lbl(m)}</button>))}
-                    {canAddCustom && (<button type="button" onClick={() => addLang(trimmed)} className="block w-full text-left px-2.5 py-1.5 text-sm text-amber-300 rounded-md hover:bg-zinc-800"><Plus className="w-3.5 h-3.5 inline -mt-0.5" /> {tx('新增', '新增', 'Add')}「{trimmed}」</button>)}
-                    {matches.length === 0 && !canAddCustom && <p className="px-2.5 py-1.5 text-sm text-gray-500">{tx('換個關鍵字', '换个关键字', 'Try another keyword')}</p>}
+                    {matches.length === 0 && <p className="px-2.5 py-1.5 text-sm text-gray-500">{tx('換個關鍵字,一次搜一種語言', '换个关键字,一次搜一种语言', 'Try another keyword — search one language at a time')}</p>}
                   </div>
                 )}
               </div>

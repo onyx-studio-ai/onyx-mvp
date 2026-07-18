@@ -87,6 +87,17 @@ export async function POST(request: NextRequest) {
     };
 
     const db = getServiceClient();
+
+    // 同名雙帳號治本(茹芸/葉元元/Amy 案):這個 email 已是平台配音員(通常是先被
+    // 邀請試音建過帳號)→ 擋下再建,導去登入/設密碼,不產生第二個帳號。
+    const { data: existingTalent } = await db.from('talents').select('id, name').eq('email', email).maybeSingle();
+    if (existingTalent) {
+      const msg = locale?.startsWith('zh')
+        ? '這個 Email 已經有 Onyx 配音員帳號了(可能是我們先前邀請您試音時建立的)。請直接前往登入;若還沒設過密碼,在登入頁點「忘記密碼」即可設定。資料要更新請來信 hello@onyxstudios.ai。'
+        : 'This email already has an Onyx talent account (possibly created when we invited you to audition). Please sign in directly — if you haven\'t set a password yet, use "Forgot password" on the sign-in page. To update your details, email hello@onyxstudios.ai.';
+      return NextResponse.json({ error: msg, duplicate: true }, { status: 409 });
+    }
+
     const { data, error } = await db
       .from('talent_applications')
       .insert(payload)

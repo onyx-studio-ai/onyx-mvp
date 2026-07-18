@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     let endedBriefs: unknown[] = [];
     if (endedIds.length) {
       const { data: eb } = await r.db.from('marketplace_briefs')
-        .select('id, brief_number, kind, title, content_type, status')
+        .select('id, brief_number, kind, title, content_type, status, close_reason')
         .in('id', endedIds);
       endedBriefs = eb || [];
     }
