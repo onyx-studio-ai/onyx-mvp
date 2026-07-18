@@ -149,6 +149,8 @@ export interface GenerateInput {
   modelSize?: '0.6B' | '1.7B';
   /** sampling temperature; 0.7 = Wing-picked sweet spot (clear + lively). */
   temperature?: number;
+  /** 計帳歸屬(Phase 1 用量計帳,2026-07-18):voiceKey=平台聲音 key;orderId 之後接單流程帶 */
+  meta?: { voiceKey?: string; talentId?: string; purpose?: string; orderId?: string };
 }
 export interface GenerateResult {
   audioUrl: string;
@@ -185,6 +187,25 @@ export async function createSpeakerEmbedding(audioUrl: string, refText: string):
 }
 
 /** Generate speech. Throws TtsError on any failure (caller maps to HTTP). */
+/** AI 生成用量計帳(Phase 1 地基,2026-07-18)。fire-and-forget:計帳失敗絕不擋生成。
+ *  成本以 fal Qwen3 1.7B 官方價 $0.09/1000 字計;0.6B 未查得官方價,先同價保守高估。 */
+function logGeneration(input: GenerateInput, result: GenerateResult): void {
+  (async () => {
+    const { getSupabaseServiceClient } = await import('@/lib/supabase-server');
+    const db = getSupabaseServiceClient();
+    await db.from('ai_generations').insert({
+      talent_id: input.meta?.talentId || null,
+      voice_key: input.meta?.voiceKey || input.voice || 'unknown',
+      language: input.language,
+      chars: result.charsBilled,
+      engine: `${result.engine}-${input.modelSize || '1.7B'}`,
+      purpose: input.meta?.purpose || (result.preview ? 'preview' : 'deliverable'),
+      order_id: input.meta?.orderId || null,
+      cost_usd: Math.round(result.charsBilled * 0.09) / 1000,
+    });
+  })().catch((e) => console.error('[ai-usage] 計帳失敗(不擋生成):', e instanceof Error ? e.message : e));
+}
+
 export async function generateVoice(input: GenerateInput): Promise<GenerateResult> {
   const text = (input.text || '').trim();
   if (!text) throw new TtsError('Empty text', 'bad_input');
@@ -235,11 +256,11 @@ export async function generateVoice(input: GenerateInput): Promise<GenerateResul
   if (full.length <= MAX_CHUNK_CHARS) {
     const falUrl = await callFal(full);
     if (input.preview) {
-      return { audioUrl: falUrl, engine, language: input.language, preview: true, charsBilled: full.length, chunks: 1 };
+      { const __r: GenerateResult = { audioUrl: falUrl, engine, language: input.language, preview: true, charsBilled: full.length, chunks: 1 }; logGeneration(input, __r); return __r; }
     }
     const buf = Buffer.from(await (await fetch(falUrl)).arrayBuffer());
     const audioUrl = await uploadDeliverable(buf);
-    return { audioUrl, engine, language: input.language, preview: false, charsBilled: full.length, chunks: 1 };
+    { const __r: GenerateResult = { audioUrl, engine, language: input.language, preview: false, charsBilled: full.length, chunks: 1 }; logGeneration(input, __r); return __r; }
   }
 
   // Long script: sentence-boundary chunks → bounded-concurrency fal calls → ordered
@@ -256,5 +277,5 @@ export async function generateVoice(input: GenerateInput): Promise<GenerateResul
   };
   await Promise.all(Array.from({ length: Math.min(CHUNK_CONCURRENCY, parts.length) }, worker));
   const audioUrl = await uploadDeliverable(Buffer.concat(bufs));
-  return { audioUrl, engine, language: input.language, preview: false, charsBilled: full.length, chunks: parts.length };
+  { const __r: GenerateResult = { audioUrl, engine, language: input.language, preview: false, charsBilled: full.length, chunks: parts.length }; logGeneration(input, __r); return __r; }
 }

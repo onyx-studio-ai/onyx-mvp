@@ -18,7 +18,13 @@ const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-
 const TONE_LABEL: Record<string, string> = { professional: '專業 Professional', energetic: '活力 Energetic', soothing: '舒緩 Soothing', trailer: '預告片 Trailer', friendly: '親切 Friendly' };
 const AUTH_MSG = '後台登入已逾時 —— 請重新整理頁面並重新登入,再試一次。';
 
+type Usage = { month: string; total: { count: number; chars: number; cost_usd: number }; by_voice: { voice_key: string; count: number; chars: number; cost: number }[] };
+
 export default function AiVoicesPage() {
+  const [usage, setUsage] = useState<Usage | null>(null);
+  useEffect(() => {
+    fetch('/api/admin/ai-usage', { credentials: 'include' }).then((r) => r.json()).then(setUsage).catch(() => {});
+  }, []);
   const [rows, setRows] = useState<VoiceRow[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [talents, setTalents] = useState<Talent[]>([]);
@@ -121,6 +127,26 @@ export default function AiVoicesPage() {
   return (
     <div className="p-6 lg:p-10 max-w-5xl text-gray-900">
       <h1 className="text-xl font-semibold mb-1">AI 聲音</h1>
+      {usage && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 mt-4">
+          <p className="font-medium text-sm mb-2">本月生成用量({usage.month})— 分潤地基:配音員 25% / 平台 75%</p>
+          <div className="flex flex-wrap gap-6 text-sm mb-3">
+            <span>生成 <b>{usage.total.count}</b> 次</span>
+            <span>共 <b>{usage.total.chars.toLocaleString()}</b> 字</span>
+            <span>引擎成本 <b>US${usage.total.cost_usd}</b></span>
+          </div>
+          {usage.by_voice.length > 0 && (
+            <table className="w-full text-xs text-left">
+              <thead><tr className="text-gray-400 border-b border-gray-100"><th className="py-1">聲音</th><th>次數</th><th>字數</th><th>引擎成本</th></tr></thead>
+              <tbody>{usage.by_voice.map((v) => (
+                <tr key={v.voice_key} className="border-b border-gray-50">
+                  <td className="py-1 font-medium text-gray-800">{v.voice_key}</td><td>{v.count}</td><td>{v.chars.toLocaleString()}</td><td>US${v.cost}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          )}
+        </div>
+      )}
       <p className="text-gray-500 text-sm mb-6">配音員錄音 → 自動逐字稿(務必逐字核對)→ 建立聲音 → 試聽 → 上架。一顆聲音服務十種語言;clone 一次約 NT$0.3,生成約 NT$3/千字。</p>
 
       {/* ── 建立新聲音 ── */}

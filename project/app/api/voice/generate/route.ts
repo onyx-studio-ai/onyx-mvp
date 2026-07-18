@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       preview: !!body.preview,
       modelSize: body.modelSize === '0.6B' ? '0.6B' : '1.7B',
       temperature: toneTemperature,
+      meta: { voiceKey: body.voiceId ? String(body.voiceId) : (body.voice ? String(body.voice) : undefined) },
     });
     // resolvedTone tells the caller which register actually played — may differ from
     // the requested tone if the talent hasn't recorded it (fell back to default).
