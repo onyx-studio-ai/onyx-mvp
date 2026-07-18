@@ -7,6 +7,7 @@
 */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -17,6 +18,7 @@ const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-
 const fmtT = (s: string) => String(s).slice(5, 16).replace('T', ' ');
 
 export default function AdminMessages() {
+  const search = useSearchParams();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState<Thread | null>(null);
@@ -69,7 +71,15 @@ export default function AdminMessages() {
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/messages-inbox', { credentials: 'include' });
     const j = await res.json().catch(() => ({}));
-    setThreads(j.threads || []);
+    let list: Thread[] = j.threads || [];
+    // ?talent=<id>:從人才管理「傳訊息」進來 —— 還沒有任何訊息也要先開一條直訊串
+    const wantTalent = search?.get('talent');
+    if (wantTalent && !list.some((t: Thread) => t.brief_id === 'direct' && t.talent_id === wantTalent)) {
+      const tr = await fetch('/api/admin/talents', { credentials: 'include' }).then((r) => r.json()).catch(() => ({}));
+      const name = (tr.talents || tr || []).find?.((x: { id: string; name?: string }) => x.id === wantTalent)?.name || '配音員';
+      list = [{ thread_key: `direct:${wantTalent}`, brief_id: 'direct', talent_id: wantTalent, brief_title: '平台直訊', brief_number: 'ONYX', talent_name: name, last_body: '', last_at: new Date().toISOString(), last_sender: 'admin', count: 0, unread: false }, ...list];
+    }
+    setThreads(list);
     setLoaded(true);
   }, []);
   useEffect(() => { load(); }, [load]);

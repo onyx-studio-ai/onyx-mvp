@@ -27,7 +27,14 @@ export async function GET(request: NextRequest) {
       // 第三來源:這串裡已經有訊息(admin 可對任何 brief+talent 開串;沒單沒報價
       // 的對象也要看得到、能回 —— 否則收到通知點進來卻是空的)。
       const { data: msged } = await c.db.from('marketplace_messages').select('brief_id').eq('talent_id', c.talentId).limit(500);
-      const ids = [...new Set([...(quotes || []), ...(assigned || []), ...(msged || [])].map((q) => q.brief_id))];
+      // 平台直訊(brief_id=null):Onyx 直接找人,不掛案件也要有對話串(Udaya 案)
+      if ((msged || []).some((m) => !m.brief_id)) {
+        threads.push({
+          key: `direct:${c.talentId}:talent`, brief_id: 'direct', talent_id: c.talentId, role: 'talent',
+          brief_number: 'ONYX', title: '平台訊息 · Onyx Studios', brief_status: 'open', counterpart: 'Onyx Studios',
+        });
+      }
+      const ids = [...new Set([...(quotes || []), ...(assigned || []), ...(msged || [])].map((q) => q.brief_id).filter(Boolean))];
       if (ids.length) {
         const { data: briefs } = await c.db
           .from('marketplace_briefs')

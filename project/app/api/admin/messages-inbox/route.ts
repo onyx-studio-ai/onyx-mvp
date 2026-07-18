@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false }).limit(2000);
   const threads = new Map<string, { brief_id: string; talent_id: string; last_body: string; last_at: string; last_sender: string; last_sender_name: string; count: number }>();
   for (const m of msgs || []) {
-    const key = `${m.brief_id}:${m.talent_id}`;
+    const key = `${m.brief_id || 'direct'}:${m.talent_id}`;
     const t = threads.get(key);
     if (t) { t.count += 1; continue; }   // 已有最後一則(desc 排序,首見即最新)
-    threads.set(key, { brief_id: String(m.brief_id), talent_id: String(m.talent_id), last_body: String(m.body || ''), last_at: String(m.created_at), last_sender: String(m.sender_type), last_sender_name: String(m.sender_name || ''), count: 1 });
+    threads.set(key, { brief_id: m.brief_id ? String(m.brief_id) : 'direct', talent_id: String(m.talent_id), last_body: String(m.body || ''), last_at: String(m.created_at), last_sender: String(m.sender_type), last_sender_name: String(m.sender_name || ''), count: 1 });
   }
 
   const { data: reads } = await db.from('admin_thread_reads').select('thread_key, read_at');
@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
   const list = [...threads.entries()].map(([key, t]) => ({
     thread_key: key,
     ...t,
-    brief_title: briefById.get(t.brief_id)?.title || '(案件)',
-    brief_number: briefById.get(t.brief_id)?.brief_number || '',
+    brief_title: t.brief_id === 'direct' ? '平台直訊' : (briefById.get(t.brief_id)?.title || '(案件)'),
+    brief_number: t.brief_id === 'direct' ? 'ONYX' : (briefById.get(t.brief_id)?.brief_number || ''),
     talent_name: talentById.get(t.talent_id)?.name || '(配音員)',
     // 未讀 = 最後一則不是我們發的,且晚於已讀時間
     unread: t.last_sender !== 'admin' && (!readAt.has(key) || t.last_at > readAt.get(key)!),

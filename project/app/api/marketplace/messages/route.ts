@@ -24,14 +24,19 @@ export async function GET(request: NextRequest) {
   if (!briefId || !talentId) return NextResponse.json({ error: 'brief_id and talent_id are required' }, { status: 400 });
 
   try {
-    const role = await threadRole(c, briefId, talentId);
+    // 'direct' = 平台直訊(Onyx ↔ 配音員,不掛案件;brief_id=null)。權限=本人。
+    const isDirect = briefId === 'direct';
+    const role = isDirect
+      ? (c.talentId === talentId ? ('talent' as const) : null)
+      : await threadRole(c, briefId, talentId);
     if (!role) return NextResponse.json({ error: 'Not a participant in this thread' }, { status: 403 });
 
-    const { data: messages } = await c.db
+    let qy = c.db
       .from('marketplace_messages')
       .select('id, sender_type, sender_name, body, attachments, created_at')
-      .eq('brief_id', briefId)
-      .eq('talent_id', talentId)
+      .eq('talent_id', talentId);
+    qy = isDirect ? qy.is('brief_id', null) : qy.eq('brief_id', briefId);
+    const { data: messages } = await qy
       .order('created_at', { ascending: true })
       .limit(500);
 
@@ -52,18 +57,23 @@ export async function POST(request: NextRequest) {
     if (!briefId || !talentId) return NextResponse.json({ error: 'brief_id and talent_id are required' }, { status: 400 });
     if (!raw) return NextResponse.json({ error: 'Message cannot be empty' }, { status: 400 });
 
-    const role = await threadRole(c, briefId, talentId);
+    const isDirect = briefId === 'direct';
+    const role = isDirect
+      ? (c.talentId === talentId ? ('talent' as const) : null)
+      : await threadRole(c, briefId, talentId);
     if (!role) return NextResponse.json({ error: 'Not a participant in this thread' }, { status: 403 });
 
     // Sender display name + the counterpart to notify.
-    const { data: brief } = await c.db
-      .from('marketplace_briefs')
-      .select('brief_number, client_name, client_email, locale')
-      .eq('id', briefId)
-      .maybeSingle();
+    const { data: brief } = isDirect
+      ? { data: null }
+      : await c.db
+          .from('marketplace_briefs')
+          .select('brief_number, client_name, client_email, locale')
+          .eq('id', briefId)
+          .maybeSingle();
     const { data: talent } = await c.db.from('talents').select('name, email').eq('id', talentId).maybeSingle();
-    // 平台自發案(對話對象是 Onyx 自己,如女王百貨的指派/補錄溝通)
-    const isPlatformBrief = (brief?.client_email || '') === 'casting@onyxstudios.ai';
+    // 平台自發案(對話對象是 Onyx 自己,如女王百貨的指派/補錄溝通);直訊對象也是 Onyx
+    const isPlatformBrief = isDirect || (brief?.client_email || '') === 'casting@onyxstudios.ai';
 
     // Block off-platform contact details outright (Wing: 即時擋下不送出 — no routing
     // around Onyx). The client + talent may only message once the job is awarded.
@@ -77,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     const { data: msg, error } = await c.db
       .from('marketplace_messages')
-      .insert({ brief_id: briefId, talent_id: talentId, sender_type: role, sender_user_id: c.userId, sender_name: senderName, body })
+      .insert({ brief_id: isDirect ? null : briefId, talent_id: talentId, sender_type: role, sender_user_id: c.userId, sender_name: senderName, body })
       .select('id, sender_type, sender_name, body, created_at')
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

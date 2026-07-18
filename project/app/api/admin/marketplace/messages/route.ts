@@ -21,11 +21,13 @@ export async function GET(request: NextRequest) {
   if (!briefId || !talentId) return NextResponse.json({ error: 'brief_id and talent_id are required' }, { status: 400 });
   try {
     const db = getSupabaseServiceClient();
-    const { data } = await db
+    // 'direct' = 平台直訊(不掛案件,brief_id 為 null;Wing 2026-07-18:沒接過案的人也要能溝通)
+    let qy = db
       .from('marketplace_messages')
       .select('id, sender_type, sender_name, body, attachments, created_at')
-      .eq('brief_id', briefId)
-      .eq('talent_id', talentId)
+      .eq('talent_id', talentId);
+    qy = briefId === 'direct' ? qy.is('brief_id', null) : qy.eq('brief_id', briefId);
+    const { data } = await qy
       .order('created_at', { ascending: true })
       .limit(500);
     return NextResponse.json({ messages: data || [] });
@@ -49,10 +51,11 @@ export async function POST(request: NextRequest) {
       .map((a: { name?: unknown; url?: unknown }) => ({ name: String(a?.name || '檔案').slice(0, 120), url: String(a?.url || '') }))
       .filter((a) => a.url.startsWith(STORE_PREFIX) && !BLOCKED_EXT.test(a.url));
     if (!briefId || !talentId || (!body && !attachments.length)) return NextResponse.json({ error: 'brief_id, talent_id and body are required' }, { status: 400 });
+    const isDirect = briefId === 'direct';
     const { data, error } = await db
       .from('marketplace_messages')
       // 有附件才帶欄位 —— migration(attachments 欄)沒跑之前,純文字訊息照常能發。
-      .insert({ brief_id: briefId, talent_id: talentId, sender_type: 'admin', sender_name: 'Onyx', body: body || '(附件)', ...(attachments.length ? { attachments } : {}) })
+      .insert({ brief_id: isDirect ? null : briefId, talent_id: talentId, sender_type: 'admin', sender_name: 'Onyx', body: body || '(附件)', ...(attachments.length ? { attachments } : {}) })
       .select('id, sender_type, sender_name, body, attachments, created_at')
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -61,9 +64,9 @@ export async function POST(request: NextRequest) {
     try {
       const [{ data: t }, { data: b }] = await Promise.all([
         db.from('talents').select('email, name').eq('id', talentId).maybeSingle(),
-        db.from('marketplace_briefs').select('title').eq('id', briefId).maybeSingle(),
+        isDirect ? Promise.resolve({ data: null }) : db.from('marketplace_briefs').select('title').eq('id', briefId).maybeSingle(),
       ]);
-      const title = (b?.title as string) || '配音案件';
+      const title = isDirect ? 'Onyx 平台訊息' : ((b?.title as string) || '配音案件');
       const email = String(t?.email || '');
       if (email && !email.endsWith('@invite.onyxstudios.ai')) {
         const note = plainNoticeEmail({
