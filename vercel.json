@@ -1,0 +1,17 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/health-check",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/delivery-reminders",
+      "schedule": "0 22 * * *"
+    }
+  ],
+  "build": {
+    "env": {
+      "VERCEL_FORCE_NO_BUILD_CACHE": "1"
+    }
+  }
+}
