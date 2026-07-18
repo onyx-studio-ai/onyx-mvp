@@ -4,6 +4,8 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // C2PA 原生模組(neon binary)不能被 bundler 打包,必須留在 node_modules 由 runtime 載入
+  serverExternalPackages: ['@contentauth/c2pa-node'],
   turbopack: {
     root: __dirname,
   },

@@ -115,9 +115,13 @@ async function uploadDeliverable(mp3: Buffer): Promise<string> {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!url || !key) throw new TtsError('Supabase not configured for long-text stitching', 'upstream');
   const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  // AI 標示合規(EU Art 50(2)):正式交付物在此共同出口嵌 C2PA manifest(lib/c2pa.ts;
+  // env 未設或簽署失敗都安靜回原檔,不擋交付)。Wing 2026-07-18 拍板:只蓋正式交付物。
+  const { markAiAudio } = await import('@/lib/c2pa');
+  const marked = await markAiAudio(mp3);
   await sb.storage.createBucket('tts-audio', { public: true }).catch(() => {}); // idempotent
   const path = `long/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.mp3`;
-  const { error } = await sb.storage.from('tts-audio').upload(path, mp3, { contentType: 'audio/mpeg' });
+  const { error } = await sb.storage.from('tts-audio').upload(path, marked, { contentType: 'audio/mpeg' });
   if (error) throw new TtsError(`storage upload failed: ${error.message}`, 'upstream');
   return sb.storage.from('tts-audio').getPublicUrl(path).data.publicUrl;
 }
@@ -225,10 +229,17 @@ export async function generateVoice(input: GenerateInput): Promise<GenerateResul
     return data.audio.url;
   };
 
-  // Short text (and every preview): single call, return fal's URL directly — unchanged path.
+  // Preview: single call, return fal's URL directly — unchanged path.
+  // 短文本「非 preview」= 正式交付物 → 一樣導進 uploadDeliverable(嵌 C2PA + 永久保存;
+  // fal URL 是暫時的,本就不該當交付物連結)。
   if (full.length <= MAX_CHUNK_CHARS) {
-    const audioUrl = await callFal(full);
-    return { audioUrl, engine, language: input.language, preview: !!input.preview, charsBilled: full.length, chunks: 1 };
+    const falUrl = await callFal(full);
+    if (input.preview) {
+      return { audioUrl: falUrl, engine, language: input.language, preview: true, charsBilled: full.length, chunks: 1 };
+    }
+    const buf = Buffer.from(await (await fetch(falUrl)).arrayBuffer());
+    const audioUrl = await uploadDeliverable(buf);
+    return { audioUrl, engine, language: input.language, preview: false, charsBilled: full.length, chunks: 1 };
   }
 
   // Long script: sentence-boundary chunks → bounded-concurrency fal calls → ordered
