@@ -439,6 +439,30 @@ export default function AdminMarketplace() {
                     → {STATUS_ACTION[s] || s}
                   </button>
                 ))}
+              {closeFor?.id === b.id && (
+                <div className="w-full border border-gray-300 bg-gray-50 rounded-lg p-3 text-sm">
+                  <p className="font-medium text-gray-900 mb-0.5">{closeFor.status === 'cancelled' ? '取消案件' : '結束案件'}</p>
+                  <p className="text-xs text-gray-400 mb-2">理由只記在後台;配音員端一律顯示「已定案」。</p>
+                  <div className="space-y-1 mb-2">
+                    {([['no_auditions', '未成案(沒有任何試音)'], ['decided', '已定案(有試音,客戶未採用/另有安排)'], ['other', '其他']] as const).map(([v, l]) => (
+                      <label key={v} className="flex items-center gap-2 text-gray-800 cursor-pointer">
+                        <input type="radio" name={`closeReason-${b.id}`} checked={closeReason === v} onChange={() => setCloseReason(v)} className="accent-gray-900" />
+                        <span>{l}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {closeFor.quoteCount > 0 && (
+                    <label className="flex items-center gap-2 text-gray-800 mb-3 cursor-pointer">
+                      <input type="checkbox" checked={closeNotify} onChange={(e) => setCloseNotify(e.target.checked)} className="accent-gray-900" />
+                      通知 {closeFor.quoteCount} 位投遞者(站內+信+LINE/TG)
+                    </label>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={confirmClose} disabled={closeBusy} className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-50">{closeBusy ? '處理中…' : '確認結案'}</button>
+                    <button onClick={() => setCloseFor(null)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100">取消</button>
+                  </div>
+                </div>
+              )}
               <button onClick={() => cloneCase(b)} className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-lg px-2.5 py-1 transition" title={t('cloneCaseTitle')}>{t('cloneCase')}</button>
             </div>
 
@@ -567,32 +591,6 @@ export default function AdminMarketplace() {
         </div>
       )}
 
-      {closeFor && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setCloseFor(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <p className="font-semibold text-sm mb-1">{closeFor.status === 'cancelled' ? '取消案件' : '結束案件'}</p>
-            <p className="text-xs text-gray-400 mb-3">理由只記在後台;配音員端一律顯示「已定案」。</p>
-            <div className="space-y-1.5 mb-3">
-              {([['no_auditions', '未成案(沒有任何試音)'], ['decided', '已定案(有試音,客戶未採用/另有安排)'], ['other', '其他']] as const).map(([v, l]) => (
-                <label key={v} className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
-                  <input type="radio" name="closeReason" checked={closeReason === v} onChange={() => setCloseReason(v)} className="accent-gray-900" />
-                  <span>{l}</span>
-                </label>
-              ))}
-            </div>
-            {closeFor.quoteCount > 0 && (
-              <label className="flex items-center gap-2 text-sm text-gray-800 mb-4 cursor-pointer">
-                <input type="checkbox" checked={closeNotify} onChange={(e) => setCloseNotify(e.target.checked)} className="accent-gray-900" />
-                通知 {closeFor.quoteCount} 位投遞者(站內+信+LINE/TG)
-              </label>
-            )}
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setCloseFor(null)} className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100">取消</button>
-              <button onClick={confirmClose} disabled={closeBusy} className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-50">{closeBusy ? '處理中…' : '確認'}</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
