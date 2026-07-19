@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
   if (b.action === 'test') {
     const id = String(b.id || '');
     const text = String(b.text || '').slice(0, 200) || '您好,這是聲音試聽,感謝您使用 Onyx Studios。';
-    const { data: row } = await db.from('talent_voice_embeddings').select('embedding_url, ref_text, temperature').eq('id', id).maybeSingle();
+    const { data: row } = await db.from('talent_voice_embeddings').select('embedding_url, ref_text, temperature, voice_key, talent_id').eq('id', id).maybeSingle();
     if (!row) return NextResponse.json({ error: '找不到這個聲音' }, { status: 404 });
     try {
       const result = await generateVoice({
@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
         embeddingUrl: row.embedding_url, refText: row.ref_text,
         preview: true, modelSize: '1.7B',
         temperature: row.temperature != null ? Number(row.temperature) : undefined,
+        meta: { voiceKey: (row as { voice_key?: string }).voice_key || id, talentId: (row as { talent_id?: string }).talent_id || undefined, purpose: 'admin-test' },
       });
       return NextResponse.json(result);
     } catch (err) {
