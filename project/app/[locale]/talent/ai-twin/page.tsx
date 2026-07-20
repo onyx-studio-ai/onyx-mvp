@@ -68,6 +68,7 @@ export default function AiTwinPage() {
   const [proofreader, setProofreader] = useState(false);
   const [proofLangs, setProofLangs] = useState<string[]>([]);
   const [otherLang, setOtherLang] = useState('');
+  const [showRates, setShowRates] = useState(false);
   const [agree, setAgree] = useState(false);
   const [sig, setSig] = useState('');
   const [busy, setBusy] = useState(false);
@@ -167,7 +168,23 @@ export default function AiTwinPage() {
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={ads} onChange={(e) => setAds(e.target.checked)} className="accent-emerald-500" />廣告投放(付費媒體,永久全通路)— 分潤機會較高</label>
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={crossLingual} onChange={(e) => setCrossLingual(e.target.checked)} className="accent-emerald-500" />跨語言生成(您的聲音講英/日/韓/歐語)</label>
             <div className="border-t border-white/5 pt-3">
-              <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={proofreader} onChange={(e) => setProofreader(e.target.checked)} className="accent-emerald-500" />我也願意接「AI 校對」兼職(聽 AI 音檔標錯句,按音檔分鐘計酬)</label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={proofreader} onChange={(e) => setProofreader(e.target.checked)} className="accent-emerald-500" />我也願意接「AI 校對」兼職(聽 AI 音檔標錯句,按音檔分鐘計酬)
+                <button type="button" onClick={(e) => { e.preventDefault(); setShowRates(!showRates); }} className="text-xs text-emerald-300 hover:underline">{showRates ? '收合報酬 ▴' : '查看報酬 ▾'}</button>
+              </label>
+              {showRates && (
+                <div className="text-xs text-gray-300 bg-black/30 border border-white/5 rounded-lg p-3 mt-1">
+                  <table className="w-full">
+                    <tbody>
+                      <tr><td className="py-0.5">中文</td><td className="text-right">US$0.30 / 音檔分鐘</td></tr>
+                      <tr><td className="py-0.5">English</td><td className="text-right">US$0.35 / 音檔分鐘</td></tr>
+                      <tr><td className="py-0.5">日本語・한국어</td><td className="text-right">US$0.45 / 音檔分鐘</td></tr>
+                      <tr><td className="py-0.5">歐語(西/葡/法/德/義/俄)</td><td className="text-right">US$0.40 / 音檔分鐘</td></tr>
+                      <tr><td className="py-0.5 text-gray-500">其他語言</td><td className="text-right text-gray-500">依語種另議,送出後與您確認</td></tr>
+                    </tbody>
+                  </table>
+                  <p className="text-gray-500 mt-2">每件保底:中文 US$3、其他語言 US$5。工作內容:對照文稿聽 AI 音檔、標記錯讀句,不需錄音。</p>
+                </div>
+              )}
               {proofreader && (
                 <>
                   <div className="flex flex-wrap gap-1.5 mt-2">
