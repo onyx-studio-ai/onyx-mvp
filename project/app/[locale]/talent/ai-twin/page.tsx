@@ -42,8 +42,13 @@ async function checkWav(file: File): Promise<string | null> {
     if (id === 'fmt ') {
       const rate = dv.getUint32(off + 12, true);
       const bits = dv.getUint16(off + 22, true);
+      const byteRate = dv.getUint32(off + 16, true);
       if (rate !== 48000) return `採樣率是 ${rate}Hz,需要 48000Hz(48kHz)。請重新匯出。`;
       if (bits !== 24) return `位深是 ${bits}bit,需要 24bit。請重新匯出。`;
+      // 時長檢查(2026-07-20 研究線定案:引擎硬牆 30 秒,超過可能靜默劣化;建議 15–20 秒)
+      const secs = byteRate > 0 ? file.size / byteRate : 0;
+      if (secs > 30) return `這段約 ${Math.round(secs)} 秒——引擎上限是 30 秒,請剪成 15–20 秒的段落再上傳。`;
+      if (secs > 0 && secs < 8) return `這段只有約 ${Math.round(secs)} 秒,太短帶不出語氣——請錄 15–20 秒。`;
       return null;
     }
     off += 8 + size + (size % 2);
@@ -141,7 +146,7 @@ export default function AiTwinPage() {
   return (
     <main className="min-h-screen bg-[#050505] text-white px-4 md:px-8 py-10 max-w-3xl mx-auto">
       <div className="flex items-center gap-2 mb-1"><Sparkles className="w-5 h-5 text-emerald-400" /><h1 className="text-2xl font-semibold" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>AI 聲音分身計畫</h1></div>
-      <p className="text-sm text-gray-400 mb-8">錄一組語氣參考音,建立您的 AI 聲音分身。客戶每次使用,您分得牌價的 25% —— 後台逐筆可查的被動收入。您隨時可以喊停。</p>
+      <p className="text-sm text-gray-400 mb-8">錄一組語氣參考音(每段 15–20 秒),建立您的 AI 聲音分身。客戶每次使用,您分得牌價的 25% —— 後台逐筆可查的被動收入。您隨時可以喊停。</p>
 
       {!signed && (
         <>
@@ -200,7 +205,7 @@ export default function AiTwinPage() {
           </div>
 
           <p className="font-medium mb-1">語氣參考錄音</p>
-          <p className="text-xs text-gray-400 mb-4">每段 30–60 秒,安靜無回音空間+宅錄設備,<b className="text-gray-200">只收 WAV 48kHz/24bit</b>(上傳時自動檢查)。至少完成「專業」一段即可送審,其餘可陸續補;「中英夾雜」與「English」兩段建議加錄,能讓您的 AI 聲音在英文單字、縮寫與跨語言內容上表現更穩。</p>
+          <p className="text-xs text-gray-400 mb-4">每段 15–20 秒(上限 30 秒,超過引擎會出問題),安靜無回音空間+宅錄設備,<b className="text-gray-200">只收 WAV 48kHz/24bit</b>(上傳時自動檢查)。至少完成「專業」一段即可送審,其餘可陸續補;「中英夾雜」與「English」兩段建議加錄,能讓您的 AI 聲音在英文單字、縮寫與跨語言內容上表現更穩。</p>
           <div className="space-y-4">
             {TONES.map((t) => {
               const done = en!.samples?.find((s) => s.tone === t.tone);
