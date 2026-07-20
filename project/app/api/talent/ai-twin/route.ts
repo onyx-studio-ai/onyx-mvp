@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { aiTwinVisible } from '@/lib/ai-twin';
+import { createHash } from 'crypto';
+import { CONTRACT_EN, CONTRACT_ZH, CONTRACT_VERSION } from '@/lib/ai-twin-contract';
+import { sendEmail } from '@/lib/mail';
+import { plainNoticeEmail } from '@/lib/mail-templates';
 
 /*
   AI 聲音分身計畫 — 配音員端(Phase 2,內測閘門見 lib/ai-twin)。
@@ -31,17 +35,53 @@ export async function POST(request: NextRequest) {
     proofreader: !!b.scopes?.proofreader,
     proof_langs: Array.isArray(b.scopes?.proof_langs) ? b.scopes!.proof_langs!.slice(0, 10).map(String) : [],
   };
+  // 簽署證據鏈:IP/UA/合約版本/全文雜湊(可歸屬性+完整性;欄位未 migration 前自動略過)
+  const contractHash = createHash('sha256').update(CONTRACT_EN + CONTRACT_VERSION).digest('hex');
+  const signatureMeta = {
+    version: CONTRACT_VERSION,
+    contract_sha256: contractHash,
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+    user_agent: (request.headers.get('user-agent') || '').slice(0, 250),
+    signed_at: new Date().toISOString(),
+  };
   const { data: existing } = await r.db.from('ai_twin_enrollments').select('id, status').eq('talent_id', r.talent.id).maybeSingle();
   if (existing) {
-    const { error } = await r.db.from('ai_twin_enrollments')
-      .update({ scopes, signature_name: sig, signed_at: new Date().toISOString(), status: 'submitted', updated_at: new Date().toISOString() })
+    let { error } = await r.db.from('ai_twin_enrollments')
+      .update({ scopes, signature_name: sig, signed_at: new Date().toISOString(), status: 'submitted', updated_at: new Date().toISOString(), signature_meta: signatureMeta })
       .eq('id', existing.id);
+    if (error && /signature_meta/.test(error.message)) {
+      ({ error } = await r.db.from('ai_twin_enrollments')
+        .update({ scopes, signature_name: sig, signed_at: new Date().toISOString(), status: 'submitted', updated_at: new Date().toISOString() })
+        .eq('id', existing.id));
+    }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   } else {
-    const { error } = await r.db.from('ai_twin_enrollments')
-      .insert({ talent_id: r.talent.id, scopes, signature_name: sig, signed_at: new Date().toISOString(), status: 'submitted' });
+    let { error } = await r.db.from('ai_twin_enrollments')
+      .insert({ talent_id: r.talent.id, scopes, signature_name: sig, signed_at: new Date().toISOString(), status: 'submitted', signature_meta: signatureMeta });
+    if (error && /signature_meta/.test(error.message)) {
+      ({ error } = await r.db.from('ai_twin_enrollments')
+        .insert({ talent_id: r.talent.id, scopes, signature_name: sig, signed_at: new Date().toISOString(), status: 'submitted' }));
+    }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  // 合約副本信(法律留痕:簽了什麼、何時、指紋)
+  try {
+    const email = String(r.talent.email || '');
+    if (email && !email.endsWith('@invite.onyxstudios.ai')) {
+      const note = plainNoticeEmail({
+        subject: `您的 AI 聲音授權合約副本(${CONTRACT_VERSION})`,
+        headline: '合約簽署完成', sub: 'AI 聲音分身計畫', cardTitle: '簽署紀錄',
+        paragraphs: [
+          `${sig} 您好,您已完成 AI 聲音授權合約之電子簽署。`,
+          `版本:${CONTRACT_VERSION} · 簽署時間:${new Date().toISOString()} · 文件指紋:${contractHash.slice(0, 16)}…`,
+          '以下為合約中文對照全文(英文正本可隨時於後台查看):',
+        ],
+        quote: CONTRACT_ZH.slice(0, 5000),
+        ctaText: '前往後台', ctaUrl: 'https://www.onyxstudios.ai/zh-TW/talent/ai-twin',
+      });
+      sendEmail({ category: 'HELLO', to: email, subject: note.subject, html: note.html }).catch(() => {});
+    }
+  } catch { /* 副本信 best-effort */ }
   return NextResponse.json({ ok: true });
 }
 
