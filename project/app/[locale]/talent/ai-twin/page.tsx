@@ -13,11 +13,13 @@ import { CONTRACT_EN, CONTRACT_ZH, CONTRACT_VERSION } from '@/lib/ai-twin-contra
 import { Loader2, CheckCircle2, UploadCloud, Trash2, Sparkles } from 'lucide-react';
 
 const TONES = [
-  { tone: 'Professional', label: '專業 Professional', script: '歡迎了解我們的服務。自 2008 年成立以來,我們已為超過 1,500 位客戶,提供橫跨 40 個國家的專業方案。您可能會問:品質如何確保?答案是三層審核,加上為期 12 個月的完整保固。我們相信,長期的信任,來自每一次準確的交付。' },
-  { tone: 'Energetic', label: '活力 Energetic', script: '準備好了嗎?年度最大檔期終於開跑!全館 5 折起,滿 3,000 再送 500!你沒聽錯,只有 72 小時!新品、經典款、限量聯名,一次到齊。還在等什麼?現在就出發,錯過再等一年!' },
-  { tone: 'Friendly', label: '親切 Friendly', script: '嘿,好久不見,最近過得怎麼樣?我上週去了一趟花蓮,天氣好得不得了。對了,你上次說想學做菜,後來有開始嗎?其實我也想試試看,不然我們約個週末,一起研究幾道簡單的家常菜,你覺得如何?' },
-  { tone: 'Soothing', label: '舒緩 Soothing', script: '現在,請慢慢閉上眼睛,深深吸一口氣,再緩緩地吐出來。感受肩膀一點一點放鬆下來。今天辛苦了。無論發生什麼,此刻都可以先放下。讓呼吸帶著你,回到安靜的地方,好好休息。' },
-  { tone: 'Trailer', label: '預告片 Trailer', script: '在一個被遺忘的城市,沉睡著一個千年的秘密。當黑夜降臨,誰能阻止命運的齒輪?他,是最後的守望者。這個冬天,見證傳奇的誕生——《暗夜黎明》,即將震撼登場。' },
+  { tone: 'Professional', label: '專業 Professional', required: true, script: '歡迎認識我們的企業服務。自二〇〇八年成立以來,我們已為超過一千五百位客戶,提供橫跨四十個國家的專業方案。品質如何確保?答案是三層審核制度,和為期十二個月的完整保固。我們研究每一個細節,重視每一次交付。長期的信任,來自穩定而可靠的品質。' },
+  { tone: 'Energetic', label: '活力 Energetic', script: '準備好了嗎?年度最大檔期,正式開跑!全館五折起,滿三千再送五百!限時七十二小時,錯過再等一年!新品、經典款、限量聯名,一次到齊。行動要快,數量有限,趕快帶著朋友一起來,絕對讓你滿載而歸!' },
+  { tone: 'Friendly', label: '親切 Friendly', script: '嘿,好久不見,最近過得還好嗎?我上個星期去了一趟花蓮,天氣好得不得了。對了,你上次說想學做菜,後來有開始嗎?其實我也想試試看。不然這樣好了,我們約個週末,把垃圾食物都戒掉,一起研究幾道簡單又健康的家常菜,你覺得怎麼樣?' },
+  { tone: 'Soothing', label: '舒緩 Soothing', script: '現在,請慢慢閉上眼睛,深深吸一口氣,再緩緩地吐出來。感覺肩膀一點一點放鬆下來。今天辛苦了。無論發生了什麼,此刻都可以先放下。周圍的氛圍安靜而溫柔,讓呼吸帶著你,回到心裡最安穩的地方,好好休息。' },
+  { tone: 'Trailer', label: '預告片 Trailer', script: '在一座被遺忘的城市,沉睡著一個千年的秘密。當黑夜降臨,危機悄悄逼近,誰能阻止命運的齒輪?他,是最後的守望者。這個冬天,見證傳奇的誕生。暗夜黎明,即將震撼登場。' },
+  { tone: 'CodeSwitch', label: '中英夾雜(建議加錄)', script: '大家好,歡迎收看今天的節目。記得訂閱我們的 Email 電子報,或是下載我們的 App,搜尋 Onyx 就可以找到。現在 AI 的發展真的很快,OK,那我們今天就從最基本的概念開始,Lets go!' },
+  { tone: 'English', label: 'English(建議加錄)', script: 'Hello, and welcome. I will be your voice guide for today. From two thousand eight until now, we have helped over one thousand five hundred clients around the world. Quality, trust, and consistency. That is what we stand for. Thank you for listening.' },
 ];
 const PROOF_LANGS = ['中文', 'English', '日本語', '한국어', 'Español', 'Português', 'Français', 'Deutsch', 'Italiano', 'Русский', '其他'];
 
@@ -198,7 +200,7 @@ export default function AiTwinPage() {
           </div>
 
           <p className="font-medium mb-1">語氣參考錄音</p>
-          <p className="text-xs text-gray-400 mb-4">每段 30–60 秒,安靜無回音空間+宅錄設備,<b className="text-gray-200">只收 WAV 48kHz/24bit</b>(上傳時自動檢查)。至少完成「專業」一段即可送審,其餘可陸續補。</p>
+          <p className="text-xs text-gray-400 mb-4">每段 30–60 秒,安靜無回音空間+宅錄設備,<b className="text-gray-200">只收 WAV 48kHz/24bit</b>(上傳時自動檢查)。至少完成「專業」一段即可送審,其餘可陸續補;「中英夾雜」與「English」兩段建議加錄,能讓您的 AI 聲音在英文單字、縮寫與跨語言內容上表現更穩。</p>
           <div className="space-y-4">
             {TONES.map((t) => {
               const done = en!.samples?.find((s) => s.tone === t.tone);
