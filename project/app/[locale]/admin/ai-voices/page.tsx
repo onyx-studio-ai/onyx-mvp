@@ -22,6 +22,15 @@ type Usage = { month: string; total: { count: number; chars: number; cost_usd: n
 
 export default function AiVoicesPage() {
   const [usage, setUsage] = useState<Usage | null>(null);
+  const [enrollments, setEnrollments] = useState<{ id: string; status: string; signature_name: string; signed_at: string; scopes: { ads?: boolean; cross_lingual?: boolean; proofreader?: boolean; proof_langs?: string[] }; samples: { tone: string; url: string; file_name?: string }[]; review_note?: string | null; talent?: { name: string; talent_no?: number } | null }[]>([]);
+  const loadEnroll = () => fetch('/api/admin/ai-twin', { credentials: 'include' }).then((r) => r.json()).then((j) => setEnrollments(j.enrollments || [])).catch(() => {});
+  useEffect(() => { loadEnroll(); }, []);
+  async function reviewEnroll(id: string, action: 'approve' | 'reject') {
+    const note = action === 'reject' ? (window.prompt('退回原因(會通知配音員):') || '') : '';
+    if (action === 'reject' && !note) return;
+    await fetch('/api/admin/ai-twin', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action, note }) });
+    loadEnroll();
+  }
   useEffect(() => {
     fetch('/api/admin/ai-usage', { credentials: 'include' }).then((r) => r.json()).then(setUsage).catch(() => {});
   }, []);
@@ -127,6 +136,35 @@ export default function AiVoicesPage() {
   return (
     <div className="p-6 lg:p-10 max-w-5xl text-gray-900">
       <h1 className="text-xl font-semibold mb-1">AI 聲音</h1>
+      {enrollments.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 mt-4">
+          <p className="font-medium text-sm mb-3">分身計畫報名({enrollments.length})</p>
+          <div className="space-y-3">
+            {enrollments.map((e) => (
+              <div key={e.id} className="border border-gray-100 rounded-lg p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-gray-900">{e.talent?.name || '?'}{e.talent?.talent_no ? ` (T-${e.talent.talent_no})` : ''}
+                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${e.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : e.status === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>{e.status === 'submitted' ? '待審' : e.status === 'approved' ? '已核准' : '已退回'}</span>
+                  </p>
+                  {e.status === 'submitted' && (
+                    <div className="flex gap-2">
+                      <button onClick={() => reviewEnroll(e.id, 'approve')} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-3 py-1">核准</button>
+                      <button onClick={() => reviewEnroll(e.id, 'reject')} className="text-xs border border-gray-300 text-gray-600 hover:bg-gray-100 rounded-lg px-3 py-1">退回</button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">簽署:{e.signature_name} · {new Date(e.signed_at).toLocaleString('zh-TW')} · 範圍:標準商用{e.scopes?.ads ? '+廣告' : ''}{e.scopes?.cross_lingual ? '+跨語言' : ''}{e.scopes?.proofreader ? ` · 校對員(${(e.scopes?.proof_langs || []).join('/')})` : ''}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(e.samples || []).map((sm) => (
+                    <span key={sm.tone} className="text-xs bg-gray-50 border border-gray-200 rounded px-2 py-1">{sm.tone} <audio src={sm.url} controls className="h-6 inline-block align-middle ml-1" /></span>
+                  ))}
+                  {(!e.samples || e.samples.length === 0) && <span className="text-xs text-gray-400">尚未上傳語料</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {usage && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 mt-4">
           <p className="font-medium text-sm mb-2">本月生成用量({usage.month})— 分潤地基:配音員 25% / 平台 75%</p>
