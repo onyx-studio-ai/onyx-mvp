@@ -19,7 +19,7 @@ const TONES = [
   { tone: 'Soothing', label: '舒緩 Soothing', script: '現在,請慢慢閉上眼睛,深深吸一口氣,再緩緩地吐出來。感受肩膀一點一點放鬆下來。今天辛苦了。無論發生什麼,此刻都可以先放下。讓呼吸帶著你,回到安靜的地方,好好休息。' },
   { tone: 'Trailer', label: '預告片 Trailer', script: '在一個被遺忘的城市,沉睡著一個千年的秘密。當黑夜降臨,誰能阻止命運的齒輪?他,是最後的守望者。這個冬天,見證傳奇的誕生——《暗夜黎明》,即將震撼登場。' },
 ];
-const PROOF_LANGS = ['中文', 'English', '日本語', '한국어', 'Español', 'Português', 'Français', 'Deutsch', 'Italiano', 'Русский'];
+const PROOF_LANGS = ['中文', 'English', '日本語', '한국어', 'Español', 'Português', 'Français', 'Deutsch', 'Italiano', 'Русский', '其他'];
 
 type Enrollment = {
   id: string; status: string; signature_name: string; signed_at: string;
@@ -60,6 +60,7 @@ export default function AiTwinPage() {
   const [crossLingual, setCrossLingual] = useState(true);
   const [proofreader, setProofreader] = useState(false);
   const [proofLangs, setProofLangs] = useState<string[]>([]);
+  const [otherLang, setOtherLang] = useState('');
   const [agree, setAgree] = useState(false);
   const [sig, setSig] = useState('');
   const [busy, setBusy] = useState(false);
@@ -88,7 +89,7 @@ export default function AiTwinPage() {
     setBusy(true); setErr('');
     const res = await authedFetch('/api/talent/ai-twin', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signature_name: sig.trim(), scopes: { ads, cross_lingual: crossLingual, proofreader, proof_langs: proofLangs } }),
+      body: JSON.stringify({ signature_name: sig.trim(), scopes: { ads, cross_lingual: crossLingual, proofreader, proof_langs: proofLangs.filter((l) => l !== '其他').concat(otherLang.trim() ? [`其他:${otherLang.trim()}`] : []) } }),
     });
     const j = await res.json().catch(() => ({}));
     setBusy(false);
@@ -138,7 +139,7 @@ export default function AiTwinPage() {
   return (
     <main className="min-h-screen bg-[#050505] text-white px-4 md:px-8 py-10 max-w-3xl mx-auto">
       <div className="flex items-center gap-2 mb-1"><Sparkles className="w-5 h-5 text-emerald-400" /><h1 className="text-2xl font-semibold" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>AI 聲音分身計畫</h1></div>
-      <p className="text-sm text-gray-400 mb-8">錄一組語氣參考音,建立您的 AI 聲音分身。客戶每次使用,您分得 Tier 1 牌價的 25% —— 後台逐筆可查的被動收入。您隨時可以喊停。</p>
+      <p className="text-sm text-gray-400 mb-8">錄一組語氣參考音,建立您的 AI 聲音分身。客戶每次使用,您分得牌價的 25% —— 後台逐筆可查的被動收入。您隨時可以喊停。</p>
 
       {!signed && (
         <>
@@ -161,12 +162,17 @@ export default function AiTwinPage() {
             <div className="border-t border-white/5 pt-3">
               <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={proofreader} onChange={(e) => setProofreader(e.target.checked)} className="accent-emerald-500" />我也願意接「AI 校對」兼職(聽 AI 音檔標錯句,按音檔分鐘計酬)</label>
               {proofreader && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {PROOF_LANGS.map((l) => (
-                    <button key={l} onClick={() => setProofLangs((s) => s.includes(l) ? s.filter((x) => x !== l) : [...s, l])}
-                      className={`text-xs px-2.5 py-1 rounded-full border ${proofLangs.includes(l) ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200' : 'bg-white/5 border-white/10 text-gray-400'}`}>{l}</button>
-                  ))}
-                </div>
+                <>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {PROOF_LANGS.map((l) => (
+                      <button key={l} onClick={() => setProofLangs((s) => s.includes(l) ? s.filter((x) => x !== l) : [...s, l])}
+                        className={`text-xs px-2.5 py-1 rounded-full border ${proofLangs.includes(l) ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200' : 'bg-white/5 border-white/10 text-gray-400'}`}>{l}</button>
+                    ))}
+                  </div>
+                  {proofLangs.includes('其他') && (
+                    <input className={inputCls + ' mt-2'} value={otherLang} onChange={(e) => setOtherLang(e.target.value)} placeholder="其他語言(例:粵語、泰語、越南語…)" />
+                  )}
+                </>
               )}
             </div>
           </div>
