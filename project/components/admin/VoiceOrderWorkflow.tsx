@@ -267,7 +267,9 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
 
   const handleUploadVersion = async () => {
     if (!pendingFile) return;
-    if (!pendingNotes.trim()) {
+    const isManaged = order.email === 'casting@onyxstudios.ai';
+    // 指派單沒有外部客戶:備註免填(錄音室代傳場景),也不寄客戶信
+    if (!isManaged && !pendingNotes.trim()) {
       setUploadError('Please add a note to the client before delivering.');
       return;
     }
@@ -290,7 +292,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
         voice_order_id: order.id,
         file_url: publicUrl,
         file_name: pendingFile.name,
-        notes: pendingNotes,
+        notes: pendingNotes.trim() || (isManaged ? '錄音室交付(後台代傳)' : ''),
         version_number: nextNum,
         status: 'pending_review',
       });
@@ -308,8 +310,8 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
       setUploadProgress(100);
       setUploadStatus('');
 
-      // Notify client that version is ready for review
-      try {
+      // Notify client that version is ready for review (skip for managed orders — the client is us)
+      if (!isManaged) try {
         await fetch('/api/mail/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
