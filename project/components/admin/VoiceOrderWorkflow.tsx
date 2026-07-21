@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -139,8 +140,11 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const [revNote, setRevNote] = useState('');
   const [revFiles, setRevFiles] = useState<{ name: string; url: string }[]>([]);
   const [revBusy, setRevBusy] = useState(false);
-  async function uploadRevFile(file: File) {
+  async function uploadRevFile(raw: File) {
     try {
+      // 音檔/影片自動轉 mp3(WAV 直傳太肥常逾時 —— Wing 2026-07-21 實測上傳失敗的根因)
+      let file = raw;
+      if (needsMp3Convert(raw)) file = await mediaToMp3(raw);
       const u = await fetch('/api/admin/casting/upload', {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name }),

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     .update({
       revision_note: note || null,
       revision_files: files,
-      status: 'in_production',
+      status: 'revising',   // 「修改中」——後台既有狀態,與製作中區分(Wing 2026-07-21)
       updated_at: new Date().toISOString(),
     })
     .eq('id', orderId)
@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
   // 通知配音員(三路,best-effort)
   try {
     const { data: t } = await db.from('talents').select('name, email').eq('id', order.talent_id).maybeSingle();
-    const title = `${order.project_name || '配音案'}${order.role_name ? ' · ' + order.role_name : ''}`;
+    const pn = order.project_name || '配音案';
+    // project_name 可能已含「· 角色名」(指派時就這樣組),避免主旨出現「齊亞德 · 齊亞德」
+    const title = order.role_name && !pn.endsWith(order.role_name) ? `${pn} · ${order.role_name}` : pn;
     const msg = `【${title}】客戶提出修改需求:${note ? note.slice(0, 150) : '請見單卡修改說明'}${files.length ? `(附 ${files.length} 個參考檔)` : ''}。請至後台查看並重新上傳。`;
     const email = String(t?.email || '');
     if (email && !email.endsWith('@invite.onyxstudios.ai')) {
