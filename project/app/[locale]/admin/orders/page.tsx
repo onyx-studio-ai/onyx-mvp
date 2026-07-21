@@ -411,9 +411,10 @@ export default function AdminOrdersPage() {
 
   const filtered = allOrders.filter(order => {
     const term = searchTerm.toLowerCase();
-    const matchesSearch =
-      order.email.toLowerCase().includes(term) ||
-      String(order.order_number).toLowerCase().includes(term);
+    // 全文比對:案名/角色/評語等所有文字欄位都搜得到(Wing 2026-07-21)
+    const matchesSearch = !term ||
+      String(order.order_number).toLowerCase().includes(term) ||
+      Object.values(order).some(v => typeof v === 'string' && v.toLowerCase().includes(term));
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
     const matchesType = filterType === 'all' || order.type === filterType;
     return matchesSearch && matchesStatus && matchesType;

@@ -2480,7 +2480,7 @@
       "inQueue": "排隊中",
       "inProduction": "製作中",
       "completed": "已完成",
-      "searchPlaceholder": "以電子郵件或訂單編號搜尋…",
+      "searchPlaceholder": "搜尋案名、角色、Email、訂單編號…",
       "allTypes": "所有類型",
       "typeVoice": "語音",
       "typeMusic": "音樂",

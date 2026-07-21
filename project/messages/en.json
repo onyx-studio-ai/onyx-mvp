@@ -2480,7 +2480,7 @@
       "inQueue": "In Queue",
       "inProduction": "In Production",
       "completed": "Completed",
-      "searchPlaceholder": "Search by email or order number...",
+      "searchPlaceholder": "Search project, role, email, order #…",
       "allTypes": "All Types",
       "typeVoice": "Voice",
       "typeMusic": "Music",
