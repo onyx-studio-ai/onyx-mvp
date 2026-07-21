@@ -99,7 +99,8 @@ export async function POST(request: NextRequest) {
       ? (isPlatformBrief ? (process.env.ADMIN_EMAIL || 'admin@onyxstudios.ai') : brief?.client_email)
       : talent?.email;
     if (to) {
-      const note = newMessageEmail({ briefNumber: brief?.brief_number, url: `${SITE}/messages`, locale: brief?.locale });
+      // 信裡直接放訊息全文(Wing 2026-07-20:收信人不用登入平台就知道內容)
+      const note = newMessageEmail({ briefNumber: brief?.brief_number, url: `${SITE}/messages`, locale: brief?.locale, body, senderName });
       sendEmail({ category: 'PRODUCTION', to, subject: note.subject, html: note.html }).catch(() => {});
     }
     // The talent gets a Telegram ping too (client→talent messages only).

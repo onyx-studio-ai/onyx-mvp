@@ -741,21 +741,6 @@ export default function Opportunities() {
                     </div>
                   </div>
                 )}
-                {((o.revision_note || (o.revision_files || []).length > 0)) && (
-                <div className="border border-amber-400/30 bg-amber-400/10 rounded-lg p-3 mb-3">
-                  <p className="text-sm font-medium text-amber-200 mb-1">✏️ {tx('客戶修改需求', '客户修改需求', 'Client revision request')}{(o.revision_count || 0) > 0 ? tx(`(第 ${o.revision_count} 輪)`, `(第 ${o.revision_count} 轮)`, ` (round ${o.revision_count})`) : ''}</p>
-                  {o.revision_note && <p className="text-xs text-gray-200 whitespace-pre-wrap mb-2">{o.revision_note}</p>}
-                  {(o.revision_files || []).length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {(o.revision_files || []).map((f, fi) => (
-                        <a key={fi} href={f.url} download target="_blank" rel="noreferrer"
-                          className="text-xs bg-white/10 hover:bg-white/15 border border-white/10 rounded px-2 py-1 text-amber-100">⬇ {f.name || tx('參考檔', '参考档', 'file')}</a>
-                      ))}
-                    </div>
-                  )}
-                  <p className="text-[11px] text-gray-400 mt-2">{tx('請依上述說明修改後,重新上傳交付檔即可。', '请依上述说明修改后,重新上传交付档即可。', 'Revise per the notes above and re-upload your delivery.')}</p>
-                </div>
-              )}
               {([
                   [o.reference_files, tx('參考音(大陸版角色參考,聽語氣用,可下載)', '参考音(大陆版角色参考,听语气用,可下载)', 'Reference audio — original-version role reference (downloadable)')],
                   [o.voice_sample_files, tx('中選聲線(客戶選中的你的聲音示範,請照這個感覺錄,可下載)', '中选声线(客户选中的你的声音示范,请照这个感觉录,可下载)', 'Selected voice sample — record in this style (downloadable)')],
@@ -783,6 +768,20 @@ export default function Opportunities() {
                   </div>
                 ); })()}
                 <p className="text-[11px] text-gray-400 mt-1.5">{tx('⬇ 只上傳「本角色」的音檔(多句可打包 zip 分軌命名),請勿與其他角色混在同一軌。', '⬇ 只上传「本角色」的音档(多句可打包 zip 分轨命名),请勿与其他角色混在同一轨。', '⬇ Upload THIS role’s audio only (zip multiple lines if needed) — don’t mix roles in one track.')}</p>
+                {(o.revision_note || (o.revision_files || []).length > 0) && (
+                  <div className="border border-amber-400/30 bg-amber-400/10 rounded-lg p-3 mb-3">
+                    <p className="text-sm font-medium text-amber-200 mb-1">✏️ {tx('客戶修改需求', '客户修改需求', 'Client revision request')}{(o.revision_count || 0) > 0 ? tx(`(第 ${o.revision_count} 輪)`, `(第 ${o.revision_count} 轮)`, ` (round ${o.revision_count})`) : ''}</p>
+                    {o.revision_note && <p className="text-xs text-gray-200 whitespace-pre-wrap mb-2">{o.revision_note}</p>}
+                    {(o.revision_files || []).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {(o.revision_files || []).map((f, fi) => (
+                          <a key={fi} href={f.url} download target="_blank" rel="noreferrer" className="text-xs bg-white/10 hover:bg-white/15 border border-white/10 rounded px-2 py-1 text-amber-100">⬇ {f.name || tx('參考檔', '参考档', 'file')}</a>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-[11px] text-gray-400 mt-2">{tx('請依上述說明修改後,重新上傳交付檔即可。', '请依上述说明修改后,重新上传交付档即可。', 'Revise per the notes above and re-upload your delivery.')}</p>
+                  </div>
+                )}
                 <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} tx={tx} onChanged={() => load()} />
               </EntityCard>
             ))}

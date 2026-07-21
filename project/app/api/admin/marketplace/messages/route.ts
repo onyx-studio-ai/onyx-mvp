@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         const note = plainNoticeEmail({
           subject: `Onyx 有新訊息 — ${title}`, headline: '您有一則新訊息', sub: title, cardTitle: '案件訊息',
           paragraphs: [`${t?.name ? t.name + ' ' : ''}您好,`, `Onyx 在「${title}」留了新訊息給您:`],
-          quote: body.slice(0, 600) + (attachments.length ? `
+          quote: body.slice(0, 3800) + (attachments.length ? `
 (含 ${attachments.length} 個附件)` : ''),
           ctaText: '前往後台查看與回覆', ctaUrl: 'https://www.onyxstudios.ai/talent/opportunities',
           footnote: '小提醒:到後台首頁點「綁定 LINE / Telegram」,之後通知即時推送、不漏接。',
