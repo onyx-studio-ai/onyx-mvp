@@ -576,7 +576,7 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
-  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
   // 分頁式看板(Voices 心智模型):待處理=欠的工作;案件機會=可應徵;已結束=歸檔
@@ -741,7 +741,22 @@ export default function Opportunities() {
                     </div>
                   </div>
                 )}
-                {([
+                {((o.revision_note || (o.revision_files || []).length > 0)) && (
+                <div className="border border-amber-400/30 bg-amber-400/10 rounded-lg p-3 mb-3">
+                  <p className="text-sm font-medium text-amber-200 mb-1">✏️ {tx('客戶修改需求', '客户修改需求', 'Client revision request')}{(o.revision_count || 0) > 0 ? tx(`(第 ${o.revision_count} 輪)`, `(第 ${o.revision_count} 轮)`, ` (round ${o.revision_count})`) : ''}</p>
+                  {o.revision_note && <p className="text-xs text-gray-200 whitespace-pre-wrap mb-2">{o.revision_note}</p>}
+                  {(o.revision_files || []).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {(o.revision_files || []).map((f, fi) => (
+                        <a key={fi} href={f.url} download target="_blank" rel="noreferrer"
+                          className="text-xs bg-white/10 hover:bg-white/15 border border-white/10 rounded px-2 py-1 text-amber-100">⬇ {f.name || tx('參考檔', '参考档', 'file')}</a>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[11px] text-gray-400 mt-2">{tx('請依上述說明修改後,重新上傳交付檔即可。', '请依上述说明修改后,重新上传交付档即可。', 'Revise per the notes above and re-upload your delivery.')}</p>
+                </div>
+              )}
+              {([
                   [o.reference_files, tx('參考音(大陸版角色參考,聽語氣用,可下載)', '参考音(大陆版角色参考,听语气用,可下载)', 'Reference audio — original-version role reference (downloadable)')],
                   [o.voice_sample_files, tx('中選聲線(客戶選中的你的聲音示範,請照這個感覺錄,可下載)', '中选声线(客户选中的你的声音示范,请照这个感觉录,可下载)', 'Selected voice sample — record in this style (downloadable)')],
                 ] as [({ name?: string; url: string }[] | null | undefined), string][]).map(([files, label], gi) => (files || []).length > 0 && (

@@ -18,7 +18,7 @@ import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null; revision_note?: string | null; revision_files?: RefFile[] | null; revision_count?: number | null };
 // 參考音(大陸版角色參考)與中選聲線(配音員自己的中選示範)分開存、分開傳(Wing 2026-07-15)。
 type AudioField = 'reference_files' | 'voice_sample_files';
 
@@ -146,6 +146,38 @@ export default function ProductionPage() {
     if (!res.ok) { toast.error('存檔失敗'); return; }
     toast.success(field === 'voice_sample_files' ? '中選聲線已加入' : '參考音已加入'); load();
   }
+  // ── 客戶修改需求(2026-07-20):評語+參考檔 → 單退回製作中+三路通知配音員 ──
+  const [revFor, setRevFor] = useState<string | null>(null);
+  const [revNote, setRevNote] = useState('');
+  const [revFiles, setRevFiles] = useState<RefFile[]>([]);
+  async function uploadRevFile(raw: File) {
+    try {
+      let file = raw;
+      if (needsMp3Convert(raw)) { toast.info(`轉檔中:${raw.name}`); file = await mediaToMp3(raw); }
+      const u = await fetch('/api/admin/casting/upload', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok || !uj.path || !uj.token) throw new Error(uj.error || '上傳準備失敗');
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setRevFiles((s) => [...s, { name: file.name, url: uj.publicUrl }]);
+    } catch (e) { toast.error(e instanceof Error ? e.message : '上傳失敗'); }
+  }
+  async function sendRevision(o: Order) {
+    if (!revNote.trim() && !revFiles.length) { toast.error('請填修改說明或上傳參考檔'); return; }
+    setBusy(o.id);
+    const res = await fetch('/api/admin/casting/revision', {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: o.id, note: revNote.trim(), files: revFiles }),
+    });
+    setBusy(null);
+    if (!res.ok) { toast.error((await res.json().catch(() => ({}))).error || '發送失敗'); return; }
+    toast.success('修改需求已發出,單子退回製作中,已通知配音員');
+    setRevFor(null); setRevNote(''); setRevFiles([]); load();
+  }
+
   async function removeRef(o: Order, idx: number, field: AudioField) {
     const next = (o[field] || []).filter((_, i) => i !== idx);
     await fetch('/api/admin/orders', {
@@ -344,6 +376,36 @@ export default function ProductionPage() {
                 {o.talent_reach && <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5">✓{o.talent_reach}</span>}
                 {o.talent_name && !o.talent_reach && !o.talent_phone && <span className="text-[10px] text-red-700 bg-red-50 border border-red-200 rounded-full px-1.5">⚠ 僅 email</span>}
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border ${o.status === 'delivered' ? 'bg-sky-50 text-sky-700 border-sky-200' : o.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-violet-50 text-violet-700 border-violet-200'}`}>{o.status === 'delivered' ? '已交付·待驗收' : o.status === 'completed' ? '已完成' : '待錄製'}</span>
+                {(o.status === 'delivered' || o.status === 'completed' || (o.revision_count || 0) > 0) && (
+                  <button onClick={() => { setRevFor(revFor === o.id ? null : o.id); setRevNote(o.revision_note || ''); setRevFiles(o.revision_files || []); }}
+                    className="text-[11px] px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100">
+                    ✏️ 發修改需求{(o.revision_count || 0) > 0 ? `(第 ${o.revision_count} 輪)` : ''}
+                  </button>
+                )}
+                {revFor === o.id && (
+                  <div className="w-full mt-2 border border-amber-200 bg-amber-50/50 rounded-lg p-3 text-sm">
+                    <p className="font-medium text-gray-900 mb-1">客戶修改需求 → 發給 {o.talent_name || '配音員'}</p>
+                    <textarea value={revNote} onChange={(e) => setRevNote(e.target.value)} rows={3}
+                      placeholder="修改說明/客戶評語(哪句、怎麼改)…"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 mb-2" />
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      {revFiles.map((f, i) => (
+                        <span key={i} className="text-xs bg-white border border-gray-200 rounded px-2 py-1">{f.name}
+                          <button onClick={() => setRevFiles((s) => s.filter((_, j) => j !== i))} className="ml-1 text-gray-400 hover:text-red-500">✕</button>
+                        </span>
+                      ))}
+                      <label className="text-xs bg-white border border-gray-300 rounded-lg px-2.5 py-1 cursor-pointer hover:bg-gray-50">
+                        + 加參考檔(音檔/文件)
+                        <input type="file" multiple className="hidden" onChange={(e) => { [...(e.target.files || [])].forEach(uploadRevFile); e.target.value = ''; }} />
+                      </label>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => sendRevision(o)} disabled={busy === o.id}
+                        className="text-xs bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg px-3 py-1.5">發出(退回製作中+通知)</button>
+                      <button onClick={() => setRevFor(null)} className="text-xs border border-gray-300 text-gray-600 rounded-lg px-3 py-1.5 hover:bg-gray-100">取消</button>
+                    </div>
+                  </div>
+                )}
                 {!o.released_at && o.talent_id && (
                   <>
                     <span className="text-[11px] px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-300">未發出·配音員看不到</span>
