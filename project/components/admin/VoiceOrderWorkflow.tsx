@@ -134,6 +134,36 @@ async function assignOrderTalent(orderId: string, talentId: string) {
 export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const { toast } = useToast();
   const [versions, setVersions] = useState<Version[]>([]);
+  // 客戶修改需求(2026-07-20 Wing:在訂單頁驗收就在訂單頁發修改)
+  const [revOpen, setRevOpen] = useState(false);
+  const [revNote, setRevNote] = useState('');
+  const [revFiles, setRevFiles] = useState<{ name: string; url: string }[]>([]);
+  const [revBusy, setRevBusy] = useState(false);
+  async function uploadRevFile(file: File) {
+    try {
+      const u = await fetch('/api/admin/casting/upload', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok || !uj.path || !uj.token) throw new Error(uj.error || '上傳準備失敗');
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      setRevFiles((s) => [...s, { name: file.name, url: uj.publicUrl }]);
+    } catch (e) { alert(e instanceof Error ? e.message : '上傳失敗'); }
+  }
+  async function sendRevision() {
+    if (!revNote.trim() && !revFiles.length) { alert('請填修改說明或上傳參考檔'); return; }
+    setRevBusy(true);
+    const res = await fetch('/api/admin/casting/revision', {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: order.id, note: revNote.trim(), files: revFiles }),
+    });
+    setRevBusy(false);
+    if (!res.ok) { alert((await res.json().catch(() => ({}))).error || '發送失敗'); return; }
+    setRevOpen(false); setRevNote(''); setRevFiles([]);
+    onStatusChange?.();
+  }
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -640,8 +670,38 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
           <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
             <Mic className="w-4 h-4 text-cyan-400" />
             <span className="text-sm font-semibold text-cyan-400">Versions ({versions.length})</span>
+            {order.talent_id && (
+              <button onClick={() => setRevOpen(!revOpen)}
+                className="ml-auto text-[11px] px-2.5 py-1 rounded-full border bg-amber-500/10 text-amber-300 border-amber-400/30 hover:bg-amber-500/20">
+                ✏️ 發修改需求{(order.revision_count || 0) > 0 ? `(第 ${order.revision_count} 輪)` : ''}
+              </button>
+            )}
           </div>
           <div className="divide-y divide-zinc-800">
+            {revOpen && (
+              <div className="px-4 py-3 border-b border-white/10 bg-amber-500/5">
+                <p className="text-xs font-medium text-amber-200 mb-1.5">客戶修改需求 → 單子退回製作中+三路通知配音員</p>
+                <textarea value={revNote} onChange={(e) => setRevNote(e.target.value)} rows={3}
+                  placeholder="修改說明/客戶評語(哪句、怎麼改)…"
+                  className="w-full bg-black/30 border border-white/15 rounded-lg px-3 py-2 text-sm text-white mb-2" />
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  {revFiles.map((f, i) => (
+                    <span key={i} className="text-xs bg-white/10 border border-white/10 rounded px-2 py-1 text-gray-200">{f.name}
+                      <button onClick={() => setRevFiles((s) => s.filter((_, j) => j !== i))} className="ml-1 text-gray-400 hover:text-red-400">✕</button>
+                    </span>
+                  ))}
+                  <label className="text-xs bg-white/10 border border-white/15 rounded-lg px-2.5 py-1 cursor-pointer hover:bg-white/15 text-gray-200">
+                    + 加參考檔(音檔/文件)
+                    <input type="file" multiple className="hidden" onChange={(e) => { [...(e.target.files || [])].forEach(uploadRevFile); e.target.value = ''; }} />
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={sendRevision} disabled={revBusy}
+                    className="text-xs bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg px-3 py-1.5">{revBusy ? '發送中…' : '發出(退回製作中+通知)'}</button>
+                  <button onClick={() => setRevOpen(false)} className="text-xs border border-white/20 text-gray-300 rounded-lg px-3 py-1.5 hover:bg-white/10">取消</button>
+                </div>
+              </div>
+            )}
             {versions.map((ver, idx) => {
               const isApproved = ver.status === 'approved';
               const hasRevisionRequest = ver.status === 'revision_requested';
