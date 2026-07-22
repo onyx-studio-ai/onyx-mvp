@@ -150,6 +150,7 @@ export default function ProductionPage() {
   const [revFor, setRevFor] = useState<string | null>(null);
   const [revNote, setRevNote] = useState('');
   const [revFiles, setRevFiles] = useState<RefFile[]>([]);
+  const [revFee, setRevFee] = useState('');
   async function uploadRevFile(raw: File) {
     try {
       let file = raw;
@@ -170,7 +171,7 @@ export default function ProductionPage() {
     setBusy(o.id);
     const res = await fetch('/api/admin/casting/revision', {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_id: o.id, note: revNote.trim(), files: revFiles }),
+      body: JSON.stringify({ order_id: o.id, note: revNote.trim(), files: revFiles, fee: revFee ? Number(revFee) : 0 }),
     });
     setBusy(null);
     if (!res.ok) { toast.error((await res.json().catch(() => ({}))).error || '發送失敗'); return; }
@@ -377,7 +378,7 @@ export default function ProductionPage() {
                 {o.talent_name && !o.talent_reach && !o.talent_phone && <span className="text-[10px] text-red-700 bg-red-50 border border-red-200 rounded-full px-1.5">⚠ 僅 email</span>}
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border ${o.status === 'delivered' ? 'bg-sky-50 text-sky-700 border-sky-200' : o.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-violet-50 text-violet-700 border-violet-200'}`}>{o.status === 'delivered' ? '已交付·待驗收' : o.status === 'completed' ? '已完成' : '待錄製'}</span>
                 {(o.status === 'delivered' || o.status === 'completed' || (o.revision_count || 0) > 0) && (
-                  <button onClick={() => { setRevFor(revFor === o.id ? null : o.id); setRevNote(o.revision_note || ''); setRevFiles(o.revision_files || []); }}
+                  <button onClick={() => { setRevFor(revFor === o.id ? null : o.id); setRevNote(o.revision_note || ''); setRevFiles(o.revision_files || []); setRevFee(''); }}
                     className="text-[11px] px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100">
                     ✏️ 發修改需求{(o.revision_count || 0) > 0 ? `(第 ${o.revision_count} 輪)` : ''}
                   </button>
@@ -398,6 +399,16 @@ export default function ProductionPage() {
                         + 加參考檔(音檔/文件)
                         <input type="file" multiple className="hidden" onChange={(e) => { [...(e.target.files || [])].forEach(uploadRevFile); e.target.value = ''; }} />
                       </label>
+                    </div>
+                    {(() => { const included = (o as { max_revisions?: number | null }).max_revisions ?? 2; const used = o.revision_count || 0; return used >= included && (
+                      <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-2 py-1 mb-2">⚠ 已修改 {used} 輪,內含 {included} 輪已用完 —— 建議填加收修改費(配音員同意後才會開始修改)。</p>
+                    ); })()}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs text-gray-300 shrink-0">加收修改費(選填)</span>
+                      <span className="text-xs text-gray-400">{(o.currency || 'TWD') === 'USD' ? 'US$' : 'NT$'}</span>
+                      <input type="number" min="0" value={revFee} onChange={(e) => setRevFee(e.target.value)} placeholder="0 = 此輪免費"
+                        className="w-32 bg-black/30 border border-white/15 rounded-lg px-2 py-1.5 text-sm text-white" />
+                      {revFee && Number(revFee) > 0 ? <span className="text-[11px] text-amber-200">配音員同意後,總酬勞 +{revFee}</span> : null}
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => sendRevision(o)} disabled={busy === o.id}

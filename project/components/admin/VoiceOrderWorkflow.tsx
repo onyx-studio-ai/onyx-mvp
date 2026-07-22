@@ -139,6 +139,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const [revOpen, setRevOpen] = useState(false);
   const [revNote, setRevNote] = useState('');
   const [revFiles, setRevFiles] = useState<{ name: string; url: string }[]>([]);
+  const [revFee, setRevFee] = useState('');
   const [revBusy, setRevBusy] = useState(false);
   async function uploadRevFile(raw: File) {
     try {
@@ -161,11 +162,11 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
     setRevBusy(true);
     const res = await fetch('/api/admin/casting/revision', {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_id: order.id, note: revNote.trim(), files: revFiles }),
+      body: JSON.stringify({ order_id: order.id, note: revNote.trim(), files: revFiles, fee: revFee ? Number(revFee) : 0 }),
     });
     setRevBusy(false);
     if (!res.ok) { alert((await res.json().catch(() => ({}))).error || '發送失敗'); return; }
-    setRevOpen(false); setRevNote(''); setRevFiles([]);
+    setRevOpen(false); setRevNote(''); setRevFiles([]); setRevFee('');
     onStatusChange?.();
   }
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
@@ -700,6 +701,16 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                     + 加參考檔(音檔/文件)
                     <input type="file" multiple className="hidden" onChange={(e) => { [...(e.target.files || [])].forEach(uploadRevFile); e.target.value = ''; }} />
                   </label>
+                </div>
+                {(() => { const included = (order as { max_revisions?: number | null }).max_revisions ?? 2; const used = order.revision_count || 0; return used >= included && (
+                  <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-2 py-1 mb-2">⚠ 已修改 {used} 輪,內含 {included} 輪已用完 —— 建議填加收修改費(配音員同意後才會開始修改)。</p>
+                ); })()}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-gray-300 shrink-0">加收修改費(選填)</span>
+                  <span className="text-xs text-gray-400">{((order as { currency?: string | null }).currency || 'TWD') === 'USD' ? 'US$' : 'NT$'}</span>
+                  <input type="number" min="0" value={revFee} onChange={(e) => setRevFee(e.target.value)} placeholder="0 = 此輪免費"
+                    className="w-32 bg-black/30 border border-white/15 rounded-lg px-2 py-1.5 text-sm text-white" />
+                  {revFee && Number(revFee) > 0 && <span className="text-[11px] text-amber-200">配音員同意後,總酬勞 +{revFee}</span>}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={sendRevision} disabled={revBusy}

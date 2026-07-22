@@ -21,9 +21,13 @@ export async function POST(request: NextRequest) {
   if (!orderId || !url) return NextResponse.json({ error: 'order_id and delivery_url required' }, { status: 400 });
   if (!/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'invalid delivery_url' }, { status: 400 });
 
-  const { data: order } = await r.db.from('voice_orders').select('id, status, talent_id, order_number').eq('id', orderId).eq('talent_id', talent.id).maybeSingle();
+  const { data: order } = await r.db.from('voice_orders').select('id, status, talent_id, order_number, revision_fee, revision_fee_status').eq('id', orderId).eq('talent_id', talent.id).maybeSingle();
   if (!order) return NextResponse.json({ error: 'not your assigned order' }, { status: 403 });
   if (order.status === 'completed') return NextResponse.json({ error: '已完成無法再上傳。' }, { status: 400 });
+  // 有待同意的加收修改費 → 先同意才開放上傳(前端也鎖,這裡防直接打 API 繞過)
+  if (order.revision_fee_status === 'pending' && (Number(order.revision_fee) || 0) > 0) {
+    return NextResponse.json({ error: '本輪修改有加收費用,請先在單卡按「同意」後再上傳。' }, { status: 400 });
+  }
 
   const { count } = await r.db.from('voice_order_versions').select('id', { count: 'exact', head: true }).eq('voice_order_id', order.id);
   const { error } = await r.db.from('voice_order_versions').insert({

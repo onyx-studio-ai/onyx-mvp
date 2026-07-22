@@ -576,7 +576,7 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
-  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
   // 分頁式看板(Voices 心智模型):待處理=欠的工作;案件機會=可應徵;已結束=歸檔
@@ -782,7 +782,35 @@ export default function Opportunities() {
                     <p className="text-[11px] text-gray-400 mt-2">{tx('請依上述說明修改後,重新上傳交付檔即可。', '请依上述说明修改后,重新上传交付档即可。', 'Revise per the notes above and re-upload your delivery.')}</p>
                   </div>
                 )}
-                <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} tx={tx} onChanged={() => load()} />
+                {(() => {
+                  // 加收修改費:pending = 大卡+同意鈕(上傳鎖住);agreed = 一行確認。字少、金額大。
+                  const cur = (o.currency || 'TWD') === 'USD' ? 'US$' : 'NT$';
+                  const fee = Number(o.revision_fee) || 0;
+                  const base = Number(o.talent_price) || 0;
+                  const total = base + (Number(o.revision_fee_total) || 0);
+                  if (o.revision_fee_status === 'pending' && fee > 0) return (
+                    <div className="border border-amber-400/50 bg-amber-400/15 rounded-xl p-4 mb-3 text-center">
+                      <p className="text-2xl font-bold text-amber-200 mb-1">+{cur}{fee.toLocaleString()}</p>
+                      <p className="text-sm text-gray-100 mb-1">{tx('本輪修改的加收費用', '本轮修改的加收费用', 'Extra fee for this revision round')}</p>
+                      {base > 0 && <p className="text-xs text-gray-300 mb-3">{tx('總酬勞', '总酬劳', 'Total pay')} {cur}{total.toLocaleString()} → <span className="text-amber-200 font-semibold">{cur}{(total + fee).toLocaleString()}</span></p>}
+                      <button onClick={async () => {
+                        const r = await authedFetch('/api/talent/revision-fee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: o.id }) });
+                        if (!r.ok) { alert((await r.json().catch(() => ({}))).error || tx('失敗,請重試', '失败,请重试', 'Failed, try again')); return; }
+                        load();
+                      }} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg px-4 py-2.5 text-sm">
+                        {tx(`同意 +${cur}${fee.toLocaleString()},開始修改`, `同意 +${cur}${fee.toLocaleString()},开始修改`, `Agree +${cur}${fee.toLocaleString()} & start revising`)}
+                      </button>
+                      <p className="text-[11px] text-gray-400 mt-2">{tx('同意後即可上傳修改版。', '同意后即可上传修改版。', 'Upload unlocks after you agree.')}</p>
+                    </div>
+                  );
+                  if (o.revision_fee_status === 'agreed' && fee > 0) return (
+                    <p className="text-xs text-emerald-300 mb-2">✓ {tx(`已同意本輪修改費 +${cur}${fee.toLocaleString()} · 總酬勞 ${cur}${total.toLocaleString()}`, `已同意本轮修改费 +${cur}${fee.toLocaleString()} · 总酬劳 ${cur}${total.toLocaleString()}`, `Revision fee +${cur}${fee.toLocaleString()} agreed · total ${cur}${total.toLocaleString()}`)}</p>
+                  );
+                  return null;
+                })()}
+                {o.revision_fee_status === 'pending' && (Number(o.revision_fee) || 0) > 0
+                  ? <p className="text-xs text-gray-400 border border-white/10 rounded-lg px-3 py-2 bg-white/[0.03]">🔒 {tx('同意上方修改費後,即可上傳。', '同意上方修改费后,即可上传。', 'Agree to the fee above to unlock upload.')}</p>
+                  : <AssignedDelivery orderId={o.id} deliveries={o.deliveries || []} tx={tx} onChanged={() => load()} />}
               </EntityCard>
             ))}
           </div>
