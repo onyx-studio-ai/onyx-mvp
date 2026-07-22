@@ -37,13 +37,16 @@ export async function createOrderFromAward(
   quote: AwardQuote,
   opts: { talentName?: string | null; orderEmail: string; scriptText?: string | null; scriptFileUrl?: string | null; deliveryDate?: string | null },
 ): Promise<{ ok: true; id: string; order_number: string; currency: string } | { ok: false; error: string; status: number }> {
-  // One sub-order per (case, role) — a multi-role brief gets one order per awarded
-  // role; a single-voice brief (role_name null) still gets exactly one. Don't let a
-  // repeat selection create a duplicate charge for the same role.
+  // One sub-order per (case, role, TALENT) — 同角色可多人並行(2026-07-22 換人場景,
+  // 與 DB 索引 uq_voice_orders_brief_role_talent 對齊)。只擋「同角色同一人」的真重複;
+  // 用 limit(1) 不用 maybeSingle(同角色多單時 maybeSingle 會 PGRST116 且 error 被吞,
+  // 防重閘靜默失效 —— 2026-07-22 審查發現)。
   let dupQ = db.from('voice_orders').select('id, order_number').eq('brief_id', brief.id);
+  if (quote.talent_id) dupQ = dupQ.eq('talent_id', quote.talent_id);
   dupQ = quote.role_name ? dupQ.eq('role_name', quote.role_name) : dupQ.is('role_name', null);
-  const { data: existing } = await dupQ.maybeSingle();
-  if (existing) return { ok: false, error: quote.role_name ? `此角色(${quote.role_name})已建立過製作單` : '此案已建立過製作單', status: 409 };
+  const { data: existRows, error: dupErr } = await dupQ.limit(1);
+  if (dupErr) return { ok: false, error: dupErr.message, status: 500 };
+  if (existRows?.length) return { ok: false, error: quote.role_name ? `此角色(${quote.role_name})已為這位配音員建過製作單` : '此案已為這位配音員建立過製作單', status: 409 };
 
   const currency = (quote.currency as string) || 'USD';
 

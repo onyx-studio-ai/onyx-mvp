@@ -175,8 +175,16 @@ export async function POST(request: NextRequest) {
     }));
   }
   const { data: orders } = await db.from('voice_orders').select('id, role_name, order_number, talent_id, pay_unit, pay_rate').eq('brief_id', briefId);
-  const orderByName = new Map((orders || []).filter((o) => o.role_name).map((o) => [mainKey(String(o.role_name)), o]));
-  const orderByLoose = new Map((orders || []).filter((o) => o.role_name).map((o) => [looseKey(String(o.role_name)), o]));
+  // 同角色可多單並行(2026-07-22):Map 存陣列,匯入時對「該角色的所有單」各自寫入,
+  // 不再後蓋前(舊 Map 一角一單,並行第二人的單會拿不到稿件與酬勞)。
+  type OrdRow = NonNullable<typeof orders>[number];
+  const push = (m: Map<string, OrdRow[]>, k: string, o: OrdRow) => { const a = m.get(k) || []; a.push(o); m.set(k, a); };
+  const orderByName = new Map<string, OrdRow[]>();
+  const orderByLoose = new Map<string, OrdRow[]>();
+  for (const o of (orders || []).filter((o) => o.role_name)) {
+    push(orderByName, mainKey(String(o.role_name)), o);
+    push(orderByLoose, looseKey(String(o.role_name)), o);
+  }
   // 無分隔符的皮膚名(顧冶擊劍皮膚、谷川翔一決勝時刻)用「以訂單角色名為前綴」合併;
   // 長名優先,避免短名訂單誤吞別的角色。
   const anchors = [...orderByName.entries()].sort((a, b) => b[0].length - a[0].length);
@@ -185,17 +193,19 @@ export async function POST(request: NextRequest) {
   const byOrder = new Map<string, { roleName: string; order: Ord; lines: Line[]; images: { name: string; url: string }[] }>();
   const unmatched: { role: string; lines: number }[] = [];
   for (const [role, lines] of byRole) {
-    let order = orderByName.get(role);
-    if (!order) { const hit = anchors.find(([k]) => k.length >= 2 && role.startsWith(k)); order = hit?.[1]; }
+    let matched = orderByName.get(role);
+    if (!matched?.length) { const hit = anchors.find(([k]) => k.length >= 2 && role.startsWith(k)); matched = hit?.[1]; }
     // 分頁歸戶:皮膚列常不帶主角前綴(顾冶分頁裡直接寫「緋夜共舞」),列名對不到
     // 訂單時,用「所在分頁的主角」找訂單(2026-07-15 女王百貨顧冶 11 句漏 4 句的根因)。
-    if (!order) { const sk = roleSheet.get(role); if (sk) order = orderByLoose.get(sk); }
-    if (!order) { unmatched.push({ role, lines: lines.length }); continue; }
-    const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), order: order as Ord, lines: [], images: [] };
-    const anchor = mainKey(slot.roleName);
-    for (const l of lines) slot.lines.push({ ...l, variant: l.variant || (role !== anchor ? role : undefined) });
-    for (const img of imgsByKey.get(role) || []) slot.images.push(img);
-    byOrder.set(String(order.id), slot);
+    if (!matched?.length) { const sk = roleSheet.get(role); if (sk) matched = orderByLoose.get(sk); }
+    if (!matched?.length) { unmatched.push({ role, lines: lines.length }); continue; }
+    for (const order of matched) {
+      const slot = byOrder.get(String(order.id)) || { roleName: String(order.role_name || role), order: order as Ord, lines: [], images: [] };
+      const anchor = mainKey(slot.roleName);
+      for (const l of lines) slot.lines.push({ ...l, variant: l.variant || (role !== anchor ? role : undefined) });
+      for (const img of imgsByKey.get(role) || []) slot.images.push(img);
+      byOrder.set(String(order.id), slot);
+    }
   }
 
   const matched: { role: string; lines: number; images?: number; pay?: string }[] = [];

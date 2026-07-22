@@ -1412,8 +1412,7 @@ function RoleAudition({
       <span className="text-lg font-semibold text-white leading-tight" style={{ fontFamily: '"Songti TC","Noto Serif TC",serif' }}>{role.name}</span>
       {assigned && <span className="ml-2 align-middle text-[10px] bg-white/10 border border-white/20 text-gray-300 rounded-full px-2 py-0.5 whitespace-nowrap">{tx('已徵得', '已征得', 'Cast')}</span>}
       <span className="flex items-center gap-1.5 shrink-0">
-        {isAssigned && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap bg-white/[0.08] text-gray-400 border border-white/10">{tx('已徵得', '已征得', 'Cast')}</span>}
-        {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
+                {meta && <span className="text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap" style={{ color: '#7fb2e8', background: 'rgba(127,178,232,.14)' }}>{meta}</span>}
       </span>
     </div>
   );

@@ -14,7 +14,7 @@ import { auditionDeadlinePassed } from '@/lib/casting';
   dashboard keeps working.
 */
 export async function GET(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id, name, languages, visible_languages, demos, quote_templates, coop_ai_clone, coop_ai_training');
+  const r = await resolveTalentFromRequest(request, 'id, name, email, languages, visible_languages, demos, quote_templates, coop_ai_clone, coop_ai_training');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
 
   // The talent's own published demos — offered as "pick an existing demo" when
@@ -51,6 +51,12 @@ export async function GET(request: NextRequest) {
     if (langSet.size) {
       const { data: mine } = await r.db.from('marketplace_quotes').select('brief_id').eq('talent_id', (r.talent as { id: string }).id);
       minedIds = new Set((mine || []).map((q) => String(q.brief_id)));
+      // 被點名邀請的案也永遠可見(2026-07-22 審查:Wing 勾人通知了、對方卻因語言過濾看不到案)
+      const myEmail = String((r.talent as { email?: string }).email || '').toLowerCase();
+      if (myEmail) {
+        const { data: inv } = await r.db.from('casting_invites').select('brief_id').ilike('email', myEmail);
+        for (const i of inv || []) minedIds.add(String(i.brief_id));
+      }
     }
     const briefs = (briefsRaw || []).filter((b) => {
       const at = (b as { ai_type?: string | null }).ai_type;

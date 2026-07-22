@@ -677,7 +677,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
           <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
             <Mic className="w-4 h-4 text-cyan-400" />
             <span className="text-sm font-semibold text-cyan-400">Versions ({versions.length})</span>
-            {order.talent_id && (
+            {order.talent_id && order.email === 'casting@onyxstudios.ai' && (  /* 費用同意卡只做在指派單;報價單掛費會靜默失效(2026-07-22 審查) */
               <button onClick={() => setRevOpen(!revOpen)}
                 className="ml-auto text-[11px] px-2.5 py-1 rounded-full border bg-amber-500/10 text-amber-300 border-amber-400/30 hover:bg-amber-500/20">
                 ✏️ 發修改需求{(order.revision_count || 0) > 0 ? `(第 ${order.revision_count} 輪)` : ''}

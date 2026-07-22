@@ -73,7 +73,8 @@ export async function POST(request: NextRequest) {
   //    其次 email;都沒有才 insert 最小檔(未上線 is_active=false,之後自助補檔)。──
   let { data: talent } = await db.from('talents').select('id, name').eq('auth_user_id', user.id).maybeSingle();
   if (!talent) {
-    const { data: byEmail } = await db.from('talents').select('id, name').eq('email', email).maybeSingle();
+    const { data: byEmailRows } = await db.from('talents').select('id, name').ilike('email', email).limit(1); // ilike:歷史 email 有大小寫混雜,eq 會 miss → 重複建檔(2026-07-22 審查)
+    const byEmail = byEmailRows?.[0] || null;
     if (byEmail) {
       await db.from('talents').update({ auth_user_id: user.id }).eq('id', byEmail.id);
       talent = byEmail;

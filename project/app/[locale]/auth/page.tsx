@@ -25,7 +25,7 @@ export default function AuthPage() {
   // 從試音 join 頁帶來的 ?next=<回程路徑>(登入後回到那個案子)。只收本站相對路徑,
   // 擋開放轉址(//evil.com、http://…)。?mode=signup 讓 join 頁能直接開在註冊頁。
   const rawNext = searchParams.get('next') || '';
-  const nextPath = /^\/(?!\/)/.test(rawNext) ? rawNext : '';
+  const nextPath = /^\/(?!\/)/.test(rawNext) && !rawNext.includes('\\') ? rawNext : ''; // 反斜線會被瀏覽器當 / → //evil.com 開放轉址(2026-07-22 審查)
   const [mode, setMode] = useState<AuthMode>(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
