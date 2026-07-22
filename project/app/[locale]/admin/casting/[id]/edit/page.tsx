@@ -33,7 +33,7 @@ const optsWith = (opts: string[], val?: string) => (val && !opts.includes(val) ?
 // 快速組價(Wing 2026-07-22):固定 / 區間 / 最高(Up to)三模式,組好帶入報酬欄(仍可手改)。
 function RateQuickBuild({ onApply, input }: { onApply: (v: string) => void; input: string }) {
   const [cur, setCur] = useState('TWD');
-  const [mode, setMode] = useState<'fixed' | 'range' | 'upto'>('fixed');
+  const [mode, setMode] = useState<'fixed' | 'range' | 'upto' | 'plus'>('fixed');
   const [a1, setA1] = useState('');
   const [a2, setA2] = useState('');
   const [unit, setUnit] = useState('整案');
@@ -43,13 +43,14 @@ function RateQuickBuild({ onApply, input }: { onApply: (v: string) => void; inpu
     let core = `${SYM[cur] || cur + ' '}${a1.trim()}`;
     if (mode === 'range' && a2.trim()) core = `${core}–${a2.trim()}`;
     if (mode === 'upto') core = cur === 'USD' ? `Up to ${core}` : `最高 ${core}`;
+    if (mode === 'plus') core = `${core}+`;
     return unit === '整案' ? `${core} · 整案` : `${core} / ${unit}`;
   };
   return (
     <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
       <select className={`${input} w-24`} value={cur} onChange={(e) => setCur(e.target.value)}><option>TWD</option><option>USD</option></select>
-      <select className={`${input} w-28`} value={mode} onChange={(e) => setMode(e.target.value as 'fixed' | 'range' | 'upto')}>
-        <option value="fixed">固定價</option><option value="range">區間</option><option value="upto">最高(Up to)</option>
+      <select className={`${input} w-28`} value={mode} onChange={(e) => setMode(e.target.value as 'fixed' | 'range' | 'upto' | 'plus')}>
+        <option value="fixed">固定價</option><option value="range">區間</option><option value="upto">最高(Up to)</option><option value="plus">起價(X+)</option>
       </select>
       <input type="number" min="0" className={`${input} w-28`} value={a1} onChange={(e) => setA1(e.target.value)} placeholder={mode === 'range' ? '下限' : '金額'} />
       {mode === 'range' && <input type="number" min="0" className={`${input} w-28`} value={a2} onChange={(e) => setA2(e.target.value)} placeholder="上限" />}

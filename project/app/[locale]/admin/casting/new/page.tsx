@@ -172,7 +172,7 @@ function NewCasting() {
   const [wantsDirector, setWantsDirector] = useState(false);
   const [brief, setBrief] = useState('');
   const [rateCur, setRateCur] = useState('TWD');
-  const [rateMode, setRateMode] = useState<'fixed' | 'range' | 'upto'>('fixed'); // 固定 / 區間 / 最高(Up to)
+  const [rateMode, setRateMode] = useState<'fixed' | 'range' | 'upto' | 'plus'>('fixed'); // 固定 / 區間 / 最高(Up to) / 起價(X+)
   const [rateAmt, setRateAmt] = useState('');
   const [rateAmt2, setRateAmt2] = useState(''); // 區間上限
   const [rateUnit, setRateUnit] = useState('整案');
@@ -515,6 +515,7 @@ function NewCasting() {
     let core = fmtRate(rateCur, rateAmt);
     if (rateMode === 'range' && rateAmt2.trim()) core = `${fmtRate(rateCur, rateAmt)}–${rateAmt2.trim()}`;
     if (rateMode === 'upto') core = en ? `Up to ${core}` : `最高 ${core}`;
+    if (rateMode === 'plus') core = `${core}+`;   // 起價:往上自由報
     return rateUnit === '整案' ? `${core} · 整案` : `${core} / ${rateUnit}`;
   }
   function goPreview() {
@@ -1015,10 +1016,11 @@ function NewCasting() {
             <select className={`${input} w-28`} value={rateCur} onChange={(e) => setRateCur(e.target.value)}>
               {CCYS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select className={`${input} w-32`} value={rateMode} onChange={(e) => setRateMode(e.target.value as 'fixed' | 'range' | 'upto')}>
+            <select className={`${input} w-32`} value={rateMode} onChange={(e) => setRateMode(e.target.value as 'fixed' | 'range' | 'upto' | 'plus')}>
               <option value="fixed">固定價</option>
               <option value="range">區間(X–Y)</option>
               <option value="upto">最高(Up to)</option>
+              <option value="plus">起價(X+)</option>
             </select>
             <input type="number" min="0" className={`${input} w-32`} value={rateAmt} onChange={(e) => setRateAmt(e.target.value)} placeholder={rateMode === 'range' ? '下限' : '金額'} />
             {rateMode === 'range' && <><span className="text-gray-500 text-sm">–</span>

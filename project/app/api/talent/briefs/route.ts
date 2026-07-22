@@ -14,7 +14,7 @@ import { auditionDeadlinePassed } from '@/lib/casting';
   dashboard keeps working.
 */
 export async function GET(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id, name, languages, demos, quote_templates, coop_ai_clone, coop_ai_training');
+  const r = await resolveTalentFromRequest(request, 'id, name, languages, visible_languages, demos, quote_templates, coop_ai_clone, coop_ai_training');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
 
   // The talent's own published demos — offered as "pick an existing demo" when
@@ -38,11 +38,29 @@ export async function GET(request: NextRequest) {
     // coop_ai_training. Ordinary cases (ai_type null) stay visible to everyone.
     const aiClone = !!(r.talent as { coop_ai_clone?: boolean }).coop_ai_clone;
     const aiTrain = !!(r.talent as { coop_ai_training?: boolean }).coop_ai_training;
+    // ── 語言可見性(Wing 2026-07-22):案源不全攤開 ──
+    // 可見語言集 = 自選 visible_languages(最多5)優先,否則檔案 languages。
+    // 「主語言」比對(Mandarin · Taiwan 可見所有 Mandarin 案 —— 擋語言不擋口音)。
+    // 集合為空(老資料沒填)→ 全可見,前端提示補設定。已投過的案永遠可見。
+    const primary = (v: unknown) => String(v || '').split('·')[0].trim().toLowerCase();
+    const vl = (r.talent as { visible_languages?: unknown }).visible_languages;
+    const fl = (r.talent as { languages?: unknown }).languages;
+    const langSrc = (Array.isArray(vl) && vl.length ? vl : Array.isArray(fl) ? fl : []) as unknown[];
+    const langSet = new Set(langSrc.map(primary).filter(Boolean));
+    let minedIds = new Set<string>();
+    if (langSet.size) {
+      const { data: mine } = await r.db.from('marketplace_quotes').select('brief_id').eq('talent_id', (r.talent as { id: string }).id);
+      minedIds = new Set((mine || []).map((q) => String(q.brief_id)));
+    }
     const briefs = (briefsRaw || []).filter((b) => {
       const at = (b as { ai_type?: string | null }).ai_type;
-      if (at === 'clone') return aiClone;
-      if (at === 'training') return aiTrain;
-      return true;
+      if (at === 'clone' && !aiClone) return false;
+      if (at === 'training' && !aiTrain) return false;
+      if (!langSet.size) return true;
+      const bl = (b as { language?: string | null }).language;
+      if (!bl) return true;                       // 案件沒標語言 → 保守顯示
+      if (minedIds.has(String(b.id))) return true; // 投過的永遠可見
+      return langSet.has(primary(bl));
     });
 
     // Per-role audition counts (casting only). The count IS shown to talents, and
@@ -156,7 +174,7 @@ export async function GET(request: NextRequest) {
     const assignedOrders = (ao || []).map((o) => ({ ...o, deliveries: aoVers[o.id as string] || [], case_timezone: tzByBrief.get(String(o.brief_id)) || 'Asia/Taipei' }));
 
     const tt = (r.talent as { name?: string; quote_templates?: { intro?: unknown[]; revision?: unknown[] } });
-    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs, assignedOrders, myName: tt.name || '', templates: tt.quote_templates || {} });
+    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs, assignedOrders, myName: tt.name || '', templates: tt.quote_templates || {}, langFilter: { active: langSet.size > 0, visible: Array.isArray(vl) && vl.length ? vl : (Array.isArray(fl) ? fl : []) } });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });

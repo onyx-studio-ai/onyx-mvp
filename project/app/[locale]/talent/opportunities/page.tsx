@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
-import { langLabel } from '@/lib/languages';
+import { langLabel, LANGUAGES } from '@/lib/languages';
 import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -598,6 +598,9 @@ export default function Opportunities() {
   const [tab, setTab] = useState<'todo' | 'open' | 'ended'>('todo');
   const [jobQ, setJobQ] = useState('');
   const tabInitRef = useRef(false);
+  const [langFilter, setLangFilter] = useState<{ active: boolean; visible: string[] }>({ active: false, visible: [] });
+  const [langEdit, setLangEdit] = useState(false);
+  const [langSel, setLangSel] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     const res = await authedFetch('/api/talent/briefs');
@@ -612,6 +615,7 @@ export default function Opportunities() {
     setAssignedOrders(j.assignedOrders || []);
     setMyName(j.myName || '');
     setTemplates(j.templates || {});
+    setLangFilter(j.langFilter || { active: false, visible: [] });
     setPhase('ready');
   }, []);
 
@@ -941,6 +945,42 @@ export default function Opportunities() {
       </div>
 
       <div className={tab === 'open' ? '' : 'hidden'}>
+
+      {/* 案件語言可見度(Wing 2026-07-22):只看得到自己語言的案;此處自選最多 5 個語言 */}
+      <div className="mb-3 text-xs text-gray-400 flex flex-wrap items-center gap-1.5">
+        {langFilter.active ? (
+          <>
+            <span>{tx('顯示語言', '显示语言', 'Showing languages')}:</span>
+            {langFilter.visible.slice(0, 5).map((l) => <span key={l} className="bg-white/[0.06] border border-white/10 rounded-full px-2 py-0.5 text-gray-200">{langLabel(l, locale)}</span>)}
+          </>
+        ) : (
+          <span className="text-amber-300">{tx('尚未設定案件語言,目前顯示全部 —— 建議設定你的語言。', '尚未设定案件语言,目前显示全部 —— 建议设定你的语言。', 'No case languages set — showing everything. Set yours below.')}</span>
+        )}
+        <button onClick={() => { setLangSel(langFilter.visible.slice(0, 5)); setLangEdit(!langEdit); }} className="text-sky-300 hover:underline">{langEdit ? tx('收起', '收起', 'Close') : tx('調整', '调整', 'Edit')}</button>
+      </div>
+      {langEdit && (
+        <div className="mb-4 border border-white/10 rounded-xl p-3 bg-white/[0.03]">
+          <p className="text-xs text-gray-300 mb-2">{tx('選擇你想看到的案件語言(最多 5 個)。其他語言的案件將不會顯示。', '选择你想看到的案件语言(最多 5 个)。其他语言的案件将不会显示。', 'Pick the case languages you want to see (up to 5). Cases in other languages won’t show.')}</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {langSel.map((l) => (
+              <span key={l} className="bg-sky-500/15 border border-sky-400/30 text-sky-200 rounded-full px-2 py-0.5 text-xs">{langLabel(l, locale)}
+                <button onClick={() => setLangSel(langSel.filter((x) => x !== l))} className="ml-1 text-sky-300 hover:text-red-300">✕</button>
+              </span>
+            ))}
+            {langSel.length < 5 && (
+              <select className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-xs text-white" value="" onChange={(e) => { const v = e.target.value; if (v && !langSel.includes(v)) setLangSel([...langSel, v]); }}>
+                <option value="" className="bg-black">{tx('+ 加語言', '+ 加语言', '+ Add language')}</option>
+                {LANGUAGES.filter((o) => !langSel.includes(o.v)).map((o) => <option key={o.v} value={o.v} className="bg-black">{langLabel(o.v, locale)}</option>)}
+              </select>
+            )}
+          </div>
+          <button onClick={async () => {
+            const r2 = await authedFetch('/api/talent/visible-languages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ languages: langSel }) });
+            if (!r2.ok) { alert((await r2.json().catch(() => ({}))).error || tx('儲存失敗', '保存失败', 'Save failed')); return; }
+            setLangEdit(false); load();
+          }} className="text-xs bg-sky-500 hover:bg-sky-400 text-black font-semibold rounded-lg px-3 py-1.5">{tx('儲存', '保存', 'Save')}</button>
+        </div>
+      )}
 
       {briefs.length === 0 && wonBriefs.length === 0 && endedBriefs.length === 0 && (
         <p className="text-gray-300 text-sm text-center py-16">{tx('目前沒有開放中的案件。之後有新案件會出現在這裡。', '目前没有开放中的案件。之后有新案件会出现在这里。', 'No open cases right now. New ones will appear here.')}</p>
