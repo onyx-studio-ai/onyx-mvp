@@ -36,7 +36,7 @@ export default function EditCasting() {
   const [phase, setPhase] = useState<'loading' | 'notfound' | 'ready'>('loading');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [f, setF] = useState({ title: '', internal_client_note: '', license_summary: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', audition_deadline_time: '', recording_start: '', deadline: '', deadline_time: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
+  const [f, setF] = useState({ title: '', internal_client_note: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', audition_deadline_time: '', recording_start: '', deadline: '', deadline_time: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
   // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 之前只在發案表單有,編輯頁沒有,導致從客戶請求
@@ -155,7 +155,7 @@ export default function EditCasting() {
       .filter((a) => a.role_name)
       .map((a) => [String(a.role_name), { talent_name: a.talent_name || null, talent_price: a.talent_price, pay_unit: a.pay_unit, pay_rate: a.pay_rate, status: a.status }])));
     setF({
-      title: bf.title || '', internal_client_note: bf.internal_client_note || '', license_summary: bf.license_summary || '', content_type: bf.content_type || '', language: bf.language || '', brief: bf.brief || '',
+      title: bf.title || '', internal_client_note: bf.internal_client_note || '', content_type: bf.content_type || '', language: bf.language || '', brief: bf.brief || '',
       rate_note: bf.rate_note || '', audition_deadline: bf.audition_deadline || '', audition_deadline_time: bf.audition_deadline_time || '', recording_start: bf.recording_start || '',
       deadline: bf.deadline || '', deadline_time: bf.deadline_time || '', length: bf.length || '', audition_script: bf.audition_script || '',
       timezone: bf.timezone || 'Asia/Taipei',
@@ -195,7 +195,6 @@ export default function EditCasting() {
       <div className="space-y-3 bg-white border border-gray-200 rounded-xl p-5 mb-5">
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">標題</span><input className={input} value={f.title} onChange={(e) => set('title', e.target.value)} /></label>
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">客戶(內部備註,配音員和前台都看不到)</span><input className={input} value={f.internal_client_note} onChange={(e) => set('internal_client_note', e.target.value)} placeholder="例:WeChat 客戶 王經理 · 上海XX網絡 · 微信ID xxx" /></label>
-        <label className="block"><span className="text-xs text-gray-600 mb-1 block">授權要點(配音員試音前必讀必勾;留空 = 不啟用授權閘)</span><textarea className={`${input} min-h-[120px] resize-y`} value={f.license_summary} onChange={(e) => set('license_summary', e.target.value)} placeholder="AI/TTS 案建議必填:授權範圍、期限、權利歸屬、保密…(不要寫終端客戶名稱)" /></label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">語言</span>
             <select className={input} value={f.language} onChange={(e) => set('language', e.target.value)}>

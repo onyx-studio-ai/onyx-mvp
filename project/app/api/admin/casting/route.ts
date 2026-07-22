@@ -253,7 +253,6 @@ export async function POST(request: NextRequest) {
     ai_type: ['clone', 'training'].includes(String(b.ai_type)) ? String(b.ai_type) : null,
     // 內部客戶備註(這案是誰的:WeChat/LINE 客戶名+聯絡方式)。只給後台看,talent/client 端一律不回。
     internal_client_note: String(b.internal_client_note || '').slice(0, 300) || null,
-    license_summary: String(b.license_summary || '').slice(0, 4000) || null, // AI 案授權要點(試音前必同意;去識別化,不提終端客戶名)
     locale: String(b.locale || 'zh-TW'),
     status: 'open',
   };
@@ -328,7 +327,7 @@ export async function PATCH(request: NextRequest) {
     const e = b.edit as Record<string, unknown>;
     const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
     const setStr = (k: string, max: number) => { if (e[k] !== undefined) upd[k] = String(e[k] ?? '').slice(0, max) || null; };
-    for (const [k, max] of [['title', 200], ['content_type', 80], ['language', 80], ['brief', 20000], ['rate_note', 200], ['audition_deadline', 120], ['recording_start', 120], ['deadline', 120], ['length', 120], ['media_scope', 200], ['territory', 120], ['license_term', 200], ['accent', 120], ['voice_style', 120], ['voice_age', 120], ['audition_script', 20000], ['gender_needs', 120], ['internal_client_note', 300], ['license_summary', 4000], ['audition_deadline_time', 5], ['deadline_time', 5]] as [string, number][]) setStr(k, max);
+    for (const [k, max] of [['title', 200], ['content_type', 80], ['language', 80], ['brief', 20000], ['rate_note', 200], ['audition_deadline', 120], ['recording_start', 120], ['deadline', 120], ['length', 120], ['media_scope', 200], ['territory', 120], ['license_term', 200], ['accent', 120], ['voice_style', 120], ['voice_age', 120], ['audition_script', 20000], ['gender_needs', 120], ['internal_client_note', 300], ['audition_deadline_time', 5], ['deadline_time', 5]] as [string, number][]) setStr(k, max);
     if (e.base_revisions !== undefined) upd.base_revisions = Math.max(0, Math.trunc(Number(e.base_revisions) || 0));
     if (e.audition_cap !== undefined) upd.audition_cap = Math.max(1, Math.trunc(Number(e.audition_cap) || 5));
     // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 讓編輯頁能改(修正從客戶請求帶入時自動勾的)。

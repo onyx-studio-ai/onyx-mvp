@@ -113,22 +113,6 @@ const CATEGORIES: { label: string; mode: 'roles' | 'general' }[] = [
   // this reveals the clone/training sub-type + gates the case to opted-in talents.
   { label: 'TTS / AI 語音', mode: 'general' },
 ];
-// 授權要點模板(照 ByteDance 類授權書濃縮、去識別化;發案時可逐案改)— Wing 2026-07-21
-const LICENSE_TPL_COMMERCIAL = `此案為 AI 語音(TTS)訓練案,終端客戶為國際科技公司(依保密協議不公開名稱)。中選後需簽署客戶的正式授權書,核心條款如下,請確認全部可接受再試音:
-
-■ 用途:錄音用於訓練語音合成(TTS)模型,可模仿/重現你的音色,用於商業場景(直播、廣告、有聲書、智能客服、數字人等)
-■ 期限/地區:永久、全球
-■ 權利歸屬:錄音與衍生技術成果的智慧財產權全部歸客戶,並放棄署名權
-■ 簽署:正式授權書需填護照資料並親簽
-■ 保密:不得對外透露專案與客戶資訊
-■ 無競業:你仍可自由為其他公司錄音
-
-以上任一條無法接受,請勿試音。`;
-const LICENSE_TPL_INTERNAL = LICENSE_TPL_COMMERCIAL.replace(
-  '■ 用途:錄音用於訓練語音合成(TTS)模型,可模仿/重現你的音色,用於商業場景(直播、廣告、有聲書、智能客服、數字人等)',
-  '■ 用途:錄音僅供客戶內部研發與模型訓練使用,不會出現在對外產品'
-);
-
 // The one category that flags a case as client-side AI/TTS (drives ai_type + consent gate).
 const AI_CATEGORY = 'TTS / AI 語音';
 
@@ -156,7 +140,6 @@ function NewCasting() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [clientNote, setClientNote] = useState('');   // 內部客戶備註:這案是誰的(只給後台看)
-  const [licenseSummary, setLicenseSummary] = useState(''); // AI 案授權要點:配音員試音前必勾同意(去識別化,不提終端客戶名)
   const [category, setCategory] = useState('遊戲 Video Game');
   const [mode, setMode] = useState<'roles' | 'general'>('roles');
   const [language, setLanguage] = useState('Mandarin · Taiwan');
@@ -242,10 +225,10 @@ function NewCasting() {
     title, category, mode, language, maleVoices, femaleVoices, hasSinging, wantsDirector, brief,
     rateCur, rateAmt, rateUnit, scale, deadline, mediaScope, territory, licenseTerm, accent,
     voiceStyle, voiceAge, baseRev, cap, auditionDeadline, recordingStart, methods, rolesText,
-    parsedRoles, auditionScript, refLinks, refFiles, aiType, clientNote, licenseSummary, deadlineTime, auditionDeadlineTime, caseTz,
+    parsedRoles, auditionScript, refLinks, refFiles, aiType, clientNote, deadlineTime, auditionDeadlineTime, caseTz,
   }, (d) => {
     setDeadlineTime(d.deadlineTime || ''); setAuditionDeadlineTime(d.auditionDeadlineTime || ''); setCaseTz(d.caseTz || 'Asia/Taipei');
-    setTitle(d.title); setCategory(d.category); setMode(d.mode); setLanguage(d.language); setClientNote(d.clientNote || ''); setLicenseSummary(d.licenseSummary || '');
+    setTitle(d.title); setCategory(d.category); setMode(d.mode); setLanguage(d.language); setClientNote(d.clientNote || '');
     setMaleVoices(d.maleVoices); setFemaleVoices(d.femaleVoices); setHasSinging(d.hasSinging); setWantsDirector(d.wantsDirector);
     setBrief(d.brief); setRateCur(d.rateCur); setRateAmt(d.rateAmt); setRateUnit(d.rateUnit); setScale(d.scale);
     setDeadline(d.deadline); setMediaScope(d.mediaScope); setTerritory(d.territory); setLicenseTerm(d.licenseTerm);
@@ -533,7 +516,6 @@ function NewCasting() {
       accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
       ai_type: aiType, // ''=一般 / 'clone'=聲音變AI / 'training'=訓練素材(客戶端)
       internal_client_note: clientNote,
-      license_summary: licenseSummary.trim() || null, // 有填就啟用授權閘(非 AI 案也可用)
       // AI case → invite opted-in applicants by email (免註冊 magic-link);
       // normal case → invite online vetted talents by id (the picker).
       ...(aiType ? { invite_emails: Array.from(selEmails) } : { invite_talent_ids: Array.from(selTalents) }),
@@ -905,16 +887,6 @@ function NewCasting() {
 
         <Field label="標題 *"><input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例:遊戲角色配音 · 女王百貨" /></Field>
         <Field label="客戶(內部備註,配音員和前台都看不到)"><input className={input} value={clientNote} onChange={(e) => setClientNote(e.target.value)} placeholder="例:WeChat 客戶 王經理 · 上海XX網絡 · 微信ID xxx" /></Field>
-
-        <Field label="授權要點(配音員試音前必讀必勾;留空 = 不啟用授權閘)">
-          <div className="flex gap-2 mb-1.5">
-            <button type="button" onClick={() => setLicenseSummary(LICENSE_TPL_COMMERCIAL)} className="text-[11px] border border-rose-300 text-rose-700 rounded px-2 py-1 hover:bg-rose-50">帶入模板:對外商用 TTS</button>
-            <button type="button" onClick={() => setLicenseSummary(LICENSE_TPL_INTERNAL)} className="text-[11px] border border-rose-300 text-rose-700 rounded px-2 py-1 hover:bg-rose-50">帶入模板:僅內部訓練</button>
-            {licenseSummary && <button type="button" onClick={() => setLicenseSummary('')} className="text-[11px] border border-gray-300 text-gray-500 rounded px-2 py-1 hover:bg-gray-50">清空</button>}
-          </div>
-          <textarea className={`${input} min-h-[120px] resize-y`} value={licenseSummary} onChange={(e) => setLicenseSummary(e.target.value)} placeholder="AI/TTS 案建議必填:授權範圍、期限、權利歸屬、保密…(不要寫終端客戶名稱)" />
-          {licenseSummary && <p className="text-[11px] text-rose-600/80 mt-1">⚖ 已啟用授權閘:配音員必須勾「同意授權要點」才能送出試音;同意時間會落庫存證。</p>}
-        </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="類別">

@@ -19,7 +19,7 @@ import { tzLabel } from '@/lib/case-time';
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string; license_summary?: string | null };
+type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -132,7 +132,7 @@ export default function GuestCasting() {
           <div className="space-y-3">
             {(brief.roles || []).map((ro, i) => (
               <GuestRole key={i} token={token} role={ro} count={counts[ro.name || ''] || 0}
-                source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type} licenseSummary={brief.license_summary}
+                source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type}
                 popular={(counts[ro.name || ''] || 0) >= (Number(brief.audition_cap) || 5)}
                 assigned={!!ro.name && assignedRoles.includes(ro.name)}
                 done={mine.find((m) => (m.role_name || '') === (ro.name || ''))} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
@@ -141,7 +141,7 @@ export default function GuestCasting() {
         </>
       ) : (
         /* General (single-voice) call — upload a demo + price (no per-role audition). */
-        <GuestGeneral token={token} source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type} licenseSummary={brief.license_summary} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
+        <GuestGeneral token={token} source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
       )}
 
       <div className="mt-8 border-t border-white/10 pt-4 text-center">
@@ -152,27 +152,13 @@ export default function GuestCasting() {
   );
 }
 
-// 授權前置閘:AI 案授權要點+同意勾選,沒勾不能送出(Wing 2026-07-21)
-function LicenseGate({ summary, ok, setOk, tx }: { summary: string; ok: boolean; setOk: (v: boolean) => void; tx: (zh: string, en: string) => string }) {
-  return (
-    <div className="border border-rose-400/30 bg-rose-500/[0.06] rounded-lg p-3">
-      <p className="text-xs font-semibold text-rose-200 mb-1.5">⚖ {tx('授權要點(試音前必讀)', 'License terms — read before auditioning')}</p>
-      <p className="text-xs text-gray-200 whitespace-pre-wrap mb-2">{summary}</p>
-      <label className="flex items-start gap-2 cursor-pointer">
-        <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} className="mt-0.5 accent-rose-400" />
-        <span className="text-xs text-gray-100">{tx('我已閱讀並同意上述授權範圍,確認中選後願意簽署正式授權文件。', 'I have read and agree to the terms above, and will sign the formal authorization if selected.')}</span>
-      </label>
-    </div>
-  );
-}
-
 function Shell({ children }: { children: React.ReactNode }) {
   return <main className="min-h-screen bg-black text-white px-4 pt-24 pb-12"><div className="max-w-4xl mx-auto">{children}</div></main>;
 }
 
-function GuestRole({ token, role, count, popular, assigned, done, closed, source, rateNote, budget, budgetType, licenseSummary, tx, onDone }: {
+function GuestRole({ token, role, count, popular, assigned, done, closed, source, rateNote, budget, budgetType, tx, onDone }: {
   token: string; role: Role; count: number; popular: boolean; assigned?: boolean; done?: Audition; closed: boolean;
-  source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string; licenseSummary?: string | null;
+  source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string;
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -196,16 +182,14 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
       setAudioUrl(uj.publicUrl);
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
   }
-  const [licenseOk, setLicenseOk] = useState(false);
   async function submit() {
     setErr('');
-    if (licenseSummary && !licenseOk) return setErr(tx('請先勾選同意授權要點', 'Please agree to the license terms first'));
     if (!audioUrl) return setErr(tx('請先上傳試音音檔', 'Upload your audition first'));
     const earn = Number(gross); // input = the talent's take-home fee
     if (!(earn > 0)) return setErr(tx('請填報價', 'Enter your price'));
     const grossAmount = source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
     setBusy(true);
-    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro }) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
@@ -292,7 +276,6 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
               return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
             })()}
             <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
-            {licenseSummary && <LicenseGate summary={licenseSummary} ok={licenseOk} setOk={setLicenseOk} tx={tx} />}
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button onClick={submit} disabled={busy || uploading} className="w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm" style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>{busy ? tx('送出中…', 'Submitting…') : tx('送出試音', 'Submit')}</button>
           </div>
@@ -303,8 +286,8 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
 }
 
 // General (single-voice) guest response: upload one demo + price. No roles.
-function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetType, licenseSummary, tx, onDone }: {
-  token: string; done?: Audition; closed: boolean; source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string; licenseSummary?: string | null;
+function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetType, tx, onDone }: {
+  token: string; done?: Audition; closed: boolean; source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string;
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [audioUrl, setAudioUrl] = useState('');
@@ -327,16 +310,14 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
       setAudioUrl(uj.publicUrl);
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
   }
-  const [licenseOk, setLicenseOk] = useState(false);
   async function submit() {
     setErr('');
-    if (licenseSummary && !licenseOk) return setErr(tx('請先勾選同意授權要點', 'Please agree to the license terms first'));
     if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
     const earn = Number(gross);
     if (!(earn > 0)) return setErr(tx('請填報價', 'Enter your price'));
     const grossAmount = source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
     setBusy(true);
-    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: audioUrl, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: audioUrl, gross_amount: grossAmount, currency, intro }) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
@@ -375,7 +356,6 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
         return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
       })()}
       <textarea className={`${cls} min-h-[48px] resize-y`} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder={tx('報價說明 + 自我介紹', 'Pricing + intro')} />
-      {licenseSummary && <LicenseGate summary={licenseSummary} ok={licenseOk} setOk={setLicenseOk} tx={tx} />}
       {err && <p className="text-red-400 text-xs">{err}</p>}
       <button onClick={submit} disabled={busy || uploading || closed} className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-1.5 text-sm">{busy ? tx('送出中…', 'Submitting…') : tx('送出應徵', 'Submit')}</button>
     </div>
