@@ -449,7 +449,67 @@ const morePosts: BlogPost[] = [
   },
 ];
 
-export const posts: BlogPost[] = [mapsMaori, wilderConsent, langQA, ...morePosts];
+const euLabeling: BlogPost = {
+  slug: 'eu-ai-act-labeling-what-changes-for-ai-voice',
+  date: '2026-07-22',
+  readMins: 6,
+  cover: '/blog/gene-wilder-ai-voice-what-permission-requires-hero.png',
+  tags: ['AI Voice', 'Compliance', 'Legal', 'EU AI Act'],
+  title: {
+    en: 'On August 2, Europe Starts Requiring a Label on AI Voices. Here Is What Actually Changes.',
+    'zh-TW': '8 月 2 日起,歐洲開始要求 AI 聲音掛上標示。真正改變的是什麼。',
+    'zh-CN': '8 月 2 日起,欧洲开始要求 AI 声音挂上标示。真正改变的是什么。',
+  },
+  dek: {
+    en: "The EU AI Act's transparency rules take effect on 2 August 2026. If your ad, course or game uses an AI voice and reaches European ears, a labeling duty is now on the table — and part of it may be yours, not the tool's.",
+    'zh-TW': '歐盟《AI 法案》的透明度規定將於 2026 年 8 月 2 日生效。如果你的廣告、課程或遊戲用了 AI 聲音、而且會被歐洲的耳朵聽到,一份標示義務就攤在桌上了——而其中一部分,可能是你的,不是工具的。',
+    'zh-CN': '欧盟《AI 法案》的透明度规定将于 2026 年 8 月 2 日生效。如果你的广告、课程或游戏用了 AI 声音、而且会被欧洲的耳朵听到,一份标示义务就摊在桌上了——而其中一部分,可能是你的,不是工具的。',
+  },
+  body: [
+    { t: 'p', text: {
+      en: "On 2 August 2026, a set of rules inside the EU AI Act quietly switches on, and one of them is about the sound coming out of your speakers. Under Article 50, AI systems that generate synthetic audio, images, video or text must mark their output so that a machine can detect it as artificially generated. And anyone deploying an AI-generated deepfake — which, in the law's wording, reaches a synthetic voice made to pass as real speech — must disclose that it is artificial. If any part of your work involves an AI voice reaching listeners in Europe, this is no longer a future policy debate. It is a date on the calendar, and it is nearly here.",
+      'zh-TW': "2026 年 8 月 2 日,歐盟《AI 法案》裡的一組規定會悄悄啟動,其中一條,講的正是你喇叭裡放出來的那個聲音。依據第 50 條,凡是會生成合成音訊、影像、影片或文字的 AI 系統,都必須在輸出上打上標記,讓機器能偵測出它是人工生成的。而任何人只要部署了 AI 生成的深偽內容——依法條的用語,這涵蓋一把被做來冒充真人說話的合成聲音——就必須揭露它是人工的。只要你的工作有任何一環,是讓一把 AI 聲音被歐洲的聽眾聽到,這就不再是未來的政策辯論了。它是日曆上的一個日期,而且近在眼前。",
+      'zh-CN': "2026 年 8 月 2 日,欧盟《AI 法案》里的一组规定会悄悄启动,其中一条,讲的正是你音箱里放出来的那个声音。依据第 50 条,凡是会生成合成音频、图像、视频或文字的 AI 系统,都必须在输出上打上标记,让机器能检测出它是人工生成的。而任何人只要部署了 AI 生成的深伪内容——依法条的用语,这涵盖一把被做来冒充真人说话的合成声音——就必须揭露它是人工的。只要你的工作有任何一环,是让一把 AI 声音被欧洲的听众听到,这就不再是未来的政策辩论了。它是日历上的一个日期,而且近在眼前。",
+    } },
+    { t: 'p', text: {
+      en: "It helps to see that Article 50 is really two obligations pointed at two different people. The first lands on the **provider** — the party that builds the AI system and puts it on the market. They have to embed a mark in the output itself: a watermark or metadata that travels with the file and lets a detector confirm it was machine-made, even after it has been copied around the internet. The second lands on the **deployer** — the party that uses the system to make content and puts that content in front of an audience. They have to disclose, in a way a person can actually perceive, that a deepfake is artificial. Same piece of audio, two separate duties, and — this is the part that trips people up — often two separate companies.",
+      'zh-TW': "先看懂一件事會很有幫助:第 50 條其實是兩項義務,指向兩個不同的人。第一項落在**提供者**(provider)身上——也就是打造這套 AI 系統、並把它推上市場的那一方。他們必須在輸出本身嵌入標記:一個隨檔案一起走的浮水印或中繼資料(metadata),讓偵測工具即使在檔案被整個網路轉了一圈之後,仍能確認它是機器做的。第二項落在**部署者**(deployer)身上——也就是拿這套系統去產出內容、再把內容送到受眾面前的那一方。他們必須以一個真人能實際察覺的方式,揭露這段深偽內容是人工的。同一段音訊,兩項各自獨立的義務,而且——這正是最多人卡住的地方——往往是兩家不同的公司。",
+      'zh-CN': "先看懂一件事会很有帮助:第 50 条其实是两项义务,指向两个不同的人。第一项落在**提供者**(provider)身上——也就是打造这套 AI 系统、并把它推上市场的那一方。他们必须在输出本身嵌入标记:一个随文件一起走的水印或元数据(metadata),让检测工具即使在文件被整个网络转了一圈之后,仍能确认它是机器做的。第二项落在**部署者**(deployer)身上——也就是拿这套系统去产出内容、再把内容送到受众面前的那一方。他们必须以一个真人能实际察觉的方式,揭露这段深伪内容是人工的。同一段音频,两项各自独立的义务,而且——这正是最多人卡住的地方——往往是两家不同的公司。",
+    } },
+    { t: 'p', text: {
+      en: "Now put yourself in it. You licensed an AI voice, typed in your script, and generated a narration for a product video that will run in Germany. Are you the provider or the deployer? You did not build the model, so not the provider. But you took its output and published it to an audience, which is close to the textbook definition of a deployer — and the deployer's disclosure duty may be yours. The tool's terms of service will have a view on this, and it may not be the view you would have chosen. The Act even carves out an exemption for work that is clearly artistic, creative or satirical, which sounds reassuring until you try to decide whether your brand's explainer video qualifies. The honest summary is that the line runs straight through the middle of an ordinary AI-voice purchase, and 'the tool handles it' is an assumption, not a fact.",
+      'zh-TW': "現在把自己放進去。你授權了一把 AI 聲音,打進你的腳本,生成了一段要在德國播出的產品影片旁白。你是提供者,還是部署者?你沒有打造那個模型,所以不是提供者。但你拿了它的輸出、並把它發佈給了一群受眾,這幾乎就是教科書上「部署者」的定義——而那份部署者的揭露義務,可能就是你的。工具的服務條款對這件事會有它的看法,而那看法未必是你會替自己挑的那一個。《法案》甚至替明顯屬於藝術、創作或諷刺的作品開了一道豁免,聽起來讓人安心,直到你真的要判斷「你品牌的產品說明影片算不算」。誠實的總結是:這條界線,就直直穿過一筆再普通不過的 AI 聲音採購的正中央,而「工具會處理好」是一個假設,不是一個事實。",
+      'zh-CN': "现在把自己放进去。你授权了一把 AI 声音,打进你的脚本,生成了一段要在德国播出的产品视频旁白。你是提供者,还是部署者?你没有打造那个模型,所以不是提供者。但你拿了它的输出、并把它发布给了一群受众,这几乎就是教科书上「部署者」的定义——而那份部署者的揭露义务,可能就是你的。工具的服务条款对这件事会有它的看法,而那看法未必是你会替自己挑的那一个。《法案》甚至替明显属于艺术、创作或讽刺的作品开了一道豁免,听起来让人安心,直到你真的要判断「你品牌的产品说明视频算不算」。诚实的总结是:这条界线,就直直穿过一笔再普通不过的 AI 声音采购的正中央,而「工具会处理好」是一个假设,不是一个事实。",
+    } },
+    { t: 'p', text: {
+      en: "Underneath the legal roles sit two technical layers, and you need both. One is the machine-readable mark on the file — the watermark or provenance metadata the provider is meant to embed, which a person listening will never hear. The other is the human-perceptible disclosure — the on-screen note or the spoken line that tells an actual listener the voice is synthetic. To help everyone hit a moving target, the European Commission finalised a voluntary Code of Practice on the Transparency of AI-Generated Content on 10 June 2026; signing it is one recognised way to show you have done enough. There is a little breathing room, too: for AI systems already on the market before 2 August, the machine-readable-marking part has an extension to 2 December 2026. The expectation that you disclose does not wait that long.",
+      'zh-TW': "在這些法律角色底下,坐著兩個技術層次,而你兩個都需要。一個是檔案上那道機器可讀的標記——提供者本應嵌入的浮水印或來源中繼資料,聽的人永遠不會聽見它。另一個是真人能察覺的揭露——螢幕上那行字,或口白裡那句話,告訴真正在聽的人:這把聲音是合成的。為了幫大家追上一個移動中的目標,歐盟執委會在 2026 年 6 月 10 日,定案了一份自願性的《AI 生成內容透明度行為準則》;簽署它,是一條受官方認可、用來證明你已做到位的途徑。也有一點喘息空間:對於在 8 月 2 日之前就已上市的 AI 系統,機器可讀標記這部分有一段寬限,延到 2026 年 12 月 2 日。但「你必須揭露」這件事,並不等這麼久。",
+      'zh-CN': "在这些法律角色底下,坐着两个技术层次,而你两个都需要。一个是文件上那道机器可读的标记——提供者本应嵌入的水印或来源元数据,听的人永远不会听见它。另一个是真人能察觉的揭露——屏幕上那行字,或口白里那句话,告诉真正在听的人:这把声音是合成的。为了帮大家追上一个移动中的目标,欧盟委员会在 2026 年 6 月 10 日,定案了一份自愿性的《AI 生成内容透明度行为准则》;签署它,是一条受官方认可、用来证明你已做到位的途径。也有一点喘息空间:对于在 8 月 2 日之前就已上市的 AI 系统,机器可读标记这部分有一段宽限,延到 2026 年 12 月 2 日。但「你必须揭露」这件事,并不等这么久。",
+    } },
+    { t: 'p', text: {
+      en: "If this is starting to feel like homework you did not sign up for, that is the honest shape of it. You came to AI voice to get an ad or a course out the door quickly and within budget — not to work out whether you count as a 'deployer' under an EU regulation, whether your file carries a compliant watermark, or whether your voiceover needs a spoken disclaimer. But 'fast and cheap' has a way of quietly handing you a compliance question along with the audio, and a raw file from a self-serve tool usually arrives with none of this settled. Whether it is marked, whether you can prove where the voice came from, whether you are the one who has to disclose — all of it lands back on your desk.",
+      'zh-TW': "如果這開始像一份你從沒報名的作業,那就是它誠實的樣子。你會來用 AI 聲音,是為了把一支廣告、一堂課,又快又在預算內地送出門——不是為了搞清楚「你在歐盟法規下算不算部署者」、「你的檔案帶不帶合規的浮水印」,或「你的旁白需不需要一句口頭聲明」。但「又快又便宜」總有辦法,在把音檔交給你的同時,悄悄一起塞給你一道合規題,而一個自助工具吐出來的原始檔案,通常這些事一件都沒替你敲定。它有沒有被標記、你能不能證明這聲音是哪來的、要揭露的人是不是你——這一切,又全部落回你的桌上。",
+      'zh-CN': "如果这开始像一份你从没报名的作业,那就是它诚实的样子。你会来用 AI 声音,是为了把一支广告、一门课,又快又在预算内地送出门——不是为了搞清楚「你在欧盟法规下算不算部署者」、「你的文件带不带合规的水印」,或「你的旁白需不需要一句口头声明」。但「又快又便宜」总有办法,在把音频交给你的同时,悄悄一起塞给你一道合规题,而一个自助工具吐出来的原始文件,通常这些事一件都没替你敲定。它有没有被标记、你能不能证明这声音是哪来的、要揭露的人是不是你——这一切,又全部落回你的桌上。",
+    } },
+    { t: 'p', text: {
+      en: "This is where working with a studio rather than a raw generator quietly earns its keep. A supplier who takes this seriously hands you audio that already carries a machine-readable mark at the file level, tells you plainly whether a given voice is AI or a real person so you can make the right disclosure call, and keeps the provenance on file — a named professional, an explicit authorization — so that if anyone ever asks where the voice came from, there is a document rather than a shrug. That is close to how Onyx already operates: we came out of running a voice studio in Taiwan since 2008, every AI voice in our library traces to a named actor who recorded under a written licence, and marking and provenance are things we treat as part of delivery, not paperwork we leave on your side of the table.",
+      'zh-TW': "而這,正是「跟一間工作室合作,而不是跟一個原始生成器合作」默默展現價值的地方。一個認真看待這件事的供應商,會交給你一份在檔案層級就已帶著機器可讀標記的音訊,會清楚告訴你某把聲音是 AI 還是真人,好讓你做出正確的揭露判斷,並且會把來源留存在案——一位有名有姓的專業配音員、一份明確的授權書——這樣一來,萬一有人問起這聲音是哪來的,拿得出的是一份文件,而不是一個聳肩。這幾乎就是 Onyx 現在的運作方式:我們是從 2008 年就在台灣經營配音起家,聲音庫裡的每一把 AI 聲音,都能追溯到一位在書面授權下錄音、有名有姓的配音員,而標記與來源歸屬,是我們當成交付一部分來對待的事,不是留在你那一側桌上的文書。",
+      'zh-CN': "而这,正是「跟一间工作室合作,而不是跟一个原始生成器合作」默默展现价值的地方。一个认真看待这件事的供应商,会交给你一份在文件层级就已带着机器可读标记的音频,会清楚告诉你某把声音是 AI 还是真人,好让你做出正确的揭露判断,并且会把来源留存在案——一位有名有姓的专业配音员、一份明确的授权书——这样一来,万一有人问起这声音是哪来的,拿得出的是一份文件,而不是一个耸肩。这几乎就是 Onyx 现在的运作方式:我们是从 2008 年就在台湾经营配音起家,声音库里的每一把 AI 声音,都能追溯到一位在书面授权下录音、有名有姓的配音员,而标记与来源归属,是我们当成交付一部分来对待的事,不是留在你那一侧桌上的文书。",
+    } },
+    { t: 'p', text: {
+      en: "So the takeaway is not to panic about a date on the near horizon; it is to ask one specific question before you ship anything with an AI voice into Europe: who marked this file, and who has to disclose it — you or your supplier? If you cannot answer that from the tool you are using, that is worth knowing now rather than after 2 August. Tell us what you need voiced, and for which markets, and we will make sure what comes back is labelled, traceable, and clear about which part is yours to disclose — so the deadline becomes one less thing on your list.",
+      'zh-TW': "所以,重點不是為了一個近在眼前的日期而恐慌;而是在你把任何一支帶著 AI 聲音的東西送進歐洲之前,先問一個具體的問題:這個檔案是誰標記的、又是誰得去揭露它——是你,還是你的供應商?如果從你正在用的工具那裡,你答不出這題,那現在就知道,總比 8 月 2 日之後才知道好。把你要配的內容、要投放的市場告訴我們,我們會確保拿回去的版本已經標示好、可追溯,而且清楚哪一部分是你該揭露的——好讓這個死線,從你的清單上少掉一項。",
+      'zh-CN': "所以,重点不是为了一个近在眼前的日期而恐慌;而是在你把任何一支带着 AI 声音的东西送进欧洲之前,先问一个具体的问题:这个文件是谁标记的、又是谁得去揭露它——是你,还是你的供应商?如果从你正在用的工具那里,你答不出这题,那现在就知道,总比 8 月 2 日之后才知道好。把你要配的内容、要投放的市场告诉我们,我们会确保拿回去的版本已经标示好、可追溯,而且清楚哪一部分是你该揭露的——好让这个死线,从你的清单上少掉一项。",
+    } },
+  ],
+  sources: [
+    { label: "EU Artificial Intelligence Act — Article 50: transparency obligations for providers and deployers; synthetic audio/image/video/text must be marked machine-readable and detectable; deepfake disclosure; applies 2 August 2026", url: "https://artificialintelligenceact.eu/article/50/" },
+    { label: "EU Artificial Intelligence Act — Article 50 transparency rules explained: provider vs deployer roles, machine-readable marking, and the extension to 2 December 2026 for systems already on the market before 2 August", url: "https://artificialintelligenceact.eu/transparency-rules-article-50/" },
+    { label: "European Commission — Code of Practice on Transparency of AI-Generated Content: voluntary framework finalised 10 June 2026 to help demonstrate Article 50 compliance", url: "https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content" },
+  ],
+};
+
+export const posts: BlogPost[] = [euLabeling, mapsMaori, wilderConsent, langQA, ...morePosts];
 
 // Server-evaluated "today" in Asia/Taipei (UTC+8) so posts go live on their
 // date in Taiwan time. With ISR revalidate on the pages, future-dated posts
