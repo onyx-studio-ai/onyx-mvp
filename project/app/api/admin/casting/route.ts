@@ -31,28 +31,45 @@ const EN_RE = /english|英語|英语|英文/i;
 async function notifyMatchingTalents(
   db: ReturnType<typeof getSupabaseServiceClient>,
   brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null },
-  opts: { dryRun?: boolean } = {},
+  opts: { dryRun?: boolean; mode?: 'lang' | 'all'; aiType?: string | null; excludeEmails?: string[] } = {},
 ) {
+  // 2026-07-22 Wing:一鍵通知。mode 'lang'(預設)= 該語系;'all' = 全站。
+  // 語言比對:中/英沿用寬鬆正則(涵蓋舊自由文字資料);其他語言用主語言精確比對
+  // (「Malay」對得上「Malay」,不再直接跳過)。AI 案一律交集合作意願 flag ——
+  // 沒同意 AI 的人通知了也看不到案子(briefs API 有意願閘)。
+  const mode = opts.mode || 'lang';
   const lang = brief.language || '';
   const isZh = ZH_RE.test(lang);
   const isEn = !isZh && EN_RE.test(lang);
-  if (!isZh && !isEn) return 0; // unknown language → skip auto-notify
+  const primary = (v: unknown) => String(v || '').split('·')[0].trim().toLowerCase();
+  const wantPrimary = primary(lang);
+  if (mode === 'lang' && !isZh && !isEn && !wantPrimary) return 0; // 沒語言可比 → 不廣播
   const { data: talents } = await db.from('talents')
-    .select('email, languages, native_languages')
+    .select('email, languages, native_languages, coop_ai_clone, coop_ai_training')
     .eq('type', 'VO')
     .not('application_id', 'is', null) // approved applicants only (no guests / internal personas)
     .not('email', 'is', null)
     .limit(800);
-  const re = isZh ? ZH_RE : EN_RE;
+  const re = isZh ? ZH_RE : isEn ? EN_RE : null;
   const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i; // internal / placeholder
   const asText = (v: unknown) => (Array.isArray(v) ? v.join(' ') : String(v || ''));
+  const excl = new Set((opts.excludeEmails || []).map((e) => String(e).trim().toLowerCase()));
   const seen = new Set<string>();
   const matched = (talents || []).filter((t) => {
     const email = String(t.email || '').trim().toLowerCase();
-    if (!EMAIL_OK.test(email) || SKIP.test(email) || seen.has(email)) return false;
-    const langs = `${asText(t.languages)} ${asText(t.native_languages)}`;
-    if (!re.test(langs)) return false;
+    if (!EMAIL_OK.test(email) || SKIP.test(email) || seen.has(email) || excl.has(email)) return false;
+    if (opts.aiType === 'clone' && !(t as { coop_ai_clone?: boolean }).coop_ai_clone) return false;
+    if (opts.aiType === 'training' && !(t as { coop_ai_training?: boolean }).coop_ai_training) return false;
+    if (mode === 'lang') {
+      if (re) {
+        const langs = `${asText(t.languages)} ${asText(t.native_languages)}`;
+        if (!re.test(langs)) return false;
+      } else {
+        const set = new Set(([...(Array.isArray(t.languages) ? t.languages : []), ...(Array.isArray(t.native_languages) ? t.native_languages : [])]).map(primary));
+        if (!set.has(wantPrimary)) return false;
+      }
+    }
     seen.add(email);
     return true;
   }).slice(0, 250);
@@ -302,6 +319,17 @@ export async function POST(request: NextRequest) {
       // via the explicit picker selection above.
       notified = await notifyMatchingTalents(db, briefMeta);
     }
+    // 一鍵廣播(Wing 2026-07-22):與上面的手動勾選並存 —— 勾的人已收邀請,這裡
+    // 再對「該語系 / 全站」廣播通知信(去重:排除已邀 email)。AI 案自動交集意願。
+    if (b.notify_mode === 'lang' || b.notify_mode === 'all') {
+      let excludeEmails: string[] = [];
+      if (row.ai_type && Array.isArray(b.invite_emails)) excludeEmails = (b.invite_emails as unknown[]).map(String);
+      else if (Array.isArray(b.invite_talent_ids) && (b.invite_talent_ids as unknown[]).length) {
+        const { data: sel } = await db.from('talents').select('email').in('id', (b.invite_talent_ids as unknown[]).map(String));
+        excludeEmails = (sel || []).map((t) => String(t.email || ''));
+      }
+      notified += await notifyMatchingTalents(db, briefMeta, { mode: b.notify_mode as 'lang' | 'all', aiType: row.ai_type, excludeEmails });
+    }
     // 指定邀請(可含未上線):不論案別,對點名的 email 額外寄免註冊 magic-link 試音連結。
     // 讓 Wing 能按名字點名任何已核准的人(含未上線),系統用它存的 email 寄,不必手打 email。
     if (Array.isArray(b.pin_invite_emails) && b.pin_invite_emails.length) {
@@ -372,12 +400,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true, notified: n, sent: true });
   }
 
-  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note, gender_needs, audition_deadline').eq('id', id).maybeSingle();
+  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note, gender_needs, audition_deadline, ai_type').eq('id', id).maybeSingle();
   if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
   if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });
   const notified = await notifyMatchingTalents(db, {
     title: String(brief.title || ''), language: String(brief.language || ''),
     rate_note: brief.rate_note, content_type: brief.content_type, gender_needs: brief.gender_needs, audition_deadline: brief.audition_deadline, code: caseCode(brief),
-  }, { dryRun: b.send !== true });
+  }, { dryRun: b.send !== true, mode: b.notify_mode === 'all' ? 'all' : 'lang', aiType: (brief as { ai_type?: string | null }).ai_type });
   return NextResponse.json({ ok: true, notified, sent: b.send === true });
 }

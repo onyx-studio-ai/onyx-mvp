@@ -209,6 +209,7 @@ function NewCasting() {
   const [copied, setCopied] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [notify] = useState(true); // legacy fallback flag (picker drives invites now)
+  const [notifyMode, setNotifyMode] = useState<'lang' | 'all' | 'none'>('lang'); // 一鍵廣播:該語系(預設)/全站/不廣播 —— 與手動勾選並存
   // AI / TTS case (client-side): the talent's voice becomes an AI model for a CLIENT
   // (not Onyx's own training). '' = ordinary casting; 'clone' = 聲音製成AI(用到本人聲音,
   // filters coop_ai_clone); 'training' = AI 訓練素材(不用本人聲音, filters coop_ai_training).
@@ -542,6 +543,7 @@ function NewCasting() {
       reference_links: refLinks.map((l) => l.trim()).filter(Boolean), reference_files: refFiles,
       length: scale, deadline, media_scope: mediaScope, territory, license_term: licenseTerm,
       accent, voice_style: voiceStyle, voice_age: voiceAge, notify,
+      notify_mode: notifyMode === 'none' ? undefined : notifyMode,
       ai_type: aiType, // ''=一般 / 'clone'=聲音變AI / 'training'=訓練素材(客戶端)
       internal_client_note: clientNote,
       license_summary: licenseSummary.trim() || null, // 有填就啟用授權閘(非 AI 案也可用)
@@ -747,6 +749,19 @@ function NewCasting() {
             ) : (
               <p className="text-sm text-amber-300">⚠ 還沒有角色 —— 返回上傳 xlsx 或手動填角色。</p>
             )}
+          </div>
+
+          {/* 一鍵廣播(與下方手動勾選並存)—— Wing 2026-07-22 */}
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <p className="text-sm font-semibold text-gray-200 mb-1.5">📢 一鍵通知</p>
+            <div className="flex flex-wrap gap-3 text-sm text-gray-200 mb-1">
+              {([['lang', '通知該語系配音員(建議)'], ['all', '通知全站配音員'], ['none', '不廣播(只寄下方勾選的邀請)']] as ['lang' | 'all' | 'none', string][]).map(([v, label]) => (
+                <label key={v} className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="radio" name="notifyMode" checked={notifyMode === v} onChange={() => setNotifyMode(v)} /> {label}
+                </label>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-500 mb-2">廣播 = 寄通知信給符合條件的已核准配音員(AI 案自動只寄給有同意 AI 合作的人);與下方手動勾選並存、自動去重。</p>
           </div>
 
           {/* Publish-time invite picker — only ONLINE (vetted) talents appear (the gate) */}
