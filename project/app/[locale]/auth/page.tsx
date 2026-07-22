@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +21,12 @@ export default function AuthPage() {
   const t = useTranslations('auth');
   const locale = useLocale();
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>('login');
+  const searchParams = useSearchParams();
+  // 從試音 join 頁帶來的 ?next=<回程路徑>(登入後回到那個案子)。只收本站相對路徑,
+  // 擋開放轉址(//evil.com、http://…)。?mode=signup 讓 join 頁能直接開在註冊頁。
+  const rawNext = searchParams.get('next') || '';
+  const nextPath = /^\/(?!\/)/.test(rawNext) ? rawNext : '';
+  const [mode, setMode] = useState<AuthMode>(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -59,6 +65,9 @@ export default function AuthPage() {
         if (!cap.ok) { const d = await cap.json().catch(() => ({})); throw new Error(d.error || 'Bot check failed'); }
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // 從試音連結來的 → 登入後直接回那個案子(nextPath 已含 locale 前綴,用整頁導向
+        // 避免 i18n router 重複加前綴)。admin 例外照舊。
+        if (nextPath && email.toLowerCase() !== 'admin@onyxstudios.ai') { window.location.assign(nextPath); return; }
         if (email.toLowerCase() === 'admin@onyxstudios.ai') { router.push('/admin/dashboard'); return; }
         // 依身分分流:純配音員(有配音員檔、非客戶)→ /talent;純客戶 / 雙重身分 /
         // 查不出 → /dashboard。雙重身分刻意送 /dashboard(客戶後台),避免「我是
