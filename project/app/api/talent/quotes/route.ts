@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Brief must exist and be open.
     const { data: brief } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline, created_at')
+      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline, created_at, license_summary')
       .eq('id', briefId)
       .maybeSingle();
     if (!brief) return NextResponse.json({ error: 'Brief not found' }, { status: 404 });
@@ -58,6 +58,10 @@ export async function POST(request: NextRequest) {
     // 試音截止:過了截止日(當天 23:59)就不再收試音;沒設試音截止就用交付截止當界線。
     // 用共用 auditionDeadlinePassed(吃 ISO 也吃舊「6/30」短字串,以建立年份推年)。
     if (auditionDeadlinePassed(brief)) return NextResponse.json({ error: '這個案子的試音已截止。' }, { status: 400 });
+    // 授權前置閘:案件掛了授權要點 → 必須勾同意才能試音(中選後才反悔授權 = 全部白忙,Wing 2026-07-21)
+    if ((brief as { license_summary?: string | null }).license_summary && body.license_agreed !== true) {
+      return NextResponse.json({ error: '此案需先同意授權要點才能試音。' }, { status: 400 });
+    }
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
 
@@ -71,6 +75,7 @@ export async function POST(request: NextRequest) {
       .insert({
         brief_id: briefId, talent_id: talent.id, gross_amount: gross, currency, message,
         sample_url: sampleUrl, intro, included_revisions: inclRev, extra_revision_price: extraRevPrice,
+        license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null,
         role_name: roleName,
         commission_rate: isPlatform ? 0 : 0.20,
       })
