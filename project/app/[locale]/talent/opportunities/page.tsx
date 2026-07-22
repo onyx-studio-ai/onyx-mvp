@@ -21,9 +21,8 @@ import { authedFetch } from '@/lib/authed-fetch';
 import { deadlineDisplay, zonedTimeToUtc, tzLabel } from '@/lib/case-time';
 
 // 案件層級的截止顯示:日期 [+時間](時區標);沒設時間就只給日期(=當天 23:59)
-function briefDeadlineText(date?: string | null, time?: string | null, tz?: string | null): string {
-  if (!date) return '';
-  return `${date}${time ? ` ${time}` : ''}(${tzLabel(tz || 'Asia/Taipei')})`;
+function briefDeadlineText(date?: string | null, time?: string | null, tz?: string | null, locale?: string): string {
+  return `${date}${time ? ` ${time}` : ''}(${tzLabel(tz || 'Asia/Taipei', locale)})`;
 }
 import { caseCode, auditionDeadlinePassed } from '@/lib/casting';
 import { toMp3 } from '@/lib/to-mp3';
@@ -776,7 +775,7 @@ export default function Opportunities() {
                 ))}
                 {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
                 {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('下載稿件檔', '下载稿件档', 'Download script')}</a>}
-                {o.deadline && (() => { const dd = deadlineDisplay(o.deadline, o.deadline_time, o.case_timezone || 'Asia/Taipei'); return (
+                {o.deadline && (() => { const dd = deadlineDisplay(o.deadline, o.deadline_time, o.case_timezone || 'Asia/Taipei', locale); return (
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
                     <span className="text-gray-200 font-medium">{tx('完成期限', '完成期限', 'Due')}: <span className="text-amber-300">{dd.caseText}</span>{dd.localText && <span className="text-gray-400"> ≈ {tx('你的當地時間', '你的当地时间', 'your local time')} {dd.localText}</span>}</span>
                     <span className="text-gray-400">{tx('如無法如期,請提前用訊息告知你可提供的時間。', '如无法如期,请提前用讯息告知你可提供的时间。', 'If you can’t make it, message us your available date in advance.')}</span>
@@ -1041,8 +1040,8 @@ function BriefCard({
               brief.source === 'client'
                 ? (brief.budget ? { l: tx('客戶預算', '客户预算', 'Budget'), v: `${brief.budget_type ? `${brief.budget_type} ` : ''}${brief.budget}`, gold: true } : null)
                 : (brief.rate_note ? { l: tx('報酬', '报酬', 'Rate'), v: brief.rate_note, gold: true } : null),
-              brief.audition_deadline ? { l: tx('試音截止', '试音截止', 'Audition due'), v: briefDeadlineText(brief.audition_deadline, brief.audition_deadline_time, brief.timezone) } : null,
-              brief.deadline ? { l: tx('交付截止', '交付截止', 'Delivery'), v: briefDeadlineText(brief.deadline, brief.deadline_time, brief.timezone) } : null,
+              brief.audition_deadline ? { l: tx('試音截止', '试音截止', 'Audition due'), v: briefDeadlineText(brief.audition_deadline, brief.audition_deadline_time, brief.timezone, locale) } : null,
+              brief.deadline ? { l: tx('交付截止', '交付截止', 'Delivery'), v: briefDeadlineText(brief.deadline, brief.deadline_time, brief.timezone, locale) } : null,
               brief.length ? { l: tx('規模', '规模', 'Scale'), v: brief.length } : null,
             ].filter(Boolean) as { l: string; v: string; gold?: boolean }[];
             return stats.length ? (
@@ -1166,7 +1165,7 @@ function BriefCard({
             {brief.media_scope && <span>{tx('媒體', '媒体', 'Media')}: {brief.media_scope}</span>}
             {brief.territory && <span>{tx('地區', '地区', 'Territory')}: {brief.territory}</span>}
             {brief.license_term && <span>{tx('授權', '授权', 'License')}: {brief.license_term}</span>}
-            {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')}: {briefDeadlineText(brief.audition_deadline, brief.audition_deadline_time, brief.timezone)}</span>}
+            {brief.audition_deadline && <span>{tx('試音截止', '试音截止', 'Audition')}: {briefDeadlineText(brief.audition_deadline, brief.audition_deadline_time, brief.timezone, locale)}</span>}
             {brief.length && <span>{tx('長度', '长度', 'Length')}: {brief.length}</span>}
             {brief.budget && <span>{tx('預算', '预算', 'Budget')}: {brief.budget_type ? `${brief.budget_type} ` : ''}{brief.budget}</span>}
           </div>

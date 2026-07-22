@@ -77,8 +77,8 @@ export default function GuestCasting() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
         {[
           { l: tx('報酬', 'Rate'), v: brief.rate_note || tx('面議', 'TBD'), gold: true },
-          { l: tx('試音截止', 'Audition due'), v: brief.audition_deadline ? `${brief.audition_deadline}${brief.audition_deadline_time ? ' ' + brief.audition_deadline_time : ''}(${tzLabel(brief.timezone || 'Asia/Taipei')})` : tx('待定', 'TBD') },
-          { l: tx('交付截止', 'Delivery'), v: brief.deadline ? `${brief.deadline}${brief.deadline_time ? ' ' + brief.deadline_time : ''}(${tzLabel(brief.timezone || 'Asia/Taipei')})` : tx('待定', 'TBD') },
+          { l: tx('試音截止', 'Audition due'), v: brief.audition_deadline ? `${brief.audition_deadline}${brief.audition_deadline_time ? ' ' + brief.audition_deadline_time : ''}(${tzLabel(brief.timezone || 'Asia/Taipei', locale)})` : tx('待定', 'TBD') },
+          { l: tx('交付截止', 'Delivery'), v: brief.deadline ? `${brief.deadline}${brief.deadline_time ? ' ' + brief.deadline_time : ''}(${tzLabel(brief.timezone || 'Asia/Taipei', locale)})` : tx('待定', 'TBD') },
           { l: tx('規模', 'Scale'), v: brief.length || tx('待定', 'TBD') },
         ].map((s, i) => (
           <div key={i} className="bg-[#1d1b25] border border-white/[0.08] rounded-xl p-3.5">
