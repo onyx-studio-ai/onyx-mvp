@@ -34,6 +34,17 @@ const nextConfig = {
       })),
     ];
   },
+  // 對外分享的公開檔案走自家域名(www.onyxstudios.ai/files/...),不露 supabase 網址
+  // (2026-07-22 Wing:supabase 裸網址看起來次等)。只轉發 public storage;私有
+  // bucket 仍走 signed URL 不經此路。
+  async rewrites() {
+    return [
+      {
+        source: '/files/:path*',
+        destination: 'https://hnblwckpnapsdladcjql.supabase.co/storage/v1/object/public/:path*',
+      },
+    ];
+  },
   typescript: {
     // 型別守門已恢復:2026-07-04 清掉最後 3 個型別債、全專案 tsc 0 錯誤後翻回 false。
     // 型別壞掉的 code 會被 build 擋下 —— 對「用 GitHub API 部署、沒本地 build」的
