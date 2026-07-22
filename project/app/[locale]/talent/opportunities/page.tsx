@@ -744,7 +744,7 @@ export default function Opportunities() {
                 {o.production_notes && (
                   <div className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/[0.08] px-3 py-2">
                     <p className="text-[11px] font-semibold text-amber-300 mb-0.5">{tx('製作備註(請先讀)', '制作备注(请先读)', 'Production notes (read first)')}</p>
-                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{o.production_notes}</p>
+                    <p className="text-sm text-gray-200 whitespace-pre-wrap">{(o.production_notes || '').split(/(https?:\/\/\S+)/g).map((part, pi) => /^https?:\/\//.test(part) ? <a key={pi} href={part} target="_blank" rel="noreferrer" className="text-sky-300 underline break-all">{part}</a> : part)}</p>
                   </div>
                 )}
                 {(o.role_images || []).length > 0 && (
