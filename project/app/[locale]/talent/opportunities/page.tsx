@@ -81,6 +81,20 @@ function parseCcy(s: string | null | undefined): string | null {
   if (/€/.test(s)) return 'EUR';
   return null;
 }
+// 授權前置閘:AI 案的授權要點卡+同意勾選。沒勾 → submit 擋下。(Wing 2026-07-21)
+function LicenseGate({ summary, ok, setOk, tx }: { summary: string; ok: boolean; setOk: (v: boolean) => void; tx: (a: string, b: string, c: string) => string }) {
+  return (
+    <div className="border border-rose-400/30 bg-rose-500/[0.06] rounded-lg p-3">
+      <p className="text-xs font-semibold text-rose-200 mb-1.5">⚖ {tx('授權要點(試音前必讀)', '授权要点(试音前必读)', 'License terms — read before auditioning')}</p>
+      <p className="text-xs text-gray-200 whitespace-pre-wrap mb-2">{summary}</p>
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} className="mt-0.5 accent-rose-400" />
+        <span className="text-xs text-gray-100">{tx('我已閱讀並同意上述授權範圍,確認中選後願意簽署正式授權文件。', '我已阅读并同意上述授权范围,确认中选后愿意签署正式授权文件。', 'I have read and agree to the terms above, and will sign the formal authorization if selected.')}</span>
+      </label>
+    </div>
+  );
+}
+
 function dealCurrency(brief: { budget_currency?: string | null; budget?: string | null; rate_note?: string | null }): string {
   return (brief.budget_currency && brief.budget_currency.toUpperCase())
     || parseCcy(brief.budget) || parseCcy(brief.rate_note) || 'USD';
@@ -111,6 +125,7 @@ type Brief = {
   rate_note?: string | null;
   base_revisions?: number | null;
   audition_cap?: number | null;
+  license_summary?: string | null;   // AI 案授權要點:試音前必勾同意(2026-07-21)
   categories: string[] | null;
   content_type: string | null;
   media_scope: string | null;
@@ -991,14 +1006,16 @@ function BriefCard({
   const grossN = Number(gross);
   const netPreview = isFinite(grossN) && grossN > 0 ? Math.round(grossN * (1 - COMMISSION) * 100) / 100 : 0;
 
+  const [licenseOk, setLicenseOk] = useState(false);
   async function submitQuote() {
     setErr('');
+    if (brief.license_summary && !licenseOk) return setErr(tx('請先勾選同意授權要點', '请先勾选同意授权要点', 'Please agree to the license terms first'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請輸入大於 0 的金額', '请输入大于 0 的金额', 'Enter an amount greater than 0'));
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, gross_amount: grossN, currency, message }),
+      body: JSON.stringify({ brief_id: brief.id, gross_amount: grossN, currency, message, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -1171,6 +1188,7 @@ function BriefCard({
               )}
               <textarea className={`${inputCls} min-h-[60px] resize-y ${closed ? closedFieldCls : ''}`} disabled={closed} value={message} onChange={(e) => setMessage(e.target.value)}
                 placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')} />
+              {brief.license_summary && <LicenseGate summary={brief.license_summary} ok={licenseOk} setOk={setLicenseOk} tx={tx} />}
               {err && <p className="text-red-400 text-xs">{err}</p>}
               <button onClick={submitQuote} disabled={busy || closed} className={`bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm transition ${closed ? 'cursor-not-allowed' : ''}`}>
                 {closed ? tx('已截止', '已截止', 'Closed') : busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出報價', '送出报价', 'Submit quote')}
@@ -1314,8 +1332,10 @@ function RoleAudition({
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setUploading(false); }
   }
 
+  const [licenseOk, setLicenseOk] = useState(false);
   async function submit() {
     setErr('');
+    if (brief.license_summary && !licenseOk) return setErr(tx('請先勾選同意授權要點', '请先勾选同意授权要点', 'Please agree to the license terms first'));
     if (!audioUrl) return setErr(tx('請先上傳試音音檔', '请先上传试音音档', 'Please upload your audition first'));
     const earn = Number(gross); // input = the talent's take-home fee
     if (!isFinite(earn) || earn <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
@@ -1325,7 +1345,7 @@ function RoleAudition({
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
+      body: JSON.stringify({ brief_id: brief.id, role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
@@ -1465,6 +1485,7 @@ function RoleAudition({
             </div>
             <TemplatedField kind="revision" optional label={tx('修改政策(補充說明)', '修改政策(补充说明)', 'Revision notes')} value={revPolicy} onChange={setRevPolicy}
               builtin={builtinRev(tx)} saved={templates.revision || []} onTemplates={onTemplates} tx={tx} />
+            {brief.license_summary && <LicenseGate summary={brief.license_summary} ok={licenseOk} setOk={setLicenseOk} tx={tx} />}
             {err && <p className="text-red-400 text-xs">{err}</p>}
             <button onClick={submit} disabled={busy || uploading || closed} className={`w-full disabled:opacity-50 rounded-xl px-4 py-2 text-sm ${closed ? 'cursor-not-allowed' : ''}`}
               style={{ color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 700 }}>
@@ -1524,8 +1545,10 @@ function GeneralResponse({
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setUploading(false); }
   }
 
+  const [licenseOk, setLicenseOk] = useState(false);
   async function submit() {
     setErr('');
+    if (brief.license_summary && !licenseOk) return setErr(tx('請先勾選同意授權要點', '请先勾选同意授权要点', 'Please agree to the license terms first'));
     if (!sampleUrl) return setErr(tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
     const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
@@ -1533,7 +1556,7 @@ function GeneralResponse({
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
@@ -1629,6 +1652,7 @@ function GeneralResponse({
         builtin={builtinIntro(myName, tx)} saved={templates.intro || []} onTemplates={onTemplates} tx={tx} />
       <TemplatedField kind="revision" optional label={tx('修改政策', '修改政策', 'Revisions')} value={revPolicy} onChange={setRevPolicy}
         builtin={builtinRev(tx)} saved={templates.revision || []} onTemplates={onTemplates} tx={tx} />
+      {brief.license_summary && <LicenseGate summary={brief.license_summary} ok={licenseOk} setOk={setLicenseOk} tx={tx} />}
       {err && <p className="text-red-400 text-xs">{err}</p>}
       <button onClick={submit} disabled={busy || uploading || closed} className={`bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 text-sm ${closed ? 'cursor-not-allowed' : ''}`}>
         {closed ? tx('已截止', '已截止', 'Closed') : busy ? tx('送出中…', '送出中…', 'Submitting…') : tx('送出應徵', '送出应征', 'Submit')}

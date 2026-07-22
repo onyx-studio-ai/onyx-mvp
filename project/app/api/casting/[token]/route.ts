@@ -23,7 +23,7 @@ const GUEST_BRIEF_FIELDS = [
   'id', 'brief_number', 'kind', 'content_type', 'title', 'language', 'rate_note', 'status', 'created_at',
   'budget', 'budget_type',
   'brief', 'audition_script', 'audition_deadline', 'audition_deadline_time', 'deadline', 'deadline_time', 'timezone', 'recording_start', 'recording_methods',
-  'reference_files', 'reference_links', 'roles', 'audition_cap', 'base_revisions', 'length',
+  'reference_files', 'reference_links', 'roles', 'audition_cap', 'base_revisions', 'length', 'license_summary',
   'media_scope', 'territory', 'license_term', 'accent', 'voice_style', 'voice_age',
 ] as const;
 
@@ -83,6 +83,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const roleName = String(body.role_name || '').slice(0, 80) || null;
+  // 授權前置閘(訪客端同樣擋;中選後才反悔授權 = 全部白忙,Wing 2026-07-21)
+  if ((brief as { license_summary?: string | null }).license_summary && body.license_agreed !== true) {
+    return NextResponse.json({ error: '此案需先同意授權要點才能試音。' }, { status: 400 });
+  }
   const sampleUrl = String(body.sample_url || '').slice(0, 1000);
   const intro = String(body.intro || '').slice(0, 3000) || null;
   const gross = Number(body.gross_amount);
@@ -117,7 +121,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   // Platform-posted = no cut (take-home); client-posted = 20% commission.
   const commissionRate = brief.client_email === 'casting@onyxstudios.ai' ? 0 : 0.20;
   const { data, error } = await db.from('marketplace_quotes')
-    .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id, commission_rate: commissionRate })
+    .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id, commission_rate: commissionRate, license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null })
     .select('id, brief_id, role_name, gross_amount, currency, status, sample_url').single();
   if (error) {
     if (error.code === '23505') return NextResponse.json({ error: '你已經試過這個角色了' }, { status: 409 });
