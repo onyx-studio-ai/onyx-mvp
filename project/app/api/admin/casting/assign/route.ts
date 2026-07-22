@@ -114,8 +114,10 @@ export async function POST(request: NextRequest) {
 
   let assigned = 0; const skipped: string[] = [];
   for (const rn of roleNames) {
-    const { data: dup } = await db.from('voice_orders').select('id').eq('brief_id', briefId).eq('role_name', rn).maybeSingle();
-    if (dup) { skipped.push(rn); continue; }
+    // 同角色可指派多人並行(客戶換人場景,Wing 2026-07-22 拍板:多人各自建單、
+    // 最後客戶採用誰再定)。只擋「同角色+同一人」的真重複。
+    const { data: dup } = await db.from('voice_orders').select('id').eq('brief_id', briefId).eq('role_name', rn).eq('talent_id', talentId).maybeSingle();
+    if (dup) { skipped.push(`${rn}(此人已有這個角色的單)`); continue; }
     seq += 1;
     const orderNumber = `VO-${ymd}-${String(seq).padStart(4, '0')}`;
     const { data: ord, error } = await db.from('voice_orders').insert({
