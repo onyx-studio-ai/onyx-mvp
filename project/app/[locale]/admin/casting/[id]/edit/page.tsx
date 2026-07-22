@@ -30,6 +30,37 @@ const parseGenderNeeds = (s?: string | null) => { const t = String(s || ''); con
 const optEl = (o: string) => <option key={o || '_'} value={o}>{o || '— 不指定 —'}</option>;
 const optsWith = (opts: string[], val?: string) => (val && !opts.includes(val) ? [...opts, val] : opts);
 
+// 快速組價(Wing 2026-07-22):固定 / 區間 / 最高(Up to)三模式,組好帶入報酬欄(仍可手改)。
+function RateQuickBuild({ onApply, input }: { onApply: (v: string) => void; input: string }) {
+  const [cur, setCur] = useState('TWD');
+  const [mode, setMode] = useState<'fixed' | 'range' | 'upto'>('fixed');
+  const [a1, setA1] = useState('');
+  const [a2, setA2] = useState('');
+  const [unit, setUnit] = useState('整案');
+  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$' };
+  const build = () => {
+    if (!a1.trim()) return '';
+    let core = `${SYM[cur] || cur + ' '}${a1.trim()}`;
+    if (mode === 'range' && a2.trim()) core = `${core}–${a2.trim()}`;
+    if (mode === 'upto') core = cur === 'USD' ? `Up to ${core}` : `最高 ${core}`;
+    return unit === '整案' ? `${core} · 整案` : `${core} / ${unit}`;
+  };
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+      <select className={`${input} w-24`} value={cur} onChange={(e) => setCur(e.target.value)}><option>TWD</option><option>USD</option></select>
+      <select className={`${input} w-28`} value={mode} onChange={(e) => setMode(e.target.value as 'fixed' | 'range' | 'upto')}>
+        <option value="fixed">固定價</option><option value="range">區間</option><option value="upto">最高(Up to)</option>
+      </select>
+      <input type="number" min="0" className={`${input} w-28`} value={a1} onChange={(e) => setA1(e.target.value)} placeholder={mode === 'range' ? '下限' : '金額'} />
+      {mode === 'range' && <input type="number" min="0" className={`${input} w-28`} value={a2} onChange={(e) => setA2(e.target.value)} placeholder="上限" />}
+      <select className={`${input} w-32`} value={unit} onChange={(e) => setUnit(e.target.value)}>
+        {['整案', '字', '句', '分鐘', 'finished hour', '千字'].map((u) => <option key={u} value={u}>{u === '整案' ? '整案' : `每${u}`}</option>)}
+      </select>
+      <button type="button" disabled={!build()} onClick={() => onApply(build())} className="text-[11px] border border-emerald-400 text-emerald-700 rounded px-2 py-1 hover:bg-emerald-50 disabled:opacity-40">↓ 帶入{build() ? `:${build()}` : ''}</button>
+    </div>
+  );
+}
+
 export default function EditCasting() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -203,7 +234,10 @@ export default function EditCasting() {
               {LANGUAGES.map((o) => <option key={o.v} value={o.v}>{o.tw}</option>)}
             </select>
           </label>
-          <label className="block"><span className="text-xs text-gray-600 mb-1 block">報酬</span><input className={input} value={f.rate_note} onChange={(e) => set('rate_note', e.target.value)} placeholder="例:NT$150 / 句" /></label>
+          <label className="block"><span className="text-xs text-gray-600 mb-1 block">報酬</span>
+            <RateQuickBuild onApply={(v) => set('rate_note', v)} input={input} />
+            <input className={input} value={f.rate_note} onChange={(e) => set('rate_note', e.target.value)} placeholder="例:NT$150 / 句" />
+          </label>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">類別</span><input className={input} value={f.content_type} onChange={(e) => set('content_type', e.target.value)} placeholder="例:旁白 Narration" /></label>

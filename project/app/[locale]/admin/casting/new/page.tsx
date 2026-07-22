@@ -172,7 +172,9 @@ function NewCasting() {
   const [wantsDirector, setWantsDirector] = useState(false);
   const [brief, setBrief] = useState('');
   const [rateCur, setRateCur] = useState('TWD');
+  const [rateMode, setRateMode] = useState<'fixed' | 'range' | 'upto'>('fixed'); // 固定 / 區間 / 最高(Up to)
   const [rateAmt, setRateAmt] = useState('');
+  const [rateAmt2, setRateAmt2] = useState(''); // 區間上限
   const [rateUnit, setRateUnit] = useState('整案');
   // Voices-style data fields (most reuse existing brief columns)
   const [scale, setScale] = useState('');        // length: 句數/字數/秒數/時數
@@ -242,14 +244,14 @@ function NewCasting() {
   // 自動草稿:打到一半關頁不再全丟(送出成功才清)。從客戶請求帶入(?from=)時停用,以帶入為準。
   const draft = useFormDraft('casting-new', {
     title, category, mode, language, maleVoices, femaleVoices, hasSinging, wantsDirector, brief,
-    rateCur, rateAmt, rateUnit, scale, deadline, mediaScope, territory, licenseTerm, accent,
+    rateCur, rateMode, rateAmt, rateAmt2, rateUnit, scale, deadline, mediaScope, territory, licenseTerm, accent,
     voiceStyle, voiceAge, baseRev, cap, auditionDeadline, recordingStart, methods, rolesText,
     parsedRoles, auditionScript, refLinks, refFiles, aiType, clientNote, licenseSummary, deadlineTime, auditionDeadlineTime, caseTz,
   }, (d) => {
     setDeadlineTime(d.deadlineTime || ''); setAuditionDeadlineTime(d.auditionDeadlineTime || ''); setCaseTz(d.caseTz || 'Asia/Taipei');
     setTitle(d.title); setCategory(d.category); setMode(d.mode); setLanguage(d.language); setClientNote(d.clientNote || ''); setLicenseSummary(d.licenseSummary || '');
     setMaleVoices(d.maleVoices); setFemaleVoices(d.femaleVoices); setHasSinging(d.hasSinging); setWantsDirector(d.wantsDirector);
-    setBrief(d.brief); setRateCur(d.rateCur); setRateAmt(d.rateAmt); setRateUnit(d.rateUnit); setScale(d.scale);
+    setBrief(d.brief); setRateCur(d.rateCur); setRateMode(d.rateMode || 'fixed'); setRateAmt(d.rateAmt); setRateAmt2(d.rateAmt2 || ''); setRateUnit(d.rateUnit); setScale(d.scale);
     setDeadline(d.deadline); setMediaScope(d.mediaScope); setTerritory(d.territory); setLicenseTerm(d.licenseTerm);
     setAccent(d.accent); setVoiceStyle(d.voiceStyle); setVoiceAge(d.voiceAge); setBaseRev(d.baseRev); setCap(d.cap);
     setAuditionDeadline(d.auditionDeadline); setRecordingStart(d.recordingStart); setMethods(d.methods);
@@ -507,7 +509,13 @@ function NewCasting() {
   }
   // assemble the rate note from the structured currency/amount inputs (both optional)
   function buildRateNote() {
-    return rateAmt.trim() ? (rateUnit === '整案' ? `${fmtRate(rateCur, rateAmt)} · 整案` : `${fmtRate(rateCur, rateAmt)} / ${rateUnit}`) : '';
+    if (!rateAmt.trim()) return '';
+    // 三模式:固定 NT$500 / 區間 NT$300–500 / 最高「最高 NT$500」(USD 案用英文 Up to,國際配音員看得懂)
+    const en = rateCur === 'USD';
+    let core = fmtRate(rateCur, rateAmt);
+    if (rateMode === 'range' && rateAmt2.trim()) core = `${fmtRate(rateCur, rateAmt)}–${rateAmt2.trim()}`;
+    if (rateMode === 'upto') core = en ? `Up to ${core}` : `最高 ${core}`;
+    return rateUnit === '整案' ? `${core} · 整案` : `${core} / ${rateUnit}`;
   }
   function goPreview() {
     setErr('');
@@ -1003,16 +1011,24 @@ function NewCasting() {
           {buildGenderNeeds(maleVoices, femaleVoices) && <p className="text-[11px] text-gray-400 mt-1">需求:{buildGenderNeeds(maleVoices, femaleVoices)}</p>}
         </Field>
         <Field label="報酬(客戶預算,給配音員看 · 台幣/美金二選一)">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <select className={`${input} w-28`} value={rateCur} onChange={(e) => setRateCur(e.target.value)}>
               {CCYS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <input type="number" min="0" className={input} value={rateAmt} onChange={(e) => setRateAmt(e.target.value)} placeholder="金額" />
+            <select className={`${input} w-32`} value={rateMode} onChange={(e) => setRateMode(e.target.value as 'fixed' | 'range' | 'upto')}>
+              <option value="fixed">固定價</option>
+              <option value="range">區間(X–Y)</option>
+              <option value="upto">最高(Up to)</option>
+            </select>
+            <input type="number" min="0" className={`${input} w-32`} value={rateAmt} onChange={(e) => setRateAmt(e.target.value)} placeholder={rateMode === 'range' ? '下限' : '金額'} />
+            {rateMode === 'range' && <><span className="text-gray-500 text-sm">–</span>
+              <input type="number" min="0" className={`${input} w-32`} value={rateAmt2} onChange={(e) => setRateAmt2(e.target.value)} placeholder="上限" /></>}
             <span className="text-gray-500 text-sm">/</span>
             <select className={`${input} w-28`} value={rateUnit} onChange={(e) => setRateUnit(e.target.value)}>
               {RATE_UNITS.map((u) => <option key={u} value={u}>{u === '整案' ? '整案' : `每${u}`}</option>)}
             </select>
           </div>
+          {buildRateNote() && <p className="text-[11px] text-gray-400 mt-1">顯示為:{buildRateNote()}</p>}
         </Field>
         <Field label="案件說明 *"><textarea className={`${input} min-h-[90px] resize-y`} value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="全劇共 X 條台詞… 先試音,通過後正式錄。試音範圍…" /></Field>
 
