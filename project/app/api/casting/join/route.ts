@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   }
   if (!talent) {
     const { data: created, error: cErr } = await db.from('talents')
-      .insert({ email, name: name || email.split('@')[0], auth_user_id: user.id, is_active: false })
+      .insert({ type: 'VO', email, name: name || email.split('@')[0], auth_user_id: user.id, is_active: false })  // type 為 not-null(2026-07-22 IAN 卡註冊實測)
       .select('id, name').maybeSingle();
     if (cErr || !created) return NextResponse.json({ error: '建立配音員檔失敗' }, { status: 500 });
     talent = created;
