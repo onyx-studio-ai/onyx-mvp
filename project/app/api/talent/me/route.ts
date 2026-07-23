@@ -55,8 +55,9 @@ async function resolveTalent(request: NextRequest) {
   const r1 = await db.from('talents').select(COLS).eq('auth_user_id', user.id).maybeSingle();
   let talent = r1.data as unknown as TalentRow | null;
   if (!talent && user.email) {
-    const r2 = await db.from('talents').select(COLS).eq('email', user.email).maybeSingle();
-    const byEmail = r2.data as unknown as TalentRow | null;
+    // ilike:歷史 email 大小寫混雜,eq 會 miss(比照 casting/join 2026-07-22)
+    const r2 = await db.from('talents').select(COLS).ilike('email', user.email).limit(1);
+    const byEmail = (r2.data?.[0] || null) as unknown as TalentRow | null;
     if (byEmail) {
       await db.from('talents').update({ auth_user_id: user.id }).eq('id', byEmail.id);
       talent = byEmail;
