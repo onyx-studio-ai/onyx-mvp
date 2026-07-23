@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { normCaseLang } from '@/lib/languages';
 
 /*
   One of the signed-in client's own requests.
@@ -76,7 +77,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const patch: Record<string, unknown> = {
     title: s(b.title, 200) ?? null,
     brief: s(b.brief, 8000) ?? r.brief.brief,
-    language: s(b.language, 80) ?? null,
+    // 語言寫入口統一正規化(旖樂案拍板延伸;admin PATCH 已套,客戶端編輯這口補上)
+    language: (() => { const v = s(b.language, 80); return v ? normCaseLang(v) : (v ?? null); })(),
     budget: s(b.budget, 80) ?? null,
     budget_type: s(b.budget_type, 40) ?? null,
     audition_deadline: s(b.audition_deadline, 60) ?? null,
