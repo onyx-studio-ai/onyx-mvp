@@ -126,7 +126,6 @@ async function sendWorkflowEmail(
   extra?: Record<string, unknown>
 ) {
   try {
-    console.log(`[MusicWorkflow] Sending email: type=${type}, to=${email}, order=#${orderNumber}`);
     const res = await fetch('/api/mail/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -135,8 +134,6 @@ async function sendWorkflowEmail(
     const data = await res.json();
     if (!res.ok) {
       console.error(`[MusicWorkflow] Email API error: ${res.status}`, data);
-    } else {
-      console.log(`[MusicWorkflow] Email sent successfully:`, data);
     }
   } catch (err) {
     console.error('[MusicWorkflow] Email send failed:', err);
@@ -381,12 +378,10 @@ export default function MusicOrderWorkflow({ order, onStatusChange }: MusicOrder
       setUploadDemoCurrent('');
 
       if (isFirstUpload) {
-        console.log('[MusicWorkflow] First demo upload — notifying client:', order.email);
         await updateMusicOrderStatus(order.id, 'demo_ready');
         await sendWorkflowEmail('demos_ready', order.email, order.order_number, order.id);
         onStatusChange();
       } else {
-        console.log('[MusicWorkflow] Additional demos added — sending update to client:', order.email);
         if (order.status !== 'demo_ready') {
           await updateMusicOrderStatus(order.id, 'demo_ready');
           onStatusChange();
