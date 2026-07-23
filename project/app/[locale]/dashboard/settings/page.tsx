@@ -58,9 +58,14 @@ export default function SettingsPage() {
       if (error) throw error;
       toast.success(t('passwordUpdated'));
       try {
+        // mail/send 已加授權閘:帶本人 Supabase token,只能寄給登入者自己的 email
+        const { data: { session } } = await supabase.auth.getSession();
         await fetch('/api/mail/send', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token || ''}`,
+          },
           body: JSON.stringify({
             workflow: 'password_changed',
             type: 'password_changed',
