@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { briefMatchesTalentLangs } from '@/lib/languages';
 import { User, Briefcase, MessageSquare, DollarSign, LogOut, Bell, ArrowLeftRight } from 'lucide-react';
 
@@ -49,7 +50,7 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
       // sidebar). Only HIDE it if the API explicitly says not-a-talent (404).
       if (!cancelled) setLoggedIn(true);
       try {
-        const r = await fetch('/api/talent/me', { headers: { Authorization: `Bearer ${token}` } });
+        const r = await authedFetch('/api/talent/me'); // 統一 authedFetch 即時取 token(鐵律:不沿用掛載時 token)
         if (r.status === 401) { if (!cancelled) setLoggedIn(false); return; }
         if (r.status === 404) { if (!cancelled) setNotTalent(true); return; }
         if (r.ok) {
@@ -58,7 +59,7 @@ export default function TalentLayout({ children }: { children: React.ReactNode }
           const myLangs: string[] = [...(j.talent?.languages || []), ...(j.talent?.native_languages || [])];
           // Derive notifications from the briefs feed (real data, no extra table).
           try {
-            const br = await fetch('/api/talent/briefs', { headers: { Authorization: `Bearer ${token}` } });
+            const br = await authedFetch('/api/talent/briefs');
             if (br.ok) {
               const bj = await br.json();
               const quoted = new Set((bj.myQuotes || []).map((q: { brief_id: string }) => q.brief_id));
