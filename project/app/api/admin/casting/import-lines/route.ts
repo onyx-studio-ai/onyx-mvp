@@ -236,11 +236,18 @@ export async function POST(request: NextRequest) {
     if (error) { unmatched.push({ role: roleName, lines: lines.length }); continue; }
     matched.push({ role: roleName, lines: lines.length, images: images.length, pay: payNote });
     // 分潤紀錄同步(per_line 在指派時跳過建立,這裡補建/更新成正確總額)。
+    // 這是「錢」—— 寫入失敗不能靜默漏記(對帳才發現;2026-07-23 審查)→ 接 error,
+    // 失敗計入 unmatched 回報,匯入結果會顯示這個角色要人工補分潤。
     if (order.pay_unit === 'per_line' && rate > 0 && order.talent_id) {
       const total = rate * lines.length;
       const { data: exist } = await db.from('talent_earnings').select('id').eq('order_id', orderId).maybeSingle();
-      if (exist) await db.from('talent_earnings').update({ order_total: total, commission_amount: total }).eq('id', exist.id);
-      else await db.from('talent_earnings').insert({ talent_id: order.talent_id, order_id: orderId, order_type: 'voice', order_number: order.order_number, tier: 'managed', order_total: total, commission_rate: 1, commission_amount: total, status: 'pending' });
+      const { error: earnErr } = exist
+        ? await db.from('talent_earnings').update({ order_total: total, commission_amount: total }).eq('id', exist.id)
+        : await db.from('talent_earnings').insert({ talent_id: order.talent_id, order_id: orderId, order_type: 'voice', order_number: order.order_number, tier: 'managed', order_total: total, commission_rate: 1, commission_amount: total, status: 'pending' });
+      if (earnErr) {
+        console.error('[import-lines] talent_earnings write failed for order', orderId, ':', earnErr.message);
+        unmatched.push({ role: `${roleName}(分潤寫入失敗,需人工補)`, lines: lines.length });
+      }
     }
   }
   return NextResponse.json({ ok: true, matched, unmatched, totalRoles: byRole.size });
