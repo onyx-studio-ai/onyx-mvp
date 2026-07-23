@@ -13,7 +13,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
 import { caseCode } from '@/lib/casting';
-import { LANGUAGES, langLabel } from '@/lib/languages';
+import { LANGUAGES, langLabel, langKeys, isSpecificLangKey } from '@/lib/languages';
 import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
 import { CASE_TIMEZONES, tzLabel } from '@/lib/case-time';
 import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
@@ -49,26 +49,9 @@ const voicesTotal = (male: string, female: string) => (male === '5+' ? 5 : Numbe
 
 // 語言比對正規化 —— 報名者的語言存的是英文正規值(如 'Chinese · Taiwan'),案件語言常是
 // 中文字(如 '中文 · 台灣國語'),直接比子字串會跨語言比不到(這是「符合語系全部 0 人」的
-// 根因)。把兩邊都轉成同一組語言鍵(家族 zh/en… + 地區 zh-tw/zh-cn/yue/nan…)再比。
-const langKeys = (s: string): string[] => {
-  const t = (s || '').toLowerCase();
-  const has = (...xs: string[]) => xs.some((x) => t.includes(x));
-  const k = new Set<string>();
-  if (has('cantonese', '粵', '粤', '廣東', '广东', '香港', 'hong kong')) k.add('yue');
-  if (has('hokkien', '閩南', '闽南', '台語', '台语', 'taigi')) k.add('nan');
-  if (has('mandarin', 'chinese', '中文', '國語', '国语', '華語', '华语', '普通話', '普通话')) {
-    k.add('zh');
-    if (has('taiwan', '台灣', '台湾', '臺灣')) k.add('zh-tw');
-    if (has('mainland', '大陸', '大陆', '中國', '中国', 'prc', '普通話', '普通话')) k.add('zh-cn');
-    if (has('malaysia', '馬來', '马来')) k.add('zh-my');
-  }
-  if (has('english', '英文', '英語', '英语')) k.add('en');
-  if (has('japanese', '日文', '日語', '日语')) k.add('ja');
-  if (has('korean', '韓', '韩')) k.add('ko');
-  return [...k];
-};
-// 地區/方言鍵(比家族更具體);案件若指定了它,配對就要求對得上該地區,避免大陸腔被選進台灣案。
-const isSpecificKey = (key: string) => key.includes('-') || key === 'yue' || key === 'nan';
+// 根因)。兩邊都轉語言鍵再比 —— 共用 lib/languages 的 langKeys / isSpecificLangKey
+// (2026-07-23 整理:刪掉本地逐字複本,單一事實源)。
+const isSpecificKey = isSpecificLangKey;
 // 性別正規化成 male/female('' = 不明);先判 female 因為 'female' 內含 'male'。
 const normGender = (v: unknown): '' | 'male' | 'female' => {
   const s = String(v || '').toLowerCase();
