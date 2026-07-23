@@ -170,7 +170,6 @@ export async function POST(request: NextRequest) {
       console.error(`[Admin Inquiries] Update after reply failed:`, updateError.message);
     }
 
-    console.log(`[Admin Inquiries] Reply sent for ${inquiry.inquiry_number} to ${inquiry.email}`);
 
     return NextResponse.json({ success: true, messageId: result.messageId });
   } catch (err) {
