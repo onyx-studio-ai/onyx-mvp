@@ -205,6 +205,9 @@ export function normalizeLangArray(arr: unknown): string[] {
 }
 
 
+/** 主語言鍵:取「·」前的主語言、小寫(發案通知與案源可見度共用的粗比對)。 */
+export const primaryLangKey = (v: unknown): string => String(v || '').split('·')[0].trim().toLowerCase();
+
 /*
   語系家族配對(發案 picker 與配音員通知共用)。
   langKeys():把任意語言字串(中英/新舊格式)拆成家族鍵(zh)與地區鍵(zh-tw);
@@ -236,4 +239,16 @@ export function briefMatchesTalentLangs(briefLanguage: string, talentLangs: stri
   const specific = caseKeys.filter(isSpecificLangKey);
   if (specific.length) return specific.some((k) => mine.has(k));
   return caseKeys.some((k) => mine.has(k));
+}
+
+// 案件語言正規化:能對上標準清單或中文地區變體(「中文 · 台灣國語」→ Mandarin · Taiwan)
+// 就轉標準值,認不得原樣保留(健檢會報)。防髒值入庫害配音員端語言過濾漏案(2026-07-23 旖樂案)。
+// 原本只活在 admin/casting route 內,2026-07-23 搬進 lib 供各語言寫入口共用。
+const ZH_KEY_STD: Record<string, string> = { 'zh-tw': 'Mandarin · Taiwan', 'zh-cn': 'Mandarin · Mainland', 'zh-my': 'Mandarin · Malaysia' };
+export function normCaseLang(s: string): string {
+  const n = normalizeLangValue(s);
+  if (n !== s) return n;
+  const ks = langKeys(s).filter(isSpecificLangKey).filter((k) => ZH_KEY_STD[k]);
+  if (ks.length === 1) return ZH_KEY_STD[ks[0]];
+  return s;
 }
