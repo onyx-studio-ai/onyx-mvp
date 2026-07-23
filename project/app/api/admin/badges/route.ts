@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
+import { PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('kind', 'casting')
       .eq('status', 'reviewing')
-      .neq('client_email', 'casting@onyxstudios.ai');
+      .neq('client_email', PLATFORM_CASTING_EMAIL);
     if (requestsSince) requestsQuery = requestsQuery.gt('created_at', requestsSince);
 
     // New "extra demos" a talent uploaded in response to a 想聽更多 demo request.
