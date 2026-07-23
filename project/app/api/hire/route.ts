@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/mail';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { briefReceivedEmail } from '@/lib/mail-templates';
+import { normCaseLang } from '@/lib/languages';
 
 /*
   Client brief intake. Persists the brief to marketplace_briefs (Phase 3c) so
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
           budget_unit: (typeof b.budget_unit === 'string' && b.budget_unit.trim()) ? b.budget_unit.trim().slice(0, 20) : null,
           // currency the client set at posting — single source of truth for the deal currency
           budget_currency: (typeof b.budget_currency === 'string' && /^[A-Za-z]{3}$/.test(b.budget_currency.trim())) ? b.budget_currency.trim().toUpperCase() : null,
-          language: b.language || null,
+          language: (typeof b.language === 'string' && b.language.trim()) ? normCaseLang(b.language.trim()) : null, // 語言寫入口統一正規化(旖樂案拍板延伸)
           accent: (typeof b.accent === 'string' && b.accent.trim()) ? b.accent.trim().slice(0, 120) : null,
           voice_style: (typeof b.voice_style === 'string' && b.voice_style.trim()) ? b.voice_style.trim().slice(0, 120) : null,
           voice_age: (typeof b.voice_age === 'string' && b.voice_age.trim()) ? b.voice_age.trim().slice(0, 120) : null,
