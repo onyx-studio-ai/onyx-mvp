@@ -74,8 +74,6 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('[Contact] DB insert failed:', dbError.message);
-    } else {
-      console.log(`[Contact] Saved inquiry ${inquiryNumber}`);
     }
 
     const confirmTemplate = contactInquiryConfirmationEmail({
@@ -93,7 +91,7 @@ export async function POST(request: NextRequest) {
       replyTo: DEPARTMENT_EMAILS[validDepartment],
     });
 
-    console.log(`[Contact] Confirmation to ${email}:`, confirmResult.success ? 'SENT' : confirmResult.error);
+    if (!confirmResult.success) console.error(`[Contact] Confirmation to ${email} FAILED:`, confirmResult.error);
 
     await new Promise((r) => setTimeout(r, 700));
 
@@ -115,7 +113,7 @@ export async function POST(request: NextRequest) {
       replyTo: email,
     });
 
-    console.log(`[Contact] Internal to ${deptEmail}:`, internalResult.success ? 'SENT' : internalResult.error);
+    if (!internalResult.success) console.error(`[Contact] Internal to ${deptEmail} FAILED:`, internalResult.error);
 
     return NextResponse.json({
       success: true,
