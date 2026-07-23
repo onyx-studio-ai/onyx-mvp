@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
 
     let { data: talent } = await db.from('talents').select('id').eq('auth_user_id', user.id).maybeSingle();
     if (!talent && user.email) {
-      const { data: byEmail } = await db.from('talents').select('id').eq('email', user.email).maybeSingle();
-      if (byEmail) talent = byEmail;
+      // ilike:歷史 email 大小寫混雜,eq 會 miss(比照 casting/join 2026-07-22)
+      const { data: byEmailRows } = await db.from('talents').select('id').ilike('email', user.email).limit(1);
+      if (byEmailRows?.[0]) talent = byEmailRows[0];
     }
     if (!talent) return NextResponse.json({ error: 'No talent profile linked' }, { status: 404 });
 
