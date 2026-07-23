@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos' | 'messages' | 'payoutRequests' | 'talentReview';
@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
       { href: '/admin/promos', labelKey: 'promos', icon: Tag },
       { href: '/admin/showcases', labelKey: 'audioShowcases', icon: Volume2 },
       { href: '/admin/ai-voices', labelKey: 'aiVoices', icon: Waves },
+      { href: '/admin/social', labelKey: 'social', icon: Share2 },
       // 2026-07-16 藏(頁面程式都留著):admin/voices(CosyVoice pod)與 admin/sovits
       // (GPT-SoVITS/RVC pod)的後端 pod 已不存在(RunPod 帳上零 pod;模型全量備份在
       // SSD Onyx_語音資產/_RunPod_volume_rescue_2026-07-16/)。pod 線回歸(BreezyVoice/
@@ -80,6 +81,7 @@ export default function AdminLayout({ children, buildTag }: { children: React.Re
     voiceLibrary: 'AI Voice 庫',
     sovits: 'GPT-SoVITS / RVC',
     aiVoices: 'AI 聲音',
+    social: '社群發文',
     invalidAdminCode: '管理員代碼無效',
     authFailed: '驗證失敗，請再試一次。',
     loading: '載入中...',
@@ -116,6 +118,7 @@ export default function AdminLayout({ children, buildTag }: { children: React.Re
     voiceLibrary: 'AI Voice Library',
     sovits: 'GPT-SoVITS / RVC',
     aiVoices: 'AI Voices',
+    social: 'Social Post',
     invalidAdminCode: 'Invalid admin code',
     authFailed: 'Authentication failed. Please try again.',
     loading: 'Loading...',
