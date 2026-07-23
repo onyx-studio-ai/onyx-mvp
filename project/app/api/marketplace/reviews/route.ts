@@ -34,8 +34,9 @@ async function resolve(request: NextRequest) {
   const email = (data?.user?.email || '').toLowerCase();
   if (error || !email) return null;
   // 不閘 is_active(同 marketplace-auth 2026-07-17 修法:未上線配音員也是有效身分)。
-  const { data: talent } = await db.from('talents').select('id').eq('email', email).maybeSingle();
-  return { db, email, userId: data.user.id, talentId: (talent as { id: string } | null)?.id || null };
+  // ilike:歷史 email 大小寫混雜,eq 會 miss(比照 casting/join 2026-07-22)
+  const { data: talentRows } = await db.from('talents').select('id').ilike('email', email).limit(1);
+  return { db, email, userId: data.user.id, talentId: (talentRows?.[0] as { id: string } | undefined)?.id || null };
 }
 
 export async function GET(request: NextRequest) {
