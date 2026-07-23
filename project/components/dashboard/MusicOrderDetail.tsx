@@ -140,7 +140,6 @@ async function sendNotification(
   extra?: { versionsUsed?: number; maxRevisions?: number; extraMessage?: string }
 ) {
   try {
-    console.log(`[MusicClient] Sending notification: type=${type}, email=${email}, order=#${orderNumber}`);
     // mail/send 已加授權閘:帶本人 Supabase token,只能為登入者自己的 email 觸發通知
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch('/api/mail/send', {
@@ -154,8 +153,6 @@ async function sendNotification(
     const data = await res.json();
     if (!res.ok) {
       console.error(`[MusicClient] Email API error: ${res.status}`, data);
-    } else {
-      console.log('[MusicClient] Notification sent successfully:', data);
     }
   } catch (err) {
     console.error('[MusicClient] Notification send failed:', err);
