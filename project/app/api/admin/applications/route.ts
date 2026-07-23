@@ -102,11 +102,11 @@ export async function PATCH(request: NextRequest) {
       }
 
       if (updateData.status === 'approved' && application) {
-        const { data: existing } = await db
-          .from('talents')
-          .select('id')
-          .eq('email', application.email)
-          .maybeSingle();
+        // ilike:歷史 email 大小寫混雜,eq miss 就再建一個帳號(比照 casting/join 2026-07-22)
+        const { data: existingRows } = application.email
+          ? await db.from('talents').select('id').ilike('email', application.email).limit(1)
+          : { data: null };
+        const existing = existingRows?.[0] || null;
 
         if (existing) {
           await db.from('talent_applications').update({ talent_id: existing.id }).eq('id', id);
