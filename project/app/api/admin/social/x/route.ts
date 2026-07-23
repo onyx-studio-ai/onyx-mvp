@@ -149,6 +149,55 @@ async function postTweet(
   return { id };
 }
 
+/*
+  GET = 連線診斷(不發任何推文,安全)。
+  回報:①四把金鑰的長度/有無空白(絕不回金鑰值本身)②Access Token 格式對不對
+  ③用金鑰對 X 做一次「讀取」(GET /2/users/me),把 X 的完整回應透傳。
+  用途:401 時精準定位是「金鑰值錯」還是「寫入權限不足」——
+  讀取也 401 = 金鑰/簽名問題;讀取成功但發文失敗 = app 權限沒 Read+Write。
+*/
+export async function GET(request: NextRequest) {
+  const unauthorized = requireAdmin(request);
+  if (unauthorized) return unauthorized;
+
+  const vars: Record<string, string | undefined> = {
+    X_API_KEY: process.env.X_API_KEY,
+    X_API_SECRET: process.env.X_API_SECRET,
+    X_ACCESS_TOKEN: process.env.X_ACCESS_TOKEN,
+    X_ACCESS_TOKEN_SECRET: process.env.X_ACCESS_TOKEN_SECRET,
+  };
+  const envCheck = Object.entries(vars).map(([name, v]) => ({
+    name,
+    present: !!v,
+    length: v ? v.length : 0,
+    hasWhitespace: v ? /\s/.test(v) : false, // 中間有空白/換行 = 貼錯
+    trimmedDiffers: v ? v !== v.trim() : false, // 前後有空白 = 貼錯
+  }));
+  const at = vars.X_ACCESS_TOKEN || '';
+  const accessTokenFormatOk = /^\d+-\w+/.test(at); // OAuth 1.0a = 數字-字母
+
+  let xReadTest: { status: number; body: string } | { error: string };
+  if (vars.X_API_KEY && vars.X_API_SECRET && vars.X_ACCESS_TOKEN && vars.X_ACCESS_TOKEN_SECRET) {
+    try {
+      const url = 'https://api.twitter.com/2/users/me';
+      const authHeader = buildOAuthHeader('GET', url, {
+        apiKey: vars.X_API_KEY,
+        apiSecret: vars.X_API_SECRET,
+        accessToken: vars.X_ACCESS_TOKEN,
+        accessTokenSecret: vars.X_ACCESS_TOKEN_SECRET,
+      });
+      const res = await fetch(url, { headers: { Authorization: authHeader } });
+      xReadTest = { status: res.status, body: (await res.text()).slice(0, 600) };
+    } catch (e) {
+      xReadTest = { error: e instanceof Error ? e.message : String(e) };
+    }
+  } else {
+    xReadTest = { error: '金鑰未齊,略過 X 讀取測試' };
+  }
+
+  return NextResponse.json({ envCheck, accessTokenFormatOk, xReadTest });
+}
+
 export async function POST(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
