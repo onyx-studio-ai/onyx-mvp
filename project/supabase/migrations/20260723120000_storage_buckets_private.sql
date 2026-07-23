@@ -1,0 +1,11 @@
+-- 安全審計 M-2:storage bucket 私有化(防設定漂移)
+--
+-- 背景:
+--   - 20260207122845 曾把 deliverables 建為 public=true
+--   - 20260219222709 曾把 talent-submissions 建為 public=true(且 ON CONFLICT DO UPDATE SET public=true)
+--   - 生產環境已於 2026-07 在 Supabase 儀表板手動改為私有,但 repo 內一直沒有對應 migration
+--     → 任何一次重跑 migration 都會把兩個桶重新打開(設定漂移)。
+--
+-- 此檔目的:把「私有」寫回 migration,讓桶狀態可從 migration 重建。
+-- 對已私有化的生產環境為 no-op;讀取一律走 signed URL。
+update storage.buckets set public = false where id in ('deliverables', 'talent-submissions');
