@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       if (!userId) {
         // Email may already have an auth user from a prior attempt — reuse it.
         const { data: list } = await db.auth.admin.listUsers();
-        userId = list?.users?.find((u) => (u.email || '').toLowerCase() === talent.email!.toLowerCase())?.id || null;
+        userId = list?.users?.find((u) => (u.email || '').toLowerCase() === String(talent.email).toLowerCase())?.id || null; // email 上面已驗非空,不用非空斷言
       }
       if (!userId) {
         console.error('[onboard] account provisioning failed for', talent.email);
