@@ -11,6 +11,7 @@ import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { caseCode } from '@/lib/casting';
 import { downloadWatermarked } from '@/lib/watermark';
 import { currencySymbol } from '@/lib/currency';
@@ -137,7 +138,7 @@ export default function ClientRequestDetail() {
     if (!hasScript) { setMsg(tx('請提供正式稿件(貼上或上傳檔案)', '请提供正式稿件(贴上或上传档案)', 'Please paste or upload the final script')); return; }
     setMsg(''); setSubmitting(true);
     try {
-      const res = await fetch(`/api/client/requests/${id}/select`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: selected, final_script: scriptMode === 'paste' ? finalScript.trim() : '', final_script_url: scriptMode === 'upload' ? scriptFileUrl : '', delivery_date: delivery }) });
+      const res = await authedFetch(`/api/client/requests/${id}/select`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quote_id: selected, final_script: scriptMode === 'paste' ? finalScript.trim() : '', final_script_url: scriptMode === 'upload' ? scriptFileUrl : '', delivery_date: delivery }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setMsg(j.error || tx('選定失敗', '选定失败', 'Failed')); return; }
       setSelected(''); load();
@@ -158,7 +159,7 @@ export default function ClientRequestDetail() {
   async function submitReaudit() {
     setMsg(''); setReauditing(true);
     try {
-      const res = await fetch(`/api/client/requests/${id}/reaudition`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: reauditTarget, note: reauditNote.trim() }) });
+      const res = await authedFetch(`/api/client/requests/${id}/reaudition`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quote_id: reauditTarget, note: reauditNote.trim() }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setMsg(j.error || tx('送出失敗', '送出失败', 'Failed')); return; }
       setReauditTarget(''); setReauditNote(''); setMsg(tx('已請對方重錄,我們會通知他 ✓', '已请对方重录,我们会通知他 ✓', 'Re-record requested — we’ll notify them ✓')); load();
@@ -169,7 +170,7 @@ export default function ClientRequestDetail() {
   async function submitMoreDemos() {
     setMsg(''); setMoreSending(true);
     try {
-      const res = await fetch(`/api/client/requests/${id}/request-demos`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ quote_id: moreTarget, note: moreNote.trim() }) });
+      const res = await authedFetch(`/api/client/requests/${id}/request-demos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quote_id: moreTarget, note: moreNote.trim() }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setMsg(j.error || tx('送出失敗', '送出失败', 'Failed')); return; }
       setMoreTarget(''); setMoreNote(''); setMsg(tx('已請對方多提供 demo,我們會通知他 ✓', '已请对方多提供 demo,我们会通知他 ✓', 'Requested more demos — we’ll notify them ✓')); load();
@@ -186,8 +187,8 @@ export default function ClientRequestDetail() {
 
   async function save() {
     setMsg(''); setSaving(true);
-    const res = await fetch(`/api/client/requests/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    const res = await authedFetch(`/api/client/requests/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, brief: briefText, language, budget: amt.trim() ? `${cur} ${amt.trim()}` : '', budget_type: budgetType, audition_deadline: audDeadline, deadline }),
     });
     const j = await res.json().catch(() => ({}));
@@ -445,13 +446,14 @@ export default function ClientRequestDetail() {
 type Msg = { id: string; sender_type: string; sender_name: string | null; body: string; created_at: string };
 
 // Client ↔ Onyx in-platform thread on this request (Onyx replies as a team).
+// token 只當「session 就緒」訊號用;實際請求走 authedFetch 即時取最新 token(防 1hr 過期 401)。
 function ClientThread({ id, token, tx }: { id: string; token: string; tx: (tw: string, cn: string, en: string) => string }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const load = useCallback(async () => {
     if (!token) return;
-    const r = await fetch(`/api/client/requests/${id}/messages`, { headers: { Authorization: `Bearer ${token}` } });
+    const r = await authedFetch(`/api/client/requests/${id}/messages`);
     const j = await r.json().catch(() => ({}));
     setMsgs(j.messages || []);
   }, [id, token]);
@@ -461,7 +463,7 @@ function ClientThread({ id, token, tx }: { id: string; token: string; tx: (tw: s
     if (!body) return;
     setSending(true);
     try {
-      const r = await fetch(`/api/client/requests/${id}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ body }) });
+      const r = await authedFetch(`/api/client/requests/${id}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) });
       const j = await r.json().catch(() => ({}));
       if (r.ok) { setText(''); setMsgs((m) => [...m, j.message]); }
     } finally { setSending(false); }
