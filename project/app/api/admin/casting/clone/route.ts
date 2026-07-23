@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { isPlatformCase } from '@/lib/casting';
 
 /*
   POST /api/admin/casting/clone — duplicate a casting brief as a fresh REVIEWING copy
@@ -31,6 +32,6 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Where it shows: client cases → 客戶請求; platform (casting@) → 案件·發案 (reviewing).
-  const toInbox = created.client_email && created.client_email !== 'casting@onyxstudios.ai';
+  const toInbox = created.client_email && !isPlatformCase(created.client_email);
   return NextResponse.json({ ok: true, id: created.id, brief_number: created.brief_number, toInbox });
 }
