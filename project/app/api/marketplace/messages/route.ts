@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/mail';
 import { newMessageEmail } from '@/lib/mail-templates';
 import { sanitizeMessage } from '@/lib/message-filter';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { isPlatformCase } from '@/lib/casting';
 
 /*
   Thread messages for a (brief, talent) pairing.
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
     const { data: talent } = await c.db.from('talents').select('name, email').eq('id', talentId).maybeSingle();
     // 平台自發案(對話對象是 Onyx 自己,如女王百貨的指派/補錄溝通);直訊對象也是 Onyx
-    const isPlatformBrief = isDirect || (brief?.client_email || '') === 'casting@onyxstudios.ai';
+    const isPlatformBrief = isDirect || isPlatformCase(brief?.client_email as string | null | undefined);
 
     // Block off-platform contact details outright (Wing: 即時擋下不送出 — no routing
     // around Onyx). The client + talent may only message once the job is awarded.
