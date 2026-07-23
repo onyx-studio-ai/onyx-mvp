@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
-import { auditionDeadlinePassed } from '@/lib/casting';
-import { langKeys } from '@/lib/languages';
+import { auditionDeadlinePassed, isPlatformCase } from '@/lib/casting';
+import { langKeys, primaryLangKey } from '@/lib/languages';
 
 /*
   GET /api/talent/briefs — open voice-over briefs the talent can quote on, plus
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // 可見語言集 = 自選 visible_languages(最多5)優先,否則檔案 languages。
     // 「主語言」比對(Mandarin · Taiwan 可見所有 Mandarin 案 —— 擋語言不擋口音)。
     // 集合為空(老資料沒填)→ 全可見,前端提示補設定。已投過的案永遠可見。
-    const primary = (v: unknown) => String(v || '').split('·')[0].trim().toLowerCase();
+    const primary = primaryLangKey; // 共用主語言拆分(lib/languages)
     const vl = (r.talent as { visible_languages?: unknown }).visible_languages;
     const fl = (r.talent as { languages?: unknown }).languages;
     const langSrc = (Array.isArray(vl) && vl.length ? vl : Array.isArray(fl) ? fl : []) as unknown[];
@@ -56,13 +56,18 @@ export async function GET(request: NextRequest) {
     const famOf = (s: unknown) => langKeys(String(s ?? '')).filter((k) => !k.includes('-'));
     const famSet = new Set(langSrc.flatMap(famOf));
     let minedIds = new Set<string>();
+    // 查詢失敗時 fail-open:minedIds 為空會讓「投過的案/被點名邀請的案」被語言過濾
+    // 誤藏(2026-07-22 剛修過的洞在查詢失敗路徑重現)→ 一旦查不到就整段略過語言過濾,寧多勿漏。
+    let langFilterUsable = true;
     if (langSet.size) {
-      const { data: mine } = await r.db.from('marketplace_quotes').select('brief_id').eq('talent_id', (r.talent as { id: string }).id);
+      const { data: mine, error: mineErr } = await r.db.from('marketplace_quotes').select('brief_id').eq('talent_id', (r.talent as { id: string }).id);
+      if (mineErr) { console.error('[talent/briefs] my-quotes query failed — skipping language filter:', mineErr.message); langFilterUsable = false; }
       minedIds = new Set((mine || []).map((q) => String(q.brief_id)));
       // 被點名邀請的案也永遠可見(2026-07-22 審查:Wing 勾人通知了、對方卻因語言過濾看不到案)
       const myEmail = String((r.talent as { email?: string }).email || '').toLowerCase();
       if (myEmail) {
-        const { data: inv } = await r.db.from('casting_invites').select('brief_id').ilike('email', myEmail);
+        const { data: inv, error: invErr } = await r.db.from('casting_invites').select('brief_id').ilike('email', myEmail);
+        if (invErr) { console.error('[talent/briefs] invites query failed — skipping language filter:', invErr.message); langFilterUsable = false; }
         for (const i of inv || []) minedIds.add(String(i.brief_id));
       }
     }
@@ -70,7 +75,7 @@ export async function GET(request: NextRequest) {
       const at = (b as { ai_type?: string | null }).ai_type;
       if (at === 'clone' && !aiClone) return false;
       if (at === 'training' && !aiTrain) return false;
-      if (!langSet.size) return true;
+      if (!langSet.size || !langFilterUsable) return true;
       const bl = (b as { language?: string | null }).language;
       if (!bl) return true;                       // 案件沒標語言 → 保守顯示
       if (minedIds.has(String(b.id))) return true; // 投過的永遠可見
@@ -116,7 +121,7 @@ export async function GET(request: NextRequest) {
       for (const o of aos || []) { const k = String(o.brief_id); (assignedByBrief[k] ||= []).push(String(o.role_name)); }
     }
     const safeBriefs = briefs.map((b) => {
-      const o = { ...b, source: (b as { client_email?: string }).client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client', closed: isClosed(b), assigned_roles: [...new Set(assignedByBrief[(b as { id: string }).id] || [])] } as Record<string, unknown>;
+      const o = { ...b, source: isPlatformCase((b as { client_email?: string }).client_email) ? 'platform' : 'client', closed: isClosed(b), assigned_roles: [...new Set(assignedByBrief[(b as { id: string }).id] || [])] } as Record<string, unknown>;
       delete o.client_email;
       return o;
     });
