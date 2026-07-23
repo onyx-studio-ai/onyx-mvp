@@ -3,7 +3,6 @@ import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📥 [Draft API] Received draft save request');
     const supabase = getSupabaseServiceClient();
     const body = await request.json();
     const {
@@ -17,16 +16,6 @@ export async function POST(request: NextRequest) {
       talentId,
       talentPrice
     } = body;
-
-    console.log('📋 [Draft API] Request data:', {
-      email,
-      orderId: orderId || 'NEW',
-      vibe,
-      sonicRefUrl: sonicRefUrl?.substring(0, 50) + '...',
-      usageType,
-      tier,
-      descriptionLength: description?.length
-    });
 
     if (!email || !vibe || !sonicRefUrl || !description) {
       console.error('❌ [Draft API] Missing required fields');
@@ -51,7 +40,6 @@ export async function POST(request: NextRequest) {
     };
 
     if (orderId) {
-      console.log('🔄 [Draft API] Updating existing music draft:', orderId);
       const { data, error } = await supabase
         .from('music_orders')
         .update(orderData)
@@ -68,10 +56,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log('✅ [Draft API] Music draft updated successfully:', data?.id);
       return NextResponse.json({ orderId: data?.id, updated: true });
     } else {
-      console.log('➕ [Draft API] Creating new music draft order');
       const { data, error } = await supabase
         .from('music_orders')
         .insert([orderData])
@@ -87,7 +73,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log('✅ [Draft API] Music draft created successfully:', data?.id);
       return NextResponse.json({ orderId: data?.id, created: true });
     }
   } catch (err) {
