@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { isPlatformCase } from '@/lib/casting';
 import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -268,7 +269,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
 
   const handleUploadVersion = async () => {
     if (!pendingFile) return;
-    const isManaged = order.email === 'casting@onyxstudios.ai';
+    const isManaged = isPlatformCase(order.email); // 平台案判定統一(lib/casting)
     // 指派單沒有外部客戶:備註免填(錄音室代傳場景),也不寄客戶信
     if (!isManaged && !pendingNotes.trim()) {
       setUploadError('Please add a note to the client before delivering.');
@@ -677,7 +678,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
           <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
             <Mic className="w-4 h-4 text-cyan-400" />
             <span className="text-sm font-semibold text-cyan-400">Versions ({versions.length})</span>
-            {order.talent_id && order.email === 'casting@onyxstudios.ai' && (  /* 費用同意卡只做在指派單;報價單掛費會靜默失效(2026-07-22 審查) */
+            {order.talent_id && isPlatformCase(order.email) && (  /* 費用同意卡只做在指派單;報價單掛費會靜默失效(2026-07-22 審查) */
               <button onClick={() => setRevOpen(!revOpen)}
                 className="ml-auto text-[11px] px-2.5 py-1 rounded-full border bg-amber-500/10 text-amber-300 border-amber-400/30 hover:bg-amber-500/20">
                 ✏️ 發修改需求{(order.revision_count || 0) > 0 ? `(第 ${order.revision_count} 輪)` : ''}
