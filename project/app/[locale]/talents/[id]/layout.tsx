@@ -171,7 +171,8 @@ export default async function TalentProfileLayout({
     if (t.headshot_url) person.image = t.headshot_url;
     if (knowsLanguage.length) person.knowsLanguage = knowsLanguage;
     if (t.location) person.homeLocation = { '@type': 'Place', name: t.location };
-    personLd = JSON.stringify(person);
+    // 安全審計 M-3:跳脫 `<` 防止 name/location 內含 `</script>` 造成儲存型 XSS
+    personLd = JSON.stringify(person).replace(/</g, '\\u003c');
   }
 
   return (
