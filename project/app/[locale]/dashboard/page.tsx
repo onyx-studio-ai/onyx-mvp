@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import LineConnectClient from '@/components/client/LineConnectClient';
 import TelegramConnectClient from '@/components/client/TelegramConnectClient';
 import { supabase, Order } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 import { useDashboardUser } from '@/contexts/DashboardContext';
 import { getMusicTierLabel } from '@/lib/config/pricing.config';
 import { languages } from '@/lib/voices';
@@ -725,21 +726,17 @@ const TAB_CONFIG: { id: Tab; labelKey: string; icon: typeof Mic2; accent: string
 type FavTalent = { id: string; name: string; english_name?: string | null; headshot_url?: string | null; category?: string | null };
 function FavoritesSection({ tx }: { tx: (a: string, b: string, c: string) => string }) {
   const [items, setItems] = useState<FavTalent[]>([]);
-  const [token, setToken] = useState('');
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      const tk = data.session?.access_token || '';
-      setToken(tk);
-      if (!tk) return;
-      const r = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${tk}` } });
+      // authedFetch 即時取最新 token(掛載時存 token 會在 1hr 過期後 401)
+      const r = await authedFetch('/api/favorites');
       const j = await r.json().catch(() => ({}));
       if (Array.isArray(j.items)) setItems(j.items as FavTalent[]);
     })();
   }, []);
   async function remove(id: string) {
     setItems((xs) => xs.filter((x) => x.id !== id));
-    if (token) await fetch(`/api/favorites?talent_id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    await authedFetch(`/api/favorites?talent_id=${id}`, { method: 'DELETE' }).catch(() => {});
   }
   if (!items.length) return null;
   return (
