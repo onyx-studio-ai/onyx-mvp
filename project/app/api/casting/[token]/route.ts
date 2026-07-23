@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
-import { auditionDeadlinePassed } from '@/lib/casting';
+import { auditionDeadlinePassed, isPlatformCase } from '@/lib/casting';
 
 /*
   Guest casting endpoints (token = the invite link's capability; no login).
@@ -31,7 +31,7 @@ function pickGuestBrief(brief: Record<string, unknown>): Record<string, unknown>
   const out: Record<string, unknown> = {};
   for (const k of GUEST_BRIEF_FIELDS) if (k in brief) out[k] = brief[k];
   // platform 案不收平台費、client 案收 20% —— 前台靠這個 label 判斷,不外洩客戶 email 本身。
-  out.source = brief.client_email === 'casting@onyxstudios.ai' ? 'platform' : 'client';
+  out.source = isPlatformCase(brief.client_email as string | null | undefined) ? 'platform' : 'client';
   return out;
 }
 
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Reuse an existing talent with this email (they may already be a talent, or
     // auditioned via another link) — a plain insert would hit the unique-email
     // constraint and fail with "建立試音身分失敗".
-    const email = String(invite.email || '').trim();
+    const email = String(invite.email || '').trim().toLowerCase(); // 寫入端一律 lowercase(比照 hire/assign;混雜大小寫是重複建檔髒源頭)
     if (email) {
       const { data: existing } = await db.from('talents').select('id').ilike('email', email).limit(1);
       if (existing?.[0]?.id) talentId = existing[0].id as string;
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // Platform-posted = no cut (take-home); client-posted = 20% commission.
-  const commissionRate = brief.client_email === 'casting@onyxstudios.ai' ? 0 : 0.20;
+  const commissionRate = isPlatformCase(brief.client_email as string | null | undefined) ? 0 : 0.20; // 平台案判定統一(lib/casting)
   const { data, error } = await db.from('marketplace_quotes')
     .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id, commission_rate: commissionRate, license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null })
     .select('id, brief_id, role_name, gross_amount, currency, status, sample_url').single();
