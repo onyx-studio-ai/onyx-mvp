@@ -125,15 +125,33 @@ export default function VoiceConfiguratorPage() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewErr, setPreviewErr] = useState('');
+  // 免費試聽限流錯誤碼(too_long_free / free_quota_exceeded)→ 顯示人話 + 註冊連結
+  const [previewErrCode, setPreviewErrCode] = useState('');
   const handlePreview = async () => {
-    setPreviewErr(''); setPreviewUrl(''); setPreviewLoading(true);
+    setPreviewErr(''); setPreviewErrCode(''); setPreviewUrl(''); setPreviewLoading(true);
     try {
+      // 登入用戶帶「當下最新」token(比照 lib/authed-fetch:掛載時存的舊 token 一小時
+      // 會過期)→ 後端驗過即跳過免費試聽的字數/每日次數限制;未登入就不帶,走免費額度。
+      const { data: sessionData } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const accessToken = sessionData.session?.access_token;
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
       const r = await fetch('/api/voice/generate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers,
         body: JSON.stringify({ text: config.scriptText, language: config.language, voiceId: previewVoiceId, tone: config.tone, preview: true }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error || 'Preview failed');
+      if (!r.ok) {
+        // 免費限流的兩個碼:不用後端訊息原文,改依 locale 顯示人話(訊息後面接註冊連結)
+        if (d.code === 'free_quota_exceeded' || d.code === 'too_long_free') {
+          setPreviewErrCode(d.code);
+          setPreviewErr(d.code === 'free_quota_exceeded'
+            ? (isZhLocale ? '今日免費試聽已達上限,' : "You've reached today's free preview limit — ")
+            : (isZhLocale ? '免費試聽單次最多 300 字,' : 'Free previews are limited to 300 characters — '));
+          return;
+        }
+        throw new Error(d.error || 'Preview failed');
+      }
       setPreviewUrl(d.audioUrl);
     } catch (e) {
       setPreviewErr(e instanceof Error ? e.message : 'Preview failed');
@@ -148,6 +166,7 @@ export default function VoiceConfiguratorPage() {
   useEffect(() => {
     setPreviewUrl('');
     setPreviewErr('');
+    setPreviewErrCode('');
   }, [config.voiceSelection, config.tone, config.language, config.scriptText]);
 
   // Live talent catalogue (Onyx Alpha / Bravo / Delta / future). Sourced
@@ -773,7 +792,16 @@ export default function VoiceConfiguratorPage() {
                         {previewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
                         {isZhLocale ? '試聽前兩句(免費)' : 'Preview first lines (free)'}
                       </button>
-                      {previewErr && <p className="text-red-400 text-sm mt-2">{previewErr}</p>}
+                      {previewErr && (
+                        <p className="text-red-400 text-sm mt-2">
+                          {previewErr}
+                          {(previewErrCode === 'free_quota_exceeded' || previewErrCode === 'too_long_free') && (
+                            <Link href="/auth?mode=signup" className="text-blue-400 hover:text-blue-300 underline underline-offset-2">
+                              {isZhLocale ? '註冊帳號即可繼續使用' : 'sign up free to continue'}
+                            </Link>
+                          )}
+                        </p>
+                      )}
                       {previewUrl && <audio controls src={previewUrl} className="mt-3 w-full" />}
                     </div>
                   ) : config.voiceSelection ? (
