@@ -60,6 +60,7 @@ export default function AdminSocialPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ tweetUrl: string; replyId?: string } | null>(null);
   const [error, setError] = useState('');
+  const [diag, setDiag] = useState<Record<string, unknown> | null>(null);
 
   // 以 Unicode code point 計長度,和後端一致(避免 emoji 被算成 2)
   const len = [...text].length;
@@ -94,6 +95,21 @@ export default function AdminSocialPage() {
       const msg = e instanceof Error ? e.message : t.errTitle;
       setError(msg);
       toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // 連線診斷:打 GET,檢查金鑰狀態 + X 讀取測試(不發推文)
+  async function runDiag() {
+    setBusy(true);
+    setDiag(null);
+    try {
+      const res = await fetch('/api/admin/social/x', { method: 'GET', credentials: 'include' });
+      const j = await res.json().catch(() => ({}));
+      setDiag(j);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'diag failed');
     } finally {
       setBusy(false);
     }
@@ -146,6 +162,21 @@ export default function AdminSocialPage() {
           <Send className="w-4 h-4" />
           {busy ? t.sending : t.send}
         </button>
+
+        {/* 連線診斷(除錯用,不發推文) */}
+        <button
+          onClick={runDiag}
+          disabled={busy}
+          className="ml-3 inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 hover:bg-gray-50 disabled:opacity-50 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+        >
+          {isZhTW ? '連線診斷' : 'Diagnose'}
+        </button>
+
+        {diag && (
+          <pre className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-800 overflow-x-auto whitespace-pre-wrap break-words">
+            {JSON.stringify(diag, null, 2)}
+          </pre>
+        )}
 
         {/* 結果:成功 */}
         {result && (
