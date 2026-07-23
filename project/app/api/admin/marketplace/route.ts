@@ -4,6 +4,8 @@ import { requireAdmin, requireAdminOnly } from '@/app/api/admin/_utils/requireAd
 import { sendEmail } from '@/lib/mail';
 import { castingAwardedTalentEmail, castingAwardedClientEmail } from '@/lib/mail-templates';
 import { notifyBriefClosed } from '@/lib/brief-close';
+import { isPlatformCase } from '@/lib/casting';
+import { normCaseLang } from '@/lib/languages';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
 
@@ -63,6 +65,16 @@ export async function PATCH(request: NextRequest) {
       // Reopening/cancelling clears the stale award pointer so it can't linger.
       const patch: Record<string, unknown> = { status, updated_at: now };
       if (['open', 'reviewing', 'cancelled'].includes(status)) patch.awarded_quote_id = null;
+      // reviewing→open 直接上線的口:語言入庫前過 normCaseLang(客戶手打髒語言值不能
+      // 原樣 open,否則配音員端語言過濾漏案 —— 2026-07-23 旖樂案同類,寫入端關口治本)。
+      if (status === 'open') {
+        const { data: cur } = await db.from('marketplace_briefs').select('language').eq('id', id).maybeSingle();
+        const rawLang = String(cur?.language || '');
+        if (rawLang) {
+          const norm = normCaseLang(rawLang);
+          if (norm !== rawLang) patch.language = norm;
+        }
+      }
       // 結案理由(Wing 2026-07-18:投過的人要有交代)。有值才帶欄位,migration 前不擋。
       // no_auditions=零試音的未成案;decided=有試音但未採用(配音員端一律顯示「已定案」)
       const closeReason = ['no_auditions', 'decided', 'other'].includes(String(body.close_reason)) ? String(body.close_reason) : null;
@@ -105,10 +117,13 @@ export async function PATCH(request: NextRequest) {
           // to keep picking. Brief goes 'awarded' (enables 建立製作單) but keeps NO single
           // awarded_quote_id and can still accept more roles — to-order builds from every
           // accepted quote.
-          await db.from('marketplace_quotes').update({ status: 'rejected', updated_at: now })
+          // 這兩個 update 靜默失敗 = 落選者仍看到活報價 / 案面狀態不一致(2026-07-23 審查)→ 接 error 回 500。
+          const { error: rejErr } = await db.from('marketplace_quotes').update({ status: 'rejected', updated_at: now })
             .eq('brief_id', q.brief_id).eq('role_name', q.role_name).neq('id', id).in('status', ['submitted', 'shortlisted']);
+          if (rejErr) return NextResponse.json({ error: rejErr.message }, { status: 500 });
           if (brief?.status !== 'awarded') {
-            await db.from('marketplace_briefs').update({ status: 'awarded', updated_at: now }).eq('id', q.brief_id);
+            const { error: awErr } = await db.from('marketplace_briefs').update({ status: 'awarded', updated_at: now }).eq('id', q.brief_id);
+            if (awErr) return NextResponse.json({ error: awErr.message }, { status: 500 });
           }
         } else {
           // Single-voice: award the brief once (prevents double-award), reject everyone else.
@@ -119,8 +134,9 @@ export async function PATCH(request: NextRequest) {
             await db.from('marketplace_quotes').update({ status: 'submitted', updated_at: now }).eq('id', id);
             return NextResponse.json({ error: 'This brief is already awarded' }, { status: 409 });
           }
-          await db.from('marketplace_quotes').update({ status: 'rejected', updated_at: now })
+          const { error: rejErr } = await db.from('marketplace_quotes').update({ status: 'rejected', updated_at: now })
             .eq('brief_id', q.brief_id).neq('id', id).in('status', ['submitted', 'shortlisted']);
+          if (rejErr) return NextResponse.json({ error: rejErr.message }, { status: 500 }); // 同上:落選者不能留活報價
         }
 
         // Notify the winning talent + the client that a selection was made (best-effort).
@@ -131,7 +147,7 @@ export async function PATCH(request: NextRequest) {
             const m = castingAwardedTalentEmail({ talentName: talent.name as string, title, url: `${SITE}/talent`, locale: brief?.locale as string });
             sendEmail({ category: 'HELLO', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
           }
-          if (brief?.client_email && brief.client_email !== 'casting@onyxstudios.ai') {
+          if (brief?.client_email && !isPlatformCase(brief.client_email)) {
             const m = castingAwardedClientEmail({ title, url: `${SITE}/dashboard/requests`, locale: brief?.locale as string });
             sendEmail({ category: 'HELLO', to: brief.client_email as string, subject: m.subject, html: m.html }).catch(() => {});
           }
