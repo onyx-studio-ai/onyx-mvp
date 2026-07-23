@@ -79,21 +79,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!order.ok) return NextResponse.json({ error: order.error }, { status: order.status });
 
   // Award this quote.
-  await r.db.from('marketplace_quotes').update({ status: 'accepted', updated_at: new Date().toISOString() }).eq('id', quoteId);
+  // 訂單已建、信要寄 —— 這裡的 update 若靜默失敗,quote 留在 submitted、案子留在 open,
+  // 同一 quote 可被再次採用重複建單(2026-07-23 審查)。失敗就明確回 500 + log,人工補狀態。
+  const { error: acceptErr } = await r.db.from('marketplace_quotes').update({ status: 'accepted', updated_at: new Date().toISOString() }).eq('id', quoteId);
+  if (acceptErr) {
+    console.error('[client/select] quote accept update failed (order already created', order.order_number, '):', acceptErr.message);
+    return NextResponse.json({ error: '訂單已建立,但狀態更新失敗,請聯絡 Onyx 處理。' }, { status: 500 });
+  }
 
   // Multi-role brief: keep it open so the client can still pick the OTHER roles;
   // only close once every defined role has an awarded sub-order. Single-voice
   // brief (no role): close immediately as before.
   const briefRoles = (Array.isArray((r.brief as { roles?: { name?: string }[] }).roles) ? (r.brief as { roles?: { name?: string }[] }).roles! : [])
     .map((ro) => ro?.name).filter((n): n is string => !!n);
+  let closeErr: { message: string } | null = null;
   if (q.role_name && briefRoles.length > 0) {
     const { data: acc } = await r.db.from('marketplace_quotes').select('role_name').eq('brief_id', id).eq('status', 'accepted');
     const awarded = new Set((acc || []).map((x) => x.role_name as string));
     if (briefRoles.every((rn) => awarded.has(rn))) {
-      await r.db.from('marketplace_briefs').update({ status: 'closed', updated_at: new Date().toISOString() }).eq('id', id);
+      ({ error: closeErr } = await r.db.from('marketplace_briefs').update({ status: 'closed', updated_at: new Date().toISOString() }).eq('id', id));
     }
   } else {
-    await r.db.from('marketplace_briefs').update({ status: 'closed', awarded_quote_id: quoteId, updated_at: new Date().toISOString() }).eq('id', id);
+    ({ error: closeErr } = await r.db.from('marketplace_briefs').update({ status: 'closed', awarded_quote_id: quoteId, updated_at: new Date().toISOString() }).eq('id', id));
+  }
+  if (closeErr) {
+    console.error('[client/select] brief close update failed (order', order.order_number, 'created, quote accepted):', closeErr.message);
+    return NextResponse.json({ error: '訂單已建立,但結案狀態更新失敗,請聯絡 Onyx 處理。' }, { status: 500 });
   }
 
   const title = (r.brief.title as string) || (r.brief.content_type as string) || '配音案件';
