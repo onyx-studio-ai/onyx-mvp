@@ -6,6 +6,18 @@ import { CASE_TIMEZONES } from '@/lib/case-time';
 import { sendEmail } from '@/lib/mail';
 import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail } from '@/lib/mail-templates';
 import { caseCode } from '@/lib/casting';
+import { normalizeLangValue, langKeys, isSpecificLangKey } from '@/lib/languages';
+
+// 案件語言正規化:能對上標準清單或中文地區變體(「中文 · 台灣國語」→ Mandarin · Taiwan)
+// 就轉標準值,認不得原樣保留(健檢會報)。防髒值入庫害配音員端語言過濾漏案(2026-07-23 旖樂案)。
+const ZH_KEY_STD: Record<string, string> = { 'zh-tw': 'Mandarin · Taiwan', 'zh-cn': 'Mandarin · Mainland', 'zh-my': 'Mandarin · Malaysia' };
+function normCaseLang(s: string): string {
+  const n = normalizeLangValue(s);
+  if (n !== s) return n;
+  const ks = langKeys(s).filter(isSpecificLangKey).filter((k) => ZH_KEY_STD[k]);
+  if (ks.length === 1) return ZH_KEY_STD[ks[0]];
+  return s;
+}
 
 /*
   POST /api/admin/casting — create a human-VO casting call (kind='casting').
@@ -240,7 +252,7 @@ export async function POST(request: NextRequest) {
     timezone: tzOk(b.timezone) ? String(b.timezone) : 'Asia/Taipei',   // 案件時區:全案時間溝通以它為準
     content_type: String(b.content_type || '').slice(0, 80) || null, // 類別(廣告/旁白/遊戲…)
     brief: briefText,
-    language: String(b.language || '').slice(0, 80) || null,
+    language: normCaseLang(String(b.language || '').slice(0, 80)) || null,
     gender_needs: String(b.gender_needs || '').slice(0, 200) || null, // 需求人數/性別, e.g. 男聲 1 位、女聲 1 位
     voices_needed: Number.isFinite(Number(b.voices_needed)) && Number(b.voices_needed) > 0 ? Math.trunc(Number(b.voices_needed)) : null,
     has_singing: b.has_singing === true,
@@ -357,6 +369,7 @@ export async function PATCH(request: NextRequest) {
     const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
     const setStr = (k: string, max: number) => { if (e[k] !== undefined) upd[k] = String(e[k] ?? '').slice(0, max) || null; };
     for (const [k, max] of [['title', 200], ['content_type', 80], ['language', 80], ['brief', 20000], ['rate_note', 200], ['audition_deadline', 120], ['recording_start', 120], ['deadline', 120], ['length', 120], ['media_scope', 200], ['territory', 120], ['license_term', 200], ['accent', 120], ['voice_style', 120], ['voice_age', 120], ['audition_script', 20000], ['gender_needs', 120], ['internal_client_note', 300], ['license_summary', 4000], ['audition_deadline_time', 5], ['deadline_time', 5]] as [string, number][]) setStr(k, max);
+    if (typeof upd.language === 'string' && upd.language) upd.language = normCaseLang(upd.language); // 編輯也正規化,防髒語言值回流
     if (e.base_revisions !== undefined) upd.base_revisions = Math.max(0, Math.trunc(Number(e.base_revisions) || 0));
     if (e.audition_cap !== undefined) upd.audition_cap = Math.max(1, Math.trunc(Number(e.audition_cap) || 5));
     // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 讓編輯頁能改(修正從客戶請求帶入時自動勾的)。
