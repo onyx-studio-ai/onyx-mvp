@@ -6,6 +6,7 @@ import { CASE_TIMEZONES } from '@/lib/case-time';
 import { sendEmail } from '@/lib/mail';
 import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail } from '@/lib/mail-templates';
 import { caseCode } from '@/lib/casting';
+import { multicastLine } from '@/lib/line';
 import { normalizeLangValue, langKeys, isSpecificLangKey } from '@/lib/languages';
 
 // 案件語言正規化:能對上標準清單或中文地區變體(「中文 · 台灣國語」→ Mandarin · Taiwan)
@@ -42,8 +43,8 @@ const EN_RE = /english|英語|英语|英文/i;
 // internal Onyx personas. Invites them to audition AND finish their profile.
 async function notifyMatchingTalents(
   db: ReturnType<typeof getSupabaseServiceClient>,
-  brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null },
-  opts: { dryRun?: boolean; mode?: 'lang' | 'all'; aiType?: string | null; excludeEmails?: string[] } = {},
+  brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null; id?: string },
+  opts: { dryRun?: boolean; mode?: 'lang' | 'all'; aiType?: string | null; excludeEmails?: string[]; excludeQuoted?: boolean; reopened?: boolean } = {},
 ) {
   // 2026-07-22 Wing:一鍵通知。mode 'lang'(預設)= 該語系;'all' = 全站。
   // 語言比對:中/英沿用寬鬆正則(涵蓋舊自由文字資料);其他語言用主語言精確比對
@@ -67,6 +68,16 @@ async function notifyMatchingTalents(
   const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i; // internal / placeholder
   const asText = (v: unknown) => (Array.isArray(v) ? v.join(' ') : String(v || ''));
   const excl = new Set((opts.excludeEmails || []).map((e) => String(e).trim().toLowerCase()));
+  // 重開通知(excludeQuoted):排除本案已投遞過試音的人 —— 他們已投過,再收邀請信很怪。
+  // 含已撤回者(撤回=本人主動退出,不再打擾)。quotes 只存 talent_id,轉 talents 撈 email 比對。
+  if (opts.excludeQuoted && brief.id) {
+    const { data: qs } = await db.from('marketplace_quotes').select('talent_id').eq('brief_id', brief.id);
+    const qIds = [...new Set((qs || []).map((q) => String(q.talent_id || '')).filter(Boolean))];
+    if (qIds.length) {
+      const { data: qt } = await db.from('talents').select('email').in('id', qIds);
+      for (const t of qt || []) { const e = String(t.email || '').trim().toLowerCase(); if (e) excl.add(e); }
+    }
+  }
   const seen = new Set<string>();
   const matched = (talents || []).filter((t) => {
     const email = String(t.email || '').trim().toLowerCase();
@@ -91,9 +102,22 @@ async function notifyMatchingTalents(
     title: brief.title, caseCode: brief.code, language: brief.language,
     rateNote: brief.rate_note || undefined, contentType: brief.content_type || undefined,
     genderNeeds: brief.gender_needs || undefined, auditionDeadline: brief.audition_deadline || undefined,
-    url, locale: isZh ? 'zh-TW' : 'en',
+    url, locale: isZh ? 'zh-TW' : 'en', reopened: opts.reopened,
   });
   await Promise.all(matched.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
+  // 重開通知:綁定 LINE 的收件者同步推播提醒(已答應配音員「綁 LINE 會收到重開通知」)。
+  // 獨立查詢 + try/catch:欄位或金鑰缺就安靜跳過,絕不影響寄信主流程。
+  if (opts.reopened && matched.length) {
+    try {
+      const { data: lt } = await db.from('talents').select('line_user_id')
+        .in('email', matched.map((t) => t.email as string)).not('line_user_id', 'is', null);
+      const ids = (lt || []).map((r) => String(r.line_user_id || '')).filter(Boolean);
+      const text = isZh
+        ? `📢 案件重新開放試音 ——《${brief.title}》\n歡迎前往配音員後台查看並試音:${url}`
+        : `📢 Casting re-opened — ${brief.title}\nView and audition: ${url}`;
+      if (ids.length) await multicastLine(ids, text);
+    } catch { /* best-effort */ }
+  }
   return matched.length;
 }
 
@@ -354,6 +378,8 @@ export async function POST(request: NextRequest) {
 // Re-notify matching talents for an already-published casting call (the publish-time
 // auto-notify only fires once). { id, send:false } previews the recipient count;
 // { id, send:true } actually emails them.
+// 重開通知(案件截止後延後 deadline / 重新 open 時):加 { exclude_quoted:true, reopened:true }
+// —— 排除本案已投遞者、信件加「重新開放」banner、綁 LINE 者同步推播。
 export async function PATCH(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
@@ -416,9 +442,10 @@ export async function PATCH(request: NextRequest) {
   const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note, gender_needs, audition_deadline, ai_type').eq('id', id).maybeSingle();
   if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
   if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });
+  // exclude_quoted=true:排除本案已投遞者(重開通知用);reopened=true:信件加「重新開放」banner + 綁 LINE 者推播。
   const notified = await notifyMatchingTalents(db, {
     title: String(brief.title || ''), language: String(brief.language || ''),
-    rate_note: brief.rate_note, content_type: brief.content_type, gender_needs: brief.gender_needs, audition_deadline: brief.audition_deadline, code: caseCode(brief),
-  }, { dryRun: b.send !== true, mode: b.notify_mode === 'all' ? 'all' : 'lang', aiType: (brief as { ai_type?: string | null }).ai_type });
+    rate_note: brief.rate_note, content_type: brief.content_type, gender_needs: brief.gender_needs, audition_deadline: brief.audition_deadline, code: caseCode(brief), id,
+  }, { dryRun: b.send !== true, mode: b.notify_mode === 'all' ? 'all' : 'lang', aiType: (brief as { ai_type?: string | null }).ai_type, excludeQuoted: b.exclude_quoted === true, reopened: b.reopened === true });
   return NextResponse.json({ ok: true, notified, sent: b.send === true });
 }
