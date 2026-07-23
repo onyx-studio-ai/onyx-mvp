@@ -3,6 +3,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { createOrderFromAward } from '@/lib/casting-to-order';
 import { notifyBriefClosed } from '@/lib/brief-close';
+import { isPlatformCase } from '@/lib/casting';
 
 /*
   POST /api/admin/casting/to-order — turn an AWARDED casting brief into a production
@@ -33,7 +34,9 @@ export async function POST(request: NextRequest) {
   if (brief.status !== 'awarded') return NextResponse.json({ error: '此案尚未採用配音員,無法建單' }, { status: 400 });
   // Platform-posted cases (casting@) have no client on file — require an override
   // email from the admin so the order has a billing/delivery contact.
-  const isPlatform = !brief.client_email || brief.client_email === 'casting@onyxstudios.ai';
+  // 平台案判定統一走 isPlatformCase(Wing 2026-07-23 拍板:空白 client_email = 客戶案;
+  // 生產無空白單,零實際影響)。客戶案沿用 brief 上的 email。
+  const isPlatform = isPlatformCase(brief.client_email);
   const orderEmail = isPlatform ? clientEmailOverride : String(brief.client_email).toLowerCase();
   if (!orderEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(orderEmail)) {
     return NextResponse.json({ error: '平台發案請提供客戶 email(用於帳務與交付)。' }, { status: 400 });
@@ -68,11 +71,18 @@ export async function POST(request: NextRequest) {
   const briefRoles = (Array.isArray((brief as { roles?: { name?: string }[] }).roles) ? (brief as { roles?: { name?: string }[] }).roles! : [])
     .map((ro) => ro?.name).filter((n): n is string => !!n);
   const awardedRoles = new Set((accepted || []).map((qq) => qq.role_name).filter(Boolean));
-  const allCast = briefRoles.length === 0 || briefRoles.every((rn) => awardedRoles.has(rn));
+  let allCast = briefRoles.length === 0 || briefRoles.every((rn) => awardedRoles.has(rn));
   if (allCast) {
-    await db.from('marketplace_briefs').update({ status: 'closed', close_reason: 'decided', updated_at: new Date().toISOString() }).eq('id', briefId);
-    // 一鍵通知未中選者「客戶已定案」(中選者另收採用通知,排除)—— Wing 2026-07-18
-    await notifyBriefClosed(db, briefId, { excludeTalentIds: (accepted || []).map((qq) => qq.talent_id as string).filter(Boolean) });
+    // 關案 update 若靜默失敗,回應卻回 closed:true → 後台以為關了其實沒關(2026-07-23 審查)
+    // → 接 error,失敗時回 closed:false + log,讓後台看得出來要再關一次。
+    const { error: closeErr } = await db.from('marketplace_briefs').update({ status: 'closed', close_reason: 'decided', updated_at: new Date().toISOString() }).eq('id', briefId);
+    if (closeErr) {
+      console.error('[casting/to-order] brief close failed (orders created):', closeErr.message);
+      allCast = false;
+    } else {
+      // 一鍵通知未中選者「客戶已定案」(中選者另收採用通知,排除)—— Wing 2026-07-18
+      await notifyBriefClosed(db, briefId, { excludeTalentIds: (accepted || []).map((qq) => qq.talent_id as string).filter(Boolean) });
+    }
   }
 
   return NextResponse.json({ ok: true, order_number: created[0].order_number, id: created[0].id, count: created.length, closed: allCast });
