@@ -34,12 +34,14 @@ export async function resolveTalentFromRequest(
     .eq('auth_user_id', user.id)
     .maybeSingle();
   // Fall back to the user's verified email + lazy-link auth_user_id.
+  // ilike:歷史 email 有大小寫混雜,eq 會 miss → 混雜 email 的配音員第一次登入 404(比照 casting/join 2026-07-22)。
   if (!talent && user.email) {
-    const { data: byEmail } = await db
+    const { data: byEmailRows } = await db
       .from('talents')
       .select(sel)
-      .eq('email', user.email)
-      .maybeSingle();
+      .ilike('email', user.email)
+      .limit(1);
+    const byEmail = byEmailRows?.[0] || null;
     if (byEmail) {
       await db.from('talents').update({ auth_user_id: user.id }).eq('id', (byEmail as unknown as { id: string }).id);
       talent = byEmail;
