@@ -1299,9 +1299,17 @@ export function quoteReceivedEmail(p: { talentName: string; briefNumber?: string
 
 /** Invite a matching-language talent (an approved applicant) to audition for a
  *  casting call — branded, professional, and consistent with our other emails. */
-export function castingNotifyEmail(p: { title: string; caseCode?: string; language?: string; rateNote?: string; contentType?: string; genderNeeds?: string; auditionDeadline?: string; url: string; locale?: string }): { subject: string; html: string } {
+export function castingNotifyEmail(p: { title: string; caseCode?: string; language?: string; rateNote?: string; contentType?: string; genderNeeds?: string; auditionDeadline?: string; url: string; locale?: string; reopened?: boolean }): { subject: string; html: string } {
   const L = mpLocale(p.locale);
   const title = mpEsc(p.title);
+  // reopened=true:案件截止後重新開放試音的補寄通知 —— 信件頂部加一行醒目 banner。
+  const REOPEN = { tw: '此案已重新開放試音', cn: '此案已重新开放试音', en: 'This casting has re-opened for auditions' } as const;
+  const reopenBanner = p.reopened ? `
+    <tr>
+      <td align="center" style="padding-bottom:20px;">
+        <span style="display:inline-block;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.5);color:${BRAND_GREEN};font-size:14px;font-weight:700;border-radius:999px;padding:8px 20px;">${REOPEN[L]}</span>
+      </td>
+    </tr>` : '';
   const C = {
     tw: {
       subject: `Onyx Studios · 新試音案邀請 —— ${title}`,
@@ -1335,6 +1343,7 @@ export function castingNotifyEmail(p: { title: string; caseCode?: string; langua
     ...(p.auditionDeadline ? [{ label: C.due, value: mpEsc(p.auditionDeadline) }] : []),
   ];
   const content = `
+    ${reopenBanner}
     ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
     ${infoCard(C.info, rows)}
     ${ctaRow(C.cta, p.url, BRAND_GREEN)}
