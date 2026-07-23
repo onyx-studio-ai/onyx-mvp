@@ -348,7 +348,6 @@ export default function OrchestraOrderDetailPage() {
             orderId: order.id,
           }),
         });
-        console.log('[Orchestra] Delivery accepted notification sent');
       } catch (err) {
         console.error('[Orchestra] Failed to send delivery accepted notification:', err);
       }
