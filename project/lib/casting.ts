@@ -59,6 +59,16 @@ export function auditionDeadlinePassed(b: { audition_deadline?: string | null; d
   return Number.isFinite(ts) && Date.now() > ts;
 }
 
+/*
+  平台案判定(Wing 2026-07-23 拍板統一):client_email 小寫等於平台識別信箱才算平台案;
+  空白/null 一律視為客戶案。生產已驗證無空白 client_email 的單,此統一無實際影響。
+  之前這條 magic string 散在約 20 處且空值語意不一,全部改走這裡。
+*/
+export const PLATFORM_CASTING_EMAIL = 'casting@onyxstudios.ai';
+export function isPlatformCase(clientEmail: string | null | undefined): boolean {
+  return String(clientEmail || '').trim().toLowerCase() === PLATFORM_CASTING_EMAIL;
+}
+
 export function caseCode(b: { content_type?: string | null; created_at?: string | null; brief_number?: string | null }): string {
   const ct = b.content_type || '';
   let type = 'VO';
