@@ -165,6 +165,19 @@ export default function EditCasting() {
     } catch (e) { setMsg(e instanceof Error ? e.message : '換圖失敗'); } finally { setImgBusy(null); }
   }
 
+  // 補發/重開通知共用流程:先 send:false 拿可通知人數 → confirm → send:true 實寄。
+  // extra 原樣帶進 PATCH body(重開鈕帶 exclude_quoted / reopened)。
+  const notifyFlow = async (extra: Record<string, unknown>) => {
+    const pv = await fetch('/api/admin/casting', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...extra, send: false }) });
+    const pj = await pv.json().catch(() => ({}));
+    if (!pv.ok) { alert(pj.error || '查詢失敗'); return; }
+    if (!pj.notified) { alert('沒有符合條件的配音員可通知。'); return; }
+    if (!window.confirm(`將寄通知信給 ${pj.notified} 位配音員,確定?`)) return;
+    const r2 = await fetch('/api/admin/casting', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...extra, send: true }) });
+    const j2 = await r2.json().catch(() => ({}));
+    alert(r2.ok ? `已寄出 ${j2.notified} 封通知` : (j2.error || '寄送失敗'));
+  };
+
   const load = useCallback(async () => {
     const res = await fetch(`/api/admin/casting?id=${encodeURIComponent(id)}`, { credentials: 'include' });
     if (!res.ok) { setPhase('notfound'); return; }
@@ -229,21 +242,13 @@ export default function EditCasting() {
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">客戶(內部備註,配音員和前台都看不到)</span><input className={input} value={f.internal_client_note} onChange={(e) => set('internal_client_note', e.target.value)} placeholder="例:WeChat 客戶 王經理 · 上海XX網絡 · 微信ID xxx" /></label>
         <div className="border border-emerald-200 rounded-lg p-3 bg-emerald-50/50">
           <p className="text-xs font-semibold text-gray-700 mb-1.5">📢 補發通知(對已發佈的這個案)</p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {([['lang', '通知該語系配音員'], ['all', '通知全站配音員']] as ['lang' | 'all', string][]).map(([m, label]) => (
-              <button key={m} type="button" onClick={async () => {
-                const pv = await fetch('/api/admin/casting', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, notify_mode: m, send: false }) });
-                const pj = await pv.json().catch(() => ({}));
-                if (!pv.ok) { alert(pj.error || '查詢失敗'); return; }
-                if (!pj.notified) { alert('沒有符合條件的配音員可通知。'); return; }
-                if (!window.confirm(`將寄通知信給 ${pj.notified} 位配音員,確定?`)) return;
-                const r2 = await fetch('/api/admin/casting', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, notify_mode: m, send: true }) });
-                const j2 = await r2.json().catch(() => ({}));
-                alert(r2.ok ? `已寄出 ${j2.notified} 封通知` : (j2.error || '寄送失敗'));
-              }} className="text-xs border border-emerald-400 text-emerald-700 rounded px-2.5 py-1.5 hover:bg-emerald-100">{label}</button>
+              <button key={m} type="button" onClick={() => notifyFlow({ notify_mode: m })} className="text-xs border border-emerald-400 text-emerald-700 rounded px-2.5 py-1.5 hover:bg-emerald-100">{label}</button>
             ))}
+            <button type="button" onClick={() => notifyFlow({ notify_mode: 'lang', exclude_quoted: true, reopened: true })} className="text-xs border border-emerald-400 text-emerald-700 rounded px-2.5 py-1.5 hover:bg-emerald-100">重新開放通知(該語系,排除已投遞)</button>
           </div>
-          <p className="text-[11px] text-gray-500 mt-1.5">先顯示可通知人數再確認寄出;AI 案自動只寄給有同意 AI 合作的人。</p>
+          <p className="text-[11px] text-gray-500 mt-1.5">先顯示可通知人數再確認寄出;AI 案自動只寄給有同意 AI 合作的人。「重新開放通知」用於截止後重開的案:只通知還沒投遞過的人,信件標明重新開放,綁 LINE 者同步推播。</p>
         </div>
 
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">授權要點(配音員試音前必讀必勾;留空 = 不啟用授權閘)</span><textarea className={`${input} min-h-[120px] resize-y`} value={f.license_summary} onChange={(e) => set('license_summary', e.target.value)} placeholder="AI/TTS 案建議必填:授權範圍、期限、權利歸屬、保密…(不要寫終端客戶名稱)" /></label>
