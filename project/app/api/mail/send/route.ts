@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { sendEmail, type SenderCategory } from '@/lib/mail';
 import {
   musicWorkflowEmail,
@@ -43,6 +44,23 @@ export async function POST(request: NextRequest) {
 
     if (!workflow || !type || !email) {
       return NextResponse.json({ error: 'Missing required fields: workflow, type, email' }, { status: 400 });
+    }
+
+    // 授權雙閘(安全審計 H-1):此端點會以公司名義寄信、並為 email 生成魔法登入連結,不可對外全開。
+    // 閘 A:admin session cookie(後台工作流)→ 可為任何 email 觸發通知。
+    // 閘 B:Supabase Bearer token(客戶 dashboard)→ 僅限為「登入者本人的 email」觸發。
+    const adminRejection = requireAdmin(request);
+    if (adminRejection) {
+      const authHeader = request.headers.get('authorization') || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+      if (!token) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const { data: userData, error: userErr } = await getAdminClient().auth.getUser(token);
+      const sessionEmail = userData?.user?.email;
+      if (userErr || !sessionEmail || sessionEmail.toLowerCase() !== String(email).toLowerCase()) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const dashboardLink = await getMagicLink(email);
