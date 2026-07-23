@@ -6,7 +6,9 @@ import { Wand2, Upload, AlertCircle, CheckCircle2, Loader2, RefreshCw, Volume2, 
 
 // Browser → RunPod direct (bypasses Vercel function 10s timeout on Hobby plan).
 const SOVITS_URL = (process.env.NEXT_PUBLIC_SOVITS_API_URL || '').replace(/\/$/, '');
-const SOVITS_KEY = process.env.NEXT_PUBLIC_SOVITS_API_KEY || '';
+// 安全審計 H-2:API Key 不再走 NEXT_PUBLIC_ 環境變數(會被 inline 進前端 bundle、任何訪客可取),
+// 改由 admin 在頁面輸入、只存於本機瀏覽器 localStorage。URL 非機密可留。
+const SOVITS_KEY_STORAGE = 'sovits_api_key';
 
 interface VoiceEntry {
   voice_id: string;
@@ -19,8 +21,8 @@ interface HealthInfo {
   model?: string;
 }
 
-function authHeaders(): Record<string, string> {
-  return SOVITS_KEY ? { Authorization: `Bearer ${SOVITS_KEY}` } : {};
+function authHeaders(key: string): Record<string, string> {
+  return key ? { Authorization: `Bearer ${key}` } : {};
 }
 
 export default function AdminSovitsPage() {
@@ -28,6 +30,17 @@ export default function AdminSovitsPage() {
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [healthError, setHealthError] = useState('');
   const [loadingHealth, setLoadingHealth] = useState(true);
+
+  // API Key:只存本機 localStorage(見檔頭 H-2 註解)
+  const [apiKey, setApiKey] = useState('');
+  const [apiKeyLoaded, setApiKeyLoaded] = useState(false);
+
+  function handleApiKeyChange(value: string) {
+    setApiKey(value);
+    try {
+      localStorage.setItem(SOVITS_KEY_STORAGE, value);
+    } catch { /* 隱私模式下 localStorage 可能不可寫,忽略 */ }
+  }
 
   // Dynamic voice list from gateway /v1/voices
   const [allVoices, setAllVoices] = useState<VoiceEntry[]>([]);
@@ -61,7 +74,7 @@ export default function AdminSovitsPage() {
       return;
     }
     try {
-      const res = await fetch(`${SOVITS_URL}/health`, { headers: authHeaders() });
+      const res = await fetch(`${SOVITS_URL}/health`, { headers: authHeaders(apiKey) });
       if (!res.ok) {
         setHealthError(`HTTP ${res.status}`);
         setHealth(null);
@@ -79,7 +92,7 @@ export default function AdminSovitsPage() {
   async function loadVoices() {
     if (!SOVITS_URL) return;
     try {
-      const res = await fetch(`${SOVITS_URL}/v1/voices`, { headers: authHeaders() });
+      const res = await fetch(`${SOVITS_URL}/v1/voices`, { headers: authHeaders(apiKey) });
       if (!res.ok) return;
       const data = (await res.json()) as { data: VoiceEntry[] };
       setAllVoices(data.data || []);
@@ -93,10 +106,20 @@ export default function AdminSovitsPage() {
     }
   }
 
+  // 先從 localStorage 回填 API Key,再做首次連線(避免用空 key 打健康檢查)
   useEffect(() => {
+    try {
+      setApiKey(localStorage.getItem(SOVITS_KEY_STORAGE) || '');
+    } catch { /* 讀不到就維持空字串 */ }
+    setApiKeyLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!apiKeyLoaded) return;
     loadHealth();
     loadVoices();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiKeyLoaded]);
 
   async function handleTts() {
     if (!ttsText.trim()) return setTtsError(t('errEnterText'));
@@ -109,7 +132,7 @@ export default function AdminSovitsPage() {
     try {
       const res = await fetch(`${SOVITS_URL}/v1/audio/speech`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json', ...authHeaders(apiKey) },
         body: JSON.stringify({
           model: 'tts-1',
           input: ttsText,
@@ -148,7 +171,7 @@ export default function AdminSovitsPage() {
 
       const res = await fetch(`${SOVITS_URL}/v1/audio/voice_convert`, {
         method: 'POST',
-        headers: authHeaders(), // no Content-Type — browser sets multipart boundary
+        headers: authHeaders(apiKey), // no Content-Type — browser sets multipart boundary
         body: formData,
       });
       if (!res.ok) {
@@ -174,6 +197,28 @@ export default function AdminSovitsPage() {
         <p className="text-gray-600 text-sm mt-1">
           {t('subtitle')}
         </p>
+      </div>
+
+      {/* API Key(只存本機瀏覽器,不進 bundle / 不上伺服器) */}
+      <div className="mb-8 p-4 rounded-xl border border-gray-200 bg-white">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">API Key</label>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => handleApiKeyChange(e.target.value)}
+          placeholder="輸入 SoVITS 閘道 API Key"
+          autoComplete="off"
+          className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder:text-gray-400"
+        />
+        <p className="text-xs text-gray-500 mt-1.5">
+          金鑰只儲存在此瀏覽器的 localStorage,不會寫進程式碼或傳回我們的伺服器;填好後點下方狀態卡的重新整理圖示重新連線。
+        </p>
+        {!apiKey && (
+          <p className="text-xs text-amber-700 mt-1.5 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5" />
+            尚未填入 API Key,連線 SoVITS 服務前請先輸入。
+          </p>
+        )}
       </div>
 
       {/* Health status */}
@@ -206,7 +251,7 @@ export default function AdminSovitsPage() {
               <p className="text-xs mt-1">{healthError}</p>
               <p className="text-xs mt-2 text-gray-600">
                 {t('checkEnvPrefix')} <code>NEXT_PUBLIC_SOVITS_API_URL</code> /{' '}
-                <code>NEXT_PUBLIC_SOVITS_API_KEY</code>{t('checkEnvSuffix')}
+                上方 API Key 欄位{t('checkEnvSuffix')}
                 {' '}{t('checkPodPrefix')} <code>a52pzfcunv6ov8</code> {t('checkPodSuffix')}
               </p>
             </div>
