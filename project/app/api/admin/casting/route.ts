@@ -5,20 +5,9 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { CASE_TIMEZONES } from '@/lib/case-time';
 import { sendEmail } from '@/lib/mail';
 import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail } from '@/lib/mail-templates';
-import { caseCode } from '@/lib/casting';
+import { caseCode, isPlatformCase, PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 import { multicastLine } from '@/lib/line';
-import { normalizeLangValue, langKeys, isSpecificLangKey } from '@/lib/languages';
-
-// 案件語言正規化:能對上標準清單或中文地區變體(「中文 · 台灣國語」→ Mandarin · Taiwan)
-// 就轉標準值,認不得原樣保留(健檢會報)。防髒值入庫害配音員端語言過濾漏案(2026-07-23 旖樂案)。
-const ZH_KEY_STD: Record<string, string> = { 'zh-tw': 'Mandarin · Taiwan', 'zh-cn': 'Mandarin · Mainland', 'zh-my': 'Mandarin · Malaysia' };
-function normCaseLang(s: string): string {
-  const n = normalizeLangValue(s);
-  if (n !== s) return n;
-  const ks = langKeys(s).filter(isSpecificLangKey).filter((k) => ZH_KEY_STD[k]);
-  if (ks.length === 1) return ZH_KEY_STD[ks[0]];
-  return s;
-}
+import { normCaseLang, primaryLangKey } from '@/lib/languages';
 
 /*
   POST /api/admin/casting — create a human-VO casting call (kind='casting').
@@ -54,7 +43,7 @@ async function notifyMatchingTalents(
   const lang = brief.language || '';
   const isZh = ZH_RE.test(lang);
   const isEn = !isZh && EN_RE.test(lang);
-  const primary = (v: unknown) => String(v || '').split('·')[0].trim().toLowerCase();
+  const primary = primaryLangKey; // 共用主語言拆分(lib/languages)
   const wantPrimary = primary(lang);
   if (mode === 'lang' && !isZh && !isEn && !wantPrimary) return 0; // 沒語言可比 → 不廣播
   const { data: talents } = await db.from('talents')
@@ -317,7 +306,7 @@ export async function POST(request: NextRequest) {
   // with the poster-side placeholder client (talents never see it).
   const result = fromId
     ? await db.from('marketplace_briefs').update(row).eq('id', fromId).eq('kind', 'casting').select('id, brief_number, created_at, gender_needs, client_email, client_name, locale').single()
-    : await db.from('marketplace_briefs').insert({ ...row, client_email: 'casting@onyxstudios.ai', client_name: 'Onyx Casting' }).select('id, brief_number, created_at, gender_needs, client_email, client_name, locale').single();
+    : await db.from('marketplace_briefs').insert({ ...row, client_email: PLATFORM_CASTING_EMAIL, client_name: 'Onyx Casting' }).select('id, brief_number, created_at, gender_needs, client_email, client_name, locale').single();
   const { data, error } = result;
   if (error || !data) return NextResponse.json({ error: error?.message || '發案失敗' }, { status: 500 });
 
@@ -325,7 +314,7 @@ export async function POST(request: NextRequest) {
   // let the client know their brief passed review and is now live for auditions.
   // Best-effort — never block the publish on a mail failure.
   const clientEmail = String((data as { client_email?: string | null }).client_email || '');
-  if (clientEmail && clientEmail !== 'casting@onyxstudios.ai') {
+  if (clientEmail && !isPlatformCase(clientEmail)) {
     const note = clientBriefPublishedEmail({
       clientName: (data as { client_name?: string | null }).client_name || undefined,
       title, briefNumber: data.brief_number as string,
