@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { auditionDeadlinePassed } from '@/lib/casting';
+import { langKeys } from '@/lib/languages';
 
 /*
   GET /api/talent/briefs — open voice-over briefs the talent can quote on, plus
@@ -47,6 +48,13 @@ export async function GET(request: NextRequest) {
     const fl = (r.talent as { languages?: unknown }).languages;
     const langSrc = (Array.isArray(vl) && vl.length ? vl : Array.isArray(fl) ? fl : []) as unknown[];
     const langSet = new Set(langSrc.map(primary).filter(Boolean));
+    // 家族鍵集(langKeys):吃得下中英/新舊/自由文字變體(「中文 · 台灣國語」→ zh)。
+    // 可見度語意=擋語言不擋口音 → 只比家族鍵(zh/yue/nan/en/ja/ko),地區鍵(zh-tw…)不參與;
+    // langKeys 認不得的語言(German/Malay…)退回下方 primary 字串比對,行為不變。
+    // (2026-07-23 旖樂案:案件語言存了手打「中文 · 台灣國語」,primary「中文」對不上
+    //  配音員標準值「Mandarin」→ 客戶指定的配音員反而看不到案。)
+    const famOf = (s: unknown) => langKeys(String(s ?? '')).filter((k) => !k.includes('-'));
+    const famSet = new Set(langSrc.flatMap(famOf));
     let minedIds = new Set<string>();
     if (langSet.size) {
       const { data: mine } = await r.db.from('marketplace_quotes').select('brief_id').eq('talent_id', (r.talent as { id: string }).id);
@@ -66,6 +74,8 @@ export async function GET(request: NextRequest) {
       const bl = (b as { language?: string | null }).language;
       if (!bl) return true;                       // 案件沒標語言 → 保守顯示
       if (minedIds.has(String(b.id))) return true; // 投過的永遠可見
+      const fam = famOf(bl);
+      if (fam.length) return fam.some((k) => famSet.has(k));
       return langSet.has(primary(bl));
     });
 
