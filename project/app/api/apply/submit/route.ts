@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
 
     // ── 後端驗證(前端 stepError 只在瀏覽器,可被繞過,所以這裡再擋一次)──
     // 1) email 格式(與 email-code route 同一個正則)
-    const email = typeof formData.email === 'string' ? formData.email.trim() : '';
+    // 寫入端一律 lowercase(比照 hire/assign)—— 混雜大小寫是 talents email 對不上的髒源頭
+    const email = typeof formData.email === 'string' ? formData.email.trim().toLowerCase() : '';
     if (!EMAIL_RE.test(email)) {
       return bad('請提供有效的 Email。', 'A valid email is required.');
     }
@@ -90,7 +91,8 @@ export async function POST(request: NextRequest) {
 
     // 同名雙帳號治本(茹芸/葉元元/Amy 案):這個 email 已是平台配音員(通常是先被
     // 邀請試音建過帳號)→ 擋下再建,導去登入/設密碼,不產生第二個帳號。
-    const { data: existingTalent } = await db.from('talents').select('id, name').eq('email', email).maybeSingle();
+    const { data: existingRows } = await db.from('talents').select('id, name').ilike('email', email).limit(1); // ilike:歷史 email 大小寫混雜,eq 會漏擋(比照 casting/join)
+    const existingTalent = existingRows?.[0] || null;
     if (existingTalent) {
       const msg = locale?.startsWith('zh')
         ? '這個 Email 已經有 Onyx 配音員帳號了(可能是我們先前邀請您試音時建立的)。請直接前往登入;若還沒設過密碼,在登入頁點「忘記密碼」即可設定。資料要更新請來信 hello@onyxstudios.ai。'
