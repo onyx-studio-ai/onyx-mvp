@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
-import { caseCode, auditionDeadlinePassed } from '@/lib/casting';
+import { caseCode, auditionDeadlinePassed, isPlatformCase } from '@/lib/casting';
 import JSZip from 'jszip';
 import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
@@ -111,7 +111,7 @@ export default function AdminMarketplace() {
     const j = await res.json().catch(() => ({}));
     // Hide ONLY un-actioned CLIENT requests (they live in 客戶請求 /admin/requests).
     // Onyx-posted cases (client_email = casting@) always show here, any status.
-    setBriefs((j.briefs || []).filter((b: Brief) => !(b.status === 'reviewing' && b.client_email && b.client_email !== 'casting@onyxstudios.ai')));
+    setBriefs((j.briefs || []).filter((b: Brief) => !(b.status === 'reviewing' && b.client_email && !isPlatformCase(b.client_email))));
     setQuotes(j.quotes || []);
     setUnavailable(!!j.unavailable);
     setPhase('ready');
@@ -166,7 +166,7 @@ export default function AdminMarketplace() {
   }
 
   async function toOrder(b: Brief) {
-    const isPlatform = !b.client_email || b.client_email === 'casting@onyxstudios.ai';
+    const isPlatform = isPlatformCase(b.client_email); // 平台案判定統一(Wing 2026-07-23:空白 = 客戶案)
     // Platform-posted cases have no client email on file — ask for the end client's
     // email so the production order has a billing/delivery contact.
     let clientEmail = '';
@@ -308,11 +308,11 @@ export default function AdminMarketplace() {
                     <span className="font-mono text-xs text-gray-500">{b.kind === 'casting' ? caseCode(b) : b.brief_number}</span>
                     <span className={`text-[11px] px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : b.status === 'reviewing' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{b.status}</span>
                     {b.kind === 'casting' && <span className="text-[11px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{t('tagCasting')}</span>}
-                    {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{t('tagClientRequest')}</span>}
+                    {b.client_email && !isPlatformCase(b.client_email) && <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{t('tagClientRequest')}</span>}
                   </div>
                   <p className="text-sm font-medium text-gray-900 truncate">{b.title || b.client_name || b.client_email || t('dash')}</p>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-500">
-                    {(b.internal_client_note || (b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (b.client_name || b.client_email))) && (
+                    {(b.internal_client_note || (b.client_email && !isPlatformCase(b.client_email) && (b.client_name || b.client_email))) && (
                       <span className="text-sky-700 font-medium">{t('internalClient')}:{b.internal_client_note || b.client_name || b.client_email}</span>
                     )}
                     {b.language && <span>{b.language}</span>}
@@ -331,7 +331,7 @@ export default function AdminMarketplace() {
             <div className="px-5 pb-5">
             {b.kind === 'casting' ? (
               <div className="mb-2">
-                {b.client_email && b.client_email !== 'casting@onyxstudios.ai' && (
+                {b.client_email && !isPlatformCase(b.client_email) && (
                   <div className="mb-1.5">
                     <p className="text-xs text-gray-600">📥 {b.client_name || t('dash')}{b.company ? ` · ${b.company}` : ''} · {b.client_email}{b.budget ? ` · ${t('clientBudget')} ${b.budget_type || ''} ${b.budget}` : ''}</p>
                     {b.status === 'reviewing' && (
@@ -422,7 +422,7 @@ export default function AdminMarketplace() {
               <div className="mb-3 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                 <span className="text-xs text-blue-800">
                   {t('awardedNote')}
-                  {(!b.client_email || b.client_email === 'casting@onyxstudios.ai') && t('awardedPlatformHint')}
+                  {isPlatformCase(b.client_email) && t('awardedPlatformHint')}
                 </span>
                 <button onClick={() => toOrder(b)} className="ml-auto text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg px-3 py-1.5 whitespace-nowrap">{t('createOrder')}</button>
               </div>
