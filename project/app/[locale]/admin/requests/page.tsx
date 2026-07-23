@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
-import { caseCode } from '@/lib/casting';
+import { caseCode, isPlatformCase } from '@/lib/casting';
 import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 
 type Brief = {
@@ -75,7 +75,7 @@ export default function AdminRequests() {
     const j = await res.json().catch(() => ({}));
     // Only un-actioned client requests: came from a real client + still reviewing.
     const reqs = (j.briefs || []).filter(
-      (b: Brief) => b.status === 'reviewing' && b.client_email && b.client_email !== 'casting@onyxstudios.ai',
+      (b: Brief) => b.status === 'reviewing' && b.client_email && !isPlatformCase(b.client_email),
     );
     setRequests(reqs);
     setPhase('ready');
