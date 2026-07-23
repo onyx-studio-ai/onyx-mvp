@@ -8,10 +8,11 @@
 import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 
 let cache: Set<string> | null = null; // null = not loaded yet
 let loading: Promise<void> | null = null;
-let token = '';
+let signedIn = false; // 只記「有沒有登入」;token 不快取(整個瀏覽階段共用舊 token 會過期 401),請求走 authedFetch 即時取
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -19,10 +20,10 @@ async function ensureLoaded() {
   if (cache || loading) return loading || Promise.resolve();
   loading = (async () => {
     const { data } = await supabase.auth.getSession();
-    token = data.session?.access_token || '';
+    signedIn = !!data.session?.access_token;
     cache = new Set();
-    if (token) {
-      const r = await fetch('/api/favorites', { headers: { Authorization: `Bearer ${token}` } });
+    if (signedIn) {
+      const r = await authedFetch('/api/favorites');
       const j = await r.json().catch(() => ({}));
       if (Array.isArray(j.ids)) cache = new Set(j.ids as string[]);
     }
@@ -45,15 +46,15 @@ export default function FavoriteButton({ talentId, size = 18, className = '' }: 
 
   async function toggle(e: React.MouseEvent) {
     e.preventDefault(); e.stopPropagation(); // don't trigger the card's link
-    if (!token) { window.location.href = '/auth'; return; } // prompt sign-in
+    if (!signedIn) { window.location.href = '/auth'; return; } // prompt sign-in
     if (busy || !cache) return;
     setBusy(true);
     if (fav) {
       cache.delete(talentId); emit();
-      await fetch(`/api/favorites?talent_id=${talentId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+      await authedFetch(`/api/favorites?talent_id=${talentId}`, { method: 'DELETE' }).catch(() => {});
     } else {
       cache.add(talentId); emit();
-      await fetch('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ talent_id: talentId }) }).catch(() => {});
+      await authedFetch('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ talent_id: talentId }) }).catch(() => {});
     }
     setBusy(false);
   }
