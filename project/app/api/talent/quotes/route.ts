@@ -3,7 +3,7 @@ import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
 import { quoteReceivedEmail, deliveryUploadedEmail, castingDeliveryClientEmail, extraDemoUploadedEmail } from '@/lib/mail-templates';
 import { sanitizeMessage } from '@/lib/message-filter';
-import { auditionDeadlinePassed } from '@/lib/casting';
+import { auditionDeadlinePassed, isPlatformCase } from '@/lib/casting';
 
 const SITE = 'https://www.onyxstudios.ai';
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Commission keys off the SOURCE, not kind (every case is kind='casting' now):
     // Onyx PLATFORM-posted cases take NO cut (the price IS the talent's take-home;
     // Onyx's margin lives in the Onyx↔client deal). CLIENT-posted cases carry 20%.
-    const isPlatform = brief.client_email === 'casting@onyxstudios.ai';
+    const isPlatform = isPlatformCase(brief.client_email); // 平台案判定統一(lib/casting)
 
     const { data, error } = await r.db
       .from('marketplace_quotes')
@@ -227,11 +227,21 @@ export async function PATCH(request: NextRequest) {
     if (order && order.status !== 'completed') {
       const { count } = await r.db.from('voice_order_versions').select('id', { count: 'exact', head: true }).eq('voice_order_id', order.id);
       firstDelivery = (count || 0) === 0;
-      await r.db.from('voice_order_versions').insert({
+      // 版本 insert / 訂單轉 delivered 靜默失敗 = 配音員看到「交付成功」、客戶端卻沒版本可審
+      // (2026-07-23 審查)→ 接 error 回 500;quote 的 delivery_url 已寫入,log 提示人工補。
+      const { error: verErr } = await r.db.from('voice_order_versions').insert({
         voice_order_id: order.id, file_url: deliveryUrl, file_name: deliveryName,
         notes: '配音員交付', version_number: (count || 0) + 1, status: 'pending_review',
       });
-      await r.db.from('voice_orders').update({ download_url: deliveryUrl, status: 'delivered', updated_at: new Date().toISOString() }).eq('id', order.id);
+      if (verErr) {
+        console.error('[talent/quotes] version insert failed (quote delivery_url already saved, order', order.order_number, '):', verErr.message);
+        return NextResponse.json({ error: '交付檔已收到,但版本建立失敗,請聯絡 Onyx 補登。' }, { status: 500 });
+      }
+      const { error: delivErr } = await r.db.from('voice_orders').update({ download_url: deliveryUrl, status: 'delivered', updated_at: new Date().toISOString() }).eq('id', order.id);
+      if (delivErr) {
+        console.error('[talent/quotes] order delivered update failed (version created, order', order.order_number, '):', delivErr.message);
+        return NextResponse.json({ error: '交付檔已收到,但訂單狀態更新失敗,請聯絡 Onyx 處理。' }, { status: 500 });
+      }
       if (order.email && firstDelivery) {
         const cnote = castingDeliveryClientEmail({ title: (order.order_number as string) || '', orderNumber: order.order_number as string, url: `${SITE}/dashboard/orders/${order.id}` });
         sendEmail({ category: 'PRODUCTION', to: order.email as string, subject: cnote.subject, html: cnote.html }).catch(() => {});
