@@ -4,6 +4,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { sendEmail } from '@/lib/mail';
 import { sendTelegram } from '@/lib/telegram';
 import { LANGUAGES } from '@/lib/languages';
+import { auditionDeadlinePassed } from '@/lib/casting';
 
 /*
   每日資料健檢(唯讀)— 抓「不報錯、build 綠燈、但商業結果是錯的」那類靜默不一致。
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     const [{ data: talents }, pv48, { data: openCasting }] = await Promise.all([
       db.from('talents').select('id, name, type, gender, is_active, voice_id_status, application_id, published_snapshot, languages, native_languages, demos, demo_urls, sample_url, phone, line_user_id, telegram_chat_id'),
       db.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 48 * 3600_000).toISOString()),
-      db.from('marketplace_briefs').select('brief_number, audition_deadline').eq('kind', 'casting').eq('status', 'open'),
+      db.from('marketplace_briefs').select('brief_number, audition_deadline, audition_deadline_time, deadline, timezone, created_at').eq('kind', 'casting').eq('status', 'open'),
     ]);
     const ts = talents || [];
     const cap = (arr: string[], n = 10) => arr.slice(0, n).join('、') + (arr.length > n ? ` …共${arr.length}` : '');
@@ -113,8 +114,10 @@ export async function GET(request: NextRequest) {
       && !(Array.isArray(t.demos) && t.demos.length) && !(Array.isArray(t.demo_urls) && t.demo_urls.length) && !t.sample_url).map((t) => t.name);
     if (noDemo.length) info.push(`上線但零 demo:${cap(noDemo)}`);
 
-    // G. 試音已截止但仍 open 的案(設計上不自動關 —— 純提醒數字)
-    const expired = (openCasting || []).filter((b) => b.audition_deadline && /^\d{4}-\d{2}-\d{2}/.test(b.audition_deadline) && new Date(b.audition_deadline + 'T23:59:59') < new Date());
+    // G. 試音已截止但仍 open 的案(設計上不自動關 —— 純提醒數字)。
+    // 用共用 auditionDeadlinePassed(吃 ISO / 舊「6/30」短格式 / 精確時間+時區),
+    // 與 join/quotes/briefs 各處同一口徑 —— 不再自寫只認 ISO 的判定(2026-07-23 整理)。
+    const expired = (openCasting || []).filter((b) => auditionDeadlinePassed(b));
     if (expired.length) info.push(`open 但試音已截止的案:${expired.map((b) => b.brief_number).join('、')}(設計上不自動關,若已分完案可手動關)`);
 
     const report = { ok: warn.length === 0, warn, info, checkedAt: new Date().toISOString() };
