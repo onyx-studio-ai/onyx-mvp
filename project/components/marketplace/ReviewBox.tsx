@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabase';
+import { authedFetch } from '@/lib/authed-fetch';
 
 function Stars({ value, onPick }: { value: number; onPick?: (n: number) => void }) {
   return (
@@ -43,7 +44,6 @@ export default function ReviewBox({ orderId, myType }: { orderId: string; myType
       ];
   const target = myType === 'client' ? tx('配音員', '配音员', 'the talent') : tx('客戶', '客户', 'the client');
 
-  const [token, setToken] = useState('');
   const [mine, setMine] = useState<Rev | null | undefined>(undefined); // undefined = loading
   const [theirs, setTheirs] = useState<Rev | null>(null);
   const [theirsHidden, setTheirsHidden] = useState(false);
@@ -53,11 +53,10 @@ export default function ReviewBox({ orderId, myType }: { orderId: string; myType
   const [err, setErr] = useState('');
 
   const load = useCallback(async () => {
+    // 不存 token state:寫評價寫久一點 token 過期就 401 —— 改 authedFetch 每次即時取。
     const { data } = await supabase.auth.getSession();
-    const tk = data.session?.access_token || '';
-    setToken(tk);
-    if (!tk) { setMine(null); return; }
-    const r = await fetch(`/api/marketplace/reviews?order_id=${orderId}&as=${myType}`, { headers: { Authorization: `Bearer ${tk}` } });
+    if (!data.session?.access_token) { setMine(null); return; }
+    const r = await authedFetch(`/api/marketplace/reviews?order_id=${orderId}&as=${myType}`);
     const j = await r.json().catch(() => ({}));
     setMine((j.mine as Rev) || null);
     setTheirs((j.theirs as Rev) || null);
@@ -68,8 +67,8 @@ export default function ReviewBox({ orderId, myType }: { orderId: string; myType
   const submit = async () => {
     if (!DIMS.some((d) => scores[d.key])) { setErr(tx('請至少點選一項星等', '请至少点选一项星等', 'Rate at least one item')); return; }
     setBusy(true); setErr('');
-    const r = await fetch('/api/marketplace/reviews', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    const r = await authedFetch('/api/marketplace/reviews', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ order_id: orderId, reviewer_type: myType, comment, rating_communication: scores.rating_communication, rating_quality: scores.rating_quality, rating_delivery: scores.rating_delivery }),
     });
     const j = await r.json().catch(() => ({}));
