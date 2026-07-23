@@ -76,8 +76,6 @@ export async function POST(request: NextRequest) {
       const recipientEmail = sender_role === 'admin' ? order.email : productionEmail;
       const senderCategory = sender_role === 'admin' ? 'PRODUCTION' : 'ADMIN';
       
-      console.log(`📧 [Orchestra Message] ${sender_role} sent message → notifying ${recipientEmail} (from ${senderCategory})`);
-
       let dashboardLink = 'https://www.onyxstudios.ai/dashboard';
       try {
         const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
