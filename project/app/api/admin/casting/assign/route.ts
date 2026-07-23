@@ -4,6 +4,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail, emailLocaleForTalent } from '@/lib/mail';
 import { mintOnboardingLink } from '@/lib/onboarding';
 import { talentAccountSetupEmail } from '@/lib/mail-templates';
+import { PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 
 /*
   POST /api/admin/casting/assign — Onyx DIRECTLY assigns a batch of roles to one
@@ -55,7 +56,9 @@ export async function POST(request: NextRequest) {
     talentName = name; talentEmail = isPlaceholder ? '' : email;   // 佔位不寄任何信
 
     // Reuse an existing talent row for this email if any; else create a lightweight one.
-    const { data: existing } = await db.from('talents').select('id, name, auth_user_id').eq('email', email).maybeSingle();
+    // ilike:歷史 email 大小寫混雜,eq miss 就再建一個(Ashley 案同類;比照 casting/join 2026-07-22)
+    const { data: existingRows } = await db.from('talents').select('id, name, auth_user_id').ilike('email', email).limit(1);
+    const existing = existingRows?.[0] || null;
     let authUserId = (existing as { auth_user_id?: string } | null)?.auth_user_id || null;
     if (existing) {
       talentId = (existing as { id: string }).id;
@@ -105,7 +108,7 @@ export async function POST(request: NextRequest) {
   const roles = Array.isArray(brief.roles) ? (brief.roles as Array<{ name?: string; sample_line?: string }>) : [];
   const roleScript = (rn: string) => (roles.find((r) => (r.name || '').trim() === rn)?.sample_line || '').trim();
   const currency = (brief.budget_currency as string) || 'TWD';
-  const orderEmail = (brief.client_email as string) || 'casting@onyxstudios.ai';
+  const orderEmail = (brief.client_email as string) || PLATFORM_CASTING_EMAIL;
   const d = new Date();
   const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
