@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
+import { PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 
 /*
   後台左側導覽的「待處理數量」徽章 — 一次把各項待處理 count 拿回來,
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('kind', 'casting')
       .eq('status', 'reviewing')
-      .neq('client_email', 'casting@onyxstudios.ai');
+      .neq('client_email', PLATFORM_CASTING_EMAIL);
     if (requestsSince) requestsQuery = requestsQuery.gt('created_at', requestsSince);
 
     // --- 請款單:配音員已上傳發票、待撥款 ---
