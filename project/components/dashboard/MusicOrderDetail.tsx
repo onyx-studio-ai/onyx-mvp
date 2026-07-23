@@ -141,9 +141,14 @@ async function sendNotification(
 ) {
   try {
     console.log(`[MusicClient] Sending notification: type=${type}, email=${email}, order=#${orderNumber}`);
+    // mail/send 已加授權閘:帶本人 Supabase token,只能為登入者自己的 email 觸發通知
+    const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch('/api/mail/send', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token || ''}`,
+      },
       body: JSON.stringify({ workflow: 'music', type, email, orderNumber, orderId, category: 'PRODUCTION', ...extra }),
     });
     const data = await res.json();
