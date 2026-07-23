@@ -105,7 +105,8 @@ export default async function BlogPostPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        // 安全審計 M-3 同類修補:跳脫 `<` 防 `</script>` 注入
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, '\\u003c') }}
       />
 
       <main className="min-h-screen bg-black text-white">
