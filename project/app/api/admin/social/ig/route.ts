@@ -121,11 +121,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 影片:輪詢 container 直到 status_code=FINISHED(圖片通常即時可發,略過輪詢)
-    if (mediaType === 'video') {
+    // 🚨 圖片與影片都要先輪詢 container status_code=FINISHED 才能發布。
+    //    (原本圖片略過輪詢 → IG 回 9007「Media ID is not available」:容器還在處理就 publish。)
+    //    圖片通常 1–3 秒就緒 → 短輪詢;影片較久 → 沿用原設定。先查一次再睡,圖片多半第一次就 FINISHED。
+    {
+      const interval = mediaType === 'video' ? POLL_INTERVAL_MS : 2000;
+      const maxAttempts = mediaType === 'video' ? POLL_MAX_ATTEMPTS : 10;
       let finished = false;
-      for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-        await sleep(POLL_INTERVAL_MS);
+      for (let i = 0; i < maxAttempts; i++) {
         const statusUrl = `${GRAPH}/${encodeURIComponent(creationId)}?fields=status_code&access_token=${encodeURIComponent(accessToken)}`;
         const res = await fetch(statusUrl);
         const raw = await res.text();
@@ -142,15 +145,16 @@ export async function POST(request: NextRequest) {
         }
         if (statusCode === 'ERROR' || statusCode === 'EXPIRED') {
           return NextResponse.json(
-            { error: `IG 影片處理失敗(status_code=${statusCode})。請確認影片格式(建議 MP4/H.264)與長度符合 IG Reels 規範` },
+            { error: `IG 媒體處理失敗(status_code=${statusCode})。影片請確認格式(MP4/H.264)與長度符合 Reels 規範;圖片請確認是公開可讀的 JPG/PNG` },
             { status: 502 },
           );
         }
-        // 其餘(IN_PROGRESS / PUBLISHED 前置狀態)續等
+        // 其餘(IN_PROGRESS 等)續等
+        await sleep(interval);
       }
       if (!finished) {
         return NextResponse.json(
-          { error: 'IG 影片處理逾時(超過約 55 秒仍未就緒)。影片較大時請稍後再試,或改用較短/較小的影片' },
+          { error: 'IG 媒體處理逾時仍未就緒,請稍後再試' },
           { status: 504 },
         );
       }
