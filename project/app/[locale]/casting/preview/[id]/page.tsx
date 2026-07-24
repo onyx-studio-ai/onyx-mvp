@@ -45,7 +45,7 @@ export default function CastingPreview() {
   useEffect(() => { load(); }, [load]);
 
   const shell = (inner: React.ReactNode) => (
-    <main className="min-h-screen bg-black text-white px-4 pt-24 pb-16"><div className="max-w-4xl mx-auto">{inner}</div></main>
+    <main className="min-h-screen bg-black text-white px-4 pt-24 pb-16"><div className="max-w-5xl mx-auto">{inner}</div></main>
   );
   if (phase === 'loading') return shell(<p className="text-gray-500 text-sm text-center py-20">載入中…</p>);
   if (phase === 'unauth') return shell(<p className="text-gray-400 text-sm text-center py-20">請先登入後台再預覽。</p>);
