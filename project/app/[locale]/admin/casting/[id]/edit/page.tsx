@@ -18,7 +18,7 @@ import { CASE_TIMEZONES } from '@/lib/case-time';
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 // 與發案表單同一套選項(編輯頁補齊,讓幾乎全欄位可編)。
-const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
+const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '影片旁白', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
 const TERRITORY_OPTS = ['', '台灣', '大陸', '港澳', '全球', '北美', '東南亞', '其他'];
 const LICENSE_OPTS = ['', '一年', '兩年', '三年', '永久', '買斷', '專案限定'];
 const STYLE_OPTS = ['', '對話自然', '旁白沉穩', '權威 / 正式', '溫暖', '活潑 / 年輕', '角色演繹', '不限', '其他'];
