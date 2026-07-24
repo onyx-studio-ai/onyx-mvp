@@ -249,7 +249,7 @@ export const VOICE_TIERS = [
       'Custom delivery formats & stems',
       'Multi-language project coordination',
     ],
-    priceLabel: 'US$229 / 0-60s package',
+    priceLabel: 'from US$229 / 0-60s package',
     gradient: 'from-amber-600 to-orange-600',
     popular: false,
     isCustom: false,
