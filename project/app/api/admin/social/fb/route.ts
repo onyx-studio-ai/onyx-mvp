@@ -62,9 +62,23 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // System User token 不能直接發粉專(FB 會要求已停用的 publish_actions);
+    // 先用它換出該粉專的 Page Access Token 再發(從 System User token 換出的粉專 token 永不過期)。
+    // 換不到就退回原值,相容「FB_PAGE_ACCESS_TOKEN 本來就是 Page token」的情況。
+    let pageToken = accessToken;
+    try {
+      const tokRes = await fetch(
+        `${GRAPH}/${encodeURIComponent(pageId)}?fields=access_token&access_token=${encodeURIComponent(accessToken)}`,
+      );
+      const tokJson = (await tokRes.json().catch(() => null)) as { access_token?: string } | null;
+      if (tokRes.ok && tokJson?.access_token) pageToken = tokJson.access_token;
+    } catch {
+      /* 換不到就用原 token */
+    }
+
     let endpoint: string;
     const form = new URLSearchParams();
-    form.set('access_token', accessToken);
+    form.set('access_token', pageToken);
 
     if (imageUrl) {
       // 帶單圖 → /photos,caption = 主文
