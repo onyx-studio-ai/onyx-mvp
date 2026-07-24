@@ -165,6 +165,11 @@ export async function GET(request: NextRequest) {
     X_API_SECRET: process.env.X_API_SECRET,
     X_ACCESS_TOKEN: process.env.X_ACCESS_TOKEN,
     X_ACCESS_TOKEN_SECRET: process.env.X_ACCESS_TOKEN_SECRET,
+    // FB/IG 也一起診斷:確認 Vercel 環境變數在此 build 是否讀得到(不回值)
+    FB_PAGE_ID: process.env.FB_PAGE_ID,
+    FB_PAGE_ACCESS_TOKEN: process.env.FB_PAGE_ACCESS_TOKEN,
+    IG_USER_ID: process.env.IG_USER_ID,
+    IG_ACCESS_TOKEN: process.env.IG_ACCESS_TOKEN,
   };
   const envCheck = Object.entries(vars).map(([name, v]) => ({
     name,
