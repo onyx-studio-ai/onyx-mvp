@@ -17,10 +17,10 @@
   admin 頁沿用 credentials:'include' 慣例(非 talent 的 authedFetch)。
 */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { toast } from 'sonner';
-import { Send, ExternalLink, AlertCircle, Upload, X as XIcon, CheckCircle2 } from 'lucide-react';
+import { Send, ExternalLink, AlertCircle, Upload, X as XIcon, CheckCircle2, CalendarClock, Clock, Trash2 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/list-ui';
 
 const X_MAX_LEN = 280;
@@ -33,6 +33,16 @@ type PlatformResult = {
   ok: boolean;
   url?: string;
   message?: string;
+};
+
+// 排程佇列中的一則貼文
+type QueueItem = {
+  id: string;
+  kind: string;
+  platforms: string[] | null;
+  text: string | null;
+  media_url: string | null;
+  scheduled_for: string | null;
 };
 
 export default function AdminSocialPage() {
@@ -72,6 +82,19 @@ export default function AdminSocialPage() {
         viewPost: '看這則貼文',
         diagnose: 'X 連線診斷',
         errTitle: '發送失敗',
+        modeNow: '立即發布',
+        modeSchedule: '排程發送',
+        scheduleLabel: '排程時間(英國時間)',
+        scheduleHint: '時間到後,系統每 10 分鐘巡一次自動發送(誤差約 10 分鐘)。',
+        pickTime: '請先選排程時間',
+        enqueue: '排入佇列',
+        enqueuing: '排程中…',
+        scheduledOk: '已排程',
+        queueTitle: '排程中 / 待發',
+        queueEmpty: '目前沒有排程中的貼文。',
+        cancelQ: '取消',
+        immediateTag: '隨時可發',
+        canceledOk: '已取消',
       }
     : {
         title: 'Social Post',
@@ -107,6 +130,19 @@ export default function AdminSocialPage() {
         viewPost: 'View this post',
         diagnose: 'X diagnostics',
         errTitle: 'Failed to post',
+        modeNow: 'Publish now',
+        modeSchedule: 'Schedule',
+        scheduleLabel: 'Schedule time (UK time)',
+        scheduleHint: 'A cron checks every 10 min and posts when due (±10 min).',
+        pickTime: 'Pick a schedule time first',
+        enqueue: 'Add to queue',
+        enqueuing: 'Queuing…',
+        scheduledOk: 'Scheduled',
+        queueTitle: 'Scheduled / pending',
+        queueEmpty: 'No scheduled posts.',
+        cancelQ: 'Cancel',
+        immediateTag: 'Any time',
+        canceledOk: 'Canceled',
       };
 
   const [platforms, setPlatforms] = useState<Record<Platform, boolean>>({ x: true, fb: false, ig: false });
@@ -118,6 +154,10 @@ export default function AdminSocialPage() {
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<PlatformResult[]>([]);
   const [diag, setDiag] = useState<Record<string, unknown> | null>(null);
+  // 排程
+  const [mode, setMode] = useState<'now' | 'schedule'>('now');
+  const [scheduledLocal, setScheduledLocal] = useState(''); // datetime-local 值(使用者本地=英國時間)
+  const [queue, setQueue] = useState<QueueItem[]>([]);
 
   // X 以 Unicode code point 計長度,和後端一致(避免 emoji 被算成 2)
   const xLen = [...text].length;
@@ -269,6 +309,77 @@ export default function AdminSocialPage() {
     }
   }
 
+  // ── 排程佇列 ──
+  const loadQueue = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/social/enqueue', { method: 'GET', credentials: 'include' });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(j.items)) setQueue(j.items);
+    } catch {
+      /* 靜默:佇列讀取失敗不擋發文主流程 */
+    }
+  }, []);
+
+  useEffect(() => {
+    loadQueue();
+  }, [loadQueue]);
+
+  // 排入佇列(排程):把目前表單內容寫進 social_queue,交給 cron 定時發
+  async function enqueue() {
+    const selected = (Object.keys(platforms) as Platform[]).filter((p) => platforms[p]);
+    if (selected.length === 0) return toast.error(t.noPlatform);
+    if (!text.trim() && !mediaUrl) return toast.error(t.emptyMain);
+    if (platforms.ig && !mediaUrl) return toast.error(t.igNeedsMedia);
+    if (platforms.x && xOver) return toast.error(t.xOver);
+    if (!scheduledLocal) return toast.error(t.pickTime);
+
+    // datetime-local 是「使用者本地(英國)時間」;在瀏覽器 new Date 會用本地時區解析,
+    // toISOString() 轉成正確 UTC 再送後端(後端跑 UTC,不能在那邊猜時區)。
+    const iso = new Date(scheduledLocal).toISOString();
+
+    setBusy(true);
+    try {
+      const res = await fetch('/api/admin/social/enqueue', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platforms: selected,
+          text: text.trim(),
+          link: link.trim() || undefined,
+          mediaUrl: mediaUrl || undefined,
+          mediaKind: mediaKind || undefined,
+          scheduledFor: iso,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || t.errTitle);
+      toast.success(`${t.scheduledOk} — ${new Date(iso).toLocaleString()}`);
+      // 清掉主文/連結/媒體,方便接著排下一篇(平台勾選保留)
+      setText('');
+      setLink('');
+      clearMedia();
+      setScheduledLocal('');
+      loadQueue();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t.errTitle);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelQueued(id: string) {
+    try {
+      const res = await fetch(`/api/admin/social/enqueue?id=${encodeURIComponent(id)}`, { method: 'DELETE', credentials: 'include' });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || t.errTitle);
+      toast.success(t.canceledOk);
+      setQueue((prev) => prev.filter((q) => q.id !== id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t.errTitle);
+    }
+  }
+
   const inputCls =
     'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none';
 
@@ -385,16 +496,66 @@ export default function AdminSocialPage() {
           <p className="text-xs text-gray-500 mt-1.5">{t.mediaHint}</p>
         </div>
 
-        {/* 發布 */}
+        {/* 發送方式:立即 / 排程 */}
+        <div>
+          <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+            <button
+              type="button"
+              onClick={() => setMode('now')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                mode === 'now' ? 'bg-white shadow-sm text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Send className="w-3.5 h-3.5" />
+              {t.modeNow}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('schedule')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                mode === 'schedule' ? 'bg-white shadow-sm text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <CalendarClock className="w-3.5 h-3.5" />
+              {t.modeSchedule}
+            </button>
+          </div>
+
+          {mode === 'schedule' && (
+            <div className="mt-3">
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">{t.scheduleLabel}</label>
+              <input
+                type="datetime-local"
+                value={scheduledLocal}
+                onChange={(e) => setScheduledLocal(e.target.value)}
+                className={`${inputCls} w-fit`}
+              />
+              <p className="text-xs text-gray-500 mt-1.5">{t.scheduleHint}</p>
+            </div>
+          )}
+        </div>
+
+        {/* 動作按鈕:依模式送「立即發布」或「排入佇列」 */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={send}
-            disabled={busy || uploading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
-          >
-            <Send className="w-4 h-4" />
-            {busy ? t.sending : t.send}
-          </button>
+          {mode === 'now' ? (
+            <button
+              onClick={send}
+              disabled={busy || uploading}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <Send className="w-4 h-4" />
+              {busy ? t.sending : t.send}
+            </button>
+          ) : (
+            <button
+              onClick={enqueue}
+              disabled={busy || uploading}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <CalendarClock className="w-4 h-4" />
+              {busy ? t.enqueuing : t.enqueue}
+            </button>
+          )}
 
           <button
             onClick={runDiag}
@@ -452,6 +613,48 @@ export default function AdminSocialPage() {
             ))}
           </div>
         )}
+
+        {/* 排程中 / 待發佇列 */}
+        <div className="pt-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-gray-500" />
+            <p className="text-sm font-medium text-gray-700">{t.queueTitle}</p>
+            <span className="text-xs text-gray-400">({queue.length})</span>
+          </div>
+          {queue.length === 0 ? (
+            <p className="text-sm text-gray-400">{t.queueEmpty}</p>
+          ) : (
+            <div className="space-y-2">
+              {queue.map((q) => (
+                <div key={q.id} className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3">
+                  {q.media_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={q.media_url} alt="" className="w-12 h-12 rounded object-cover border border-gray-200 shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-gray-100 border border-gray-200 shrink-0" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                      <span className="inline-flex items-center gap-1 tabular-nums">
+                        <CalendarClock className="w-3.5 h-3.5" />
+                        {q.scheduled_for ? new Date(q.scheduled_for).toLocaleString() : t.immediateTag}
+                      </span>
+                      <span className="uppercase text-gray-400">{(q.platforms || []).join(' · ')}</span>
+                    </div>
+                    <p className="text-sm text-gray-800 mt-0.5 line-clamp-2 break-words">{q.text || '—'}</p>
+                  </div>
+                  <button
+                    onClick={() => cancelQueued(q.id)}
+                    className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {t.cancelQ}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
