@@ -219,7 +219,24 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ envCheck, accessTokenFormatOk, xReadTest, fbReadTest });
+  // IG 讀取測試:用 IG token 打 /{IG_USER_ID}(回 username),驗證 token 是否有效/過期。
+  let igReadTest: unknown = { skipped: 'IG 金鑰未齊' };
+  if (vars.IG_USER_ID && vars.IG_ACCESS_TOKEN) {
+    try {
+      const tk = encodeURIComponent(vars.IG_ACCESS_TOKEN);
+      const me = await fetch(`https://graph.instagram.com/v23.0/${encodeURIComponent(vars.IG_USER_ID)}?fields=id,username&access_token=${tk}`).then((r) => r.json());
+      igReadTest = {
+        id: me?.id,
+        username: me?.username,
+        error: me?.error?.message,
+        code: me?.error?.code,
+      };
+    } catch (e) {
+      igReadTest = { error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  return NextResponse.json({ envCheck, accessTokenFormatOk, xReadTest, fbReadTest, igReadTest });
 }
 
 export async function POST(request: NextRequest) {
