@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -23,21 +23,28 @@ interface TrafficData {
   funnel: { views: number; inquiries: number; orders: number };
 }
 
-// 常見國家碼 → 顯示名(其餘直接顯示國碼)。老闆最關心美歐,所以先列這些。
-const COUNTRY_NAMES: Record<string, string> = {
-  US: '美國', TW: '台灣', GB: '英國', CN: '中國', HK: '香港',
-  DE: '德國', FR: '法國', CA: '加拿大', AU: '澳洲', JP: '日本',
-  SG: '新加坡', KR: '南韓', NL: '荷蘭', ES: '西班牙', IT: '義大利',
-  IN: '印度', MY: '馬來西亞', TH: '泰國', ID: '印尼', VN: '越南',
-  Unknown: '未知',
-};
-
-function countryLabel(code: string) {
-  return COUNTRY_NAMES[code] || code;
+// 國碼 → 各語系國名:用瀏覽器內建 Intl.DisplayNames,任何合法國碼都翻得出
+// (原本手工表只列 20 國,FI/MX/PL 這些就露出原始代碼)。翻不出/Unknown 原樣顯示。
+function countryLabel(code: string, regionNames: Intl.DisplayNames | null) {
+  if (!code || code === 'Unknown') return '未知';
+  try {
+    return regionNames?.of(code) || code;
+  } catch {
+    return code;
+  }
 }
 
 export default function TrafficSection() {
   const t = useTranslations('admin.traffic');
+  const locale = useLocale();
+  // 依當前後台語系翻國名(zh-TW 芬蘭 / zh-CN 芬兰 / en Finland)
+  const regionNames = useMemo(() => {
+    try {
+      return new Intl.DisplayNames([locale], { type: 'region' });
+    } catch {
+      return null;
+    }
+  }, [locale]);
   const [data, setData] = useState<TrafficData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -218,7 +225,7 @@ export default function TrafficSection() {
                 {d.countries.slice(0, 10).map((c) => (
                   <div key={c.country} className="px-6 py-3">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-700">{countryLabel(c.country)}</span>
+                      <span className="text-sm text-gray-700">{countryLabel(c.country, regionNames)}</span>
                       <span className="text-sm text-gray-600">{c.views.toLocaleString()} · {c.percentage}%</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
