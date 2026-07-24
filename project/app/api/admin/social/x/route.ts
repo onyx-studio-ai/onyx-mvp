@@ -200,7 +200,26 @@ export async function GET(request: NextRequest) {
     xReadTest = { error: '金鑰未齊,略過 X 讀取測試' };
   }
 
-  return NextResponse.json({ envCheck, accessTokenFormatOk, xReadTest });
+  // FB 讀取測試:用 Page token 打 /me(回 token 所屬粉專)+ 目標粉專的 tasks(權限),
+  // 定位 #200 是「id/token 配錯」還是「權限不足」。不回 token 值,只回粉專 id/name/tasks。
+  let fbReadTest: unknown = { skipped: 'FB 金鑰未齊' };
+  if (vars.FB_PAGE_ID && vars.FB_PAGE_ACCESS_TOKEN) {
+    try {
+      const tk = encodeURIComponent(vars.FB_PAGE_ACCESS_TOKEN);
+      const me = await fetch(`https://graph.facebook.com/v23.0/me?fields=id,name&access_token=${tk}`).then((r) => r.json());
+      const page = await fetch(`https://graph.facebook.com/v23.0/${vars.FB_PAGE_ID}?fields=name,tasks&access_token=${tk}`).then((r) => r.json());
+      fbReadTest = {
+        tokenBelongsTo: { id: me?.id, name: me?.name, error: me?.error?.message },
+        fbPageIdEnv: vars.FB_PAGE_ID,
+        idMatches: !!me?.id && me.id === vars.FB_PAGE_ID,
+        targetPage: { name: page?.name, tasks: page?.tasks, error: page?.error?.message },
+      };
+    } catch (e) {
+      fbReadTest = { error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  return NextResponse.json({ envCheck, accessTokenFormatOk, xReadTest, fbReadTest });
 }
 
 export async function POST(request: NextRequest) {
