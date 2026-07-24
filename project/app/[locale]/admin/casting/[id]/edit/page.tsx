@@ -7,7 +7,7 @@
   Admin (cookie) auth, light theme.
 */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { supabase } from '@/lib/supabase';
@@ -60,6 +60,19 @@ function RateQuickBuild({ onApply, input }: { onApply: (v: string) => void; inpu
       <button type="button" disabled={!build()} onClick={() => onApply(build())} className="text-[11px] border border-emerald-400 text-emerald-700 rounded px-2 py-1 hover:bg-emerald-50 disabled:opacity-40">↓ 帶入{build() ? `:${build()}` : ''}</button>
     </div>
   );
+}
+
+// 文字框自動長高:內容多長就撐多高,不用手動拖(Wing 2026-07-24:長文貼進去只露一角)。
+// min-h class 當底線;height 隨 value 設成 scrollHeight。
+function AutoTextarea({ className, value, onChange, placeholder }: { className: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return <textarea ref={ref} className={className} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />;
 }
 
 export default function EditCasting() {
@@ -232,7 +245,7 @@ export default function EditCasting() {
   if (phase === 'notfound') return <div className="p-8 text-gray-500 text-sm">找不到這個案件。<button onClick={() => router.push('/admin/marketplace')} className="text-blue-600 hover:underline ml-2">← 回案件</button></div>;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto text-gray-900">
+    <div className="p-6 lg:p-10 max-w-5xl mx-auto text-gray-900">
       <button onClick={() => router.push('/admin/marketplace')} className="text-xs text-gray-500 hover:text-gray-800">← 回案件 · 發案</button>
       <h1 className="text-xl font-semibold mt-2 mb-1">編輯案件</h1>
       <p className="text-gray-500 text-sm mb-6">改完按「儲存」即時生效(不改狀態、不重新通知)。逐角色修正台詞,圖片保留。</p>
@@ -251,7 +264,7 @@ export default function EditCasting() {
           <p className="text-[11px] text-gray-500 mt-1.5">先顯示可通知人數再確認寄出;AI 案自動只寄給有同意 AI 合作的人。「重新開放通知」用於截止後重開的案:只通知還沒投遞過的人,信件標明重新開放,綁 LINE 者同步推播。</p>
         </div>
 
-        <label className="block"><span className="text-xs text-gray-600 mb-1 block">授權要點(配音員試音前必讀必勾;留空 = 不啟用授權閘)</span><textarea className={`${input} min-h-[120px] resize-y`} value={f.license_summary} onChange={(e) => set('license_summary', e.target.value)} placeholder="AI/TTS 案建議必填:授權範圍、期限、權利歸屬、保密…(不要寫終端客戶名稱)" /></label>
+        <label className="block"><span className="text-xs text-gray-600 mb-1 block">授權要點(配音員試音前必讀必勾;留空 = 不啟用授權閘)</span><AutoTextarea className={`${input} min-h-[120px]`} value={f.license_summary} onChange={(v) => set('license_summary', v)} placeholder="AI/TTS 案建議必填:授權範圍、期限、權利歸屬、保密…(不要寫終端客戶名稱)" /></label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">語言</span>
             <select className={input} value={f.language} onChange={(e) => set('language', e.target.value)}>
@@ -269,7 +282,7 @@ export default function EditCasting() {
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">需求 男聲</span><select className={input} value={maleVoices} onChange={(e) => setMaleVoices(e.target.value)}>{VOICE_COUNTS.map((v) => <option key={v} value={v}>{v === '0' ? '不指定' : countLabel(v)}</option>)}</select></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">需求 女聲</span><select className={input} value={femaleVoices} onChange={(e) => setFemaleVoices(e.target.value)}>{VOICE_COUNTS.map((v) => <option key={v} value={v}>{v === '0' ? '不指定' : countLabel(v)}</option>)}</select></label>
         </div>
-        <label className="block"><span className="text-xs text-gray-600 mb-1 block">案件說明</span><textarea className={`${input} min-h-[80px] resize-y`} value={f.brief} onChange={(e) => set('brief', e.target.value)} /></label>
+        <label className="block"><span className="text-xs text-gray-600 mb-1 block">案件說明</span><AutoTextarea className={`${input} min-h-[80px]`} value={f.brief} onChange={(v) => set('brief', v)} /></label>
         <div className="grid grid-cols-3 gap-3">
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">口音</span><select className={input} value={f.accent} onChange={(e) => set('accent', e.target.value)}>{optsWith(['', '中文 · 台灣國語', '中文 · 大陸普通話', '粵語', '台語', '英語', '日語', '不限', '其他'], f.accent).map(optEl)}</select></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">聲音風格</span><select className={input} value={f.voice_style} onChange={(e) => set('voice_style', e.target.value)}>{optsWith(STYLE_OPTS, f.voice_style).map(optEl)}</select></label>
@@ -302,7 +315,7 @@ export default function EditCasting() {
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">含修改次數</span><input type="number" min={0} className={input} value={f.base_revisions} onChange={(e) => set('base_revisions', e.target.value)} /></label>
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">熱門門檻(人數提示)</span><input type="number" min={1} className={input} value={f.audition_cap} onChange={(e) => set('audition_cap', e.target.value)} /></label>
         </div>
-        <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音方向 / 聲音方向(選填)</span><textarea className={`${input} min-h-[60px] resize-y`} value={f.audition_script} onChange={(e) => set('audition_script', e.target.value)} /></label>
+        <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音方向 / 聲音方向(選填)</span><AutoTextarea className={`${input} min-h-[120px]`} value={f.audition_script} onChange={(v) => set('audition_script', v)} /></label>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-700 pt-1">
           <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={hasSinging} onChange={(e) => setHasSinging(e.target.checked)} className="accent-amber-500" /> 含唱歌</label>
           <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={wantsDirector} onChange={(e) => setWantsDirector(e.target.checked)} className="accent-amber-500" /> 需要聲音導演</label>
