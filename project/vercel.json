@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/social-post",
-      "schedule": "0 12 * * *"
+      "schedule": "*/10 * * * *"
     }
   ],
   "build": {
