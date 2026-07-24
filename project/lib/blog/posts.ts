@@ -509,7 +509,66 @@ const euLabeling: BlogPost = {
   ],
 };
 
-export const posts: BlogPost[] = [euLabeling, mapsMaori, wilderConsent, langQA, ...morePosts];
+const realtimeVsProduced: BlogPost = {
+  slug: 'real-time-ai-voice-is-a-different-job',
+  date: '2026-07-24',
+  readMins: 6,
+  cover: '/blog/how-generative-voice-ai-works-hero.png',
+  tags: ['AI Voice', 'Text-to-Speech', 'Production', 'Localization'],
+  title: {
+    en: "Real-Time AI Voice Just Got Much Better. That Isn't the Same as Voice You Can Ship.",
+    'zh-TW': '即時 AI 語音,剛剛變強了很多。但那,跟「能出貨的聲音」是兩回事。',
+    'zh-CN': '实时 AI 语音,刚刚变强了很多。但那,和「能发布的声音」是两回事。',
+  },
+  dek: {
+    en: "OpenAI's new GPT-Live voice can interrupt, translate, and talk like a phone call. The same launch demo also showed why a real-time assistant and a broadcast-ready voiceover are two different jobs.",
+    'zh-TW': 'OpenAI 新的 GPT-Live 語音能被打斷、能即時翻譯、講起話來像在通電話。但同一場發表 demo,也正好露出了「即時助理」和「能上檔的旁白」為什麼是兩份不同的工作。',
+    'zh-CN': 'OpenAI 新的 GPT-Live 语音能被打断、能实时翻译、讲起话来像在通电话。但同一场发布 demo,也正好露出了「实时助理」和「能上档的旁白」为什么是两份不同的工作。',
+  },
+  body: [
+    { t: 'p', text: {
+      en: "On 8 July 2026, OpenAI released two new voice models, GPT-Live-1 and GPT-Live-1 mini. The headline feature is that they are full-duplex: the model listens while it talks, the way a person does on a phone call. Cut in mid-answer and it stops, drops in a quick \"mhmm\" while you finish, and it will even translate a conversation live. Independent testing by Agora's media lab, run the day after launch, clocked it responding in a median of **about 1.1 seconds** and taking **around 1.4 seconds** to fall silent when you deliberately interrupt. GPT-Live-1 mini is now the default voice in ChatGPT; paid tiers get the larger model. This is a real leap in how a machine holds a conversation — and it is worth being precise about what that leap is, and what it isn't.",
+      'zh-TW': "2026 年 7 月 8 日,OpenAI 發表了兩個新的語音模型:GPT-Live-1 與 GPT-Live-1 mini。最受矚目的特性是「全雙工」(full-duplex):模型能一邊講、一邊聽,就像人在通電話時那樣。你在它答到一半時插話,它會停下來,趁你把話說完先「嗯哼」一聲應和,甚至還能即時翻譯一段對話。發表隔天,Agora 的媒體實驗室做了獨立實測,量到它的回應中位數是**約 1.1 秒**,而當你故意打斷它時,它需要**約 1.4 秒**才會安靜下來。GPT-Live-1 mini 現在是 ChatGPT 裡的預設語音;付費方案則能用到更大的那個模型。這在「機器怎麼進行一場對話」上,是一次真正的躍進——而我們值得把話說清楚:這次躍進是什麼,又不是什麼。",
+      'zh-CN': "2026 年 7 月 8 日,OpenAI 发布了两个新的语音模型:GPT-Live-1 与 GPT-Live-1 mini。最受瞩目的特性是「全双工」(full-duplex):模型能一边讲、一边听,就像人在通电话时那样。你在它答到一半时插话,它会停下来,趁你把话说完先「嗯哼」一声应和,甚至还能实时翻译一段对话。发布隔天,Agora 的媒体实验室做了独立实测,量到它的响应中位数是**约 1.1 秒**,而当你故意打断它时,它需要**约 1.4 秒**才会安静下来。GPT-Live-1 mini 现在是 ChatGPT 里的默认语音;付费档位则能用到更大的那个模型。这在「机器怎么进行一场对话」上,是一次真正的跃进——而我们值得把话说清楚:这次跃进是什么,又不是什么。",
+    } },
+    { t: 'p', text: {
+      en: "There are two very different jobs people both call \"AI voice.\" The first is a conversation: a live agent that answers, reacts and adapts in the moment — a phone assistant, a support bot, a translation companion. Here latency is everything, being interruptible is the whole point, and the voice can be generic because it exists only for you, only right now, and then it's gone. The second is production: a voice that goes onto an ad, an e-learning course, a game character, an audiobook — recorded once, then played to thousands of strangers who never get to interrupt and ask it to try that line again. GPT-Live is a spectacular version of the first job. It was not built to be the second, and that is not a criticism — it's just a different machine for a different task.",
+      'zh-TW': "大家口中的「AI 語音」,其實是兩份很不一樣的工作。第一份是「對話」:一個即時的代理,當場回答、當場反應、當場調整——電話助理、客服機器人、翻譯夥伴。在這裡,延遲就是一切,「能被打斷」就是整個重點,而聲音可以很通用,因為它只為你、只在此刻存在,講完就沒了。第二份是「製作」:一把要放進廣告、線上課程、遊戲角色、有聲書裡的聲音——錄一次,然後放給成千上萬個陌生人聽,而他們永遠沒機會打斷它、要它把那句再念一次。GPT-Live 是第一份工作的一個出色版本。它本來就不是為了第二份工作打造的——這不是在批評它,只是不同的任務,要用不同的機器。",
+      'zh-CN': "大家口中的「AI 语音」,其实是两份很不一样的工作。第一份是「对话」:一个实时的代理,当场回答、当场反应、当场调整——电话助理、客服机器人、翻译伙伴。在这里,延迟就是一切,「能被打断」就是整个重点,而声音可以很通用,因为它只为你、只在此刻存在,讲完就没了。第二份是「制作」:一把要放进广告、在线课程、游戏角色、有声书里的声音——录一次,然后放给成千上万个陌生人听,而他们永远没机会打断它、要它把那句再念一次。GPT-Live 是第一份工作的一个出色版本。它本来就不是为了第二份工作打造的——这不是在批评它,只是不同的任务,要用不同的机器。",
+    } },
+    { t: 'p', text: {
+      en: "The tell was inside OpenAI's own demo. When GPT-Live showed off live translation into Hindi, the reporter watching for TechCrunch noted the assistant spoke with **\"a heavy American accent\"** and produced Hindi that was, in the same account, unnatural-sounding with a slightly bookish tone — and OpenAI itself acknowledged the mode \"still needs work.\" In a live conversation, that is completely forgivable: you're talking to an assistant, not listening to a broadcast, and the point is that you understood each other. But put that exact accent on a product video running in Mumbai, or a paid course sold to native speakers, and \"still needs work\" stops being a footnote. It becomes the first thing your audience hears, and the thing they remember longest.",
+      'zh-TW': "破綻,就藏在 OpenAI 自己的 demo 裡。當 GPT-Live 展示即時翻成印地語時,替 TechCrunch 觀看的記者注意到,那個助理帶著**「濃重的美國腔」**,講出來的印地語——照同一篇報導的說法——聽起來不自然、還帶點書面腔;而 OpenAI 自己也承認,這個模式「還需要再打磨」。在一場即時對話裡,這完全可以原諒:你是在跟一個助理說話,不是在聽一段廣播,重點是你們彼此聽懂了。但把這一模一樣的口音,放到一支在孟買播出的產品影片上、或一堂賣給母語者的付費課程裡,「還需要再打磨」就不再是個註腳了。它會變成你的受眾聽到的第一件事,也是他們記得最久的那件事。",
+      'zh-CN': "破绽,就藏在 OpenAI 自己的 demo 里。当 GPT-Live 展示实时翻成印地语时,替 TechCrunch 观看的记者注意到,那个助理带着**「浓重的美国腔」**,讲出来的印地语——照同一篇报道的说法——听起来不自然、还带点书面腔;而 OpenAI 自己也承认,这个模式「还需要再打磨」。在一场实时对话里,这完全可以原谅:你是在跟一个助理说话,不是在听一段广播,重点是你们彼此听懂了。但把这一模一样的口音,放到一支在孟买播出的产品视频上、或一堂卖给母语者的付费课程里,「还需要再打磨」就不再是个脚注了。它会变成你的受众听到的第一件事,也是他们记得最久的那件事。",
+    } },
+    { t: 'p', text: {
+      en: "And this is structural, not a bug that gets patched next month. A full-duplex model is tuned to answer in about a second, deciding many times a second whether to speak or keep listening. That budget — roughly one second, one pass, no retakes — is the exact opposite of what produced voice needs: time to get a polyphone right, to place the stress where the meaning actually lives, to match the register to the brand, to let a director lean in and say \"again, warmer.\" Speed and deliberation pull in opposite directions. A system engineered to win the first will, by design, give ground on the second. The better real-time voice gets, the more tempting it becomes to forget that the trade was ever made.",
+      'zh-TW': "而這是結構性的,不是下個月就會被修掉的 bug。一個全雙工模型,是被調校成大約一秒內就要回答,而且每秒要判斷許多次:是該開口,還是繼續聽。這個額度——大約一秒、一次過、沒有重來——正好跟「製作型語音」需要的東西相反:需要時間把多音字讀對、把重音放在意義真正所在的地方、讓語域對上品牌的調性、讓導演湊近來說一句「再來一次,溫暖一點」。速度與斟酌,是往兩個相反方向拉的。一套為了贏得前者而打造的系統,照設計就會在後者上讓步。即時語音做得越好,人就越容易忘記:這筆交換,一開始就已經付過了。",
+      'zh-CN': "而这是结构性的,不是下个月就会被修掉的 bug。一个全双工模型,是被调校成大约一秒内就要回答,而且每秒要判断许多次:是该开口,还是继续听。这个额度——大约一秒、一次过、没有重来——正好跟「制作型语音」需要的东西相反:需要时间把多音字读对、把重音放在意义真正所在的地方、让语域对上品牌的调性、让导演凑近来说一句「再来一次,温暖一点」。速度与斟酌,是往两个相反方向拉的。一套为了赢得前者而打造的系统,照设计就会在后者上让步。实时语音做得越好,人就越容易忘记:这笔交换,一开始就已经付过了。",
+    } },
+    { t: 'p', text: {
+      en: "There's a second difference that matters even more, and it's about permanence. In a conversation, an error corrects itself — you hear the odd word, you ask again, the next sentence sets it right. A voiceover has no next sentence. It ships, it airs, it sits in the app store listing, it plays on every loop at the trade-show booth. Whatever accent, mispronounced brand name, or emotionally flat line went in is now the single version everyone hears, in the exact market you spent money to reach. The cost of \"good enough\" in real time is a slightly awkward chat you both move past. The cost of \"good enough\" in production is a market that quietly concluded you weren't really speaking to them.",
+      'zh-TW': "還有第二個差別,更要緊,講的是「永久性」。在對話裡,錯誤會自己修正——你聽到某個字怪怪的,你再問一次,下一句就把它擺正了。旁白沒有「下一句」。它出貨、上檔、躺在 App 商店的頁面上、在展場攤位每一輪循環裡播放。當初進去的那個口音、那個念錯的品牌名、那句沒有情緒的台詞,如今就是所有人聽到的唯一版本,而且就發生在你花了錢想打進的那個市場裡。「還行就好」在即時對話裡的代價,是一段兩人都會翻篇的小尷尬;「還行就好」在製作裡的代價,是一個市場悄悄下了結論:你其實並沒有在對他們說話。",
+      'zh-CN': "还有第二个差别,更要紧,讲的是「永久性」。在对话里,错误会自己修正——你听到某个字怪怪的,你再问一次,下一句就把它摆正了。旁白没有「下一句」。它发布、上档、躺在 App 商店的页面上、在展场摊位每一轮循环里播放。当初进去的那个口音、那个念错的品牌名、那句没有情绪的台词,如今就是所有人听到的唯一版本,而且就发生在你花了钱想打进的那个市场里。「还行就好」在实时对话里的代价,是一段两人都会翻篇的小尴尬;「还行就好」在制作里的代价,是一个市场悄悄下了结论:你其实并没有在对他们说话。",
+    } },
+    { t: 'p', text: {
+      en: "This second job is the one Onyx was built for. We came out of running a voice studio in Taiwan since 2008, with more than 1,500 professional voice actors, and we make the kind of voice that has to be right the first time — Taiwan Mandarin, Cantonese, and 40-plus languages, every delivery checked by a native speaker before it leaves the building. Not a real-time agent; a finished, broadcast-ready performance, licensed and traceable to a real person who agreed to it. That is what \"AI-Generated. Human-Perfected.\" means in practice: the speed of generation, plus the one thing a one-second, one-pass model can't hand you — someone who actually speaks the language, signing off before your audience ever hears it.",
+      'zh-TW': "而這第二份工作,正是 Onyx 生來要做的。我們是從 2008 年就在台灣經營配音起家,旗下有超過 1,500 位專業配音員,我們做的,就是那種「必須一次到位」的聲音——台灣國語、粵語,以及 40 多種語言,每一份交付,在出門之前都經過一位母語人士親耳把關。不是即時代理,而是一段完成的、可以直接上檔的演出,有授權、可追溯到一個真實的、點過頭同意的人。這就是「AI 生成,真人把關(AI-Generated. Human-Perfected.)」在實務上的意思:生成的速度,再加上那一件「一秒、一次過」的模型給不了你的事——一個真的會這個語言的人,在你的受眾聽到之前,先替你確認過。",
+      'zh-CN': "而这第二份工作,正是 Onyx 生来要做的。我们是从 2008 年就在台湾经营配音起家,旗下有超过 1,500 位专业配音员,我们做的,就是那种「必须一次到位」的声音——台湾国语、粤语,以及 40 多种语言,每一份交付,在出门之前都经过一位母语人士亲耳把关。不是实时代理,而是一段完成的、可以直接上档的演出,有授权、可追溯到一个真实的、点过头同意的人。这就是「AI 生成,真人把关(AI-Generated. Human-Perfected.)」在实务上的意思:生成的速度,再加上那一件「一秒、一次过」的模型给不了你的事——一个真的会这门语言的人,在你的受众听到之前,先替你确认过。",
+    } },
+    { t: 'p', text: {
+      en: "So enjoy the new voice in your pocket. It's a genuine advance, and it's the right tool for talking to your phone, running a support line, or getting the gist across a language barrier in real time. Just don't mistake it for the tool that puts a voice on your ad, your course, or your game — those are recorded once and judged forever. When the voice has to land the first time, in a market that will notice, send us the script instead: what comes back is already checked by someone who speaks it, and ready to air. Hear an authentic Taiwan-accent demo for yourself at onyxstudios.ai.",
+      'zh-TW': "所以,盡管享受你口袋裡那把新聲音吧。它是一次貨真價實的進步,也是「跟你的手機說話、跑一條客服線、或即時跨過語言障礙把大意傳達出去」的對的工具。只是別把它錯當成「替你的廣告、你的課程、你的遊戲配上聲音」的那個工具——那些東西,錄一次,卻要被評斷一輩子。當聲音必須一次到位、而市場又聽得出來的時候,把腳本交給我們就好:拿回去的版本,已經有會這個語言的人確認過、可以直接上檔。到 onyxstudios.ai,親耳聽一段道地的台灣腔 demo。",
+      'zh-CN': "所以,尽管享受你口袋里那把新声音吧。它是一次货真价实的进步,也是「跟你的手机说话、跑一条客服线、或实时跨过语言障碍把大意传达出去」的对的工具。只是别把它错当成「替你的广告、你的课程、你的游戏配上声音」的那个工具——那些东西,录一次,却要被评断一辈子。当声音必须一次到位、而市场又听得出来的时候,把脚本交给我们就好:拿回去的版本,已经有会这门语言的人确认过、可以直接上档。到 onyxstudios.ai,亲耳听一段地道的台湾腔 demo。",
+    } },
+  ],
+  sources: [
+    { label: "TechCrunch — OpenAI releases GPT-Live-1 and GPT-Live-1 mini (full-duplex voice, live translation); the Hindi demo drew a \"heavy American accent\" and OpenAI said the mode \"still needs work\" (8 July 2026)", url: "https://techcrunch.com/2026/07/08/openai-releases-new-voice-models-for-more-natural-live-conversations/" },
+    { label: "Agora Media Lab — independent latency measurement of GPT-Live: ~1.1s median response, ~1.4s to go silent on interruption; \"it listens while it talks, like a phone call\" (9 July 2026)", url: "https://www.agora.io/en/blog/openai-didnt-publish-gpt-lives-latency-so-we-measured-it/" },
+  ],
+};
+
+export const posts: BlogPost[] = [realtimeVsProduced, euLabeling, mapsMaori, wilderConsent, langQA, ...morePosts];
 
 // Server-evaluated "today" in Asia/Taipei (UTC+8) so posts go live on their
 // date in Taiwan time. With ISR revalidate on the pages, future-dated posts
