@@ -8,6 +8,7 @@ import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail } fro
 import { caseCode, isPlatformCase, PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 import { multicastLine } from '@/lib/line';
 import { normCaseLang, primaryLangKey } from '@/lib/languages';
+import { enqueueCastingPost } from '@/lib/social/enqueue';
 
 /*
   POST /api/admin/casting — create a human-VO casting call (kind='casting').
@@ -361,6 +362,22 @@ export async function POST(request: NextRequest) {
       notified += await inviteEmailsMagicLink(db, { id: data.id as string, title }, (b.pin_invite_emails as unknown[]).map(String));
     }
   } catch { /* best-effort */ }
+
+  // 社群自動發文:把招募貼文排進 social_queue,由 /api/cron/social-post 定時發。
+  // 🚨 非阻塞:發案是主流程,社群只是附加 —— 整段 try/catch 包住,失敗只 log。
+  // 不排的情況:①AI 案(只發給有意願的人,不公開廣播,與上面的邏輯一致)
+  //             ②admin 明確選了不通知(notify:false)—— 不通知就不該公開貼出去。
+  try {
+    if (!row.ai_type && b.notify !== false) {
+      await enqueueCastingPost(db, {
+        id: data.id as string, title, language: row.language,
+        rate_note: row.rate_note, audition_deadline: row.audition_deadline, content_type: row.content_type,
+      });
+    }
+  } catch (e) {
+    console.error('[social] 招募貼文入列失敗(不影響發案):', e instanceof Error ? e.message : e);
+  }
+
   return NextResponse.json({ ok: true, id: data.id, brief_number: data.brief_number, notified });
 }
 
