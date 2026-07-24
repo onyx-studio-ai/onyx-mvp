@@ -29,7 +29,7 @@ const CCY_SYM: Record<string, string> = { USD: 'US$', TWD: 'NT$', CNY: '¥', HKD
 const fmtRate = (cur: string, amt: string) => `${CCY_SYM[cur] || cur + ' '}${amt.trim()}`;
 const RATE_UNITS = ['整案', '句', '字', '分鐘', '小時']; // 整案 first — the common default
 // dropdowns for case data — '' = 不指定(留白,前台不顯示);有值(含「不限/全媒體/全年齡」)就顯示
-const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
+const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '影片旁白', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
 const TERRITORY_OPTS = ['', '台灣', '大陸', '港澳', '全球', '北美', '東南亞', '其他'];
 const LICENSE_OPTS = ['', '一年', '兩年', '三年', '永久', '買斷', '專案限定'];
 const ACCENT_OPTS = ['', '中文 · 台灣國語', '中文 · 大陸普通話', '粵語', '台語', '英語', '日語', '不限', '其他'];
