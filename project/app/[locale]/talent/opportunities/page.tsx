@@ -154,6 +154,7 @@ type Brief = {
   brief: string;
   created_at: string;
   closed?: boolean;                 // 後端算好的「試音已截止」旗標(前端優先吃這個)
+  status?: string | null;           // 案件狀態(市場透明:open/awarded/closed → 徵集中/已錄取/已定案)
 };
 type Quote = {
   id: string;
@@ -1046,7 +1047,16 @@ function BriefCard({
   const isCasting = brief.kind === 'casting';
   const hasRoles = (brief.roles || []).length > 0; // casting WITHOUT roles = general single-voice call
   const myQuote = myQuotes[0]; // regular briefs have a single quote per talent
-  const closed = auditionClosed(brief); // 截止後普通報價區的報價 / 送出停用
+  const deadlinePassed = auditionClosed(brief); // 試音截止(過期)
+  // 市場透明(Wing 2026-07-25):配音員看得到語系內所有階段的案(徵集中/決選中/已錄取/已定案),
+  // 但只有「open 且未截止」能投試音;其餘一律唯讀(closed=true 讓所有試音控制停用)。
+  const closed = deadlinePassed || brief.status !== 'open';
+  // 配音員視角的階段徽章(讓他感覺平台有案在走、自己可能有機會)。
+  const marketStage =
+    brief.status === 'awarded' ? { label: tx('已錄取', '已录取', 'Awarded'), cls: 'bg-green-500/15 text-green-300 border-green-500/30' }
+    : brief.status === 'closed' ? { label: tx('已定案', '已定案', 'Filled'), cls: 'bg-white/10 text-gray-300 border-white/15' }
+    : deadlinePassed ? { label: tx('決選中', '决选中', 'In selection'), cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' }
+    : { label: tx('徵集中', '徵集中', 'Hiring'), cls: 'bg-[#6FCF97]/15 text-[#6FCF97] border-[#6FCF97]/30' };
   const [open, setOpen] = useState(!!defaultOpen);
   const [gross, setGross] = useState('');
   const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
@@ -1075,7 +1085,7 @@ function BriefCard({
 
   return (
     <div className={`bg-white/[0.03] backdrop-blur-sm border rounded-xl overflow-hidden transition ${open ? 'border-white/15' : 'border-white/[0.06] hover:border-white/[0.12]'}`}>
-      <CaseHeader brief={brief} isCasting={isCasting} roleCount={(brief.roles || []).length} auditionCount={Object.values(roleCounts).reduce((a, b) => a + b, 0)} hasMine={myQuotes.length > 0} open={open} onToggle={() => setOpen((o) => !o)} tx={tx} />
+      <CaseHeader brief={brief} isCasting={isCasting} roleCount={(brief.roles || []).length} auditionCount={Object.values(roleCounts).reduce((a, b) => a + b, 0)} hasMine={myQuotes.length > 0} open={open} onToggle={() => setOpen((o) => !o)} tx={tx} stage={marketStage} />
 
       {open && (
       <div className="px-5 pb-5">
@@ -1256,7 +1266,7 @@ function BriefCard({
 // Compact, always-visible case header (Voices-style list row). Click to expand the
 // full detail below. Shows the headline facts so several cases scan at a glance.
 function CaseHeader({
-  brief, isCasting, roleCount, auditionCount, hasMine, open, onToggle, tx,
+  brief, isCasting, roleCount, auditionCount, hasMine, open, onToggle, tx, stage,
 }: {
   brief: Brief;
   isCasting: boolean;
@@ -1266,6 +1276,7 @@ function CaseHeader({
   open: boolean;
   onToggle: () => void;
   tx: (tw: string, cn: string, en: string) => string;
+  stage: { label: string; cls: string };   // 市場透明:徵集中/決選中/已錄取/已定案 徽章
 }) {
   const locale = useLocale();
   const due = brief.audition_deadline || brief.deadline;
@@ -1277,6 +1288,7 @@ function CaseHeader({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
             <span className="text-xs text-gray-300 font-mono">{isCasting ? caseCode(brief) : brief.brief_number}</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${stage.cls}`}>{stage.label}</span>
             {brief.source === 'client'
               ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#7fb2e8]/15 text-[#9ec4ee] border border-[#7fb2e8]/30">{tx('客戶委託', '客户委托', 'Client brief')}</span>
               : <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#C9A86A]/15 text-[#E4CB94] border border-[#C9A86A]/30">{tx('平台發案', '平台发案', 'Onyx-posted')}</span>}
