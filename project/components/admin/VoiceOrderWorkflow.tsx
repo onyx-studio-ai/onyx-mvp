@@ -416,6 +416,24 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
     }
   };
 
+  // 設為最終交付:把配音員交付的版本直接當成品,不用重新上傳(真人案 V1 就是成品;
+  // 跟客戶端「核准 casting 單 → 直接 completed」的邏輯一致。Wing 2026-07-25)。
+  const handleSetVersionAsFinal = async (ver: { id: string; file_url: string; file_name?: string | null; version_number?: number }) => {
+    if (deliverables.some((d) => d.file_url === ver.file_url)) { toast({ title: '這個版本已經是最終交付了' }); return; }
+    const ext = (ver.file_name || '').split('.').pop()?.toLowerCase() || 'wav';
+    const { error } = await supabase.from('voice_order_deliverables').insert({
+      voice_order_id: order.id,
+      file_url: ver.file_url,
+      file_name: ver.file_name || `V${ver.version_number || 1}.wav`,
+      file_type: ext,
+      label: (ver.file_name || `V${ver.version_number || 1}`).replace(/\.[^.]+$/, ''),
+      sort_order: deliverables.length,
+    });
+    if (error) { toast({ title: '設定失敗', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: '已設為最終交付', description: '往下按「Mark Order as Complete」即可結案。' });
+    fetchData();
+  };
+
   const handleMarkComplete = async () => {
     if (deliverables.length === 0) {
       toast({ title: 'No deliverables', description: 'Upload at least one final file first.', variant: 'destructive' });
@@ -758,6 +776,12 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                         className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
                         <Download className="w-3 h-3" /> 下載
                       </a>
+                      {order.status !== 'completed' && !deliverables.some((d) => d.file_url === ver.file_url) && (
+                        <button onClick={() => handleSetVersionAsFinal(ver)} title="把這個版本設為最終交付(真人案 V1 就是成品,不用重傳),再按下方結案"
+                          className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1 whitespace-nowrap">
+                          <CheckCircle2 className="w-3 h-3" /> 設為最終交付
+                        </button>
+                      )}
                       <button onClick={() => handleDeleteVersion(ver.id)} className="text-zinc-600 hover:text-red-400 transition-colors p-1">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
