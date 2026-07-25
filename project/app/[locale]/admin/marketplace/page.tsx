@@ -332,7 +332,7 @@ export default function AdminMarketplace() {
                       className="font-mono text-xs text-gray-500 hover:text-gray-900 cursor-pointer">
                       {codeCopied === b.id ? '已複製 ✓' : (b.kind === 'casting' ? caseCode(b) : b.brief_number)}
                     </button>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : b.status === 'reviewing' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{b.status}</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : b.status === 'reviewing' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{({ open: '徵集中', reviewing: '決選中', awarded: '已錄取', closed: '已定案', cancelled: '已取消' } as Record<string, string>)[b.status || ''] || b.status}</span>
                     {b.kind === 'casting' && <span className="text-[11px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{t('tagCasting')}</span>}
                     {b.client_email && !isPlatformCase(b.client_email) && <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{t('tagClientRequest')}</span>}
                   </div>
