@@ -18,7 +18,7 @@ import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null; revision_note?: string | null; revision_files?: RefFile[] | null; revision_count?: number | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null; revision_note?: string | null; revision_files?: RefFile[] | null; revision_count?: number | null; script_files?: RefFile[] | null };
 // 參考音(大陸版角色參考)與中選聲線(配音員自己的中選示範)分開存、分開傳(Wing 2026-07-15)。
 type AudioField = 'reference_files' | 'voice_sample_files';
 
@@ -145,6 +145,37 @@ export default function ProductionPage() {
     });
     if (!res.ok) { toast.error('存檔失敗'); return; }
     toast.success(field === 'voice_sample_files' ? '中選聲線已加入' : '參考音已加入'); load();
+  }
+
+  // 稿件檔(ZIP/DOC/PDF/TXT…)——像參考音一樣傳,但不轉檔;存 script_files,配音員端可下載。
+  async function uploadScript(o: Order, file: File) {
+    setBusy(o.id);
+    try {
+      const u = await fetch('/api/admin/casting/upload', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name }),
+      });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok || !uj.path || !uj.token) throw new Error((u.status === 401 || u.status === 403) ? AUTH_MSG : (uj.error || '上傳準備失敗'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      const next = [...(o.script_files || []), { name: file.name, url: uj.publicUrl }];
+      const res = await fetch('/api/admin/orders', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ orderId: o.id, orderType: 'voice', updates: { script_files: next } }),
+      });
+      if (!res.ok) { toast.error('存檔失敗'); return; }
+      toast.success('稿件檔已加入'); load();
+    } catch (e) { toast.error(e instanceof Error ? e.message : '上傳失敗'); } finally { setBusy(null); }
+  }
+  async function removeScript(o: Order, idx: number) {
+    const next = (o.script_files || []).filter((_, i) => i !== idx);
+    const res = await fetch('/api/admin/orders', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ orderId: o.id, orderType: 'voice', updates: { script_files: next } }),
+    });
+    if (!res.ok) { toast.error('移除失敗'); return; }
+    toast.success('已移除'); load();
   }
   // ── 客戶修改需求(2026-07-20):評語+參考檔 → 單退回製作中+三路通知配音員 ──
   const [revFor, setRevFor] = useState<string | null>(null);
@@ -478,6 +509,22 @@ export default function ProductionPage() {
                   </label>
                 </div>
               ))}
+
+              <div className="mb-3">
+                <span className="text-xs text-gray-600 mb-1 block">稿件檔(ZIP / DOC / PDF / TXT…,配音員可下載)</span>
+                <div className="space-y-1.5">
+                  {(o.script_files || []).map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5">
+                      <a href={f.url} download target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline truncate flex-1">{f.name || '稿件檔'}</a>
+                      <button onClick={() => removeScript(o, i)} className="text-xs text-red-500 hover:text-red-700 shrink-0">移除</button>
+                    </div>
+                  ))}
+                </div>
+                <label className="inline-flex items-center gap-1.5 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 rounded-lg px-3 py-1.5 cursor-pointer mt-1.5">
+                  {busy === o.id ? '處理中…' : '+ 上傳稿件檔'}
+                  <input type="file" accept=".zip,.doc,.docx,.pdf,.txt,.rtf,.odt,.pages,.md,.csv,.xls,.xlsx" className="hidden" disabled={busy === o.id} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadScript(o, f); e.currentTarget.value = ''; }} />
+                </label>
+              </div>
 
               <button onClick={() => saveOrder(o)} disabled={busy === o.id}
                 className={`text-sm disabled:opacity-50 rounded-lg px-4 py-2 ${isDirty(o) ? 'bg-amber-500 hover:bg-amber-400 text-black font-medium' : 'bg-gray-900 hover:bg-gray-700 text-white'}`}>
