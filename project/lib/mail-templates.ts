@@ -2058,3 +2058,22 @@ export function plainNoticeEmail(p: {
     ${p.ctaText && p.ctaUrl ? ctaRow(p.ctaText, p.ctaUrl, BRAND_GREEN) : ''}`;
   return { subject: p.subject, html: baseLayout(content) };
 }
+
+// 潛在名單(prospect)招募邀請信 —— 英文,AVOICE 舊識暖口吻 + 免註冊試音連結 + 退訂連結。
+// 後台「邀請潛在名單」按鈕用(POST /api/admin/prospects/invite)。
+export function prospectInviteEmail(p: { briefTitle: string; language?: string; joinLink: string; unsubLink: string; deadline?: string }): { subject: string; html: string } {
+  const proj = p.briefTitle || 'a paid voice project';
+  const dl = p.deadline ? `auditions close ${p.deadline}` : 'audition any time';
+  const subject = `Paid voice casting${p.language ? ` — ${p.language}` : ''} (Onyx Studios)`;
+  const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;max-width:560px">
+<p>Hi,</p>
+<p>It's the team behind AVOICE — we've moved our casting onto a new platform, Onyx Studios, and have a paid project open that may suit your voice:</p>
+<p><b>${proj}</b><br>Quote your own rate · remote · ${dl}</p>
+<p style="margin:14px 0"><a href="${p.joinLink}" style="background:#0b8;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Audition here</a></p>
+<p>The full licence terms are shown before you audition, so you know exactly what's included before committing.</p>
+<p>Any questions, just reply — happy to help.</p>
+<p style="margin:16px 0 0;color:#374151">Onyx Studios Casting Team (AVOICE)<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a> · support@onyxstudios.ai</p>
+<p style="margin:14px 0 0;color:#9ca3af;font-size:12px">Not interested in these opportunities? <a href="${p.unsubLink}" style="color:#9ca3af">Unsubscribe</a> and we won't email you again.</p>
+</div>`;
+  return { subject, html };
+}
