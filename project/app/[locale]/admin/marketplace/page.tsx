@@ -92,6 +92,7 @@ export default function AdminMarketplace() {
   const [unavailable, setUnavailable] = useState(false);
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [notifying, setNotifying] = useState<string | null>(null);
   const [invitingPool, setInvitingPool] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<{ id: string; val: string } | null>(null);
@@ -326,7 +327,11 @@ export default function AdminMarketplace() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                    <span className="font-mono text-xs text-gray-500">{b.kind === 'casting' ? caseCode(b) : b.brief_number}</span>
+                    <button type="button" title="點擊複製案號"
+                      onClick={(e) => { e.stopPropagation(); const code = (b.kind === 'casting' ? caseCode(b) : b.brief_number) || ''; navigator.clipboard?.writeText(code); setCodeCopied(b.id); setTimeout(() => setCodeCopied(null), 1200); }}
+                      className="font-mono text-xs text-gray-500 hover:text-gray-900 cursor-pointer">
+                      {codeCopied === b.id ? '已複製 ✓' : (b.kind === 'casting' ? caseCode(b) : b.brief_number)}
+                    </button>
                     <span className={`text-[11px] px-2 py-0.5 rounded-full ${b.status === 'open' ? 'bg-green-100 text-green-700' : b.status === 'awarded' ? 'bg-blue-100 text-blue-700' : b.status === 'reviewing' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{b.status}</span>
                     {b.kind === 'casting' && <span className="text-[11px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{t('tagCasting')}</span>}
                     {b.client_email && !isPlatformCase(b.client_email) && <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">{t('tagClientRequest')}</span>}
