@@ -93,6 +93,7 @@ export default function AdminMarketplace() {
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notifying, setNotifying] = useState<string | null>(null);
+  const [invitingPool, setInvitingPool] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<{ id: string; val: string } | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
@@ -163,6 +164,26 @@ export default function AdminMarketplace() {
       }).then((r) => r.json());
       if (res.sent) toast.success(t('notifySent', { count: res.notified })); else toast.error(t('notifyFail'));
     } catch { toast.error(t('notifyFail')); } finally { setNotifying(null); }
+  }
+
+  // 邀請潛在名單:按語言配對 prospect,dry-run 先給人數 → 確認 → 寄(自動去重+7天冷卻)。
+  async function invitePool(b: Brief) {
+    setInvitingPool(b.id);
+    try {
+      const pre = await fetch('/api/admin/prospects/invite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ brief_id: b.id, send: false }),
+      }).then((r) => r.json());
+      const n = pre.eligible || 0;
+      const cd = pre.cooldown_excluded ? `(另 ${pre.cooldown_excluded} 位冷卻期內,已排除)` : '';
+      if (!n) { toast.error(`潛在名單無符合對象${cd}`); return; }
+      if (!confirm(`潛在名單符合 ${n} 位${cd}。寄出邀請?`)) return;
+      const res = await fetch('/api/admin/prospects/invite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ brief_id: b.id, send: true }),
+      }).then((r) => r.json());
+      if (res.sent) toast.success(`已寄 ${res.count} 封潛在名單邀請`); else toast.error('寄送失敗');
+    } catch { toast.error('寄送失敗'); } finally { setInvitingPool(null); }
   }
 
   async function toOrder(b: Brief) {
@@ -359,6 +380,12 @@ export default function AdminMarketplace() {
                     <button onClick={() => { setPinFor(b); setPinPicked([]); setPinQ(''); }}
                       className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded px-2.5 py-1 whitespace-nowrap" title="按名字點名邀請(可含未上線)">
                       指定邀請
+                    </button>
+                  )}
+                  {b.status === 'open' && b.kind === 'casting' && (
+                    <button onClick={() => invitePool(b)} disabled={invitingPool === b.id}
+                      className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded px-2.5 py-1 whitespace-nowrap" title="按語言邀請潛在名單(自動去重 + 7 天循環冷卻)">
+                      {invitingPool === b.id ? '處理中…' : '邀請潛在名單'}
                     </button>
                   )}
                   {b.kind === 'casting' && (
