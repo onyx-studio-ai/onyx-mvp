@@ -591,7 +591,7 @@ export default function Opportunities() {
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
-  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; script_files?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
   // 分頁式看板(Voices 心智模型):待處理=欠的工作;案件機會=可應徵;已結束=歸檔
@@ -779,6 +779,16 @@ export default function Opportunities() {
                 ))}
                 {o.script_text && <div className="mb-2"><p className="text-[11px] text-gray-300 mb-1">{tx('稿件 / 台詞', '稿件 / 台词', 'Script')}</p><p className="text-sm text-gray-200 whitespace-pre-wrap bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 max-h-40 overflow-auto">{o.script_text}</p></div>}
                 {o.script_file_url && <a href={o.script_file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-300 hover:underline">{tx('下載稿件檔', '下载稿件档', 'Download script')}</a>}
+                {(o.script_files || []).length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-[11px] text-gray-300 mb-1">{tx('稿件檔(可下載)', '稿件档(可下载)', 'Script files (downloadable)')}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(o.script_files || []).map((f, i) => (
+                        <a key={i} href={f.url} download target="_blank" rel="noreferrer" className="text-xs bg-white/10 hover:bg-white/15 border border-white/10 rounded px-2 py-1 text-amber-100">⬇ {f.name || tx('稿件檔', '稿件档', 'file')}</a>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {o.deadline && (() => { const dd = deadlineDisplay(o.deadline, o.deadline_time, o.case_timezone || 'Asia/Taipei', locale); return (
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
                     <span className="text-gray-200 font-medium">{tx('完成期限', '完成期限', 'Due')}: <span className="text-amber-300">{dd.caseText}</span>{dd.localText && <span className="text-gray-400"> ≈ {tx('你的當地時間', '你的当地时间', 'your local time')} {dd.localText}</span>}</span>
