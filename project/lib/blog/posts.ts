@@ -509,7 +509,116 @@ const euLabeling: BlogPost = {
   ],
 };
 
-export const posts: BlogPost[] = [euLabeling, mapsMaori, wilderConsent, langQA, ...morePosts];
+const sunoGema: BlogPost = {
+  slug: 'suno-gema-ruling-who-pays-for-ai-music',
+  date: '2026-08-02',
+  readMins: 6,
+  cover: '/blog/ai-music-commercial-licensing-hero.png',
+  tags: ['AI Music', 'Copyright', 'Licensing', 'Suno'],
+  title: {
+    en: "Suno Lost in Munich. What the Ruling Actually Says — and What It Changes for You.",
+    'zh-TW': "Suno 在慕尼黑敗訴。判決真正說了什麼——以及它改變了你什麼。",
+    'zh-CN': "Suno 在慕尼黑败诉。判决真正说了什么——以及它改变了你什么。",
+  },
+  dek: {
+    en: "On 31 July a German court found six songs sitting inside Suno’s models in reproducible form, and held that no exception covered it. The judgment can still be appealed. The question it puts to anyone buying AI music cannot be.",
+    'zh-TW': "7 月 31 日,德國法院認定有六首歌以「可重現」的形式存在於 Suno 的模型裡,並判定沒有任何例外規定能豁免。這份判決還可以上訴;但它丟給每一個要用 AI 音樂的人的那個問題,躲不掉。",
+    'zh-CN': "7 月 31 日,德国法院认定有六首歌以「可重现」的形式存在于 Suno 的模型里,并判定没有任何例外规定能豁免。这份判决还可以上诉;但它丢给每一个要用 AI 音乐的人的那个问题,躲不掉。",
+  },
+  body: [
+    {
+      t: 'p',
+      text: {
+        en: "On 31 July 2026 the Regional Court of Munich I ruled against Suno, the AI music generator, in a case brought by GEMA, the German collecting society that represents composers, lyricists and music publishers. The case — **42 O 763/25**, heard by the court’s 42nd Civil Chamber and filed on 21 January 2025 — turned on six works: “Forever Young” and “Big in Japan” by Alphaville, “Mambo No. 5” by Lou Bega, “Atemlos durch die Nacht” by Helene Fischer, and “Daddy Cool” and “Rasputin” by Boney M. The court ordered Suno to stop reproducing those works, to stop using them to train its model, to disclose the revenue connected to the infringement, and to pay damages in an amount still to be determined.",
+        'zh-TW': "2026 年 7 月 31 日,德國慕尼黑地方法院對 AI 音樂生成工具 Suno 作出不利判決。提告方是 GEMA——代表德國作曲者、作詞者與音樂出版商的著作權集體管理團體。本案案號 **42 O 763/25**,由該院第 42 民事庭審理,2025 年 1 月 21 日提起,爭點集中在六首作品:Alphaville 的〈Forever Young〉與〈Big in Japan〉、Lou Bega 的〈Mambo No. 5〉、Helene Fischer 的〈Atemlos durch die Nacht〉,以及 Boney M. 的〈Daddy Cool〉與〈Rasputin〉。法院命令 Suno 停止重製這些作品、停止以這些作品訓練模型、揭露與侵權相關的營收,並賠償損害——金額尚待認定。",
+        'zh-CN': "2026 年 7 月 31 日,德国慕尼黑地方法院对 AI 音乐生成工具 Suno 作出不利判决。提告方是 GEMA——代表德国作曲者、作词者与音乐出版商的著作权集体管理组织。本案案号 **42 O 763/25**,由该院第 42 民事庭审理,2025 年 1 月 21 日提起,争点集中在六首作品:Alphaville 的〈Forever Young〉与〈Big in Japan〉、Lou Bega 的〈Mambo No. 5〉、Helene Fischer 的〈Atemlos durch die Nacht〉,以及 Boney M. 的〈Daddy Cool〉与〈Rasputin〉。法院命令 Suno 停止复制这些作品、停止以这些作品训练模型、披露与侵权相关的营收,并赔偿损害——金额尚待认定。",
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "The finding underneath the headline is narrower and more interesting than “AI is illegal.” The court did not rule on learning in the abstract. It ruled on **memorisation** — the songs, it held, were reproducibly contained in Suno’s models, specifically versions v3.5 and v4. Presiding judge Elke Schwager put the evidentiary point plainly: given the complexity and length of the musical pieces, randomness as the cause of their playback can be ruled out. In other words, the court was not persuaded that the system had merely learned general patterns about how pop songs work. It concluded the works themselves were retained, and could be pulled back out.",
+        'zh-TW': "標題底下的那個認定,比「AI 違法」更窄、也更有意思。法院並沒有對「機器學習」這件抽象的事下判斷,它判的是**記憶化(memorisation)**——法院認定,那些歌曲以可重現的形式存在於 Suno 的模型之中,具體指向 v3.5 與 v4 兩個版本。審判長 Elke Schwager 把證據上的關鍵講得很直白:考量這些樂曲的複雜度與長度,可以排除「純屬偶然」而被播放出來的可能。換句話說,法院並不接受「系統只是學到流行歌大致怎麼寫」這套說法;它的結論是,作品本身被留了下來,而且能被取出來。",
+        'zh-CN': "标题底下的那个认定,比「AI 违法」更窄、也更有意思。法院并没有对「机器学习」这件抽象的事下判断,它判的是**记忆化(memorisation)**——法院认定,那些歌曲以可重现的形式存在于 Suno 的模型之中,具体指向 v3.5 与 v4 两个版本。审判长 Elke Schwager 把证据上的关键讲得很直白:考量这些乐曲的复杂度与长度,可以排除「纯属偶然」而被播放出来的可能。换句话说,法院并不接受「系统只是学到流行歌大致怎么写」这套说法;它的结论是,作品本身被留了下来,而且能被取出来。",
+      },
+    },
+    {
+      t: 'h2',
+      text: {
+        en: "Why the two standard defences did not hold",
+        'zh-TW': "兩道標準防線,為什麼都沒守住",
+        'zh-CN': "两道标准防线,为什么都没守住",
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "The first defence was the European text and data mining exception, the provision AI developers routinely point to when asked what entitled them to the training set. The court rejected it, holding that the exception covers the analytical phase of training — not the retention of works inside the model in reproducible form. This is the second time the same Munich chamber has said so. On **11 November 2025**, in case 42 O 14139/24, it found against OpenAI on materially the same logic: memorised song lyrics amounted to reproduction, and the TDM exception reaches only preparatory acts that do not exploit the rightsholder’s interests. That earlier judgment is under appeal. Two rulings, one chamber, nine months apart, pointing the same direction.",
+        'zh-TW': "第一道防線,是歐盟的「文字與資料探勘(TDM)例外」——每當被問到「你憑什麼拿這些資料訓練」,AI 開發方通常就指向這一條。法院駁回了它,理由是:這項例外涵蓋的是訓練過程中的分析階段,而不是把作品以可重現的形式留存在模型裡。這已經是慕尼黑同一個法庭第二次這樣講。**2025 年 11 月 11 日**,在案號 42 O 14139/24 一案中,該庭以實質相同的邏輯判 OpenAI 敗訴:被記憶下來的歌詞構成重製,而 TDM 例外只及於「不損及權利人利益的準備行為」。那件判決目前仍在上訴中。兩份判決,同一個法庭,相隔九個月,指向同一個方向。",
+        'zh-CN': "第一道防线,是欧盟的「文本与数据挖掘(TDM)例外」——每当被问到「你凭什么拿这些数据训练」,AI 开发方通常就指向这一条。法院驳回了它,理由是:这项例外涵盖的是训练过程中的分析阶段,而不是把作品以可重现的形式留存在模型里。这已经是慕尼黑同一个法庭第二次这样讲。**2025 年 11 月 11 日**,在案号 42 O 14139/24 一案中,该庭以实质相同的逻辑判 OpenAI 败诉:被记忆下来的歌词构成复制,而 TDM 例外只及于「不损及权利人利益的准备行为」。那件判决目前仍在上诉中。两份判决,同一个法庭,相隔九个月,指向同一个方向。",
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "The second defence was geography. Suno’s training happened in the United States, which is normally where this argument ends — different country, different law, not a German court’s problem. The Munich court did not stop there. It applied US law to the US training copies and ran a full fair use analysis under 17 USC § 107, concluding the copies were not covered, because simple prompts produced outputs substantially similar to the originals. German law then governed the reproductions stored on German servers and made available in Germany. That combination — train abroad, reproduce and serve locally — is the part of this ruling with the longest reach, and it is why lawyers reading it are telling clients to document how their training data was lawfully obtained and to honour machine-readable rights reservations rather than treat memorisation as a theoretical risk.",
+        'zh-TW': "第二道防線,是地理。Suno 的訓練發生在美國——通常論證到這裡就結束了:不同國家、不同法律,不關德國法院的事。慕尼黑法院沒有停在這裡。它對發生於美國的訓練重製適用美國法,並依 17 USC § 107 完整做了一次合理使用分析,結論是這些重製不受合理使用保護——因為只要簡單的提示詞,就能產出與原作實質近似的結果。至於儲存在德國伺服器上、並在德國向公眾提供的重製,則適用德國法。這個組合——在境外訓練、在當地重製與提供——是這份判決裡影響半徑最長的一段;也因此,讀完判決的律師開始要求客戶留存「訓練資料合法取得」的文件紀錄、尊重機器可讀的權利保留聲明,而不要再把記憶化當成理論上的風險。",
+        'zh-CN': "第二道防线,是地理。Suno 的训练发生在美国——通常论证到这里就结束了:不同国家、不同法律,不关德国法院的事。慕尼黑法院没有停在这里。它对发生于美国的训练复制适用美国法,并依 17 USC § 107 完整做了一次合理使用分析,结论是这些复制不受合理使用保护——因为只要简单的提示词,就能产出与原作实质近似的结果。至于储存在德国服务器上、并在德国向公众提供的复制,则适用德国法。这个组合——在境外训练、在当地复制与提供——是这份判决里影响半径最长的一段;也因此,读完判决的律师开始要求客户留存「训练数据合法取得」的文件记录、尊重机器可读的权利保留声明,而不要再把记忆化当成理论上的风险。",
+      },
+    },
+    {
+      t: 'h2',
+      text: {
+        en: "What it means if you are the one putting music in an ad",
+        'zh-TW': "如果你是那個要把音樂放進廣告的人",
+        'zh-CN': "如果你是那个要把音乐放进广告的人",
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "First, the honest caveat: this judgment is not final and not yet enforceable. Suno says the verdict rests on a fundamental mischaracterisation of how its technology works, and is evaluating all available options, including an appeal. So it is not settled law, and anyone telling you it is has got ahead of the record. What it is, is a repricing. GEMA’s chief executive, Dr Tobias Holzmüller, framed the outcome as AI providers having to pay for licences instead of helping themselves to members’ works — and a court in a major European market has now said that framing is enforceable enough to carry an injunction, a disclosure order and damages.",
+        'zh-TW': "先講該講的但書:這份判決尚未確定、也還不能執行。Suno 表示,該判決建立在對其技術運作方式的根本誤解之上,並正在評估包括上訴在內的所有選項。所以它還不是定讞的法律,任何跟你說「這件事已成定局」的人,都講得比卷宗還快。它真正是什麼?是一次重新定價。GEMA 執行長 Dr. Tobias Holzmüller 把結果總結成:AI 業者必須付授權費,而不是把會員的作品拿來就用——而現在,一個歐洲主要市場的法院認定,這個說法足以支撐一紙禁制令、一項揭露命令,以及損害賠償。",
+        'zh-CN': "先讲该讲的但书:这份判决尚未确定、也还不能执行。Suno 表示,该判决建立在对其技术运作方式的根本误解之上,并正在评估包括上诉在内的所有选项。所以它还不是定谳的法律,任何跟你说「这件事已成定局」的人,都讲得比卷宗还快。它真正是什么?是一次重新定价。GEMA 首席执行官 Dr. Tobias Holzmüller 把结果总结成:AI 业者必须付授权费,而不是把会员的作品拿来就用——而现在,一个欧洲主要市场的法院认定,这个说法足以支撑一纸禁制令、一项披露命令,以及损害赔偿。",
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "Second, the licensed route already exists, and it is being built in public. Warner Music Group settled with Suno on **25 November 2025**, licensed its catalogue, sold Songkick to Suno as part of the deal, and secured controls for its artists over whether their names, images, likenesses, voices and compositions are used in AI-generated music; Suno said licensed models would replace its current ones during 2026. But a deal with one rightsholder covers that rightsholder. GEMA’s repertoire was not in it — which is precisely why this case still had to be tried. “Licensed” is not a property a tool has. It is a property of a specific catalogue, in a specific territory, at a specific version of the model.",
+        'zh-TW': "第二,取得授權的那條路已經存在,而且正在公開地被建起來。華納音樂集團於 **2025 年 11 月 25 日**與 Suno 和解,授權其曲庫,並在交易中把 Songkick 賣給 Suno,同時為旗下藝人取得控制權——藝人可決定自己的姓名、形象、肖像、聲音與作品是否被用於 AI 生成音樂;Suno 也表示,已取得授權的新模型將在 2026 年間取代現行模型。但是,跟一個權利人談成的協議,只涵蓋那一個權利人。GEMA 的曲庫不在裡面——這正是本案仍然必須進法院的原因。「已授權」不是一個工具本身的屬性,它是「某個特定曲庫、在某個特定地區、對應到某個特定模型版本」的屬性。",
+        'zh-CN': "第二,取得授权的那条路已经存在,而且正在公开地被建起来。华纳音乐集团于 **2025 年 11 月 25 日**与 Suno 和解,授权其曲库,并在交易中把 Songkick 卖给 Suno,同时为旗下艺人取得控制权——艺人可决定自己的姓名、形象、肖像、声音与作品是否被用于 AI 生成音乐;Suno 也表示,已取得授权的新模型将在 2026 年间取代现行模型。但是,跟一个权利人谈成的协议,只涵盖那一个权利人。GEMA 的曲库不在里面——这正是本案仍然必须进法院的原因。「已授权」不是一个工具本身的属性,它是「某个特定曲库、在某个特定地区、对应到某个特定模型版本」的属性。",
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "So the useful question changed shape. It is no longer “is AI music legal.” It is: which repertoire is this specific output licensed against, in which countries will it run, on which model version was it made — and if the answer turns out to be wrong, whose name is on the campaign? That last one rarely belongs to the tool. Worth noting too that the same week carries a separate deadline: the EU AI Act’s transparency obligations for synthetic audio apply from 2 August 2026, which is a labelling duty rather than a licensing one, but lands on the same desk.",
+        'zh-TW': "所以,真正該問的問題換了形狀。它不再是「AI 音樂合不合法」,而是:這一段特定的產出,是對著哪一個曲庫取得授權的?它要在哪些國家播?它是用哪一個模型版本做出來的?——而萬一答案是錯的,掛名在這支案子上的是誰?最後這一題,很少會是工具的名字。另外值得一提的是,同一週還有另一條期限:歐盟《人工智慧法》針對合成語音的透明度義務自 2026 年 8 月 2 日起適用——那是標示義務、不是授權義務,但落在同一張桌子上。",
+        'zh-CN': "所以,真正该问的问题换了形状。它不再是「AI 音乐合不合法」,而是:这一段特定的产出,是对着哪一个曲库取得授权的?它要在哪些国家播?它是用哪一个模型版本做出来的?——而万一答案是错的,挂名在这支案子上的是谁?最后这一题,很少会是工具的名字。另外值得一提的是,同一周还有另一条期限:欧盟《人工智能法》针对合成语音的透明度义务自 2026 年 8 月 2 日起适用——那是标示义务、不是授权义务,但落在同一张桌子上。",
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "None of this makes generators useless. It makes them a place to find an idea rather than a place to source a master. When a piece has to clear legal in more than one country, the unglamorous answer keeps winning: music performed by people, recorded in a room, delivered with the rights written down and the paperwork attached. That is what Onyx Live Strings is — a real string section, real players, and a master you can actually point to a contract for. Tell us what the piece has to do and where it has to run, and we will tell you what it takes to own it outright.",
+        'zh-TW': "這一切並不代表生成工具沒有用。它代表的是:那是一個「找到想法」的地方,而不是一個「取得成品母帶」的地方。當一支作品得在不只一個國家過法務,那個一點都不炫的答案總是會贏:由真人演奏、在錄音間裡收錄、連同白紙黑字的權利與文件一起交付的音樂。這就是 Onyx Live Strings——真正的弦樂團、真正的樂手,以及一份你真的可以指著合約說「這是我的」的母帶。把這支作品要做到什麼、要在哪裡播告訴我們,我們會告訴你,要完整擁有它需要什麼。",
+        'zh-CN': "这一切并不代表生成工具没有用。它代表的是:那是一个「找到想法」的地方,而不是一个「取得成品母带」的地方。当一支作品得在不只一个国家过法务,那个一点都不炫的答案总是会赢:由真人演奏、在录音棚里收录、连同白纸黑字的权利与文件一起交付的音乐。这就是 Onyx Live Strings——真正的弦乐团、真正的乐手,以及一份你真的可以指着合约说「这是我的」的母带。把这支作品要做到什么、要在哪里播告诉我们,我们会告诉你,要完整拥有它需要什么。",
+      },
+    },
+  ],
+  sources: [
+    { label: "GEMA — official statement on the Munich judgment against Suno, 31 July 2026: use and reproduction of GEMA repertoire requires a licence and providers must pay creators", url: "https://www.gema.de/en/w/suno-entscheidung-2026" },
+    { label: "JUVE Patent — Regional Court of Munich I, 42nd Civil Chamber, case 42 O 763/25: injunction, disclosure of revenue and damages; TDM exception rejected; judgment not yet enforceable and subject to appeal", url: "https://www.juve-patent.com/cases/munich-regional-court-stops-suno-using-gema-protected-music/" },
+    { label: "Music Ally — the six works at issue; Judge Elke Schwager on the songs being reproducibly contained in Suno models v3.5 and v4; outputs held not covered by 17 USC § 107", url: "https://musically.com/2026/07/31/german-collecting-society-gema-wins-its-copyright-infringement-lawsuit-against-suno/" },
+    { label: "Reed Smith — analysis of the ruling: memorisation as infringing reproduction, a German court running a full US fair use analysis, and what companies should document", url: "https://www.reedsmith.com/our-insights/blogs/viewpoints/102nfis/gema-notches-a-second-transatlantic-ai-copyright-win-in-germany/" },
+    { label: "Music Week — GEMA executives on the judgment and Suno’s response that the verdict rests on a mischaracterisation of its technology", url: "https://www.musicweek.com/publishing/read/gema-wins-court-ruling-on-breach-of-copyright-by-ai-music-firm-suno/094644" },
+    { label: "CMS — GEMA v. OpenAI, Regional Court of Munich I, 11 November 2025, case 42 O 14139/24: memorisation is reproduction and the TDM exception covers only preparatory acts", url: "https://cms.law/en/deu/legal-updates/gema-vs.-openai-munich-regional-court-i-issues-landmark-copyright-decision" },
+    { label: "TechCrunch — Warner Music Group settles with Suno and licenses its catalogue, 25 November 2025; artist controls over name, image, likeness and voice; licensed models to replace current ones in 2026", url: "https://techcrunch.com/2025/11/25/warner-music-signs-deal-with-ai-music-startup-suno-settles-lawsuit/" },
+  ],
+};
+
+export const posts: BlogPost[] = [sunoGema, euLabeling, mapsMaori, wilderConsent, langQA, ...morePosts];
 
 // Server-evaluated "today" in Asia/Taipei (UTC+8) so posts go live on their
 // date in Taiwan time. With ISR revalidate on the pages, future-dated posts
