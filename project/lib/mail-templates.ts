@@ -2070,6 +2070,7 @@ export function prospectInviteEmail(p: { briefTitle: string; language?: string; 
 <p>It's the team behind AVOICE — we've moved our casting onto a new platform, Onyx Studios, and have a paid project open that may suit your voice:</p>
 <p><b>${proj}</b><br>Quote your own rate · remote · ${dl}</p>
 <p style="margin:14px 0"><a href="${p.joinLink}" style="background:#0b8;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Audition here</a></p>
+<p style="color:#6b7280;font-size:13px">First time on Onyx? On that page click <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — it takes a minute. ("Invalid login credentials" just means there's no account yet.)</p>
 <p>The full licence terms are shown before you audition, so you know exactly what's included before committing.</p>
 <p>Any questions, just reply — happy to help.</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios Casting Team (AVOICE)<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a> · support@onyxstudios.ai</p>
