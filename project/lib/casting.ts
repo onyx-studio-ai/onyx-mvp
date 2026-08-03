@@ -69,15 +69,36 @@ export function isPlatformCase(clientEmail: string | null | undefined): boolean 
   return String(clientEmail || '').trim().toLowerCase() === PLATFORM_CASTING_EMAIL;
 }
 
+// 案號打亂:此界線(含)之後建立的新案,對外案號尾碼不再用遞增序號,改用 brief_number
+// 的確定性雜湊產生 4 碼英數 —— 對外看不出案量與先後,也猜不到相鄰案號。界線之前的舊案
+// 沿用原本遞增序號完全不變(Wing 2026-08-03)。純顯示,DB 內部 brief_number 仍遞增不動。
+const CASE_CODE_SCRAMBLE_FROM = new Date('2026-08-03T00:00:00+08:00').getTime();
+const SCRAMBLE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // 去掉易混淆的 0/O/1/I
+
+// FNV-1a 32-bit → 4 碼英數。確定性:同一個 brief_number 永遠對應同一組碼(可搜尋、穩定)。
+function scrambleSeq(seed: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  let n = h >>> 0, out = '';
+  for (let i = 0; i < 4; i++) { out += SCRAMBLE_ALPHABET[n % 32]; n = Math.floor(n / 32); }
+  return out;
+}
+
 export function caseCode(b: { content_type?: string | null; created_at?: string | null; brief_number?: string | null }): string {
   const ct = b.content_type || '';
   let type = 'VO';
   for (const [re, ab] of TYPE_ABBR) if (re.test(ct)) { type = ab; break; }
   let ymd = '';
+  let isNew = false;
   if (b.created_at) {
     const d = new Date(b.created_at);
-    if (!isNaN(d.getTime())) ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    if (!isNaN(d.getTime())) {
+      ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      isNew = d.getTime() >= CASE_CODE_SCRAMBLE_FROM;
+    }
   }
-  const seq = (b.brief_number || '').replace(/\D/g, '').slice(-3);
-  return ['ONYX', type, ymd, seq].filter(Boolean).join('-');
+  const tail = (isNew && b.brief_number)
+    ? scrambleSeq(b.brief_number)                            // 新案:打亂尾碼
+    : (b.brief_number || '').replace(/\D/g, '').slice(-3);   // 舊案:原遞增序號
+  return ['ONYX', type, ymd, tail].filter(Boolean).join('-');
 }
