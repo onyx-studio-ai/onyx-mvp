@@ -564,7 +564,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const usedRev = order.revision_count ?? 0;
 
   // 交付/審版中也保留上傳區:一次交多檔常需分批補傳(尤其大檔),別交付一次就鎖死。
-  // 只有結案(completed)後才收起。Wing 2026-08-03。
+  // 只有結案(completed)後才收起。Wing 2026-08-03(redeploy)。
   const canUploadVersion = ['in_production', 'delivered', 'demo_ready', 'client_reviewing', 'revising', 'awaiting_final'].includes(order.status);
   const showFinalSection = ['delivered', 'awaiting_final', 'in_production', 'completed'].includes(order.status);
 
