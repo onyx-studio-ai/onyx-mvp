@@ -21,9 +21,10 @@ const REVEAL_MS = REVEAL_DAYS * 24 * 60 * 60 * 1000;
 type Row = {
   order_id?: string; reviewer_type?: string; rating: number; comment: string | null; created_at: string;
   rating_communication?: number | null; rating_quality?: number | null; rating_delivery?: number | null;
+  by_admin?: boolean | null;   // 平台代客戶評 → 立刻揭露(不受雙盲/14天限制)
 };
 
-const REVIEW_COLS = 'order_id, reviewer_type, rating, rating_communication, rating_quality, rating_delivery, comment, created_at';
+const REVIEW_COLS = 'order_id, reviewer_type, rating, rating_communication, rating_quality, rating_delivery, comment, created_at, by_admin';
 const avgOf = (nums: number[]) => (nums.length ? Math.round((nums.reduce((s, n) => s + n, 0) / nums.length) * 10) / 10 : 0);
 
 async function resolve(request: NextRequest) {
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
       const { data: tRows } = await db.from('marketplace_reviews').select('order_id').eq('reviewer_type', 'talent').in('order_id', orderIds);
       bothOrders = new Set((tRows || []).map((r) => r.order_id as string));
     }
-    const revealed = rows.filter((r) => bothOrders.has(r.order_id as string) || (now - new Date(r.created_at).getTime()) > REVEAL_MS);
+    const revealed = rows.filter((r) => r.by_admin || bothOrders.has(r.order_id as string) || (now - new Date(r.created_at).getTime()) > REVEAL_MS);
     const count = revealed.length;
     const dim = (k: keyof Row) => avgOf(revealed.map((r) => Number(r[k])).filter((n) => n >= 1));
     return NextResponse.json({
