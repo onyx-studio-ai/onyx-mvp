@@ -315,7 +315,10 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
       setUploadStatus('Updating order status...');
 
       // 整批算一次交付:非首次交付才 +1(不是每個檔 +1)
-      const newRevisionCount = (order.revision_count || 0) + (isFirstDelivery ? 0 : 1);
+      // 只有「回應客戶修改需求」才算一輪修改(上傳時 status 還在 in_production)。
+      // 補傳到已交付的單(status='delivered')= 同一次交付繼續補檔,不加修改次數。
+      const bumpRevision = !isFirstDelivery && order.status === 'in_production';
+      const newRevisionCount = (order.revision_count || 0) + (bumpRevision ? 1 : 0);
       await updateVoiceOrderStatus(order.id, 'delivered', {
         revision_count: newRevisionCount,
       });
@@ -446,6 +449,26 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
     fetchData();
   };
 
+  // 全部設為最終交付:多檔交付案(如遊戲/衛教多句)全部檔案就是成品,一鍵把所有版本
+  // 收進最終交付,不用一個一個點。跳過已經在最終交付裡的檔(去重)。Wing 2026-08-03。
+  const handleSetAllVersionsAsFinal = async () => {
+    const existing = new Set(deliverables.map((d) => d.file_url));
+    const toAdd = versions.filter((v) => !existing.has(v.file_url));
+    if (!toAdd.length) { toast({ title: '所有版本都已經是最終交付了' }); return; }
+    const rows = toAdd.map((v, i) => ({
+      voice_order_id: order.id,
+      file_url: v.file_url,
+      file_name: v.file_name || `V${v.version_number || i + 1}.wav`,
+      file_type: (v.file_name || '').split('.').pop()?.toLowerCase() || 'wav',
+      label: (v.file_name || `V${v.version_number || i + 1}`).replace(/\.[^.]+$/, ''),
+      sort_order: deliverables.length + i,
+    }));
+    const { error } = await supabase.from('voice_order_deliverables').insert(rows);
+    if (error) { toast({ title: '設定失敗', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: `已把 ${toAdd.length} 個檔設為最終交付`, description: '往下按「Mark Order as Complete」即可結案。' });
+    fetchData();
+  };
+
   const handleMarkComplete = async () => {
     if (deliverables.length === 0) {
       toast({ title: 'No deliverables', description: 'Upload at least one final file first.', variant: 'destructive' });
@@ -540,7 +563,9 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const maxRev = order.max_revisions ?? 2;
   const usedRev = order.revision_count ?? 0;
 
-  const canUploadVersion = ['in_production'].includes(order.status);
+  // 交付/審版中也保留上傳區:一次交多檔常需分批補傳(尤其大檔),別交付一次就鎖死。
+  // 只有結案(completed)後才收起。Wing 2026-08-03。
+  const canUploadVersion = ['in_production', 'delivered', 'demo_ready', 'client_reviewing', 'revising', 'awaiting_final'].includes(order.status);
   const showFinalSection = ['delivered', 'awaiting_final', 'in_production', 'completed'].includes(order.status);
 
   if (loadingData) {
@@ -708,12 +733,21 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
           <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
             <Mic className="w-4 h-4 text-cyan-400" />
             <span className="text-sm font-semibold text-cyan-400">Versions ({versions.length})</span>
-            {order.talent_id && isPlatformCase(order.email) && (  /* 費用同意卡只做在指派單;報價單掛費會靜默失效(2026-07-22 審查) */
-              <button onClick={() => setRevOpen(!revOpen)}
-                className="ml-auto text-[11px] px-2.5 py-1 rounded-full border bg-amber-500/10 text-amber-300 border-amber-400/30 hover:bg-amber-500/20">
-                ✏️ 發修改需求{(order.revision_count || 0) > 0 ? `(第 ${order.revision_count} 輪)` : ''}
-              </button>
-            )}
+            <div className="ml-auto flex items-center gap-2">
+              {/* 全部設為最終交付:多檔交付案一鍵把所有版本收成成品,不用一個一個點 */}
+              {order.status !== 'completed' && versions.some((v) => !deliverables.some((d) => d.file_url === v.file_url)) && (
+                <button onClick={handleSetAllVersionsAsFinal}
+                  className="text-[11px] px-2.5 py-1 rounded-full border bg-green-500/10 text-green-300 border-green-400/30 hover:bg-green-500/20 flex items-center gap-1 whitespace-nowrap">
+                  <CheckCircle2 className="w-3 h-3" /> 全部設為最終交付
+                </button>
+              )}
+              {order.talent_id && isPlatformCase(order.email) && (  /* 費用同意卡只做在指派單;報價單掛費會靜默失效(2026-07-22 審查) */
+                <button onClick={() => setRevOpen(!revOpen)}
+                  className="text-[11px] px-2.5 py-1 rounded-full border bg-amber-500/10 text-amber-300 border-amber-400/30 hover:bg-amber-500/20">
+                  ✏️ 發修改需求{(order.revision_count || 0) > 0 ? `(第 ${order.revision_count} 輪)` : ''}
+                </button>
+              )}
+            </div>
           </div>
           <div className="divide-y divide-zinc-800">
             {revOpen && (
