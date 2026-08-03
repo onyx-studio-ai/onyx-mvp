@@ -141,3 +141,13 @@
 .fade-up-delay-3 {
   animation-delay: 0.3s;
 }
+
+/* 全站打字框自動長高:顯示整段內容,不再擠成一條(Wing 2026-08-02:後台打字只見一行太詭異)。
+   field-sizing:content = 隨內容自動增高(Safari 17.4+/Chrome 123+;舊瀏覽器忽略,退回原樣)。
+   min-height 給空框一個合理起始高度;max-height 讓超長內容出捲軸不撐爆畫面。
+   個別元件若有 Tailwind min-h-[…] 類別,特異性較高會蓋過這裡的 min-height,行為不變。 */
+textarea {
+  field-sizing: content;
+  min-height: 90px;
+  max-height: 60vh;
+}
