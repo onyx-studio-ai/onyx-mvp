@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       // 市場透明(Wing 2026-07-25):配音員看自己語系內「所有階段」的案(徵集中/決選中/已錄取/已定案),
       // 不再只給 open —— 讓他感覺平台有案在走、自己可能有機會。近 60 天,維持新鮮感 + 清單不無限長。
       // 'reviewing' 刻意不收(那多半是未發佈的客戶請求收件匣,不可外露給配音員)。
-      .in('status', ['open', 'awarded', 'closed'])
+      .in('status', ['open', 'reviewing', 'awarded', 'closed', 'cancelled'])
       .gte('created_at', new Date(Date.now() - 60 * 86400_000).toISOString())
       .order('created_at', { ascending: false })
       .limit(120);
@@ -75,7 +75,8 @@ export async function GET(request: NextRequest) {
         for (const i of inv || []) minedIds.add(String(i.brief_id));
       }
     }
-    const briefs = (briefsRaw || []).filter((b) => {
+    // 語言 / AI 意願過濾後「看得到」的案(所有階段)。
+    const visibleBriefs = (briefsRaw || []).filter((b) => {
       const at = (b as { ai_type?: string | null }).ai_type;
       if (at === 'clone' && !aiClone) return false;
       if (at === 'training' && !aiTrain) return false;
@@ -87,6 +88,22 @@ export async function GET(request: NextRequest) {
       if (fam.length) return fam.some((k) => famSet.has(k));
       return langSet.has(primary(bl));
     });
+    // 配音員端四區分類(Wing 2026-08-03):
+    //   甄選中 = open 且試音未截止(還能投)→ 主列表 briefs
+    //   決選中 = 試音已截止 / 已錄取,但尚未結案(還在決選)→ selectingBriefs
+    //   結束   = 已定案 / 已取消(closed / cancelled)→ endedBriefs
+    //   (待處理 = 自己得標/被指派的工作,另外算)
+    // 不論配音員有沒有投過,結束/決選的案都不留在主列表,免得越積越長。
+    const auditionOpen = (b: unknown) => {
+      const bb = b as { status?: string | null };
+      return bb.status === 'open' && !auditionDeadlinePassed(bb as Parameters<typeof auditionDeadlinePassed>[0]);
+    };
+    const isFinalized = (b: unknown) => {
+      const s = (b as { status?: string | null }).status;
+      return s === 'closed' || s === 'cancelled';
+    };
+    // 主列表:只留「還能投」的案(甄選中)。
+    const briefs = visibleBriefs.filter((b) => auditionOpen(b));
 
     // Per-role audition counts (casting only). The count IS shown to talents, and
     // audition_cap is a soft "popular" threshold (a nudge to try other roles) — NOT
@@ -164,15 +181,31 @@ export async function GET(request: NextRequest) {
     // Cases the talent APPLIED to that have ended (closed / cancelled / awarded to
     // someone else) — so their audition doesn't just silently vanish; they see the
     // outcome. Excludes the open list (still live) and won cases (shown above).
+    type BriefCard = { id: string; brief_number: string; kind?: string | null; title?: string | null; content_type?: string | null; status?: string | null; close_reason?: string | null };
+    // 決選中(deciding)= 試音截止/已錄取但未結案;結束(ended)= closed/cancelled。
+    const selectingById = new Map<string, BriefCard>();
+    const endedById = new Map<string, BriefCard>();
+    const classify = (card: BriefCard) => {
+      if (wonIds.includes(card.id)) return;                    // 得標的走「待處理」,不重複
+      (isFinalized(card) ? endedById : selectingById).set(card.id, card);
+    };
+    // 看得到但已非「甄選中」的案(不論有沒有投過)→ 依結案與否分到 決選中 / 結束。
+    for (const b of visibleBriefs) {
+      const bb = b as BriefCard;
+      if (auditionOpen(bb)) continue;                          // 還能投 → 已在主列表
+      classify({ id: bb.id, brief_number: bb.brief_number, kind: bb.kind, title: bb.title, content_type: bb.content_type, status: bb.status, close_reason: null });
+    }
+    // 投過但已非 open 的案:多帶 close_reason(讓配音員看到結果),覆蓋上面的版本。
     const quotedBriefIds = [...new Set((myQuotes || []).map((q) => q.brief_id as string))];
     const endedIds = quotedBriefIds.filter((id) => !openIds.has(id) && !wonIds.includes(id));
-    let endedBriefs: unknown[] = [];
     if (endedIds.length) {
       const { data: eb } = await r.db.from('marketplace_briefs')
         .select('id, brief_number, kind, title, content_type, status, close_reason')
         .in('id', endedIds);
-      endedBriefs = eb || [];
+      for (const b of eb || []) classify(b as BriefCard);
     }
+    const selectingBriefs: unknown[] = Array.from(selectingById.values());
+    const endedBriefs: unknown[] = Array.from(endedById.values());
     // Directly-ASSIGNED production roles (managed casting — no audition/quote): one
     // voice_order per role, talent_id = me, quote_id null. Surface each as its own
     // work item (a talent can have many roles on one project).
@@ -200,7 +233,7 @@ export async function GET(request: NextRequest) {
     const assignedOrders = (ao || []).map((o) => ({ ...o, deliveries: aoVers[o.id as string] || [], case_timezone: tzByBrief.get(String(o.brief_id)) || 'Asia/Taipei' }));
 
     const tt = (r.talent as { name?: string; quote_templates?: { intro?: unknown[]; revision?: unknown[] } });
-    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, endedBriefs, assignedOrders, myName: tt.name || '', templates: tt.quote_templates || {}, langFilter: { active: langSet.size > 0, visible: Array.isArray(vl) && vl.length ? vl : (Array.isArray(fl) ? fl : []) } });
+    return NextResponse.json({ briefs: safeBriefs, myQuotes: myQuotes || [], roleCounts, myDemos, wonBriefs, selectingBriefs, endedBriefs, assignedOrders, myName: tt.name || '', templates: tt.quote_templates || {}, langFilter: { active: langSet.size > 0, visible: Array.isArray(vl) && vl.length ? vl : (Array.isArray(fl) ? fl : []) } });
   } catch {
     // Tables not migrated yet (or transient) — degrade to empty so the UI is fine.
     return NextResponse.json({ briefs: [], myQuotes: [], unavailable: true });
