@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
+import { groupByUploadDate } from '@/lib/deliveries';
 import { deadlineDisplay, zonedTimeToUtc, tzLabel } from '@/lib/case-time';
 
 // 案件層級的截止顯示:日期 [+時間](時區標);沒設時間就只給日期(=當天 23:59)
@@ -246,115 +247,150 @@ function useQuoteDefaults(templates: Templates, setIntro: SetStr, setRevPolicy: 
   }, [templates, setIntro, setRevPolicy]);
 }
 
+const DELIVERY_ACCEPT = '.wav,.mp3,.m4a,.aac,.ogg,.flac,.zip';
+
+// 逐檔進 casting storage,回傳 { delivery_url, file_name };整批收齊後才打一次交付 API。
+async function uploadOneToCasting(file: File, tx: (a: string, b: string, c: string) => string): Promise<{ delivery_url: string; file_name: string }> {
+  const u = await authedFetch('/api/talent/delivery-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+  const uj = await u.json().catch(() => ({}));
+  if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+  const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+  if (upErr) throw new Error(upErr.message);
+  return { delivery_url: uj.publicUrl, file_name: file.name };
+}
+
+type DeliveryItem = { id: string; file_name: string; file_url: string; status?: string | null; created_at?: string | null };
+
+// 交付清單:按「上傳日期」分列,每列只顯示日期,點開看那天的檔。預設展開最新那天。
+function GroupedDeliveries({ deliveries, tx, busy, onDelete }: {
+  deliveries: DeliveryItem[];
+  tx: (a: string, b: string, c: string) => string; busy: boolean;
+  onDelete?: (d: DeliveryItem) => void;   // 給了才顯示刪除鈕(且該檔可刪時)
+}) {
+  const groups = groupByUploadDate(deliveries, (d) => d.created_at);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  if (!deliveries.length) return null;
+  return (
+    <div className="space-y-1.5">
+      {groups.map((g, idx) => {
+        const open = collapsed[g.key] !== undefined ? !collapsed[g.key] : idx === 0; // 預設最新展開
+        const label = g.date ? g.date.toLocaleDateString() : tx('未標日期', '未标日期', 'No date');
+        return (
+          <div key={g.key} className="rounded-lg border border-[#6FCF97]/25 overflow-hidden">
+            <button type="button" onClick={() => setCollapsed((s) => ({ ...s, [g.key]: open }))}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs bg-[#6FCF97]/[0.08] hover:bg-[#6FCF97]/[0.14] transition text-left">
+              <span className="text-[#6FCF97]">{open ? '▾' : '▸'}</span>
+              <span className="text-gray-200 font-medium">{label}</span>
+            </button>
+            {open && (
+              <div className="divide-y divide-[#6FCF97]/15">
+                {g.items.map((d) => (
+                  <div key={d.id} className="flex items-center gap-2 text-xs px-3 py-1.5">
+                    <span className="text-[#6FCF97]">✓</span>
+                    <span className="text-gray-200 truncate flex-1">{d.file_name}</span>
+                    <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-300 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
+                    {onDelete && d.status !== 'approved' && (
+                      <button type="button" disabled={busy} onClick={() => onDelete(d)}
+                        className="text-red-400/80 hover:text-red-300 disabled:opacity-50 shrink-0">{tx('刪除', '删除', 'Delete')}</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Won-job delivery: the talent hands in finished recordings against an accepted
 // quote. MULTIPLE files allowed (each upload adds one + future revisions); each
 // becomes a client-reviewable version. Files preserve 48k/24-bit (not transcoded).
 // Deliver against a DIRECTLY-ASSIGNED role (managed production). Same upload
 // pipeline as won jobs, but attaches to the order by id (no quote).
 function AssignedDelivery({ orderId, deliveries, tx, onChanged }: {
-  orderId: string; deliveries: { id: string; file_name: string; file_url: string; status?: string | null }[];
+  orderId: string; deliveries: DeliveryItem[];
   tx: (a: string, b: string, c: string) => string; onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  async function upload(file: File) {
+  // 一次選多檔 → 全部進 storage → 一次 API(整批只算一次交付、只發一封通知)。
+  async function uploadFiles(files: File[]) {
     setErr(''); setBusy(true);
     try {
-      const u = await authedFetch('/api/talent/delivery-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
-      const uj = await u.json().catch(() => ({}));
-      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
-      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
-      if (upErr) throw new Error(upErr.message);
-      const p = await authedFetch('/api/talent/assigned-deliver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, delivery_url: uj.publicUrl, file_name: file.name }) });
+      const uploaded: { delivery_url: string; file_name: string }[] = [];
+      for (const f of files) uploaded.push(await uploadOneToCasting(f, tx));
+      const p = await authedFetch('/api/talent/assigned-deliver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, files: uploaded }) });
       const pj = await p.json().catch(() => ({}));
       if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
       onChanged();
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
   }
+  async function del(d: DeliveryItem) {
+    if (!window.confirm(tx(`刪除「${d.file_name}」?(傳錯/重複的檔可刪,刪了可再重傳)`, `删除「${d.file_name}」?(传错/重复的档可删,删了可再重传)`, `Delete "${d.file_name}"? You can re-upload after.`))) return;
+    setBusy(true); setErr('');
+    try {
+      const res = await authedFetch('/api/talent/assigned-deliver', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, version_id: d.id }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || tx('刪除失敗', '删除失败', 'Delete failed'));
+      onChanged();
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('刪除失敗', '删除失败', 'Delete failed')); } finally { setBusy(false); }
+  }
   return (
     <div className="mt-1.5 space-y-1.5">
-      {deliveries.length > 0 && deliveries.map((d) => (
-        <div key={d.id} className="flex items-center gap-2 text-xs bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-lg px-3 py-1.5">
-          <span className="text-[#6FCF97]">✓</span><span className="text-gray-200 truncate flex-1">{d.file_name}</span>
-          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-300 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
-          {d.status !== 'approved' && (
-            <button type="button" disabled={busy}
-              onClick={async () => {
-                if (!window.confirm(tx(`刪除「${d.file_name}」?(傳錯/重複的檔可刪,刪了可再重傳)`, `删除「${d.file_name}」?(传错/重复的档可删,删了可再重传)`, `Delete "${d.file_name}"? You can re-upload after.`))) return;
-                setBusy(true); setErr('');
-                try {
-                  const res = await authedFetch('/api/talent/assigned-deliver', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, version_id: d.id }) });
-                  const j = await res.json().catch(() => ({}));
-                  if (!res.ok) throw new Error(j.error || tx('刪除失敗', '删除失败', 'Delete failed'));
-                  onChanged();
-                } catch (e) { setErr(e instanceof Error ? e.message : tx('刪除失敗', '删除失败', 'Delete failed')); } finally { setBusy(false); }
-              }}
-              className="text-red-400/80 hover:text-red-300 shrink-0">{tx('刪除', '删除', 'Delete')}</button>
-          )}
-        </div>
-      ))}
+      <GroupedDeliveries deliveries={deliveries} tx={tx} busy={busy} onDelete={del} />
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
         {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('上傳更多檔', '上传更多档', 'Upload more') : tx('上傳完成音檔', '上传完成音档', 'Upload final audio')}
-        <input type="file" accept=".wav,.mp3,.m4a,.aac,.ogg,.flac,.zip" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+        <input type="file" multiple accept={DELIVERY_ACCEPT} className="hidden" disabled={busy}
+          onChange={(e) => { const fs = Array.from(e.target.files || []); e.target.value = ''; if (fs.length) uploadFiles(fs); }} />
       </label>
+      <p className="text-[10px] text-gray-300">{tx('可一次選多個檔上傳(建議 48kHz/24-bit WAV;多檔也可打包 zip)', '可一次选多个档上传(建议 48kHz/24-bit WAV;多档也可打包 zip)', 'Select several files at once (48kHz/24-bit WAV preferred; zip also fine)')}</p>
       {err && <p className="text-[10px] text-red-400">{err}</p>}
     </div>
   );
 }
 
 function DeliveryUpload({ quote, deliveries, tx, onChanged }: {
-  quote: Quote; deliveries: { id: string; file_name: string; file_url: string }[];
+  quote: Quote; deliveries: DeliveryItem[];
   tx: (a: string, b: string, c: string) => string; onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  async function upload(file: File) {
+  async function uploadFiles(files: File[]) {
     setErr(''); setBusy(true);
     try {
-      const u = await authedFetch('/api/talent/delivery-upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name }),
-      });
-      const uj = await u.json().catch(() => ({}));
-      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
-      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
-      if (upErr) throw new Error(upErr.message);
+      const uploaded: { delivery_url: string; file_name: string }[] = [];
+      for (const f of files) uploaded.push(await uploadOneToCasting(f, tx));
       const p = await authedFetch('/api/talent/quotes', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: quote.id, delivery_url: uj.publicUrl, file_name: file.name }),
+        body: JSON.stringify({ id: quote.id, files: uploaded }),
       });
       const pj = await p.json().catch(() => ({}));
       if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
       onChanged();
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
   }
-  async function remove(id: string) {
+  async function del(d: DeliveryItem) {
     setErr(''); setBusy(true);
     try {
       const p = await authedFetch('/api/talent/quotes', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: quote.id, delete_version_id: id }),
+        body: JSON.stringify({ id: quote.id, delete_version_id: d.id }),
       });
       if (!p.ok) { const j = await p.json().catch(() => ({})); throw new Error(j.error || 'failed'); }
       onChanged();
     } catch (e) { setErr(e instanceof Error ? e.message : tx('刪除失敗', '删除失败', 'Delete failed')); } finally { setBusy(false); }
   }
-  const ACCEPT = '.wav,.mp3,.m4a,.aac,.ogg,.flac,.zip';
   return (
     <div className="mt-1.5 space-y-1.5">
-      {deliveries.length > 0 && deliveries.map((d) => (
-        <div key={d.id} className="flex items-center gap-2 text-xs bg-[#6FCF97]/[0.06] border border-[#6FCF97]/25 rounded-lg px-3 py-1.5">
-          <span className="text-[#6FCF97]">✓</span>
-          <span className="text-gray-200 truncate flex-1">{d.file_name}</span>
-          <a href={d.file_url} target="_blank" rel="noreferrer" className="text-gray-300 underline hover:text-white shrink-0">{tx('檢視', '查看', 'View')}</a>
-          <button onClick={() => remove(d.id)} disabled={busy} title={tx('刪除', '删除', 'Remove')} className="text-gray-300 hover:text-red-300 disabled:opacity-50 shrink-0">✕</button>
-        </div>
-      ))}
+      <GroupedDeliveries deliveries={deliveries} tx={tx} busy={busy} onDelete={del} />
       <label className="inline-flex items-center gap-1.5 text-xs bg-[#6FCF97]/15 border border-[#6FCF97]/40 text-[#6FCF97] rounded-lg px-3 py-1.5 cursor-pointer hover:bg-[#6FCF97]/25 transition">
         {busy ? tx('處理中…', '处理中…', 'Working…') : deliveries.length ? tx('上傳更多檔', '上传更多档', 'Upload more') : tx('上傳完成音檔', '上传完成音档', 'Upload final audio')}
-        <input type="file" accept={ACCEPT} className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+        <input type="file" multiple accept={DELIVERY_ACCEPT} className="hidden" disabled={busy}
+          onChange={(e) => { const fs = Array.from(e.target.files || []); e.target.value = ''; if (fs.length) uploadFiles(fs); }} />
       </label>
-      <p className="text-[10px] text-gray-300">{tx('可上傳多個完成檔 / 修改檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '可上传多个完成档 / 修改档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Upload several final / revision files (48kHz/24-bit WAV preferred; zip for bundles)')}</p>
+      <p className="text-[10px] text-gray-300">{tx('可一次選多個完成檔 / 修改檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '可一次选多个完成档 / 修改档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Select several final / revision files at once (48kHz/24-bit WAV preferred; zip for bundles)')}</p>
       {err && <p className="text-[10px] text-red-400">{err}</p>}
     </div>
   );
@@ -590,9 +626,9 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[] }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null; created_at?: string | null }[] }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
-  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; script_files?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null }[] }[]>([]);
+  const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; script_files?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; created_at?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
   // 分頁式看板(Voices 心智模型):待處理=欠的工作;案件機會=可應徵;已結束=歸檔
