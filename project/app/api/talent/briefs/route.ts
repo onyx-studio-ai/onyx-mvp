@@ -152,11 +152,11 @@ export async function GET(request: NextRequest) {
       const orderIdToBrief: Record<string, string> = {};
       for (const o of ords || []) { if (o.brief_id) { orderByBrief[o.brief_id as string] = { id: o.id as string, script_text: o.script_text as string | null, script_file_url: o.script_file_url as string | null, reference_files: (o.reference_files as { name?: string; url: string }[] | null) || null, deadline: o.deadline as string | null, created_at: o.created_at as string | null, status: o.status as string | null, payment_status: o.payment_status as string | null }; orderIdToBrief[o.id as string] = o.brief_id as string; } }
       // The talent's delivered files (voice_order_versions) per won brief.
-      const deliveriesByBrief: Record<string, { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null }[]> = {};
+      const deliveriesByBrief: Record<string, { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null; created_at?: string | null }[]> = {};
       const orderIds = (ords || []).map((o) => o.id as string);
       if (orderIds.length) {
-        const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, version_number, status, client_feedback').in('voice_order_id', orderIds).order('version_number', { ascending: true });
-        for (const v of vers || []) { const bid = orderIdToBrief[v.voice_order_id as string]; if (bid) (deliveriesByBrief[bid] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null, client_feedback: v.client_feedback as string | null }); }
+        const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, version_number, status, client_feedback, created_at').in('voice_order_id', orderIds).order('version_number', { ascending: true });
+        for (const v of vers || []) { const bid = orderIdToBrief[v.voice_order_id as string]; if (bid) (deliveriesByBrief[bid] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null, client_feedback: v.client_feedback as string | null, created_at: v.created_at as string | null }); }
       }
       wonBriefs = (wb || []).map((b) => ({ ...b, order_id: orderByBrief[(b as { id: string }).id]?.id || null, order_status: orderByBrief[(b as { id: string }).id]?.status || null, order_payment_status: orderByBrief[(b as { id: string }).id]?.payment_status || null, final_script: orderByBrief[(b as { id: string }).id]?.script_text || null, final_script_url: orderByBrief[(b as { id: string }).id]?.script_file_url || null, order_deadline: orderByBrief[(b as { id: string }).id]?.deadline || null, order_created: orderByBrief[(b as { id: string }).id]?.created_at || null, deliveries: deliveriesByBrief[(b as { id: string }).id] || [] }));
     }
@@ -185,10 +185,10 @@ export async function GET(request: NextRequest) {
       .not('released_at', 'is', null)
       .order('created_at', { ascending: true });
     const aoIds = (ao || []).map((o) => o.id as string);
-    const aoVers: Record<string, { id: string; file_name: string; file_url: string; status?: string | null }[]> = {};
+    const aoVers: Record<string, { id: string; file_name: string; file_url: string; status?: string | null; created_at?: string | null }[]> = {};
     if (aoIds.length) {
-      const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, status').in('voice_order_id', aoIds);
-      for (const v of vers || []) (aoVers[v.voice_order_id as string] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null });
+      const { data: vers } = await r.db.from('voice_order_versions').select('id, voice_order_id, file_name, file_url, status, created_at').in('voice_order_id', aoIds);
+      for (const v of vers || []) (aoVers[v.voice_order_id as string] ||= []).push({ id: v.id as string, file_name: v.file_name as string, file_url: v.file_url as string, status: v.status as string | null, created_at: v.created_at as string | null });
     }
     // 案件時區:期限顯示用(配音員端標示案件時區並換算當地時間)。
     const aoBriefIds = [...new Set((ao || []).map((o) => o.brief_id).filter(Boolean))] as string[];
