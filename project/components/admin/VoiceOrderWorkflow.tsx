@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPlatformCase } from '@/lib/casting';
+import { groupByUploadDate } from '@/lib/deliveries';
 import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -177,7 +178,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const [savingDate, setSavingDate] = useState(false);
   const [dateSaved, setDateSaved] = useState(false);
 
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingNotes, setPendingNotes] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -268,7 +269,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   };
 
   const handleUploadVersion = async () => {
-    if (!pendingFile) return;
+    if (!pendingFiles.length) return;
     const isManaged = isPlatformCase(order.email); // 平台案判定統一(lib/casting)
     // 指派單沒有外部客戶:備註免填(錄音室代傳場景),也不寄客戶信
     if (!isManaged && !pendingNotes.trim()) {
@@ -281,38 +282,48 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
     setUploadError('');
 
     try {
-      const nextNum = versions.length + 1;
-      setUploadStatus(`Uploading ${pendingFile.name}...`);
-      setUploadProgress(20);
-
-      const filePath = `voice-versions/${order.id}/${Date.now()}-${pendingFile.name}`;
-      const publicUrl = await uploadFile(pendingFile, filePath);
-      setUploadProgress(60);
+      // 一次可傳整批檔:整批 = 一次交付。逐檔進 storage、一次插入所有版本、
+      // 修改次數整批只 +1(非首次交付)、客戶信整批只寄一封。
+      const base = versions.length;                 // 這批之前已有的版本數
+      const isFirstDelivery = base === 0;
+      const noteVal = pendingNotes.trim() || (isManaged ? '錄音室交付(後台代傳)' : '');
+      const rows: { voice_order_id: string; file_url: string; file_name: string; notes: string; version_number: number; status: string }[] = [];
+      for (let i = 0; i < pendingFiles.length; i++) {
+        const f = pendingFiles[i];
+        setUploadStatus(`Uploading ${f.name} (${i + 1}/${pendingFiles.length})...`);
+        setUploadProgress(Math.round(((i + 0.5) / pendingFiles.length) * 70));
+        const filePath = `voice-versions/${order.id}/${Date.now()}-${i}-${f.name}`;
+        const publicUrl = await uploadFile(f, filePath);
+        rows.push({
+          voice_order_id: order.id,
+          file_url: publicUrl,
+          file_name: f.name,
+          notes: noteVal,
+          version_number: base + i + 1,
+          status: 'pending_review',
+        });
+      }
+      setUploadProgress(75);
       setUploadStatus('Saving to database...');
 
-      const { error: insertErr } = await supabase.from('voice_order_versions').insert({
-        voice_order_id: order.id,
-        file_url: publicUrl,
-        file_name: pendingFile.name,
-        notes: pendingNotes.trim() || (isManaged ? '錄音室交付(後台代傳)' : ''),
-        version_number: nextNum,
-        status: 'pending_review',
-      });
+      const { error: insertErr } = await supabase.from('voice_order_versions').insert(rows);
       if (insertErr) {
         console.error('voice_order_versions insert error:', insertErr);
         throw new Error(`Database error: ${insertErr.message}. Have you created the voice_order_versions table?`);
       }
-      setUploadProgress(80);
+      setUploadProgress(85);
       setUploadStatus('Updating order status...');
 
-      const newRevisionCount = (order.revision_count || 0) + (nextNum > 1 ? 1 : 0);
+      // 整批算一次交付:非首次交付才 +1(不是每個檔 +1)
+      const newRevisionCount = (order.revision_count || 0) + (isFirstDelivery ? 0 : 1);
       await updateVoiceOrderStatus(order.id, 'delivered', {
         revision_count: newRevisionCount,
       });
       setUploadProgress(100);
       setUploadStatus('');
 
-      // Notify client that version is ready for review (skip for managed orders — the client is us)
+      // Notify client that the delivery is ready for review — one email per BATCH
+      // (skip for managed orders — the client is us).
       if (!isManaged) try {
         await fetch('/api/mail/send', {
           method: 'POST',
@@ -324,15 +335,16 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
             orderNumber: order.order_number,
             orderId: order.id,
             category: 'PRODUCTION',
-            versionNumber: nextNum,
+            versionNumber: base + pendingFiles.length,
           }),
         });
       } catch { /* silent */ }
 
-      setPendingFile(null);
+      const n = pendingFiles.length;
+      setPendingFiles([]);
       setPendingNotes('');
       setUploadSuccess(true);
-      toast({ title: `Version ${nextNum} delivered`, description: 'Client has been notified.' });
+      toast({ title: n > 1 ? `${n} files delivered` : 'Version delivered', description: isManaged ? undefined : 'Client has been notified.' });
       fetchData();
       onStatusChange();
     } catch (err: unknown) {
@@ -738,7 +750,14 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                 </div>
               </div>
             )}
-            {versions.map((ver, idx) => {
+            {/* 版本按「上傳日期」分組:每組一個日期表頭,點檔可播/下載/設為最終交付。
+                V 號用真實 version_number(跨日期組不會亂)。 */}
+            {groupByUploadDate(versions, (v) => v.created_at).map((g) => (
+              <div key={g.key} className="divide-y divide-zinc-800">
+                <div className="px-4 py-1.5 bg-zinc-800/40 text-[11px] font-medium text-gray-400">
+                  {g.date ? g.date.toLocaleDateString() : '未標日期'}
+                </div>
+                {g.items.map((ver) => {
               const isApproved = ver.status === 'approved';
               const hasRevisionRequest = ver.status === 'revision_requested';
               return (
@@ -747,7 +766,7 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                     <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
                       isApproved ? 'bg-green-500 text-white' : 'bg-zinc-800'
                     }`}>
-                      {isApproved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="text-xs text-gray-500">V{idx + 1}</span>}
+                      {isApproved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="text-xs text-gray-500">V{ver.version_number}</span>}
                     </div>
                     <FileAudio className={`w-4 h-4 flex-shrink-0 ${isApproved ? 'text-green-400' : 'text-cyan-400'}`} />
                     <div className="flex-1 min-w-0">
@@ -795,7 +814,9 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                   )}
                 </div>
               );
-            })}
+                })}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -810,23 +831,28 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
             </span>
           </div>
           <div className="p-4 space-y-3">
-            {pendingFile && !uploading && (
-              <div className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-2">
-                <FileAudio className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-200 truncate">{pendingFile.name}</p>
-                  <p className="text-xs text-gray-500">{formatBytes(pendingFile.size)}</p>
-                </div>
+            {pendingFiles.length > 0 && !uploading && (
+              <div className="space-y-2">
+                {/* 一批多檔:逐檔列出,備註套用整批(一次交付) */}
+                {pendingFiles.map((f, i) => (
+                  <div key={`${f.name}-${i}`} className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-2">
+                    <FileAudio className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-200 truncate">{f.name}</p>
+                      <p className="text-xs text-gray-500">{formatBytes(f.size)}</p>
+                    </div>
+                    <button onClick={() => setPendingFiles((arr) => arr.filter((_, idx) => idx !== i))} className="text-zinc-500 hover:text-red-400 p-1">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
                 <input
                   type="text"
-                  placeholder="Note to client (required)"
+                  placeholder="Note to client (required for this delivery)"
                   value={pendingNotes}
                   onChange={(e) => { setPendingNotes(e.target.value); setUploadError(''); }}
-                  className={`w-48 text-xs bg-zinc-700 border rounded px-2 py-1 text-white placeholder:text-gray-500 focus:outline-none h-7 ${!pendingNotes.trim() && uploadError ? 'border-red-500' : 'border-zinc-600'}`}
+                  className={`w-full text-xs bg-zinc-700 border rounded px-2 py-1.5 text-white placeholder:text-gray-500 focus:outline-none ${!pendingNotes.trim() && uploadError ? 'border-red-500' : 'border-zinc-600'}`}
                 />
-                <button onClick={() => { setPendingFile(null); setPendingNotes(''); }} className="text-zinc-500 hover:text-red-400 p-1">
-                  <X className="w-3.5 h-3.5" />
-                </button>
               </div>
             )}
 
@@ -860,24 +886,24 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
             )}
 
             <div className="flex items-center gap-2">
-              <input ref={versionFileRef} type="file" accept=".wav,.mp3,.aiff,.flac" onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) { setPendingFile(f); setUploadSuccess(false); setUploadError(''); }
+              <input ref={versionFileRef} type="file" multiple accept=".wav,.mp3,.aiff,.flac" onChange={(e) => {
+                const fs = Array.from(e.target.files || []);
+                if (fs.length) { setPendingFiles((arr) => [...arr, ...fs]); setUploadSuccess(false); setUploadError(''); }
                 e.target.value = '';
               }} className="hidden" />
               <Button size="sm" onClick={() => versionFileRef.current?.click()} disabled={uploading}
                 className="bg-zinc-700 hover:bg-zinc-600 text-white gap-2">
                 <Plus className="w-3.5 h-3.5" />
-                Select File
+                {pendingFiles.length ? 'Add More' : 'Select Files'}
               </Button>
-              {pendingFile && !uploading && (
+              {pendingFiles.length > 0 && !uploading && (
                 <Button size="sm" onClick={handleUploadVersion} className="bg-cyan-600 hover:bg-cyan-700 text-white gap-2">
                   <Upload className="w-3.5 h-3.5" />
-                  Deliver V{versions.length + 1}
+                  {pendingFiles.length > 1 ? `Deliver ${pendingFiles.length} files` : 'Deliver'}
                 </Button>
               )}
             </div>
-            <p className="text-xs text-gray-600">Upload the voiceover file. Client will be notified to review.</p>
+            <p className="text-xs text-gray-600">Select one or more files — they&apos;re delivered together as one delivery (client notified once). 48kHz/24-bit WAV preferred.</p>
           </div>
         </div>
       )}
