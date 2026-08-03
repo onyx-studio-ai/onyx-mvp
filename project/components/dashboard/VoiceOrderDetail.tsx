@@ -11,6 +11,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations, useLocale } from 'next-intl';
 import ReviewBox from '@/components/marketplace/ReviewBox';
+import { groupByUploadDate } from '@/lib/deliveries';
 
 interface Version {
   id: string;
@@ -133,6 +134,9 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   // deliveries that never created a version row — the order's download_url.
   const reviewUrl = cleanUrl(latestVersion?.file_url) || cleanUrl(order.download_url);
   const reviewVersionNo = versions.length || 1;
+  // 交付檔按上傳日期分組(新到舊)。最新那批 = 這次要審的整批檔(可能多個)。
+  const groupedVersions = groupByUploadDate(versions, (v) => v.created_at);
+  const latestBatch = groupedVersions[0]?.items || [];
 
   // Approve / request-revision run server-side (service role) — browser writes to
   // voice_orders are RLS-blocked (silent no-op), and a casting revision must reach
@@ -301,13 +305,21 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
               </div>
             )}
 
-            <div className="flex items-center gap-3">
-              <AudioPreview url={reviewUrl} label={`${t('preview')} V${reviewVersionNo}`} />
-              <a href={reviewUrl} download
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-sm text-gray-300 hover:text-white transition-all">
-                <Download className="w-3.5 h-3.5" />
-                {t('download')}
-              </a>
+            {/* 最新一批交付的所有檔(可能多個);每個都能試聽 / 下載。整批一起核准 / 要求修改。 */}
+            <div className="space-y-2">
+              {(latestBatch.length
+                ? latestBatch.map((v) => ({ id: v.id, url: cleanUrl(v.file_url), name: v.file_name }))
+                : [{ id: '_single', url: reviewUrl, name: `${t('preview')} V${reviewVersionNo}` }]
+              ).map((f) => (
+                <div key={f.id} className="flex items-center gap-3">
+                  <AudioPreview url={f.url} label={f.name} />
+                  <a href={f.url} download
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-sm text-gray-300 hover:text-white transition-all shrink-0">
+                    <Download className="w-3.5 h-3.5" />
+                    {t('download')}
+                  </a>
+                </div>
+              ))}
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -374,43 +386,47 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
             <Mic className="w-3.5 h-3.5" />
             {t('versionHistory')} ({t('versionCount', { count: versions.length })})
           </summary>
-          <div className="px-5 pb-5 space-y-3 border-t border-white/[0.06] pt-4">
-            {versions.slice().reverse().map((ver, idx) => {
-              const verNum = versions.length - idx;
-              const isApproved = ver.status === 'approved';
-              return (
-                <div key={ver.id} className={`rounded-lg p-3.5 border ${
-                  isApproved ? 'bg-green-500/10 border-green-500/25' : 'bg-cyan-500/10 border-cyan-500/15'
-                }`}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Badge variant="outline" className={`text-xs ${isApproved ? 'border-green-500/30 text-green-400' : 'border-cyan-500/30 text-cyan-400'}`}>
-                      V{verNum}
-                    </Badge>
-                    <span className="text-xs text-gray-600">{new Date(ver.created_at).toLocaleDateString()}</span>
-                    {isApproved && (
-                      <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30 gap-1">
-                        <CheckCircle2 className="w-2.5 h-2.5" /> {t('approved')}
-                      </Badge>
-                    )}
-                    {ver.status === 'revision_requested' && (
-                      <Badge className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
-                        {t('revisionRequested')}
-                      </Badge>
-                    )}
-                  </div>
-                  {ver.notes && <p className="text-xs text-gray-500 mb-1">{t('teamNote', { notes: ver.notes })}</p>}
-                  {ver.client_feedback && <p className="text-xs text-amber-300 mb-1">{t('yourFeedback', { feedback: ver.client_feedback })}</p>}
-                  {ver.file_url && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <AudioPreview url={ver.file_url} label={t('preview')} />
-                      <a href={ver.file_url} download className="text-xs text-blue-400 hover:underline inline-flex items-center gap-1">
-                        <Download className="w-3 h-3" /> {t('download')}
-                      </a>
+          <div className="px-5 pb-5 space-y-4 border-t border-white/[0.06] pt-4">
+            {/* 依上傳日期分組(新到舊);每組一個日期標題,下面列出那天的檔。 */}
+            {groupedVersions.map((g) => (
+              <div key={g.key} className="space-y-2">
+                <p className="text-xs font-medium text-gray-400">{g.date ? g.date.toLocaleDateString() : ''}</p>
+                {g.items.slice().reverse().map((ver) => {
+                  const isApproved = ver.status === 'approved';
+                  return (
+                    <div key={ver.id} className={`rounded-lg p-3.5 border ${
+                      isApproved ? 'bg-green-500/10 border-green-500/25' : 'bg-cyan-500/10 border-cyan-500/15'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Badge variant="outline" className={`text-xs ${isApproved ? 'border-green-500/30 text-green-400' : 'border-cyan-500/30 text-cyan-400'}`}>
+                          V{ver.version_number}
+                        </Badge>
+                        {isApproved && (
+                          <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30 gap-1">
+                            <CheckCircle2 className="w-2.5 h-2.5" /> {t('approved')}
+                          </Badge>
+                        )}
+                        {ver.status === 'revision_requested' && (
+                          <Badge className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
+                            {t('revisionRequested')}
+                          </Badge>
+                        )}
+                      </div>
+                      {ver.notes && <p className="text-xs text-gray-500 mb-1">{t('teamNote', { notes: ver.notes })}</p>}
+                      {ver.client_feedback && <p className="text-xs text-amber-300 mb-1">{t('yourFeedback', { feedback: ver.client_feedback })}</p>}
+                      {ver.file_url && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <AudioPreview url={cleanUrl(ver.file_url)} label={t('preview')} />
+                          <a href={cleanUrl(ver.file_url)} download className="text-xs text-blue-400 hover:underline inline-flex items-center gap-1">
+                            <Download className="w-3 h-3" /> {t('download')}
+                          </a>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </details>
       )}
