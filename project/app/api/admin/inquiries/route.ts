@@ -131,10 +131,9 @@ export async function POST(request: NextRequest) {
 
     // BCC every reply to Wing's personal inbox so she has a backup
     // copy regardless of whether the primary deliverable lands. The
-    // BCC address is configured via INQUIRY_REPLY_BCC env var — set
-    // it in Vercel to e.g. ukuclai@gmail.com to activate. Empty / unset
-    // = no BCC (preserves prior behaviour).
-    const bccTarget = process.env.INQUIRY_REPLY_BCC?.trim() || undefined;
+    // BCC 每封回覆到 Onyx 信箱,Wing 才看得到「寄出去實際長怎樣」(Wing 2026-08-02)。
+    // 預設 onyxstudios.ai@gmail.com;若要改別的收件匣,設 INQUIRY_REPLY_BCC env 覆寫即可。
+    const bccTarget = process.env.INQUIRY_REPLY_BCC?.trim() || 'onyxstudios.ai@gmail.com';
 
     const result = await sendEmail({
       category: inquiry.department as SenderCategory,
