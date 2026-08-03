@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import { langLabel, LANGUAGES } from '@/lib/languages';
 import Link from 'next/link';
-import { Briefcase, CheckCircle2, Archive, FileText, User } from 'lucide-react';
+import { Briefcase, CheckCircle2, Archive, FileText, User, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
 import { groupByUploadDate } from '@/lib/deliveries';
@@ -627,12 +627,13 @@ export default function Opportunities() {
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
   const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null; created_at?: string | null }[] }[]>([]);
+  const [selectingBriefs, setSelectingBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status?: string | null }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
   const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; script_files?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; created_at?: string | null }[] }[]>([]);
   const [myName, setMyName] = useState('');
   const [templates, setTemplates] = useState<Templates>({});
   // 分頁式看板(Voices 心智模型):待處理=欠的工作;案件機會=可應徵;已結束=歸檔
-  const [tab, setTab] = useState<'todo' | 'open' | 'ended'>('todo');
+  const [tab, setTab] = useState<'todo' | 'open' | 'selecting' | 'ended'>('todo');
   const [jobQ, setJobQ] = useState('');
   const tabInitRef = useRef(false);
   const [langFilter, setLangFilter] = useState<{ active: boolean; visible: string[] }>({ active: false, visible: [] });
@@ -648,6 +649,7 @@ export default function Opportunities() {
     setRoleCounts(j.roleCounts || {});
     setMyDemos(j.myDemos || []);
     setWonBriefs(j.wonBriefs || []);
+    setSelectingBriefs(j.selectingBriefs || []);
     setEndedBriefs(j.endedBriefs || []);
     setAssignedOrders(j.assignedOrders || []);
     setMyName(j.myName || '');
@@ -704,13 +706,15 @@ export default function Opportunities() {
         const tabCls = (t: string) => `text-left rounded-xl transition ring-2 ${tab === t ? 'ring-[#6FCF97]' : 'ring-transparent hover:ring-white/20'}`;
         return (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
               <button type="button" className={tabCls('todo')} onClick={() => setTab('todo')}>
                 <StatModule icon={CheckCircle2} label={tx('待處理', '待处理', 'To do')} value={todoCount} /></button>
               <button type="button" className={tabCls('open')} onClick={() => setTab('open')}>
-                <StatModule icon={Briefcase} label={tx('案件機會', '案件机会', 'Open cases')} value={briefs.length} /></button>
+                <StatModule icon={Briefcase} label={tx('甄選中', '甄选中', 'Auditioning')} value={briefs.length} /></button>
+              <button type="button" className={tabCls('selecting')} onClick={() => setTab('selecting')}>
+                <StatModule icon={Clock} label={tx('決選中', '决选中', 'Deciding')} value={selectingBriefs.length} /></button>
               <button type="button" className={tabCls('ended')} onClick={() => setTab('ended')}>
-                <StatModule icon={Archive} label={tx('已結束', '已结束', 'Ended')} value={endedBriefs.length} /></button>
+                <StatModule icon={Archive} label={tx('結束', '结束', 'Ended')} value={endedBriefs.length} /></button>
             </div>
             <input value={jobQ} onChange={(e) => setJobQ(e.target.value)}
               placeholder={tx('搜尋案名 / 角色…', '搜索案名 / 角色…', 'Search cases / roles…')}
@@ -961,6 +965,28 @@ export default function Opportunities() {
         </div>
       )}
 
+      </div>
+
+      <div className={tab === 'selecting' ? '' : 'hidden'}>
+      {selectingBriefs.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-gray-300 mb-1">{tx('決選中', '决选中', 'Deciding')}</h2>
+          <p className="text-xs text-gray-500 mb-3">{tx('試音已截止,客戶正在決選中,尚未定案。', '试音已截止,客户正在决选中,尚未定案。', 'Auditions closed — the client is deciding. Not finalized yet.')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {selectingBriefs.map((s) => (
+              <EntityCard
+                key={s.id}
+                icon={Clock}
+                accent="amber"
+                code={s.brief_number}
+                title={<span className="text-gray-200">{s.title || s.content_type || tx('配音案', '配音案', 'Voice case')}</span>}
+                badge={<span className="text-xs px-2.5 py-1 rounded-full border bg-amber-500/10 text-amber-300 border-amber-400/30 whitespace-nowrap">{tx('決選中', '决选中', 'Deciding')}</span>}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      {selectingBriefs.length === 0 && <p className="text-gray-400 text-sm text-center py-16">{tx('目前沒有決選中的案件。', '目前没有决选中的案件。', 'Nothing in final selection right now.')}</p>}
       </div>
 
       <div className={tab === 'ended' ? '' : 'hidden'}>
