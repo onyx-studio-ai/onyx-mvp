@@ -195,10 +195,20 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const deliveryUrl = String(body.delivery_url || '').slice(0, 1000);
-    const deliveryName = String(body.file_name || '').slice(0, 200) || (deliveryUrl.split('/').pop()?.split('?')[0] || 'delivery');
-    if (!id || !deliveryUrl) return NextResponse.json({ error: 'id and delivery_url are required' }, { status: 400 });
-    if (!/^https?:\/\//i.test(deliveryUrl)) return NextResponse.json({ error: 'invalid delivery_url' }, { status: 400 });
+    // 一次可交整批檔:files=[{delivery_url,file_name}]。相容舊的單檔 {delivery_url,file_name}。
+    // 整批只算「一次交付」:版本一次插完、客戶信只在「首次交付」寄一封、produce@ 一封。
+    const rawFiles = Array.isArray(body.files) && body.files.length
+      ? body.files
+      : [{ delivery_url: body.delivery_url, file_name: body.file_name }];
+    const deliveryFiles = (rawFiles as { delivery_url?: string; file_name?: string }[])
+      .map((f) => {
+        const url = String(f.delivery_url || '').slice(0, 1000);
+        const name = String(f.file_name || '').slice(0, 200) || (url.split('/').pop()?.split('?')[0] || 'delivery');
+        return { url, name };
+      })
+      .filter((f) => /^https?:\/\//i.test(f.url));
+    if (!id || !deliveryFiles.length) return NextResponse.json({ error: 'id and at least one valid delivery_url are required' }, { status: 400 });
+    const lastUrl = deliveryFiles[deliveryFiles.length - 1].url;
 
     // Real-person casting orders only execute AFTER payment — block delivery on an
     // unpaid order (Wing: 真人案都要付款才會執行).
@@ -209,7 +219,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data, error } = await r.db
       .from('marketplace_quotes')
-      .update({ delivery_url: deliveryUrl, delivery_uploaded_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({ delivery_url: lastUrl, delivery_uploaded_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('talent_id', talent.id)
       .eq('status', 'accepted')
@@ -220,36 +230,38 @@ export async function PATCH(request: NextRequest) {
     if (!data) return NextResponse.json({ error: '請先「同意並接單」才能上傳交付。' }, { status: 400 });
 
     // Self-serve: the delivery becomes a client-reviewable version (reuses the
-    // existing 核准 / 要求修改 flow). Each upload adds another file (multi-file +
-    // future revisions); the order moves to "delivered" for the client to review.
+    // existing 核准 / 要求修改 flow). 一批多檔 = 一次交付,一次全部插入。
     const { data: order } = await r.db.from('voice_orders').select('id, email, order_number, status').eq('quote_id', id).maybeSingle();
     let firstDelivery = true;
     if (order && order.status !== 'completed') {
       const { count } = await r.db.from('voice_order_versions').select('id', { count: 'exact', head: true }).eq('voice_order_id', order.id);
       firstDelivery = (count || 0) === 0;
+      const base = count || 0;
+      const rows = deliveryFiles.map((f, i) => ({
+        voice_order_id: order.id, file_url: f.url, file_name: f.name,
+        notes: '配音員交付', version_number: base + i + 1, status: 'pending_review',
+      }));
       // 版本 insert / 訂單轉 delivered 靜默失敗 = 配音員看到「交付成功」、客戶端卻沒版本可審
       // (2026-07-23 審查)→ 接 error 回 500;quote 的 delivery_url 已寫入,log 提示人工補。
-      const { error: verErr } = await r.db.from('voice_order_versions').insert({
-        voice_order_id: order.id, file_url: deliveryUrl, file_name: deliveryName,
-        notes: '配音員交付', version_number: (count || 0) + 1, status: 'pending_review',
-      });
+      const { error: verErr } = await r.db.from('voice_order_versions').insert(rows);
       if (verErr) {
         console.error('[talent/quotes] version insert failed (quote delivery_url already saved, order', order.order_number, '):', verErr.message);
         return NextResponse.json({ error: '交付檔已收到,但版本建立失敗,請聯絡 Onyx 補登。' }, { status: 500 });
       }
-      const { error: delivErr } = await r.db.from('voice_orders').update({ download_url: deliveryUrl, status: 'delivered', updated_at: new Date().toISOString() }).eq('id', order.id);
+      const { error: delivErr } = await r.db.from('voice_orders').update({ download_url: lastUrl, status: 'delivered', updated_at: new Date().toISOString() }).eq('id', order.id);
       if (delivErr) {
         console.error('[talent/quotes] order delivered update failed (version created, order', order.order_number, '):', delivErr.message);
         return NextResponse.json({ error: '交付檔已收到,但訂單狀態更新失敗,請聯絡 Onyx 處理。' }, { status: 500 });
       }
+      // 客戶信只在「首次交付」寄一次(整批也只一封);後續補交付不重寄。
       if (order.email && firstDelivery) {
         const cnote = castingDeliveryClientEmail({ title: (order.order_number as string) || '', orderNumber: order.order_number as string, url: `${SITE}/dashboard/orders/${order.id}` });
         sendEmail({ category: 'PRODUCTION', to: order.email as string, subject: cnote.subject, html: cnote.html }).catch(() => {});
       }
     }
 
-    // Notify Onyx production too (oversight, best-effort).
-    const dnote = deliveryUploadedEmail({ talentName: talent.name, quoteId: data.id, url: deliveryUrl });
+    // Notify Onyx production too (oversight, best-effort). 整批一封。
+    const dnote = deliveryUploadedEmail({ talentName: talent.name, quoteId: data.id, url: lastUrl });
     sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: dnote.subject, html: dnote.html }).catch(() => {});
 
     return NextResponse.json({ quote: data });
