@@ -58,6 +58,7 @@ interface VoiceOrder {
   email: string;
   tier: string;
   price: number;
+  talent_price?: number | null;   // 配音員酬勞;線下付款案 price=0 時用它顯示金額
   currency?: string | null;
   status: string;
   payment_status: string | null;
@@ -654,13 +655,31 @@ export default function AdminOrdersPage() {
                     </span>
                   </div>
 
-                  {/* Price — show the order's currency so TWD isn't mistaken for USD */}
+                  {/* Price — show the order's currency so TWD isn't mistaken for USD.
+                      線下付款案:客戶價(price)與線下結款二選一,不會同時出現。
+                      price>0 → 客戶線上收款金額;price=0 但有配音員酬勞 → 這是線下結的案子,
+                      顯示配音員酬勞並標「線下」,免得 0 元看起來像免費/壞掉。純顯示,不動任何資料或統計。 */}
                   {(() => {
                     const sym = currencySymbol((order as { currency?: string }).currency);
+                    const price = Number(order.price) || 0;
+                    const talentPay = Number((order as { talent_price?: number | null }).talent_price) || 0;
+                    if (price > 0) {
+                      return (
+                        <span className="text-sm font-bold text-gray-900 flex-shrink-0 w-24 text-right">
+                          {sym}{price.toLocaleString()}
+                        </span>
+                      );
+                    }
+                    if (talentPay > 0) {
+                      return (
+                        <span className="flex-shrink-0 w-24 text-right leading-tight">
+                          <span className="block text-sm font-bold text-gray-900">{sym}{talentPay.toLocaleString()}</span>
+                          <span className="block text-[10px] font-medium text-amber-600">線下</span>
+                        </span>
+                      );
+                    }
                     return (
-                      <span className="text-sm font-bold text-gray-900 flex-shrink-0 w-24 text-right">
-                        {sym}{Number(order.price).toLocaleString()}
-                      </span>
+                      <span className="text-sm font-bold text-gray-400 flex-shrink-0 w-24 text-right">—</span>
                     );
                   })()}
 
