@@ -996,6 +996,11 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
         </div>
       )}
 
+      {/* 代客戶留評價(Onyx → 配音員)—— 站外/聚合案客戶不上平台,平台代評,立即公開 */}
+      {order.status === 'completed' && order.talent_id && (
+        <AdminReviewCard orderId={order.id} />
+      )}
+
       {/* Completed */}
       {order.status === 'completed' && deliverables.length > 0 && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 space-y-3">
@@ -1052,6 +1057,52 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// 代客戶留評價(Onyx → 配音員)—— 站外/聚合案客戶不上平台,由平台以客戶身分代評。
+// 走 /api/admin/reviews:reviewer_type='client' + by_admin=true(立即公開,不受雙盲/14天)。
+function AdminReviewCard({ orderId }: { orderId: string }) {
+  const { toast } = useToast();
+  const [r, setR] = useState<{ communication: number; quality: number; delivery: number; comment: string }>({ communication: 0, quality: 0, delivery: 0, comment: '' });
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const dims: ['communication' | 'quality' | 'delivery', string][] = [
+    ['communication', '溝通'], ['quality', '品質'], ['delivery', '交付'],
+  ];
+  const submit = async () => {
+    if (!r.communication && !r.quality && !r.delivery) { toast({ title: '請至少給一個評分', variant: 'destructive' }); return; }
+    setBusy(true);
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, ...r }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { toast({ title: '送出失敗', description: j.error || '', variant: 'destructive' }); return; }
+      setDone(true);
+      toast({ title: '評價已送出', description: '會立即顯示在配音員個人頁。' });
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 space-y-3">
+      <p className="text-sm font-semibold text-amber-300">代客戶留評價(Onyx → 配音員 · 立即公開)</p>
+      {dims.map(([k, label]) => (
+        <div key={k} className="flex items-center gap-2">
+          <span className="text-xs text-gray-400 w-12">{label}</span>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button key={n} type="button" onClick={() => setR((s) => ({ ...s, [k]: n }))}
+              className={`text-lg leading-none ${n <= r[k] ? 'text-amber-400' : 'text-zinc-600 hover:text-zinc-400'}`}>★</button>
+          ))}
+        </div>
+      ))}
+      <textarea value={r.comment} onChange={(e) => setR((s) => ({ ...s, comment: e.target.value }))}
+        placeholder="評語(選填,會公開顯示)" rows={2}
+        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500" />
+      <Button size="sm" onClick={submit} disabled={busy} className="bg-amber-600 hover:bg-amber-500 text-black font-medium gap-2">
+        {busy ? '送出中…' : done ? '已送出 ✓(可再送覆蓋)' : '送出評價'}
+      </Button>
     </div>
   );
 }
