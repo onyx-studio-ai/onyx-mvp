@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
     let wonBriefs: unknown[] = [];
     if (wonIds.length) {
       const { data: wb } = await r.db.from('marketplace_briefs')
-        .select('id, brief_number, kind, title, content_type, language, accent, status, rate_note, media_scope, territory, license_term, deadline')
+        .select('id, brief_number, kind, title, content_type, language, accent, status, ai_type, rate_note, media_scope, territory, license_term, deadline')
         .in('id', wonIds);
       // The FINAL script the client locked at selection lives on the production
       // order — surface it so the won talent records from the right script (self-serve).
