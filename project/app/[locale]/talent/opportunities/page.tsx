@@ -1714,7 +1714,7 @@ function GeneralResponse({
 
   return (
     <div className="border-t border-white/10 pt-3 space-y-2">
-      <p className="text-xs text-gray-300">{tx('多數案件需依指定稿件試音;本案可直接用 demo 應徵(挑現有的或上傳新的)+ 報價。', '多数案件需依指定稿件试音;本案可直接用 demo 应征(挑现有的或上传新的)+ 报价。', 'Most cases require an audition of the provided script; this one accepts a demo — pick one or upload, then quote.')}</p>
+      <p className="text-xs text-gray-300">{tx('依案件說明 —— 有指定稿件就依稿試音;沒有的話,直接用 demo 應徵(挑現有的或上傳新的)+ 報價即可。', '依案件说明 —— 有指定稿件就依稿试音;没有的话,直接用 demo 应征(挑现有的或上传新的)+ 报价即可。', 'Per the case brief — if a script is provided, audition with it; if not, apply with a demo (pick one or upload), then quote.')}</p>
       {closed && <ClosedNotice tx={tx} />}
       {myDemos.length > 0 && (
         <div className="flex gap-2 text-xs">
