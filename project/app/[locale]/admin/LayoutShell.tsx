@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Share2 } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Share2, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos' | 'messages' | 'payoutRequests' | 'talentReview';
@@ -27,6 +27,7 @@ const navGroups: NavGroup[] = [
     titleKey: 'people',
     items: [
       { href: '/admin/applications', labelKey: 'applications', icon: FileText, badgeKey: 'applications' },
+      { href: '/admin/prospects', labelKey: 'prospects', icon: UserPlus },
       { href: '/admin/users', labelKey: 'users', icon: Users },
       { href: '/admin/talents', labelKey: 'talentManagement', icon: Mic, badgeKey: 'talentReview' },
       { href: '/admin/finance', labelKey: 'finance', icon: TrendingUp },
@@ -67,6 +68,7 @@ export default function AdminLayout({ children, buildTag }: { children: React.Re
     marketplace: '案件 · 發案',
     people: '人員',
     applications: '申請資料',
+    prospects: '潛在名單',
     users: '使用者',
     talentManagement: '人才管理',
     finance: '財務總覽',
@@ -104,6 +106,7 @@ export default function AdminLayout({ children, buildTag }: { children: React.Re
     marketplace: 'Briefs · Casting',
     people: 'People',
     applications: 'Applications',
+    prospects: 'Prospects',
     users: 'Users',
     talentManagement: 'Talent Management',
     finance: 'Finance',
