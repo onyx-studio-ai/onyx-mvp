@@ -738,19 +738,22 @@ function AdminThread({ briefId, talentId }: { briefId: string; talentId: string 
         ))}
       </div>
       <div className="flex gap-2 mt-1.5">
-        <input
+        {/* textarea 而非 input:長訊息要能完整顯示、自動長高(field-sizing 由全域 CSS 提供)。
+            Enter 送出、Shift+Enter 換行。min-h 覆蓋全域 textarea 的 90px,維持這裡的精簡感。 */}
+        <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
-            if (!e.nativeEvent.isComposing && e.key === 'Enter') {
+            if (!e.nativeEvent.isComposing && e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               send();
             }
           }}
+          rows={2}
           placeholder={t('threadPlaceholder')}
-          className="flex-1 bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-900"
+          className="flex-1 bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-900 resize-none !min-h-[2.5rem] max-h-[40vh] leading-relaxed"
         />
-        <button onClick={send} disabled={busy || !draft.trim()} className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded px-2 disabled:opacity-50">
+        <button onClick={send} disabled={busy || !draft.trim()} className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded px-2 disabled:opacity-50 self-stretch">
           {t('send')}
         </button>
       </div>
