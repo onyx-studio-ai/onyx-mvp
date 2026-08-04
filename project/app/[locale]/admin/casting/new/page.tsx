@@ -32,7 +32,7 @@ const RATE_UNITS = ['整案', '句', '字', '分鐘', '小時']; // 整案 first
 const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '影片旁白', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
 const TERRITORY_OPTS = ['', '台灣', '大陸', '港澳', '全球', '北美', '東南亞', '其他'];
 const LICENSE_OPTS = ['', '一年', '兩年', '三年', '永久', '買斷', '專案限定'];
-const ACCENT_OPTS = ['', '中文 · 台灣國語', '中文 · 大陸普通話', '粵語', '台語', '英語', '日語', '不限', '其他'];
+const ACCENT_OPTS = ['', '中文 · 台灣國語', '中文 · 大陸普通話', '粵語', '台語', '英語 · 美式 American', '英語 · 英式 British', '美式 / 英式 皆可', '日語', '不限', '其他'];
 const STYLE_OPTS = ['', '對話自然', '旁白沉穩', '權威 / 正式', '溫暖', '活潑 / 年輕', '角色演繹', '不限', '其他'];
 const AGE_OPTS = ['', '兒童', '青少年', '青年', '中年', '熟齡', '全年齡 / 不限', '其他'];
 // 需求人數(依性別)—— 與客戶端 /hire 同一套,配音員/admin 用點的不用打字。
@@ -1082,7 +1082,12 @@ function NewCasting() {
           <Field label="授權期"><select className={input} value={licenseTerm} onChange={(e) => setLicenseTerm(e.target.value)}>{optsWith(LICENSE_OPTS, licenseTerm).map(optEl)}</select></Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Field label="口音"><select className={input} value={accent} onChange={(e) => setAccent(e.target.value)}>{optsWith(ACCENT_OPTS, accent).map(optEl)}</select></Field>
+          {/* 口音改自由填 + 建議清單(datalist):一種語言可填多個口音,例「美式 / 英式」。單選下拉沒法表達多口音(Wing 2026-08-04)。 */}
+          <Field label="口音">
+            <input className={input} value={accent} onChange={(e) => setAccent(e.target.value)}
+              list="accentOpts" placeholder="例:美式 / 英式(可填多個,或「不限」)" />
+            <datalist id="accentOpts">{ACCENT_OPTS.filter(Boolean).map((o) => <option key={o} value={o} />)}</datalist>
+          </Field>
           <Field label="聲音風格"><select className={input} value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)}>{optsWith(STYLE_OPTS, voiceStyle).map(optEl)}</select></Field>
           <Field label="聲音年齡"><select className={input} value={voiceAge} onChange={(e) => setVoiceAge(e.target.value)}>{optsWith(AGE_OPTS, voiceAge).map(optEl)}</select></Field>
         </div>
