@@ -510,7 +510,7 @@ function licenseWindow(term: string | null | undefined, startISO: string | null 
 // payment, schedule and instructions. Must be accepted before uploading a
 // delivery. Auto-generated from the brief + the won quote.
 function JobAgreement({ brief, quote, tx, onAccepted }: {
-  brief: { brief_number?: string | null; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null };
+  brief: { brief_number?: string | null; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; final_script?: string | null; final_script_url?: string | null; ai_type?: string | null };
   quote: Quote; tx: (a: string, b: string, c: string) => string; onAccepted: (at: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -581,6 +581,20 @@ function JobAgreement({ brief, quote, tx, onAccepted }: {
               : (brief.license_term ? tx('依授權期間計算', '依授权期间计算', 'Per term above') : '—'))}
       </Section>
 
+      {/* 使用限制:非 AI 案的預設保護條款 —— 客戶只能用於上述授權範圍,禁止拿去做 AI/合成/複製聲音,
+          除非另行書面授權加價。AI 案有自己的授權書(license_summary),不套這條(Wing 2026-08-04)。 */}
+      {!brief.ai_type && (
+        <Section title={tx('使用限制 Restrictions', '使用限制 Restrictions', 'Restrictions')}>
+          <p className="text-[12px] text-gray-300 leading-relaxed py-1.5">
+            {tx(
+              '客戶僅得於上述授權範圍內使用交付檔案與您的聲音。除經書面另行授權並支付額外報酬外,不得(亦不得允許第三方)將錄音或您的聲音用於:建立資料集、衍生/合成/複製聲音或數位分身;文字轉語音(TTS)、語音轉文字、互動式語音應答(IVR-AI)、語音辨識或自然語言理解;或開發、訓練、微調或強化任何機器學習模型、演算法或人工智慧。',
+              '客户仅得于上述授权范围内使用交付档案与您的声音。除经书面另行授权并支付额外报酬外,不得(亦不得允许第三方)将录音或您的声音用于:建立数据集、衍生/合成/复制声音或数字分身;文字转语音(TTS)、语音转文字、互动式语音应答(IVR-AI)、语音识别或自然语言理解;或开发、训练、微调或强化任何机器学习模型、算法或人工智能。',
+              'The client may use the deliverables and your voice only within the licensed scope above. Except as separately licensed in writing for additional compensation, the client may not (and may not permit any third party to) use the recordings or your voice to: create datasets, derivative / synthetic / cloned voices or digital doubles; power text-to-speech, speech-to-text, interactive voice response, speech recognition or natural-language understanding; or develop, train, fine-tune or enhance any machine-learning model, algorithm or AI.'
+            )}
+          </p>
+        </Section>
+      )}
+
       {/* Payment */}
       <Section title={tx('報酬 Payment', '报酬 Payment', 'Payment')}>
         {row(tx('報酬', '报酬', 'Fee'), <span>{quote.currency} {quote.net_amount}</span>, { gold: true })}
@@ -626,7 +640,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null; created_at?: string | null }[] }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; ai_type?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null; created_at?: string | null }[] }[]>([]);
   const [selectingBriefs, setSelectingBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status?: string | null }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
   const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; script_files?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; created_at?: string | null }[] }[]>([]);
