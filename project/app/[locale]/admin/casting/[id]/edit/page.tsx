@@ -37,7 +37,7 @@ function RateQuickBuild({ onApply, input }: { onApply: (v: string) => void; inpu
   const [a1, setA1] = useState('');
   const [a2, setA2] = useState('');
   const [unit, setUnit] = useState('整案');
-  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$' };
+  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', HKD: 'HK$', CNY: '¥' };
   const build = () => {
     if (!a1.trim()) return '';
     let core = `${SYM[cur] || cur + ' '}${a1.trim()}`;
@@ -48,7 +48,7 @@ function RateQuickBuild({ onApply, input }: { onApply: (v: string) => void; inpu
   };
   return (
     <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-      <select className={`${input} w-24`} value={cur} onChange={(e) => setCur(e.target.value)}><option>TWD</option><option>USD</option></select>
+      <select className={`${input} w-24`} value={cur} onChange={(e) => setCur(e.target.value)}>{['TWD', 'USD', 'HKD', 'CNY'].map((c) => <option key={c}>{c}</option>)}</select>
       <select className={`${input} w-28`} value={mode} onChange={(e) => setMode(e.target.value as 'fixed' | 'range' | 'upto' | 'plus')}>
         <option value="fixed">固定價</option><option value="range">區間</option><option value="upto">最高(Up to)</option><option value="plus">起價(X+)</option>
       </select>
