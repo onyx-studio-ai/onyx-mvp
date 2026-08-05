@@ -62,6 +62,30 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // 🔒 治本(Wing 2026-08-05):真人單只要走到 completed,就冪等補一筆 pending 收入
+    // ——「可請款餘額」的唯一來源。原本 earnings 只在「指派(assign)」「量產匯入」「客戶
+    // 驗收(review)」三處建;平台自營 / 後台直接按「Mark Complete」的真人單(採用建單、
+    // per_line 沒跑匯入等)會整條漏掉 → 配音員收款頁顯示「無可請款款項」。這裡是所有真人
+    // 單走 completed 的收斂點,idempotent(已有就跳過,不與 review 路徑重複記兩筆)。
+    if (orderType === 'voice' && updates.status === 'completed') {
+      try {
+        const { data: o } = await db.from('voice_orders')
+          .select('talent_id, talent_price, order_number, quote_id, brief_id').eq('id', orderId).maybeSingle();
+        const net = Number(o?.talent_price) || 0;
+        if (o?.talent_id && net > 0) {
+          const { data: existing } = await db.from('talent_earnings').select('id').eq('order_id', orderId).maybeSingle();
+          if (!existing) {
+            const { error: teErr } = await db.from('talent_earnings').insert({
+              talent_id: o.talent_id, order_id: orderId, order_type: 'voice', order_number: o.order_number,
+              tier: 'marketplace', order_total: net, commission_rate: 1, commission_amount: net, status: 'pending',
+              quote_id: o.quote_id || null, brief_id: o.brief_id || null,
+            });
+            if (teErr) console.error('[admin/orders] talent_earnings insert on complete failed', o.order_number, teErr.message);
+          }
+        }
+      } catch (e) { console.error('[admin/orders] earnings-on-complete error', orderId, e); }
+    }
+
     // Send workflow notification if status changed
     if (updates.status) {
       try {
