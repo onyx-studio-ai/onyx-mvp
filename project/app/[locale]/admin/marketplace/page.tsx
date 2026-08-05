@@ -301,7 +301,7 @@ export default function AdminMarketplace() {
       <AdminHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        action={<a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-2">{t('newCasting')}</a>}
+        action={<span className="flex gap-2"><a href="/admin/casting/ai" className="text-sm bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-lg px-3 py-2">✦ AI 發案</a><a href="/admin/casting/new" className="text-sm bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg px-3 py-2">{t('newCasting')}</a></span>}
       />
       <AdminStats items={stats} />
 
