@@ -19,7 +19,7 @@ import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-
   費用發票=財務資料 → requireAdminOnly。
 */
 
-const BUCKET = 'casting'; // 沿用專案發票上傳的同一個 bucket
+const BUCKET = 'invoices'; // 私有發票桶(2026-08-05 自 casting 公開桶搬移)
 const PREFIX = 'admin-cost-invoices';
 const ALLOWED_EXT = ['pdf', 'png', 'jpg', 'jpeg', 'webp'];
 const PERIOD_RE = /^\d{4}-\d{2}$/;
