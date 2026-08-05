@@ -24,7 +24,7 @@ const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 tex
 const SITE = 'https://www.onyxstudios.ai';
 
 // Rate = currency + amount (USD / TWD lead; both optional, fill one or both).
-const CCYS = ['TWD', 'USD'];
+const CCYS = ['TWD', 'USD', 'HKD', 'CNY'];   // 香港/大陸案(Wing 2026-08-05)
 const CCY_SYM: Record<string, string> = { USD: 'US$', TWD: 'NT$', CNY: '¥', HKD: 'HK$', EUR: '€', GBP: '£', JPY: 'JP¥', SGD: 'S$' };
 const fmtRate = (cur: string, amt: string) => `${CCY_SYM[cur] || cur + ' '}${amt.trim()}`;
 const RATE_UNITS = ['整案', '句', '字', '分鐘', '小時']; // 整案 first — the common default
