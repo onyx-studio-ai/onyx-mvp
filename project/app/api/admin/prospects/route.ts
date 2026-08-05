@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const kind = searchParams.get('kind') || '';
   const status = searchParams.get('status') || '';
   const source = searchParams.get('source') || '';
-  const limit = Math.min(Number(searchParams.get('limit')) || 200, 500);
+  const limit = Math.min(Number(searchParams.get('limit')) || 200, 1000);
   const offset = Math.max(Number(searchParams.get('offset')) || 0, 0);
 
   let query = db.from('prospects')
