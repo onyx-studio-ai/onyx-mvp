@@ -2,6 +2,7 @@ export const EXCHANGE_RATES: Record<string, number> = {
   USD: 1,
   TWD: 30.1,
   CNY: 7.2,
+  HKD: 7.8,   // 香港案(Wing 2026-08-05 加 HKD/CNY 幣別)
 };
 
 const LOCALE_CURRENCY_MAP: Record<string, string> = {
