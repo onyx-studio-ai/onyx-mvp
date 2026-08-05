@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { EXCHANGE_RATES } from '@/lib/currency';
+import { sendEmail } from '@/lib/mail';
+
+const BILLING_TO = 'billing@onyxstudios.ai';
+const ADMIN_PAYOUTS = 'https://www.onyxstudios.ai/admin/payout-requests';
 
 /*
   配音員自己的請款單。
@@ -24,9 +28,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id');
+  const r = await resolveTalentFromRequest(request, 'id, name');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
-  const talentId = (r.talent as { id: string }).id;
+  const talent = r.talent as { id: string; name?: string | null };
+  const talentId = talent.id;
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
@@ -63,13 +68,24 @@ export async function POST(request: NextRequest) {
     invoice_type: invoiceType, status: 'pending',
   }).select('id, invoice_number, amount, currency, invoice_type, status, created_at').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // 通知帳務:有人發起請款(待上傳發票)。best-effort,不擋回應。
+  sendEmail({
+    category: 'BILLING', to: BILLING_TO,
+    subject: `新請款 · ${invoiceNumber} · ${currency} ${amount}`,
+    html: `<p><strong>${talent.name || '配音員'}</strong> 發起了一筆請款。</p>
+           <p>金額:${currency} ${amount}｜發票號:${invoiceNumber}｜狀態:待上傳發票</p>
+           <p><a href="${ADMIN_PAYOUTS}">前往請款單後台 →</a></p>`,
+  }).catch(() => {});
+
   return NextResponse.json({ ok: true, request: data });
 }
 
 export async function PATCH(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id');
+  const r = await resolveTalentFromRequest(request, 'id, name');
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
-  const talentId = (r.talent as { id: string }).id;
+  const talent = r.talent as { id: string; name?: string | null };
+  const talentId = talent.id;
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
@@ -80,7 +96,7 @@ export async function PATCH(request: NextRequest) {
   if (body.consent !== true) return NextResponse.json({ error: '請先勾選同意以此開立發票。' }, { status: 400 });
 
   // 只能改自己的、且尚未撥款的請款單。
-  const { data: pr } = await r.db.from('payout_requests').select('id, status').eq('id', id).eq('talent_id', talentId).maybeSingle();
+  const { data: pr } = await r.db.from('payout_requests').select('id, status, invoice_number, amount, currency').eq('id', id).eq('talent_id', talentId).maybeSingle();
   if (!pr) return NextResponse.json({ error: 'not your request' }, { status: 403 });
   if (pr.status === 'paid') return NextResponse.json({ error: '已撥款,無法修改。' }, { status: 400 });
 
@@ -88,5 +104,15 @@ export async function PATCH(request: NextRequest) {
     invoice_url: url, consent_at: new Date().toISOString(), status: 'invoice_uploaded', updated_at: new Date().toISOString(),
   }).eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // 通知帳務:發票已上傳 + 已同意 → 可審核撥款(這步最需要提醒)。best-effort。
+  sendEmail({
+    category: 'BILLING', to: BILLING_TO,
+    subject: `發票已上傳,可撥款 · ${pr.invoice_number || id}`,
+    html: `<p><strong>${talent.name || '配音員'}</strong> 已上傳發票並同意開立,可審核撥款。</p>
+           <p>金額:${pr.currency || ''} ${pr.amount ?? ''}｜發票號:${pr.invoice_number || '—'}</p>
+           <p><a href="${ADMIN_PAYOUTS}">前往請款單後台 →</a></p>`,
+  }).catch(() => {});
+
   return NextResponse.json({ ok: true });
 }
