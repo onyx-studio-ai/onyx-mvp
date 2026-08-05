@@ -212,7 +212,7 @@ export default function PayoutsPage() {
   const totalPending = summaries.reduce((sum, s) => sum + s.pendingEarnings, 0);
   const totalPaid = summaries.reduce((sum, s) => sum + s.paidEarnings, 0);
   // 幣別不混加:各幣別分開列(NT$/US$)。money()/joinCur() 是全頁唯一的金額格式化入口。
-  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', CNY: '¥', GBP: '£', EUR: '€' };
+  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', CNY: '¥', HKD: 'HK$', GBP: '£', EUR: '€' };
   const money = (n: number, cur = 'TWD') => `${SYM[cur] || `${cur} `}${(Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   const joinCur = (pick: (c: { pending: number; paid: number; total: number }) => number, byCur: Record<string, { pending: number; paid: number; total: number }>) => {
     const parts = Object.entries(byCur).filter(([, v]) => pick(v) > 0).map(([cur, v]) => money(pick(v), cur));
@@ -1063,7 +1063,7 @@ function ManualEntryModal({
           <div>
             <label className="block text-xs text-gray-600 mb-1">幣別(這筆案跟客戶談定的幣別)</label>
             <select value={dealCur} onChange={(e) => setDealCur(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              {['TWD', 'USD'].map((c) => <option key={c} value={c}>{c}</option>)}
+              {['TWD', 'USD', 'HKD', 'CNY'].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
@@ -1116,7 +1116,7 @@ function ManualEntryModal({
               <div className="flex justify-between items-baseline">
                 <span className="text-xs text-gray-600">Wing&apos;s Net:</span>
                 <span className={`text-lg font-bold font-mono ${marginColor.text}`}>
-                  {(dealCur === 'TWD' ? 'NT$' : 'US$') + wingNet.toFixed(2)}
+                  {({ TWD: 'NT$', USD: 'US$', HKD: 'HK$', CNY: '¥' }[dealCur] || dealCur + ' ') + wingNet.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-baseline">
