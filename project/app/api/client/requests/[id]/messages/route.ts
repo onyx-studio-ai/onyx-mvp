@@ -47,8 +47,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .select('id, sender_type, sender_name, body, created_at').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Nudge Onyx so they pick it up in the admin — include the message itself.
-  const note = newMessageEmail({ briefNumber: r.brief.brief_number || id, url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai'}/admin/requests`, body, senderName: r.brief.client_name || '客戶', locale: 'zh-TW' });
-  sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: `客戶回覆 · ${r.brief.brief_number || id}`, html: note.html }).catch(() => {});
+  // 客戶回覆由後台「訊息」未讀徽章看到,不寄自我 email(Wing 2026-08-05)。
   return NextResponse.json({ message: msg });
 }
