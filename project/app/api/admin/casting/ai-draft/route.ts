@@ -76,7 +76,7 @@ const SYSTEM = `你是 Onyx Studios 的後台發案助手,幫老闆 Wing 用最�
 type Msg = { role: 'user' | 'assistant'; content: string };
 
 async function askKimi(apiKey: string, system: string, msgs: Msg[]) {
-  const model = process.env.KIMI_MODEL || 'kimi-k2.5';
+  const model = process.env.KIMI_MODEL || 'kimi-k2.6';   // Wing 帳號實列:kimi-k3 / k2.7-code(×2) / k2.6(2026-08-05 驗證)
   const res = await fetch('https://api.moonshot.ai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
