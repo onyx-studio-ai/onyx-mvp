@@ -29,8 +29,13 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
   const [twdOn, setTwdOn] = useState(false);
   const [usdOn, setUsdOn] = useState(false);
   const [usdMethod, setUsdMethod] = useState<'bank' | 'paypal'>('bank');
+  const [hkdOn, setHkdOn] = useState(false);
+  const [cnyOn, setCnyOn] = useState(false);
+  const [cnyMethod, setCnyMethod] = useState<'bank' | 'alipay'>('bank');
   const [twd, setTwd] = useState<Record<string, string>>({});
   const [usd, setUsd] = useState<Record<string, string>>({});
+  const [hkd, setHkd] = useState<Record<string, string>>({});
+  const [cny, setCny] = useState<Record<string, string>>({});
   const [taxLoc, setTaxLoc] = useState<'TW' | 'overseas' | ''>('');
   const [twResident, setTwResident] = useState(false);
   const [tax, setTax] = useState<Record<string, string>>({});
@@ -50,6 +55,10 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
         const tx0 = j.tax && typeof j.tax === 'object' ? j.tax : {};
         if (tw) { setTwdOn(true); setTwd(tw); }
         if (us) { setUsdOn(true); setUsd(us); setUsdMethod(us.method === 'paypal' ? 'paypal' : 'bank'); }
+        const hk = j.hkd && typeof j.hkd === 'object' ? j.hkd : null;
+        const cn = j.cny && typeof j.cny === 'object' ? j.cny : null;
+        if (hk) { setHkdOn(true); setHkd(hk); }
+        if (cn) { setCnyOn(true); setCny(cn); setCnyMethod(cn.method === 'alipay' ? 'alipay' : 'bank'); }
         setTaxLoc(tx0.tax_location || '');
         setTwResident(tx0.tw_resident === true);
         setTax({ national_id: tx0.national_id || '', tax_address: tx0.tax_address || '', tax_id: tx0.tax_id || '' });
@@ -61,6 +70,8 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
 
   const setT = (k: string, v: string) => { setTwd((p) => ({ ...p, [k]: v })); setMsg(''); };
   const setU = (k: string, v: string) => { setUsd((p) => ({ ...p, [k]: v })); setMsg(''); };
+  const setH = (k: string, v: string) => { setHkd((p) => ({ ...p, [k]: v })); setMsg(''); };
+  const setC = (k: string, v: string) => { setCny((p) => ({ ...p, [k]: v })); setMsg(''); };
   const setTx = (k: string, v: string) => { setTax((p) => ({ ...p, [k]: v })); setMsg(''); };
   const inputCls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-amber-400/60';
   const lbl = 'block text-xs text-gray-300 mb-1';
@@ -70,9 +81,11 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
     const payload = {
       twd: twdOn ? twd : undefined,
       usd: usdOn ? { ...usd, method: usdMethod } : undefined,
+      hkd: hkdOn ? hkd : undefined,
+      cny: cnyOn ? { ...cny, method: cnyMethod } : undefined,
       tax: { tax_location: taxLoc, tw_resident: twResident, national_id: tax.national_id || '', tax_address: tax.tax_address || '', tax_id: tax.tax_id || '' },
     };
-    const errs = validatePayout({ twd: payload.twd, usd: payload.usd, tax_location: taxLoc, tw_resident: twResident, national_id: tax.national_id, tax_address: tax.tax_address } as PayoutInput);
+    const errs = validatePayout({ twd: payload.twd, usd: payload.usd, hkd: payload.hkd, cny: payload.cny, tax_location: taxLoc, tw_resident: twResident, national_id: tax.national_id, tax_address: tax.tax_address } as PayoutInput);
     if (errs.length) { setErr(errs[0].msg); return; }
     setBusy(true);
     try {
@@ -199,7 +212,44 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
         </div>
       )}
 
-      <p className="text-[11px] text-gray-300 mb-3">{tx('※ 請至少填一種收款方式(台幣或美金);請款時選哪種幣別,就要有對應那組帳戶。', '※ 请至少填一种收款方式(台币或美金);请款时选哪种币别,就要有对应那组账户。', '※ Fill at least one (TWD or USD); the currency you request must have a matching account.')}</p>
+      {/* 港幣收款(香港案)*/}
+      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={hkdOn} onChange={(e) => { setHkdOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>{tx('港幣收款(HKD)', '港币收款(HKD)', 'HKD payout')}</span></label>
+      {hkdOn && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 pl-6">
+          <div className="sm:col-span-2"><label className={lbl}>{tx('戶名(法定)', '户名(法定)', 'Account holder')} *</label><input className={inputCls} value={hkd.account_holder || ''} onChange={(e) => setH('account_holder', e.target.value)} /></div>
+          <div><label className={lbl}>{tx('銀行名稱', '银行名称', 'Bank')} *</label><input className={inputCls} value={hkd.bank_name || ''} onChange={(e) => setH('bank_name', e.target.value)} placeholder={tx('例如:匯豐 HSBC', '例如:汇丰 HSBC', 'e.g. HSBC')} /></div>
+          <div><label className={lbl}>{tx('銀行代碼(3碼,選填)', '银行代码(3码,选填)', 'Bank code (3 digits, optional)')}</label><input className={inputCls} value={hkd.bank_code || ''} onChange={(e) => setH('bank_code', e.target.value)} placeholder="004" /></div>
+          <div><label className={lbl}>{tx('帳號', '账号', 'Account number')} *</label><input className={inputCls} value={hkd.account_number || ''} onChange={(e) => setH('account_number', e.target.value)} /></div>
+          <div><label className={lbl}>{tx('轉數快 FPS ID(選填)', '转数快 FPS ID(选填)', 'FPS ID (optional)')}</label><input className={inputCls} value={hkd.fps_id || ''} onChange={(e) => setH('fps_id', e.target.value)} /></div>
+        </div>
+      )}
+
+      {/* 人民幣收款(大陸案)*/}
+      <label className="flex items-center gap-2 mb-2 cursor-pointer"><input type="checkbox" className="accent-amber-500" checked={cnyOn} onChange={(e) => { setCnyOn(e.target.checked); setMsg(''); }} /><span className={secTitle}>{tx('人民幣收款(CNY)', '人民币收款(CNY)', 'CNY payout')}</span></label>
+      {cnyOn && (
+        <div className="mb-4 pl-6">
+          <div className="flex gap-2 mb-3">
+            {(['bank', 'alipay'] as const).map((m) => (
+              <button key={m} type="button" onClick={() => { setCnyMethod(m); setMsg(''); }} className={`text-xs px-3 py-1.5 rounded-full border transition ${cnyMethod === m ? 'bg-amber-500/20 border-amber-400/50 text-amber-200' : 'bg-white/5 border-white/10 text-gray-300 hover:text-white'}`}>
+                {m === 'bank' ? tx('銀行卡', '银行卡', 'Bank card') : tx('支付寶', '支付宝', 'Alipay')}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2"><label className={lbl}>{tx('戶名(與證件一致)', '户名(与证件一致)', 'Account holder')} *</label><input className={inputCls} value={cny.account_holder || ''} onChange={(e) => setC('account_holder', e.target.value)} /></div>
+            {cnyMethod === 'bank' ? (
+              <>
+                <div><label className={lbl}>{tx('開戶行(含支行)', '开户行(含支行)', 'Bank (incl. branch)')} *</label><input className={inputCls} value={cny.bank_name || ''} onChange={(e) => setC('bank_name', e.target.value)} placeholder={tx('例如:中國銀行上海分行XX支行', '例如:中国银行上海分行XX支行', 'e.g. Bank of China Shanghai XX branch')} /></div>
+                <div><label className={lbl}>{tx('銀行卡號', '银行卡号', 'Card number')} *</label><input className={inputCls} value={cny.account_number || ''} onChange={(e) => setC('account_number', e.target.value)} /></div>
+              </>
+            ) : (
+              <div className="sm:col-span-2"><label className={lbl}>{tx('支付寶帳號(手機/Email)', '支付宝账号(手机/Email)', 'Alipay account')} *</label><input className={inputCls} value={cny.alipay_id || ''} onChange={(e) => setC('alipay_id', e.target.value)} /></div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <p className="text-[11px] text-gray-300 mb-3">{tx('※ 請至少填一種收款方式(台幣/美金/港幣/人民幣);請款時選哪種幣別,就要有對應那組帳戶。', '※ 请至少填一种收款方式(台币/美金/港币/人民币);请款时选哪种币别,就要有对应那组账户。', '※ Fill at least one (TWD / USD / HKD / CNY); the currency you request must have a matching account.')}</p>
 
       <button onClick={save} disabled={busy} className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-5 py-2 text-sm transition">
         {busy ? tx('儲存中…', '保存中…', 'Saving…') : tx('儲存收款資料', '保存收款资料', 'Save payout details')}
@@ -266,7 +316,7 @@ function PayoutRequest({ tx, pending, pendingText }: { tx: (a: string, b: string
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
         <div><label className={lbl}>{tx('金額', '金额', 'Amount')} *</label><input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
         <div><label className={lbl}>{tx('幣別', '币别', 'Currency')}</label>
-          <select className={`${inputCls} cursor-pointer`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['TWD', 'USD'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
+          <select className={`${inputCls} cursor-pointer`} value={currency} onChange={(e) => setCurrency(e.target.value)}>{['TWD', 'USD', 'HKD', 'CNY'].map((c) => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}</select>
         </div>
         <div className="sm:col-span-2"><label className={lbl}>{tx('備註(選填)', '备注(选填)', 'Note (optional)')}</label><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></div>
       </div>
@@ -408,7 +458,7 @@ export default function TalentEarningsPage() {
   }, []);
 
   // 幣別跟訂單走(之前寫死 US$,台幣案被顯示成美金)。
-  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', CNY: '¥', GBP: '£', EUR: '€' };
+  const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', CNY: '¥', HKD: 'HK$', GBP: '£', EUR: '€' };
   const money = (n: number, cur = 'TWD') => `${SYM[cur] || `${cur} `}${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   // 各幣別分開列,不混加(例:NT$1,650 + US$300)
   const moneyByCur = (key: 'paid' | 'pending' | 'total') => {
