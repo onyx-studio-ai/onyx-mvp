@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { encryptJson, decryptJson, payoutEncConfigured } from '@/lib/payout-crypto';
-import { validatePayout, hasTwd, hasUsd, type PayoutInput } from '@/lib/payout-validation';
+import { validatePayout, hasTwd, hasUsd, hasHkd, hasCny, type PayoutInput } from '@/lib/payout-validation';
 
 /*
   GET/PUT /api/talent/payout-details — 配音員自己的收款資料(session-scoped),加密存
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const { data } = await r.db.from('talent_payout_details').select('enc_payload, completed').eq('talent_id', (r.talent as { id: string }).id).maybeSingle();
   let p: Record<string, unknown> = {};
   if (data?.enc_payload) { try { p = decryptJson(data.enc_payload as string); } catch { p = {}; } }
-  return NextResponse.json({ configured: true, twd: p.twd || null, usd: p.usd || null, tax: p.tax || {}, completed: !!data?.completed });
+  return NextResponse.json({ configured: true, twd: p.twd || null, usd: p.usd || null, hkd: p.hkd || null, cny: p.cny || null, tax: p.tax || {}, completed: !!data?.completed });
 }
 
 export async function PUT(request: NextRequest) {
@@ -32,22 +32,24 @@ export async function PUT(request: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
-  const tin = obj(body.twd), uin = obj(body.usd), tax = obj(body.tax);
+  const tin = obj(body.twd), uin = obj(body.usd), hin = obj(body.hkd), cin = obj(body.cny), tax = obj(body.tax);
   const twd = { account_holder: S(tin.account_holder, 120), bank_name: S(tin.bank_name, 120), bank_branch: S(tin.bank_branch, 120), bank_code: S(tin.bank_code, 20), account_number: S(tin.account_number, 60) };
   const usd = { method: uin.method === 'paypal' ? 'paypal' : 'bank', account_holder: S(uin.account_holder, 120), bank_name: S(uin.bank_name, 120), bank_address: S(uin.bank_address, 200), swift: S(uin.swift, 30).toUpperCase(), iban: S(uin.iban, 60).toUpperCase(), account_number: S(uin.account_number, 60), paypal_email: S(uin.paypal_email, 200) };
+  const hkd = { account_holder: S(hin.account_holder, 120), bank_name: S(hin.bank_name, 120), bank_code: S(hin.bank_code, 10), account_number: S(hin.account_number, 60), fps_id: S(hin.fps_id, 60) };
+  const cny = { method: cin.method === 'alipay' ? 'alipay' : 'bank', account_holder: S(cin.account_holder, 120), bank_name: S(cin.bank_name, 160), account_number: S(cin.account_number, 40), alipay_id: S(cin.alipay_id, 120) };
   const taxLocation = tax.tax_location === 'TW' ? 'TW' : tax.tax_location === 'overseas' ? 'overseas' : '';
   const twResident = taxLocation === 'TW' ? (tax.tw_resident === true || tax.tw_resident === 'true') : false;
   const nationalId = S(tax.national_id, 40).toUpperCase();
   const taxAddress = S(tax.tax_address, 300);
   const taxId = S(tax.tax_id, 40).toUpperCase();   // 稅籍編號(選填):台灣可填身分證,海外填 Tax ID;有填才置入發票賣方欄
 
-  const forVal: PayoutInput = { twd, usd, tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress };
+  const forVal: PayoutInput = { twd, usd, hkd, cny, tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress };
   const errs = validatePayout(forVal);
   if (errs.length) return NextResponse.json({ error: 'invalid', fields: errs }, { status: 400 });
 
-  const useTwd = hasTwd(forVal), useUsd = hasUsd(forVal);
-  const payload = { twd: useTwd ? twd : null, usd: useUsd ? usd : null, tax: { tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress, tax_id: taxId } };
-  const method = [useTwd ? 'twd' : '', useUsd ? (usd.method === 'paypal' ? 'usd_paypal' : 'usd_bank') : ''].filter(Boolean).join(',');
+  const useTwd = hasTwd(forVal), useUsd = hasUsd(forVal), useHkd = hasHkd(forVal), useCny = hasCny(forVal);
+  const payload = { twd: useTwd ? twd : null, usd: useUsd ? usd : null, hkd: useHkd ? hkd : null, cny: useCny ? cny : null, tax: { tax_location: taxLocation, tw_resident: twResident, national_id: nationalId, tax_address: taxAddress, tax_id: taxId } };
+  const method = [useTwd ? 'twd' : '', useUsd ? (usd.method === 'paypal' ? 'usd_paypal' : 'usd_bank') : '', useHkd ? 'hkd' : '', useCny ? (cny.method === 'alipay' ? 'cny_alipay' : 'cny_bank') : ''].filter(Boolean).join(',');
 
   const { error } = await r.db.from('talent_payout_details').upsert({
     talent_id: (r.talent as { id: string }).id,
