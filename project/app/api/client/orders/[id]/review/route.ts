@@ -102,7 +102,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
       notifyTalentTelegram(db, order.talent_id, `✅ 客戶已驗收結案:${title}。感謝您的配音!`);
     }
-    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: `客戶已驗收 · ${order.order_number}`, html: `<p>Order ${order.order_number} approved by client → ${newStatus}.</p>` }).catch(() => {});
+    // 客戶驗收/結案 = 資訊性,不需我方動作;不寄自我 email(Wing 2026-08-05)。
     return NextResponse.json({ ok: true, status: newStatus });
   }
 
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     notifyTalentTelegram(db, order.talent_id, `🔧 客戶要求修改:${title}\n請到後台查看意見並重新交付。${SITE}/talent/opportunities`);
   }
-  sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: `客戶要求修改 · ${order.order_number}`, html: `<p>Order ${order.order_number}: client requested changes.</p><p>${feedback.replace(/</g, '&lt;')}</p>` }).catch(() => {});
-
+  // 客戶要求修改 → 配音員已收到(上面 email + Telegram);訂單回 in_production,
+  // 後台「訂單」徽章看得到,不寄自我 email(Wing 2026-08-05)。
   return NextResponse.json({ ok: true, status: 'in_production' });
 }
