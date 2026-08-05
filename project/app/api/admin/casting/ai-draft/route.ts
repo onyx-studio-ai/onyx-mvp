@@ -30,7 +30,7 @@ const DRAFT_SCHEMA = {
     brief: { type: 'string', description: '案件說明全文(對配音員展示)。照 Onyx 慣例:需求描述+形式+錄音規格(如 48kHz/24bit/mono)+報名時要在「報價說明」注明的事項。目標大陸市場用簡體、英語案用英文、其餘繁中。' },
     audition_script: { type: 'string', description: '試音稿(有指定稿才填;沒有留空=用 demo 應徵)' },
     rate_mode: { type: 'string', enum: ['fixed', 'range', 'upto', 'plus'], description: '報酬型態:固定/區間/最高/起價' },
-    rate_currency: { type: 'string', enum: ['TWD', 'USD', 'CNY', 'EUR', 'GBP', 'JPY'] },
+    rate_currency: { type: 'string', enum: ['TWD', 'USD', 'HKD', 'CNY', 'EUR', 'GBP', 'JPY'] },
     rate_amount: { type: 'string', description: '金額(數字字串);配音員自報價時留空' },
     rate_amount2: { type: 'string', description: '區間上限,非區間留空' },
     rate_unit: { type: 'string', enum: ['整案', '句', '字', '分鐘', '小時'] },
