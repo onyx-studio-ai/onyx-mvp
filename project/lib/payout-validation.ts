@@ -10,6 +10,9 @@
 export interface PayoutInput {
   twd?: { account_holder?: string; bank_name?: string; bank_branch?: string; bank_code?: string; account_number?: string };
   usd?: { method?: string; account_holder?: string; bank_name?: string; swift?: string; iban?: string; account_number?: string; paypal_email?: string };
+  // 香港戶口(HKD)與大陸收款(CNY:銀行卡 或 支付寶)—— Wing 2026-08-05 加,香港/大陸案請款用
+  hkd?: { account_holder?: string; bank_name?: string; bank_code?: string; account_number?: string; fps_id?: string };
+  cny?: { method?: string; account_holder?: string; bank_name?: string; account_number?: string; alipay_id?: string };
   tax_location?: string; tw_resident?: boolean; national_id?: string; tax_address?: string;
 }
 export interface FieldError { field: string; msg: string }
@@ -25,11 +28,33 @@ const ACCT = /^[A-Za-z0-9]{6,34}$/;
 // 判斷某組是否有填(任一關鍵欄有值)。
 export function hasTwd(d: PayoutInput): boolean { const t = d.twd; return !!t && !!(s(t.account_number) || s(t.bank_name) || s(t.bank_code)); }
 export function hasUsd(d: PayoutInput): boolean { const u = d.usd; return !!u && !!(s(u.account_number) || s(u.paypal_email) || s(u.bank_name)); }
+export function hasHkd(d: PayoutInput): boolean { const h = d.hkd; return !!h && !!(s(h.account_number) || s(h.bank_name) || s(h.fps_id)); }
+export function hasCny(d: PayoutInput): boolean { const c = d.cny; return !!c && !!(s(c.account_number) || s(c.bank_name) || s(c.alipay_id)); }
 
 export function validatePayout(d: PayoutInput): FieldError[] {
   const e: FieldError[] = [];
-  const twd = hasTwd(d), usd = hasUsd(d);
-  if (!twd && !usd) { e.push({ field: 'method', msg: '請至少填一種收款方式(台幣收款 或 美金收款)' }); return e; }
+  const twd = hasTwd(d), usd = hasUsd(d), hkd = hasHkd(d), cny = hasCny(d);
+  if (!twd && !usd && !hkd && !cny) { e.push({ field: 'method', msg: '請至少填一種收款方式(台幣 / 美金 / 港幣 / 人民幣)' }); return e; }
+
+  if (hkd) {
+    const h = d.hkd!;
+    if (s(h.account_holder).length < 2) e.push({ field: 'hkd.account_holder', msg: '港幣帳戶:請填戶名' });
+    if (s(h.bank_name).length < 2) e.push({ field: 'hkd.bank_name', msg: '港幣帳戶:請填銀行名稱' });
+    if (!ACCT.test(s(h.account_number).replace(/[\s-]/g, ''))) e.push({ field: 'hkd.account_number', msg: '港幣帳戶:帳號格式不正確(6–34 碼英數)' });
+    if (s(h.bank_code) && !/^\d{3}$/.test(s(h.bank_code))) e.push({ field: 'hkd.bank_code', msg: '港幣帳戶:銀行代碼為 3 碼數字(選填)' });
+  }
+
+  if (cny) {
+    const c = d.cny!;
+    const m = c.method === 'alipay' ? 'alipay' : 'bank';
+    if (s(c.account_holder).length < 2) e.push({ field: 'cny.account_holder', msg: '人民幣收款:請填戶名(與證件一致)' });
+    if (m === 'alipay') {
+      if (s(c.alipay_id).length < 5) e.push({ field: 'cny.alipay_id', msg: '支付寶:請填帳號(手機或 Email)' });
+    } else {
+      if (s(c.bank_name).length < 2) e.push({ field: 'cny.bank_name', msg: '人民幣銀行卡:請填開戶行(含支行)' });
+      if (!/^\d{8,32}$/.test(s(c.account_number).replace(/[\s-]/g, ''))) e.push({ field: 'cny.account_number', msg: '人民幣銀行卡:卡號格式不正確(純數字)' });
+    }
+  }
 
   if (twd) {
     const t = d.twd!;
