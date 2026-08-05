@@ -117,8 +117,8 @@ export default function AiCastingPage() {
     } catch { setErr('寫入草稿失敗'); }
   }
 
-  const inputCls = 'w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm outline-none focus:border-violet-500 bg-white';
-  const lbl = 'block text-[11px] text-gray-500 mb-0.5';
+  const inputCls = 'w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm outline-none focus:border-gray-900 bg-white transition-colors';
+  const lbl = 'block text-[10px] font-medium tracking-[0.06em] text-gray-400 mb-1';
   const methods = (draft?.methods && typeof draft.methods === 'object' ? draft.methods : { home: false, studio: false, online: false }) as Record<string, boolean>;
 
   return (
@@ -130,28 +130,35 @@ export default function AiCastingPage() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         {/* 左:對話 */}
-        <div className="rounded-2xl border border-gray-200 bg-white flex flex-col h-[74vh]">
+        <div className="rounded-2xl border border-gray-100 shadow-sm bg-white flex flex-col h-[74vh]">
           <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
             {msgs.length === 0 && (
               <div className="text-sm text-gray-500 space-y-2">
                 <p>描述你的案子,例如:</p>
                 <button onClick={() => send('我要發一個台灣國語女聲的電話語音案,大概 800 字,預算 NT$3,000 整案,下週五截止試音,居家錄音就可以。')}
-                  className="block text-left w-full rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50 text-gray-600 text-xs">
+                  className="block text-left w-full rounded-xl border border-gray-200 px-3.5 py-2.5 hover:bg-gray-50 hover:border-gray-300 text-gray-600 text-xs leading-relaxed">
                   「台灣國語女聲電話語音,800 字,NT$3,000 整案,下週五截止試音,居家錄音。」
                 </button>
                 <button onClick={() => send('客戶要做四川話的 TTS 對話語料 5 小時,跟之前上海話那批一樣的規格,讓配音員自己報價,九月底截止。')}
-                  className="block text-left w-full rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50 text-gray-600 text-xs">
+                  className="block text-left w-full rounded-xl border border-gray-200 px-3.5 py-2.5 hover:bg-gray-50 hover:border-gray-300 text-gray-600 text-xs leading-relaxed">
                   「四川話 TTS 對話語料 5 小時,規格同上海話那批,自報價,九月底截止。」
                 </button>
               </div>
             )}
             {msgs.map((m, i) => (
-              <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm whitespace-pre-wrap ${m.role === 'user' ? 'bg-violet-600 text-white' : 'bg-gray-100 text-gray-800'}`}>{m.content}</div>
-              </div>
+              m.role === 'user' ? (
+                <div key={i} className="flex justify-end">
+                  <div className="max-w-[85%] rounded-2xl rounded-br-md bg-gray-900 text-white px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                </div>
+              ) : (
+                <div key={i} className="flex items-start gap-2.5 pr-6">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">AI</div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                </div>
+              )
             ))}
             {busy && (
-              <div className="rounded-xl border border-violet-200 bg-violet-50/60 px-4 py-3 space-y-1.5">
+              <div className="ml-8 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 space-y-1.5">
                 {STEPS.map((st, i) => (
                   <div key={st} className={`flex items-center gap-2 text-xs ${i < stepIdx ? 'text-gray-400' : i === stepIdx ? 'text-violet-700 font-medium' : 'text-gray-300'}`}>
                     {i < stepIdx ? <span>✓</span> : i === stepIdx ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" /> : <span className="inline-block h-3 w-3 rounded-full border border-gray-300" />}
@@ -164,20 +171,22 @@ export default function AiCastingPage() {
             {err && <p className="text-xs text-red-600">{err}</p>}
             <div ref={endRef} />
           </div>
-          <div className="border-t border-gray-200 p-3 flex gap-2 shrink-0">
-            <textarea value={input} onChange={(e) => setInput(e.target.value)} rows={2}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="描述你的案子…(Enter 送出,Shift+Enter 換行)"
-              className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-violet-500" />
-            <button onClick={() => send()} disabled={busy || !input.trim()}
-              className="self-end inline-flex items-center gap-1.5 text-sm bg-gray-900 hover:bg-gray-700 text-white rounded-lg px-4 py-2 disabled:opacity-40">
-              <Send className="w-4 h-4" />
-            </button>
+          <div className="border-t border-gray-100 p-3 shrink-0">
+            <div className="flex items-end gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm focus-within:border-gray-400">
+              <textarea value={input} onChange={(e) => setInput(e.target.value)} rows={2}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                placeholder="描述你的案子…(Enter 送出,Shift+Enter 換行)"
+                className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-gray-400" />
+              <button onClick={() => send()} disabled={busy || !input.trim()}
+                className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-30">
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* 右:即時草稿 */}
-        <div className="rounded-2xl border border-gray-200 bg-white flex flex-col h-[74vh]">
+        <div className="rounded-2xl border border-gray-100 shadow-sm bg-white flex flex-col h-[74vh]">
           <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between shrink-0">
             <p className="text-sm font-semibold text-gray-900">📋 案件草稿(即時)</p>
             {draft ? (complete
@@ -257,7 +266,7 @@ export default function AiCastingPage() {
           </div>
           <div className="border-t border-gray-200 p-3 flex items-center gap-2 shrink-0">
             <button onClick={applyDraft} disabled={!draft || !sv('title')}
-              className="inline-flex items-center gap-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-lg px-4 py-2 disabled:opacity-40">
+              className="inline-flex items-center gap-1.5 text-sm bg-gray-900 hover:bg-gray-700 text-white font-semibold rounded-full px-5 py-2.5 disabled:opacity-30 transition-colors">
               帶入發案表單發佈 <ArrowRight className="w-4 h-4" />
             </button>
             <button onClick={() => { setMsgs([]); setDraft(null); setComplete(false); }} className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 px-2">
