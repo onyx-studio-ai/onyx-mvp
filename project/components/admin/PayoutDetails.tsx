@@ -47,6 +47,8 @@ export default function PayoutDetails({ talentId, gross, currency }: { talentId:
   const x = d!.details as Record<string, unknown>;
   const twd = x.twd && typeof x.twd === 'object' ? x.twd as Record<string, string> : null;
   const usd = x.usd && typeof x.usd === 'object' ? x.usd as Record<string, string> : null;
+  const hkd = x.hkd && typeof x.hkd === 'object' ? x.hkd as Record<string, string> : null;
+  const cny = x.cny && typeof x.cny === 'object' ? x.cny as Record<string, string> : null;
   const t0 = (x.tax && typeof x.tax === 'object' ? x.tax : {}) as Record<string, unknown>;
   const taxLocation = t0.tax_location === 'TW' ? 'TW' : 'overseas';
   const twRes = t0.tw_resident === true;
@@ -101,6 +103,23 @@ export default function PayoutDetails({ talentId, gross, currency }: { talentId:
               <Row k="IBAN" v={usd.iban} />
             </>
           )}
+        </div>
+      )}
+      {hkd && (
+        <div className={(twd || usd) ? 'border-t border-violet-200 mt-1.5 pt-1.5' : ''}>
+          <div className="font-medium text-violet-800 mb-0.5">港幣收款(HKD)</div>
+          <Row k="戶名" v={hkd.account_holder} />
+          <Row k="銀行" v={hkd.bank_name} />
+          <Row k="銀行代碼" v={hkd.bank_code} />
+          <Row k="帳號" v={hkd.account_number} />
+          <Row k="FPS" v={hkd.fps_id} />
+        </div>
+      )}
+      {cny && (
+        <div className={(twd || usd || hkd) ? 'border-t border-violet-200 mt-1.5 pt-1.5' : ''}>
+          <div className="font-medium text-violet-800 mb-0.5">人民幣收款 · {cny.method === 'alipay' ? '支付寶' : '銀行卡'}</div>
+          <Row k="戶名" v={cny.account_holder} />
+          {cny.method === 'alipay' ? <Row k="支付寶" v={cny.alipay_id} /> : (<><Row k="開戶行" v={cny.bank_name} /><Row k="卡號" v={cny.account_number} /></>)}
         </div>
       )}
       <div className="border-t border-violet-200 mt-1.5 pt-1.5">
