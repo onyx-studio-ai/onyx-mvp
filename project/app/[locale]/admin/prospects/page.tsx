@@ -43,7 +43,7 @@ export default function ProspectsAdmin() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [briefs, setBriefs] = useState<{ id: string; title: string; language: string; kind: string }[]>([]);
   const [caseId, setCaseId] = useState('');
-  const [preview, setPreview] = useState<{ eligible: number; cooldown_excluded: number; sample: { name: string | null; email: string; lang: string }[] } | null>(null);
+  const [preview, setPreview] = useState<{ eligible: number; cooldown_excluded: number; sample: { name: string | null; email: string; lang: string }[]; emails?: { lang: string; forName: string; subject: string; html: string }[] } | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -187,11 +187,22 @@ export default function ProspectsAdmin() {
               {inviteBusy ? '處理中…' : '確認寄送'}</button>
           </div>
           {preview && (
-            <p className="text-xs text-gray-200 mt-2">
-              可寄 <b className="text-white">{preview.eligible}</b> 人{preview.cooldown_excluded > 0 ? `(冷卻期內已邀、排除 ${preview.cooldown_excluded} 人)` : ''}
-              {preview.sample?.length ? ` · 例:${preview.sample.slice(0, 5).map((s) => s.name || s.email).join('、')}…` : ''}
-              　—　語言自動配對(英/簡/繁)。確認無誤按「確認寄送」。
-            </p>
+            <>
+              <p className="text-xs text-gray-200 mt-2">
+                可寄 <b className="text-white">{preview.eligible}</b> 人{preview.cooldown_excluded > 0 ? `(冷卻期內已邀、排除 ${preview.cooldown_excluded} 人)` : ''}
+                {preview.sample?.length ? ` · 例:${preview.sample.slice(0, 5).map((s) => s.name || s.email).join('、')}…` : ''}
+                　—　語言自動配對(英/簡/繁),確認無誤按「確認寄送」。
+              </p>
+              {/* 實際會寄出的信(依語言各一封範例) */}
+              {preview.emails?.map((em) => (
+                <div key={em.lang} className="mt-2 rounded-lg bg-white text-gray-900 overflow-hidden border border-gray-300">
+                  <div className="px-3 py-1.5 bg-gray-100 border-b border-gray-200 text-[11px] text-gray-600">
+                    {em.lang === 'en' ? '英文版' : em.lang === 'zh-CN' ? '簡體版' : '繁中版'} · 給 {em.forName} · <b>{em.subject}</b>
+                  </div>
+                  <div className="p-3 max-h-72 overflow-auto text-sm" dangerouslySetInnerHTML={{ __html: em.html }} />
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}
