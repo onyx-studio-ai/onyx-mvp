@@ -91,36 +91,7 @@ export async function POST(request: NextRequest) {
       await getSupabaseServiceClient().from('marketplace_briefs').update({ requested_talent_id: reqTalentId }).eq('id', briefId);
     }
 
-    const row = (label: string, val: unknown) =>
-      val ? `<tr><td style="padding:4px 12px 4px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">${label}</td><td style="padding:4px 0;color:#111;">${esc(val)}</td></tr>` : '';
-
-    // 1) Notify Onyx team
-    const teamHtml = `<div style="font-family:system-ui,sans-serif;max-width:560px;">
-      <h2 style="margin:0 0 12px;">新配音需求 / New voiceover brief</h2>
-      <table style="font-size:14px;border-collapse:collapse;">
-        ${row('Email', email)}
-        ${row('稱呼 Name', b.name)}
-        ${row('公司 Company', b.company)}
-        ${row('類型 Type', typeLabel)}
-        ${row('含唱歌 Singing', b.has_singing ? 'Yes' : '')}
-        ${row('媒體 Media', b.media_scope)}
-        ${row('地區 Territory', b.territory)}
-        ${row('授權 License', b.license_term)}
-        ${row('語言 Language', b.language)}
-        ${row('長度 Length', b.length)}
-        ${row('預算 Budget', b.budget ? `${b.budget_type || ''} ${b.budget}`.trim() + (b.budget_unit ? ` / ${b.budget_unit}` : '') : '')}
-        ${row('試音截止 Audition', b.audition_deadline)}
-        ${row('交付截止 Delivery', b.deadline)}
-        ${row('聲音導演 Director', b.wants_director ? 'Yes' : '')}
-        ${row('線上同步錄音 Live', b.wants_live_session ? (b.live_session_tool ? `Yes (${b.live_session_tool})` : 'Yes') : '')}
-        ${row('稿件 Script', [b.script_type === 'final' ? '正式稿' : b.script_type === 'audition' ? '試音稿' : '', b.script_text ? '(已附文字稿)' : '', b.script_file_url ? '(已附檔案)' : ''].filter(Boolean).join(' '))}
-        ${row('參考聲音 Ref', b.ref_audio_url)}
-        ${row('語系 Locale', b.locale)}
-      </table>
-      <p style="margin:14px 0 4px;color:#6b7280;font-size:13px;">需求說明 / Brief:</p>
-      <p style="white-space:pre-wrap;background:#f4f4f5;border-radius:8px;padding:12px;font-size:14px;color:#111;">${esc(b.brief)}</p>
-    </div>`;
-    await sendEmail({ category: 'HELLO', to: 'hello@onyxstudios.ai', subject: `新配音需求 — ${b.name || email}${typeLabel ? ` (${typeLabel})` : ''}`, html: teamHtml, replyTo: email });
+    // 新配音需求由後台「客戶請求」徽章看到,不寄自我 email 給 hello@(Wing 2026-08-05)。
 
     // 2) Provision a client account (so they can log in to /dashboard and track this
     //    request) + a set-password link. Best-effort; reuses an existing user if the
