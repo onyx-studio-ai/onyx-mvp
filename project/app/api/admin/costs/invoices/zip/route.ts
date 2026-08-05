@@ -13,7 +13,7 @@ import { getSupabaseServiceClient, storagePathFromRef } from '@/lib/supabase-ser
 */
 export const maxDuration = 60;
 
-const BUCKET = 'casting';
+const BUCKET = 'invoices'; // 私有發票桶(2026-08-05 自 casting 公開桶搬移)
 const PERIOD_RE = /^\d{4}-\d{2}$/;
 const clean = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, ' ').trim().slice(0, 60) || '_';
 const extOf = (url: string) => { const m = url.split('?')[0].match(/\.([a-z0-9]{1,5})$/i); return m ? m[1].toLowerCase() : 'pdf'; };
