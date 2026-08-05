@@ -2005,9 +2005,9 @@ export function payoutPaidEmail(p: PayoutPaidPayload): { subject: string; html: 
     : tx('您好,', '您好,', 'Hello,');
 
   const intro = tx(
-    '您的款項已完成撥付。以下為本次撥款明細,請留存此撥款證明碼備查。若對金額或扣繳有疑問,歡迎回覆本信與我們的會計聯繫。',
-    '您的款项已完成拨付。以下为本次拨款明细,请留存此拨款证明码备查。若对金额或扣缴有疑问,欢迎回复本信与我们的会计联系。',
-    'Your payment has been sent. Below is the breakdown for this payout — please keep the payout reference for your records. If you have any questions about the amount or withholding, just reply to this email and our finance team will help.',
+    '您的款項已核准撥付,將於約 7 個工作日內匯出、陸續入帳。以下為本次撥款明細,請留存此撥款證明碼備查。若對金額或扣繳有疑問,歡迎回覆本信與我們的會計聯繫。',
+    '您的款项已核准拨付,将于约 7 个工作日内汇出、陆续入账。以下为本次拨款明细,请留存此拨款证明码备查。若对金额或扣缴有疑问,欢迎回复本信与我们的会计联系。',
+    'Your payment has been released and will be issued within about 7 working days. Below is the breakdown for this payout — please keep the payout reference for your records. If you have any questions about the amount or withholding, just reply to this email and our finance team will help.',
   );
 
   const disclaimer = tx(
@@ -2017,7 +2017,7 @@ export function payoutPaidEmail(p: PayoutPaidPayload): { subject: string; html: 
   );
 
   const content = `
-    ${headlineBlock(tx('款項已撥付', '款项已拨付', 'Payment Sent'), tx('感謝您與 Onyx Studios 的合作。', '感谢您与 Onyx Studios 的合作。', 'Thank you for working with Onyx Studios.'), BRAND_GREEN)}
+    ${headlineBlock(tx('款項已核准撥付', '款项已核准拨付', 'Payment Released'), tx('約 7 個工作日內入帳 · 感謝您與 Onyx Studios 的合作。', '约 7 个工作日内入账 · 感谢您与 Onyx Studios 的合作。', 'Arriving within ~7 working days · Thank you for working with Onyx Studios.'), BRAND_GREEN)}
     ${bodyCard(tx('收款通知', '收款通知', 'Payout Notice'), `
       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0 0 8px;">${greeting}</p>
       <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${intro}</p>
@@ -2031,9 +2031,9 @@ export function payoutPaidEmail(p: PayoutPaidPayload): { subject: string; html: 
 
   return {
     subject: tx(
-      `Onyx Studios — 款項已撥付 ${p.certificateCode}`,
-      `Onyx Studios — 款项已拨付 ${p.certificateCode}`,
-      `Onyx Studios — Payment Sent · ${p.certificateCode}`,
+      `Onyx Studios — 款項已核准撥付(約 7 天內入帳)${p.certificateCode}`,
+      `Onyx Studios — 款项已核准拨付(约 7 天内入账)${p.certificateCode}`,
+      `Onyx Studios — Payment Released (within ~7 days) · ${p.certificateCode}`,
     ),
     html: baseLayout(content, 'Studios', BRAND_GREEN, ll),
   };
