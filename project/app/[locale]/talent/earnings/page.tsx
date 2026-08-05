@@ -322,9 +322,10 @@ function RequestRow({ r, tx, onChanged }: { r: PayoutReq; tx: (a: string, b: str
     try {
       const u = await authedFetch('/api/talent/invoice-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
       const uj = await u.json(); if (!u.ok) throw new Error(uj.error || 'upload prep failed');
-      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      const { error } = await supabase.storage.from('invoices').uploadToSignedUrl(uj.path, uj.token, file);
       if (error) throw new Error(error.message);
-      const p = await authedFetch('/api/talent/payout-request', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id, invoice_url: uj.publicUrl, consent: true }) });
+      // 私有桶:DB 存 storage path,檢視一律走短效簽名網址(2026-08-05 發票私有化)。
+      const p = await authedFetch('/api/talent/payout-request', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id, invoice_url: uj.path, consent: true }) });
       const pj = await p.json(); if (!p.ok) throw new Error(pj.error || 'save failed');
       onChanged();
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); }
@@ -361,7 +362,18 @@ function RequestRow({ r, tx, onChanged }: { r: PayoutReq; tx: (a: string, b: str
           {err && <p className="text-xs text-red-400">{err}</p>}
         </div>
       )}
-      {done && r.invoice_url && <a href={r.invoice_url} target="_blank" rel="noreferrer" className="text-[11px] text-gray-300 hover:underline mt-1 inline-block">{tx('看已上傳發票', '看已上传发票', 'View uploaded invoice')}</a>}
+      {done && r.invoice_url && (
+        <button
+          onClick={async () => {
+            // 私有桶 → 每次點都換一條 5 分鐘簽名網址(舊資料的公開網址也走同一端點)。
+            const res = await authedFetch(`/api/talent/invoice-upload?id=${r.id}`);
+            const j = await res.json().catch(() => ({}));
+            if (res.ok && j.url) window.open(j.url, '_blank', 'noopener,noreferrer');
+            else setErr(tx('發票開啟失敗,請稍後再試。', '发票打开失败,请稍后再试。', 'Could not open the invoice — please try again.'));
+          }}
+          className="text-[11px] text-gray-300 hover:underline mt-1 inline-block"
+        >{tx('看已上傳發票', '看已上传发票', 'View uploaded invoice')}</button>
+      )}
     </div>
   );
 }
