@@ -203,7 +203,7 @@ async function sendOrderEmails(params: {
 
   await sendEmail({ category: 'PRODUCTION', to: order.email, subject: confirmSubject, html: confirmHtml });
   await sendEmail({ category: 'BILLING', to: order.email, subject: receiptSubject, html: receiptHtml });
-  await sendEmail({ category: 'PRODUCTION', to: productionEmail, subject: adminSubject, html: adminHtml });
+  // 訂單付款由後台「訂單」徽章看到,不寄自我 email(Wing 2026-08-05)。
 }
 
 export async function finalizeOrderPayment(params: {
@@ -324,9 +324,7 @@ export async function finalizeProjectPayment(params: {
       ctaText: '查看製作進度', ctaUrl: link,
     });
     sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
-    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai',
-      subject: `專案已付款 · ${pending.length} 子單`,
-      html: `<p>Brief ${briefId}: ${pending.length} sub-orders paid (txn ${transactionId}).</p>` }).catch(() => {});
+    // 專案付款由後台「訂單」徽章看到,不寄自我 email(Wing 2026-08-05)。
   } catch { /* email best-effort */ }
 
   return { alreadyPaid: false, paid: pending.length, orderNumber: pending[0].order_number };
