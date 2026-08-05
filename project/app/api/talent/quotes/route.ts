@@ -86,10 +86,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Notify Onyx so it can review + mediate (best-effort, branded).
-    const note = quoteReceivedEmail({ talentName: talent.name, briefNumber: brief.brief_number, currency, gross, net: data.net_amount, message });
-    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: note.subject, html: note.html }).catch(() => {});
-
+    // 新報價由後台「案件·發案」看到,不寄自我 email(內部通知走平台。Wing 2026-08-05)。
     return NextResponse.json({ quote: data });
   } catch (err) {
     console.error('[talent/quotes] POST error:', err);
@@ -150,18 +147,7 @@ export async function PATCH(request: NextRequest) {
         .maybeSingle();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-      // Notify Onyx production on EVERY upload (best-effort) so the boss knows a
-      // talent responded — previously this path sent nothing at all.
-      try {
-        const briefId = (cur as { brief_id?: string }).brief_id;
-        const { data: brief } = briefId
-          ? await r.db.from('marketplace_briefs').select('brief_number, title, content_type').eq('id', briefId).maybeSingle()
-          : { data: null };
-        const title = (brief?.title as string) || (brief?.content_type as string) || (brief?.brief_number as string) || '配音案件';
-        const m = extraDemoUploadedEmail({ talentName: talent.name, title, count: arr.length, url: `${SITE}/admin/marketplace` });
-        sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: m.subject, html: m.html }).catch(() => {});
-      } catch { /* notification is best-effort — never block the upload */ }
-
+      // 加傳 demo 由後台「案件·發案」的 demos 徽章看到,不寄自我 email(Wing 2026-08-05)。
       return NextResponse.json({ quote: data });
     }
 
@@ -260,10 +246,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    // Notify Onyx production too (oversight, best-effort). 整批一封。
-    const dnote = deliveryUploadedEmail({ talentName: talent.name, quoteId: data.id, url: lastUrl });
-    sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: dnote.subject, html: dnote.html }).catch(() => {});
-
+    // 配音員交付由後台「訂單」徽章(status=delivered)看到,不寄自我 email(Wing 2026-08-05)。
     return NextResponse.json({ quote: data });
   } catch {
     return NextResponse.json({ error: 'Could not save delivery' }, { status: 500 });
