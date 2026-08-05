@@ -8,7 +8,7 @@ import { getSupabaseServiceClient, supabaseErrorResponse, storagePathFromRef } f
   之後被鎖成私有(專案近期在做 RLS/儲存鎖定)。發票=財務資料 → requireAdminOnly。
   參考 app/api/admin/voice-id/signed-url/route.ts。
 */
-const BUCKET = 'casting';
+const BUCKET = 'invoices'; // 私有發票桶(2026-08-05 自 casting 公開桶搬移)
 
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminOnly(request);
