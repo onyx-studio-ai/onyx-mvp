@@ -1,0 +1,3 @@
+-- ⚠️ 已作廢(superseded by 20260805150000_private_invoices_bucket.sql)。
+-- 本檔原本把 pdf/圖檔加進 casting 桶白名單以救急米雪請款上傳;同日稍後改為正解:
+-- 發票搬去私有 invoices 桶、casting 恢復「不限型別」。請勿執行本檔。
