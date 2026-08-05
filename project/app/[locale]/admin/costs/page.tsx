@@ -250,7 +250,7 @@ function CostCard({ cost, invoices, currentMonth, onEdit, onDelete, onInvoiceCha
     const pj = await prep.json().catch(() => ({}));
     if (!prep.ok) throw new Error(pj.error || t('prepUploadFailed'));
     // 步驟 2:上傳到 casting bucket(同專案發票上傳模式)
-    const { error } = await supabase.storage.from('casting').uploadToSignedUrl(pj.path, pj.token, file);
+    const { error } = await supabase.storage.from('invoices').uploadToSignedUrl(pj.path, pj.token, file);
     if (error) throw new Error(t('fileUploadFailed', { msg: error.message }));
     // 步驟 3:記一筆發票。存 storage path(pj.path)而非公開網址 —— 之後一律用
     // 簽名 URL route 來開,bucket 是公開或私有都不影響。
