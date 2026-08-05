@@ -48,6 +48,15 @@ export default function AiCastingPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [err, setErr] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
+  // Fiverr 式等待進度:純前端輪播(思考型模型 20-40s,給使用者「它在做事」的感覺)
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!busy) { setElapsed(0); return; }
+    const t = setInterval(() => setElapsed((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
+  const STEPS = ['已讀你的需求', '比對平台欄位與語言標準', '檢查還缺哪些關鍵資訊', '整理回覆與文案'];
+  const stepIdx = Math.min(Math.floor(elapsed / 7), STEPS.length - 1);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, draft, busy]);
 
   async function send(text?: string) {
@@ -82,7 +91,7 @@ export default function AiCastingPage() {
   }
 
   return (
-    <div className="p-6 lg:p-10 max-w-3xl">
+    <div className="p-6 lg:p-10 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Sparkles className="w-6 h-6 text-violet-600" /> AI 發案</h1>
         <p className="text-sm text-gray-500 mt-1">用講的就好 —— 把需求丟給 AI,它問齊缺的資訊後產出草稿,帶入發案表單,你檢查後照常發佈。</p>
@@ -90,7 +99,7 @@ export default function AiCastingPage() {
 
       {/* 對話區 */}
       <div className="rounded-2xl border border-gray-200 bg-white">
-        <div className="max-h-[52vh] min-h-[200px] overflow-y-auto p-4 space-y-3">
+        <div className="h-[58vh] min-h-[320px] overflow-y-auto p-4 space-y-3">
           {msgs.length === 0 && (
             <div className="text-sm text-gray-500 space-y-2">
               <p>例如直接貼:</p>
@@ -112,7 +121,17 @@ export default function AiCastingPage() {
               </div>
             </div>
           ))}
-          {busy && <p className="text-xs text-gray-400">AI 思考中…</p>}
+          {busy && (
+            <div className="rounded-xl border border-violet-200 bg-violet-50/60 px-4 py-3 space-y-1.5">
+              {STEPS.map((st, i) => (
+                <div key={st} className={`flex items-center gap-2 text-xs ${i < stepIdx ? 'text-gray-400' : i === stepIdx ? 'text-violet-700 font-medium' : 'text-gray-300'}`}>
+                  {i < stepIdx ? <span>✓</span> : i === stepIdx ? <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" /> : <span className="inline-block h-3 w-3 rounded-full border border-gray-300" />}
+                  <span>{st}</span>
+                </div>
+              ))}
+              <p className="text-[11px] text-gray-400 pt-1">思考中… {elapsed}s(通常 20-40 秒)</p>
+            </div>
+          )}
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div ref={endRef} />
         </div>
@@ -140,7 +159,7 @@ export default function AiCastingPage() {
 
         {/* 輸入列 */}
         <div className="border-t border-gray-200 p-3 flex gap-2">
-          <textarea value={input} onChange={(e) => setInput(e.target.value)} rows={2}
+          <textarea value={input} onChange={(e) => setInput(e.target.value)} rows={3}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="描述你的案子…(Enter 送出,Shift+Enter 換行)"
             className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-violet-500" />
