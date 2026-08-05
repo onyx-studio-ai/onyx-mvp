@@ -81,7 +81,7 @@ async function askKimi(apiKey: string, system: string, msgs: Msg[]) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model, temperature: 0.6, max_tokens: 3000,
+      model, max_tokens: 3000,   // k2.6 思考型模型只接受預設 temperature(=1),不能自訂
       messages: [{ role: 'system', content: system }, ...msgs],
       tools: [{ type: 'function', function: { name: 'case_draft', description: TOOL_DESC, parameters: DRAFT_SCHEMA } }],
     }),
