@@ -73,6 +73,8 @@ const SYSTEM = `你是 Onyx Studios 的後台發案助手,幫老闆 Wing 用最�
 - 分角色案(遊戲/動畫/戲劇):角色資訊寫進 brief;告訴 Wing 角色列表可在表單裡再補。
 - 不確定寧可問,不要猜(尤其對外會展示的內容)。`;
 
+export const maxDuration = 60;   // k2.6 思考型模型單輪可能 20-40s,拉高 Vercel 函式上限
+
 type Msg = { role: 'user' | 'assistant'; content: string };
 
 async function askKimi(apiKey: string, system: string, msgs: Msg[]) {
