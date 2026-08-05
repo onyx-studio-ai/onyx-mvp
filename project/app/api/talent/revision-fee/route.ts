@@ -37,13 +37,6 @@ export async function POST(request: NextRequest) {
   }).eq('id', order.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const cur = (order.currency || 'TWD') === 'USD' ? 'US$' : 'NT$';
-  const grand = (Number(order.talent_price) || 0) + newTotal;
-  sendEmail({
-    category: 'PRODUCTION', to: 'produce@onyxstudios.ai',
-    subject: `修改費已同意 · ${order.order_number}`,
-    html: `<p>${talent.name} 已同意「${order.project_name || ''}${order.role_name ? ' · ' + order.role_name : ''}」本輪修改費 ${cur}${fee}。</p><p>累計修改費 ${cur}${newTotal},總酬勞 ${cur}${grand}。</p>`,
-  }).catch(() => {});
-
+  // 修改費同意由後台訂單頁看到,不寄自我 email(Wing 2026-08-05)。
   return NextResponse.json({ ok: true, revision_fee_total: newTotal });
 }
