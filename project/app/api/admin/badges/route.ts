@@ -98,14 +98,16 @@ export async function GET(request: NextRequest) {
 
     const orchestraPaid = Array.isArray(orchestraRes) ? orchestraRes.length : 0;
 
-    // 請款單待處理 + 人才自助改檔待審核(Wing:有東西要處理,側欄要亮,不點進去也知道)。
-    let pendingPayouts = 0, pendingTalentReview = 0;
+    // 請款單待處理 + 人才自助改檔待審核 + 配音員已交付待驗收(Wing:有東西要處理,側欄要亮,
+    // 不點進去也知道)。deliveredOrders=絕對計數(不受「上次查看」時間影響),處理完狀態才會離開。
+    let pendingPayouts = 0, pendingTalentReview = 0, deliveredOrders = 0;
     try {
-      const [{ count: pp }, { count: pr }] = await Promise.all([
+      const [{ count: pp }, { count: pr }, { count: dv }] = await Promise.all([
         supabase.from('payout_requests').select('id', { count: 'exact', head: true }).in('status', ['pending', 'invoice_uploaded']),
         supabase.from('talents').select('id', { count: 'exact', head: true }).eq('pending_review', true),
+        supabase.from('voice_orders').select('id', { count: 'exact', head: true }).in('status', ['delivered', 'awaiting_final']),
       ]);
-      pendingPayouts = pp || 0; pendingTalentReview = pr || 0;
+      pendingPayouts = pp || 0; pendingTalentReview = pr || 0; deliveredOrders = dv || 0;
     } catch { /* 表缺先回 0 */ }
 
     // 未讀訊息串:每串最後一則非 admin 且晚於已讀時間(admin_thread_reads)。
@@ -128,7 +130,7 @@ export async function GET(request: NextRequest) {
       messages: unreadThreads,
       payoutRequests: pendingPayouts,
       talentReview: pendingTalentReview,
-      orders: (paidVoice || 0) + (paidMusic || 0) + orchestraPaid,
+      orders: (paidVoice || 0) + (paidMusic || 0) + orchestraPaid + deliveredOrders,
       inquiries: newInquiries || 0,
       applications: pendingApps || 0,
       requests: pendingRequests || 0,
