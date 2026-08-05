@@ -39,6 +39,12 @@ export default function ProspectsAdmin() {
   const [busyId, setBusyId] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [add, setAdd] = useState({ email: '', name: '', kind: 'talent', company: '', note: '' });
+  // 邀請:勾選名單 → 選案件 → 預覽 → 寄送
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [briefs, setBriefs] = useState<{ id: string; title: string; language: string; kind: string }[]>([]);
+  const [caseId, setCaseId] = useState('');
+  const [preview, setPreview] = useState<{ eligible: number; cooldown_excluded: number; sample: { name: string | null; email: string; lang: string }[] } | null>(null);
+  const [inviteBusy, setInviteBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setErr('');
@@ -55,6 +61,41 @@ export default function ProspectsAdmin() {
   }, [q, kind, status]);
 
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
+
+  // 載入開放中的案件(選案件下拉用)
+  useEffect(() => {
+    fetch('/api/admin/prospects/invite', { credentials: 'include' })
+      .then((r) => r.json()).then((j) => setBriefs(j.briefs || [])).catch(() => {});
+  }, []);
+
+  const toggleSel = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const activeRows = rows.filter((r) => r.status === 'active');   // 只有可邀的能勾
+  const allVisibleSel = activeRows.length > 0 && activeRows.every((r) => selected.has(r.id));
+  const toggleSelAll = () => setSelected((s) => {
+    const n = new Set(s);
+    if (allVisibleSel) activeRows.forEach((r) => n.delete(r.id)); else activeRows.forEach((r) => n.add(r.id));
+    return n;
+  });
+
+  async function doInvite(send: boolean) {
+    if (!caseId) { alert('請先選一個案件'); return; }
+    if (selected.size === 0) { alert('請先勾選要邀請的人'); return; }
+    setInviteBusy(true);
+    try {
+      const res = await fetch('/api/admin/prospects/invite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ brief_id: caseId, prospect_ids: [...selected], send }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || '失敗');
+      if (send) {
+        alert(`已寄出 ${j.count} 封邀請信。`);
+        setSelected(new Set()); setPreview(null); load();
+      } else {
+        setPreview(j);
+      }
+    } catch (e) { alert(e instanceof Error ? e.message : '失敗'); } finally { setInviteBusy(false); }
+  }
 
   async function setStatusFor(id: string, next: string) {
     setBusyId(id);
@@ -127,14 +168,49 @@ export default function ProspectsAdmin() {
         {chip('已入駐', '', status === 'joined', () => setStatus('joined'))}
       </div>
 
+      {/* 邀請列:勾選 ≥1 人才出現。選案件 → 預覽 → 寄送。永不寄/已入駐不可勾。 */}
+      {selected.size > 0 && (
+        <div className="sticky top-2 z-10 mb-3 border border-gray-900 rounded-xl bg-gray-900 text-white px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold">已選 {selected.size} 人</span>
+            <button onClick={() => { setSelected(new Set()); setPreview(null); }} className="text-xs text-gray-300 underline">清除</button>
+            <span className="mx-1 opacity-40">→</span>
+            <select value={caseId} onChange={(e) => { setCaseId(e.target.value); setPreview(null); }}
+              className="text-sm bg-white text-gray-900 rounded-lg px-2 py-1.5 max-w-xs">
+              <option value="">選一個案件…</option>
+              {briefs.map((bf) => <option key={bf.id} value={bf.id}>{bf.title}{bf.language ? ` · ${bf.language}` : ''}</option>)}
+            </select>
+            <button disabled={inviteBusy || !caseId} onClick={() => doInvite(false)}
+              className="text-sm bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 disabled:opacity-40">預覽</button>
+            <button disabled={inviteBusy || !caseId || !preview} onClick={() => doInvite(true)}
+              className="text-sm bg-[#6FCF97] text-black font-semibold rounded-lg px-3 py-1.5 disabled:opacity-40">
+              {inviteBusy ? '處理中…' : '確認寄送'}</button>
+          </div>
+          {preview && (
+            <p className="text-xs text-gray-200 mt-2">
+              可寄 <b className="text-white">{preview.eligible}</b> 人{preview.cooldown_excluded > 0 ? `(冷卻期內已邀、排除 ${preview.cooldown_excluded} 人)` : ''}
+              {preview.sample?.length ? ` · 例:${preview.sample.slice(0, 5).map((s) => s.name || s.email).join('、')}…` : ''}
+              　—　語言自動配對(英/簡/繁)。確認無誤按「確認寄送」。
+            </p>
+          )}
+        </div>
+      )}
+
       {err && <p className="text-sm text-red-600 mb-3">{err}</p>}
       {loading ? <p className="text-sm text-gray-400 py-10 text-center">載入中…</p> : (
         <>
-          <p className="text-xs text-gray-400 mb-2">顯示 {rows.length} 筆（共 {total}）</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-gray-400">顯示 {rows.length} 筆（共 {total}）</p>
+            <button onClick={toggleSelAll} className="text-xs text-gray-600 hover:text-gray-900 underline">
+              {allVisibleSel ? '取消全選' : '全選本頁(僅可邀)'}</button>
+          </div>
           <div className="space-y-2">
             {rows.map((r) => (
-              <div key={r.id} className="border border-gray-200 rounded-xl px-4 py-3 bg-white">
+              <div key={r.id} className={`border rounded-xl px-4 py-3 bg-white ${selected.has(r.id) ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-200'}`}>
                 <div className="flex items-start justify-between gap-3">
+                  <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSel(r.id)}
+                    disabled={r.status !== 'active'} title={r.status !== 'active' ? '永不寄/已入駐不可邀' : ''}
+                    className="mt-1 accent-gray-900 disabled:opacity-30" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-gray-900">{r.name || r.email}</span>
