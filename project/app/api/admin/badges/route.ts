@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     let pendingPayouts = 0, pendingTalentReview = 0;
     try {
       const [{ count: pp }, { count: pr }] = await Promise.all([
-        supabase.from('payout_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('payout_requests').select('id', { count: 'exact', head: true }).in('status', ['pending', 'invoice_uploaded']),
         supabase.from('talents').select('id', { count: 'exact', head: true }).eq('pending_review', true),
       ]);
       pendingPayouts = pp || 0; pendingTalentReview = pr || 0;
