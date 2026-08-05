@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
-import { sendEmail } from '@/lib/mail';
 
 /*
   POST /api/talent/assigned-deliver { order_id, delivery_url, file_name } — deliver
@@ -49,10 +48,8 @@ export async function POST(request: NextRequest) {
   // download_url 指向這批最後一個檔(客戶端「最新版」用)
   await r.db.from('voice_orders').update({ download_url: files[files.length - 1].url, status: 'delivered', updated_at: new Date().toISOString() }).eq('id', order.id);
 
-  // Onyx QCs assigned deliveries in the admin order workflow (no client email — this
-  // is a managed production, not a client-posted case). 整批一封信。
-  const label = files.length > 1 ? `${order.order_number}(${files.length} 個檔)` : `${order.order_number}`;
-  sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: `指派角色交付 · ${label}`, html: `<p>${talent.name} 交付了指派角色 ${order.order_number},共 ${files.length} 個檔。</p><p><a href="https://www.onyxstudios.ai/admin/orders">後台驗收 →</a></p>` }).catch(() => {});
+  // Onyx 靠後台側欄「訂單」徽章看到「已交付待驗收」(status=delivered),不寄自我 email
+  // (管理案沒有外部客戶要通知;內部通知一律走平台徽章。Wing 2026-08-05)。
   return NextResponse.json({ ok: true, count: files.length });
 }
 
