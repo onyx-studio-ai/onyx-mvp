@@ -2061,20 +2061,75 @@ export function plainNoticeEmail(p: {
 
 // 潛在名單(prospect)招募邀請信 —— 英文,AVOICE 舊識暖口吻 + 免註冊試音連結 + 退訂連結。
 // 後台「邀請潛在名單」按鈕用(POST /api/admin/prospects/invite)。
-export function prospectInviteEmail(p: { briefTitle: string; language?: string; joinLink: string; unsubLink: string; deadline?: string }): { subject: string; html: string } {
-  const proj = p.briefTitle || 'a paid voice project';
-  const dl = p.deadline ? `auditions close ${p.deadline}` : 'audition any time';
-  const subject = `Paid voice casting${p.language ? ` — ${p.language}` : ''} (Onyx Studios)`;
-  const html = `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;max-width:560px">
-<p>Hi,</p>
-<p>It's the team behind AVOICE — we've moved our casting onto a new platform, Onyx Studios, and have a paid project open that may suit your voice:</p>
-<p><b>${proj}</b><br>Quote your own rate · remote · ${dl}</p>
-<p style="margin:14px 0"><a href="${p.joinLink}" style="background:#0b8;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Audition here</a></p>
-<p style="color:#6b7280;font-size:13px">First time on Onyx? On that page click <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — it takes a minute. ("Invalid login credentials" just means there's no account yet.)</p>
-<p>The full licence terms are shown before you audition, so you know exactly what's included before committing.</p>
-<p>Any questions, just reply — happy to help.</p>
-<p style="margin:16px 0 0;color:#374151">Onyx Studios Casting Team (AVOICE)<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a> · support@onyxstudios.ai</p>
-<p style="margin:14px 0 0;color:#9ca3af;font-size:12px">Not interested in these opportunities? <a href="${p.unsubLink}" style="color:#9ca3af">Unsubscribe</a> and we won't email you again.</p>
-</div>`;
-  return { subject, html };
+// 潛在名單暖回訪邀請信。依收件人語言(zh-TW / zh-CN / en)出稿;內容:先前聯繫過 → 新平台
+// (真人 + AI/TTS)→ 邀進駐 + 目前案件試音 → 一鍵退訂(免回信)。name/company 可選(個人化)。
+export function prospectInviteEmail(p: {
+  briefTitle: string; language?: string; joinLink: string; unsubLink: string; deadline?: string;
+  lang?: 'zh-TW' | 'zh-CN' | 'en'; name?: string; company?: string;
+}): { subject: string; html: string } {
+  const L = p.lang === 'zh-CN' ? 'cn' : p.lang === 'en' ? 'en' : 'tw';
+  const proj = p.briefTitle || '';
+  const btn = (label: string) => `<p style="margin:16px 0"><a href="${p.joinLink}" style="background:#0b8;color:#fff;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600">${label}</a></p>`;
+  const wrap = (inner: string) => `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px;line-height:1.7;color:#111;max-width:560px">${inner}</div>`;
+
+  if (L === 'en') {
+    const dl = p.deadline ? ` · auditions close ${p.deadline}` : '';
+    const rel = p.company
+      ? `We previously connected with you through localization / voiceover work via ${p.company}, and your voice left a strong impression.`
+      : `We've been in touch before on voiceover work, and we've always admired your voice.`;
+    return {
+      subject: `Onyx Studios — an invitation to join, and a project for you`,
+      html: wrap(
+        `<p>Hi${p.name ? ` ${p.name}` : ''},</p>
+<p>This is the team at <b>Onyx Studios</b>. ${rel}</p>
+<p>We've built our own voice-casting platform, running both <b>live human voiceover</b> and <b>AI / TTS voice</b> projects. We'd love to have you join as a talent — set up your profile once, and future projects are matched to you directly.</p>
+${proj ? `<p>We have a project that suits you right now:<br><b>${proj}</b>${dl}</p>` : ''}
+${btn('Audition here')}
+<p style="color:#6b7280;font-size:13px">First time on Onyx? On that page tap <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — about a minute.</p>
+<p>Any questions, just reply. Looking forward to working with you!</p>
+<p style="margin:16px 0 0;color:#374151">The Onyx Studios Team<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
+<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">Note: your voice is used only for client preview on the platform and is not repurposed. Any downloaded preview is automatically marked with an audio watermark and platform tag for anti-piracy tracing. Any AI-related use is negotiated separately under a signed agreement and is never applied to model training or synthesis without it.</p>
+<p style="margin:10px 0 0;color:#9ca3af;font-size:12px">Prefer not to receive these? <a href="${p.unsubLink}" style="color:#9ca3af">Unsubscribe in one click</a> — no reply needed.</p>`),
+    };
+  }
+
+  if (L === 'cn') {
+    const dl = p.deadline ? `｜试音截止 ${p.deadline}` : '';
+    const rel = p.company
+      ? `我们先前曾通过 ${p.company} 的本地化 / 配音案件与您联系过,对您的声音印象深刻。`
+      : `我们先前曾在配音案件上与您联系过,一直很欣赏您的声音。`;
+    return {
+      subject: `Onyx Studios(凡音)· 诚邀您加入平台,有新案件`,
+      html: wrap(
+        `<p>${p.name || ''}您好,</p>
+<p>我们是 <b>Onyx Studios(凡音文化)</b> 团队。${rel}</p>
+<p>我们新建了自有的配音接案平台,同时承接<b>真人配音案</b>与 <b>AI / TTS 语音案</b>。诚挚邀请您入驻成为平台配音员 —— 资料建立一次,日后案件直接与您匹配,不必重复投递。</p>
+${proj ? `<p>目前有一个适合您的案件:<br><b>${proj}</b>${dl}</p>` : ''}
+${btn('前往试音')}
+<p style="color:#6b7280;font-size:13px">第一次用 Onyx?在页面点<b>「注册并试音」</b>(不是「登录」),用 email 注册约 1 分钟即可。</p>
+<p>有任何问题,直接回复即可。期待与您合作!</p>
+<p style="margin:16px 0 0;color:#374151">Onyx Studios 团队 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
+<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">说明:您的声音仅放在平台供客户试听,不会挪作他用;下载的试听档均自动加上语音水印与平台标记,可防盗追踪。AI 相关用途一律单独另议并签署授权,不会径行用于任何模型训练或合成。</p>
+<p style="margin:10px 0 0;color:#9ca3af;font-size:12px">不想再收到这类邀请?<a href="${p.unsubLink}" style="color:#9ca3af">点此一键退订</a> —— 点一下即可,不用回信。</p>`),
+    };
+  }
+
+  const dl = p.deadline ? `｜試音截止 ${p.deadline}` : '';
+  const rel = p.company
+    ? `我們先前曾透過 ${p.company} 的在地化 / 配音案件與您聯繫過,對您的聲音印象深刻。`
+    : `我們先前曾在配音案件上與您聯繫過,一直很欣賞您的聲音。`;
+  return {
+    subject: `Onyx Studios(凡音)· 誠邀您加入平台,有新案件`,
+    html: wrap(
+      `<p>${p.name || ''}您好,</p>
+<p>我們是 <b>Onyx Studios(凡音文化)</b> 團隊。${rel}</p>
+<p>我們新建了自有的配音接案平台,同時承接<b>真人配音案</b>與 <b>AI / TTS 語音案</b>。誠摯邀請您進駐成為平台配音員 —— 資料建立一次,日後案件直接與您媒合,不必重複投履歷。</p>
+${proj ? `<p>目前有一個適合您的案件:<br><b>${proj}</b>${dl}</p>` : ''}
+${btn('前往試音')}
+<p style="color:#6b7280;font-size:13px">第一次用 Onyx?在頁面點<b>「註冊並試音」</b>(不是「登入」),用 email 註冊約 1 分鐘即可。</p>
+<p>有任何問題,直接回覆即可。期待與您合作!</p>
+<p style="margin:16px 0 0;color:#374151">Onyx Studios 團隊 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
+<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">說明:您的聲音僅放在平台供客戶試聽,不會挪作他用;下載的試聽檔均自動加上語音浮水印與平台標記,可防盜追蹤。AI 相關用途一律單獨另議並簽署授權,不會逕行用於任何模型訓練或合成。</p>
+<p style="margin:10px 0 0;color:#9ca3af;font-size:12px">不想再收到這類邀請?<a href="${p.unsubLink}" style="color:#9ca3af">點此一鍵退訂</a> —— 點一下即可,不用回信。</p>`),
+  };
 }
