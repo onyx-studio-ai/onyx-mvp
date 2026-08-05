@@ -594,19 +594,19 @@ export default function AdminMarketplace() {
                 ))}
               </div>
             )}
-            <input value={pinQ} onChange={(e) => setPinQ(e.target.value)} placeholder="打名字搜配音員…" autoFocus
+            <input value={pinQ} onChange={(e) => setPinQ(e.target.value)} placeholder="打名字或 email 搜配音員…" autoFocus
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400" />
             {pinQ.trim() && (() => {
               const q = pinQ.trim().toLowerCase();
               const picked = new Set(pinPicked.map((p) => p.email));
-              const hits = directory.filter((d) => !picked.has(d.email) && d.name.toLowerCase().includes(q)).slice(0, 20);
+              const hits = directory.filter((d) => !picked.has(d.email) && (d.name.toLowerCase().includes(q) || d.email.toLowerCase().includes(q))).slice(0, 20);   // 名字或 email 都可搜(藝名≠本名,Wing 常只記得 email)
               return (
                 <div className="mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
                   {hits.length === 0 && <p className="text-xs text-gray-400 p-3">找不到「{pinQ}」</p>}
                   {hits.map((d) => (
                     <button key={d.email} onClick={() => { setPinPicked((s) => [...s, { email: d.email, name: d.name, active: d.active }]); setPinQ(''); }}
                       className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 text-gray-800">
-                      <span>{d.name}</span>{!d.active && <span className="text-[10px] text-amber-600">未上線</span>}
+                      <span>{d.name}</span><span className="text-[10px] text-gray-400 truncate">{d.email}</span>{!d.active && <span className="text-[10px] text-amber-600">未上線</span>}
                     </button>
                   ))}
                 </div>
