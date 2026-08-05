@@ -89,7 +89,8 @@ async function askKimi(apiKey: string, system: string, msgs: Msg[]) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model, max_tokens: 3000,   // k2.6 思考型模型只接受預設 temperature(=1),不能自訂
+      model, max_tokens: 3000,
+      thinking: { type: 'disabled' },   // 關思考:①快很多 ②思考模式與強制 tool_choice 不相容(Moonshot 官方參數)
       messages: [{ role: 'system', content: system }, ...msgs],
       tools: [{ type: 'function', function: { name: 'case_draft', description: TOOL_DESC, parameters: DRAFT_SCHEMA } }],
       tool_choice: { type: 'function', function: { name: 'case_draft' } },   // 每輪必回草稿(漸進式)
