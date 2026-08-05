@@ -436,7 +436,7 @@ export default function ProductionPage() {
                     ); })()}
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs text-gray-300 shrink-0">加收修改費(選填)</span>
-                      <span className="text-xs text-gray-400">{(o.currency || 'TWD') === 'USD' ? 'US$' : 'NT$'}</span>
+                      <span className="text-xs text-gray-400">{({ USD: 'US$', HKD: 'HK$', CNY: '¥' }[(o.currency || 'TWD') as string] || 'NT$')}</span>
                       <input type="number" min="0" value={revFee} onChange={(e) => setRevFee(e.target.value)} placeholder="0 = 此輪免費"
                         className="w-32 bg-black/30 border border-white/15 rounded-lg px-2 py-1.5 text-sm text-white" />
                       {revFee && Number(revFee) > 0 ? <span className="text-[11px] text-amber-200">配音員同意後,總酬勞 +{revFee}</span> : null}
