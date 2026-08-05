@@ -9,7 +9,7 @@ import { getSupabaseServiceClient, supabaseErrorResponse, storagePathFromRef } f
   invoices/ 前綴。requireAdminOnly(僅 admin,production 角色不可看金流)。
   鏡像 app/api/admin/costs/invoices/signed-url/route.ts(同一個 casting bucket)。
 */
-const BUCKET = 'casting';
+const BUCKET = 'invoices'; // 私有發票桶(2026-08-05 自 casting 公開桶搬移)
 
 export async function GET(request: NextRequest) {
   const unauthorized = requireAdminOnly(request);
