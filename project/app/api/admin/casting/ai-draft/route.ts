@@ -52,26 +52,32 @@ const DRAFT_SCHEMA = {
     methods: { type: 'object', additionalProperties: false, properties: { home: { type: 'boolean' }, studio: { type: 'boolean' }, online: { type: 'boolean' } }, required: ['home', 'studio', 'online'], description: '錄音方式:居家/錄音室/線上監錄' },
     ai_type: { type: 'string', enum: ['', 'clone', 'training'], description: '聲音會被做成 AI → clone;純訓練資料 → training;一般真人案 → 空字串' },
     client_note: { type: 'string', description: '內部備註(這案是哪個客戶的,只給後台看);不知道留空' },
-    summary: { type: 'string', description: '給 Wing 的一句話摘要(草稿確認用,繁中)' },
+    summary: { type: 'string', description: '給 Wing 的一句話摘要(繁中)' },
+    next_question: { type: 'string', description: '還缺資訊時,下一批要問的問題(條列、最多3-4個);齊了留空字串' },
+    complete: { type: 'boolean', description: '必備欄位是否已齊(齊=true)' },
   },
-  required: ['title', 'category', 'language', 'brief', 'male_voices', 'female_voices', 'rate_mode', 'rate_currency', 'rate_unit', 'audition_deadline', 'timezone', 'methods', 'ai_type', 'summary'],
+  required: ['complete', 'next_question'],
 } as const;
 
 const TOOL_DESC = '所有必備欄位收齊後呼叫,產出發案草稿。缺必備欄位(報酬未定、語言不明等)時不要呼叫,先追問。';
 
-const SYSTEM = `你是 Onyx Studios 的後台發案助手,幫老闆 Wing 用最少的問答把配音案開起來(像 Fiverr 的 AI 發案)。全程繁體中文對話。
+const SYSTEM = `你是 Onyx Studios 的後台發案助手,幫老闆 Wing 用最少的問答把配音案開起來(像 Fiverr 的 AI 發案)。全程繁體中文。
 
-流程:Wing 丟需求(可能很口語、資訊零散)→ 你判斷還缺哪些「必備欄位」→ 一次問一批(最多 3-4 個問題、條列)→ 齊了就呼叫 case_draft 工具,不再多話。
+【協定】你「每一輪」都必須呼叫 case_draft 工具:
+- 把目前已確定/可合理推斷的欄位全部填上;還不知道的留空字串或 0。
+- 還缺必備資訊 → complete=false,next_question 放你要問的問題(條列、最多 3-4 個、口語簡短)。
+- 必備欄位都齊了 → complete=true,next_question 留空,並把 brief 文案寫完整。
+- 使用者訊息若含「[目前草稿狀態:...]」= 右側表單現值(含 Wing 手動修改),以它為基底更新,不要退回舊值。
 
-必備欄位:類型、語言、性別/人數、內容份量、報酬(金額或明確「配音員自報價」)、試音截止日、錄音方式。能從描述合理推斷的就不要問(例:電話語音→來電語音 IVR;「找 AI 聲音要 clone」→ TTS / AI 語音 + ai_type=clone)。
+必備欄位:類型、語言、性別/人數、內容份量、報酬(金額或明確「配音員自報價」)、試音截止日、錄音方式。能合理推斷就不要問(例:電話語音→來電語音 IVR;遊戲180句→遊戲 Video Game+scale「180 句」)。
 
 鐵則:
-- 報酬絕不自己編數字。Wing 沒講就問;說「讓他們自己報」就 rate_amount 留空、在 brief 註明報名時報價。
-- 日期:今天是 {TODAY}。Wing 說「下週五」這類相對日期要換算成 YYYY-MM-DD。
-- brief 文案風格照 Onyx 現有案件:開頭一段需求描述 → 形式/內容 → 錄音規格(正式交付通常 48 kHz / 24-bit / mono 乾聲,TTS 語料另要求底噪 < −60 dB、SNR > 45 dB)→ 「報名請在『報價說明』欄注明:①…②…③…」。目標大陸市場(方言/簡體客群)用簡體;英語案用英文;其餘繁中。
-- AI/TTS 案(聲音會被拿去合成/訓練)一律 category=「TTS / AI 語音」+ ai_type(通常 clone),brief 裡不承諾授權細節(平台另有授權書流程)。
-- 分角色案(遊戲/動畫/戲劇):角色資訊寫進 brief;告訴 Wing 角色列表可在表單裡再補。
-- 不確定寧可問,不要猜(尤其對外會展示的內容)。`;
+- 報酬絕不自己編數字;Wing 沒講就問。說「自報價」→ rate_amount 留空、brief 註明報名時報價。
+- 日期:今天是 {TODAY}。「下週五」這類相對日期換算成 YYYY-MM-DD。
+- brief 文案照 Onyx 慣例:需求描述 → 形式/內容 → 錄音規格(交付通常 48 kHz / 24-bit / mono 乾聲;TTS 語料另加底噪 < −60 dB、SNR > 45 dB)→ 「報名請在『報價說明』欄注明:①…②…③…」。大陸市場用簡體;英語案用英文;其餘繁中。
+- AI/TTS 案(聲音會被合成/訓練)→ category「TTS / AI 語音」+ ai_type(通常 clone);brief 不承諾授權細節。
+- 分角色案(遊戲/動畫/戲劇):角色資訊寫進 brief,提醒角色列表可在表單補。
+- 不確定寧可問,不要猜。`;
 
 export const maxDuration = 60;   // k2.6 思考型模型單輪可能 20-40s,拉高 Vercel 函式上限
 
@@ -86,6 +92,7 @@ async function askKimi(apiKey: string, system: string, msgs: Msg[]) {
       model, max_tokens: 3000,   // k2.6 思考型模型只接受預設 temperature(=1),不能自訂
       messages: [{ role: 'system', content: system }, ...msgs],
       tools: [{ type: 'function', function: { name: 'case_draft', description: TOOL_DESC, parameters: DRAFT_SCHEMA } }],
+      tool_choice: { type: 'function', function: { name: 'case_draft' } },   // 每輪必回草稿(漸進式)
     }),
   });
   const j = await res.json().catch(() => ({}));
@@ -93,10 +100,13 @@ async function askKimi(apiKey: string, system: string, msgs: Msg[]) {
   const m = j?.choices?.[0]?.message;
   const call = m?.tool_calls?.[0];
   if (call?.function?.name === 'case_draft') {
-    try { return { draft: JSON.parse(call.function.arguments || '{}') }; }
-    catch { throw new Error('Kimi 草稿 JSON 解析失敗,請再試一次'); }
+    try {
+      const parsed = JSON.parse(call.function.arguments || '{}');
+      const { next_question = '', complete = false, ...fields } = parsed;
+      return { draft: fields, question: String(next_question || ''), complete: !!complete };
+    } catch { throw new Error('Kimi 草稿 JSON 解析失敗,請再試一次'); }
   }
-  return { reply: String(m?.content || '').trim() };
+  return { question: String(m?.content || '').trim(), complete: false };
 }
 
 async function askClaude(apiKey: string, system: string, msgs: Msg[]) {
@@ -107,10 +117,13 @@ async function askClaude(apiKey: string, system: string, msgs: Msg[]) {
     messages: msgs,
   });
   const tool = resp.content.find((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use' && b.name === 'case_draft');
-  if (tool) return { draft: tool.input as Record<string, unknown> };
+  if (tool) {
+    const { next_question = '', complete = false, ...fields } = tool.input as Record<string, unknown>;
+    return { draft: fields, question: String(next_question || ''), complete: !!complete };
+  }
   const text = resp.content.filter((b): b is Anthropic.TextBlock => b.type === 'text').map((b) => b.text).join('\n').trim();
-  if (resp.stop_reason === 'refusal' || !text) return { reply: '這個需求我沒辦法處理,請換個說法或直接手動發案。' };
-  return { reply: text };
+  if (resp.stop_reason === 'refusal' || !text) return { question: '這個需求我沒辦法處理,請換個說法或直接手動發案。', complete: false };
+  return { question: text, complete: false };
 }
 
 export async function GET(request: NextRequest) {
