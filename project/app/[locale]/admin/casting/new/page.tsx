@@ -849,11 +849,11 @@ function NewCasting() {
             )}
             <div className="relative">
               <input value={pinQ} onChange={(e) => { setPinQ(e.target.value); setPinOpen(true); }} onFocus={() => setPinOpen(true)} onBlur={() => setTimeout(() => setPinOpen(false), 150)}
-                placeholder="打名字搜配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 w-full max-w-[280px]" />
+                placeholder="打名字或 email 搜配音員…" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400/60 w-full max-w-[280px]" />
               {pinOpen && pinQ.trim() && (() => {
                 const q = pinQ.trim().toLowerCase();
                 const picked = new Set(pinned.map((p) => p.email));
-                const hits = directory.filter((d) => !picked.has(d.email) && d.name.toLowerCase().includes(q)).slice(0, 20);
+                const hits = directory.filter((d) => !picked.has(d.email) && (d.name.toLowerCase().includes(q) || d.email.toLowerCase().includes(q))).slice(0, 20);   // 名字或 email 都可搜(藝名≠本名,Wing 常只記得 email)
                 return (
                   <div className="absolute z-30 left-0 mt-1 w-full max-w-[280px] max-h-56 overflow-y-auto rounded-lg border border-white/10 bg-[#161616] shadow-xl divide-y divide-white/5">
                     {hits.length === 0 && <p className="text-xs text-gray-500 p-3">找不到「{pinQ}」</p>}
@@ -861,6 +861,7 @@ function NewCasting() {
                       <button key={d.email} type="button" onMouseDown={(e) => { e.preventDefault(); setPinned((s) => [...s, { email: d.email, name: d.name, active: d.active }]); setPinQ(''); setPinOpen(false); }}
                         className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-white/[0.05] text-gray-100">
                         <span>{d.name}</span>
+                        <span className="text-[10px] text-gray-500 truncate">{d.email}</span>
                         {d.gender && <span className="text-[10px] text-gray-400 bg-white/10 px-1 rounded">{d.gender === 'male' ? '男' : '女'}</span>}
                         {!d.active && <span className="text-[10px] text-amber-300/80">未上線</span>}
                       </button>
