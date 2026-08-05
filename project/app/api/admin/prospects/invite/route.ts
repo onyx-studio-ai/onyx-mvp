@@ -80,7 +80,26 @@ export async function POST(request: NextRequest) {
   const recentSet = new Set((recent || []).map((r) => r.prospect_id));
   const eligible = pool.filter((p) => !recentSet.has(p.id));
 
+  const deadline = brief.audition_deadline
+    ? `${brief.audition_deadline}${brief.audition_deadline_time ? ' ' + brief.audition_deadline_time : ''}` : '';
+  const joinLink = `${SITE}/casting/join/${briefId}`;
+  const title = String(brief.title || brief.content_type || '');
+  const buildMail = (p: P) => prospectInviteEmail({
+    briefTitle: title,
+    language: brief.language ? String(brief.language) : undefined,
+    joinLink, unsubLink: `${SITE}/api/prospects/unsubscribe?token=${p.unsub_token}`, deadline,
+    lang: pickLang(p.languages || []),
+    name: p.name || undefined, company: p.company || undefined,
+  });
+
   if (!send) {
+    // 預覽:附上「實際會寄出的信」—— 收件人語言各給一封範例(用該語言第一個人渲染),你看過再送。
+    const byLang = new Map<string, P>();
+    for (const p of eligible) { const l = pickLang(p.languages || []); if (!byLang.has(l)) byLang.set(l, p); }
+    const emails = [...byLang.entries()].map(([lang, p]) => {
+      const m = buildMail(p);
+      return { lang, forName: p.name || p.email, subject: m.subject, html: m.html };
+    });
     return NextResponse.json({
       ok: true, sent: false,
       selected: ids ? ids.length : undefined,
@@ -88,13 +107,10 @@ export async function POST(request: NextRequest) {
       cooldown_excluded: pool.length - eligible.length,
       eligible: eligible.length,
       sample: eligible.slice(0, 30).map((p) => ({ name: p.name, email: p.email, lang: pickLang(p.languages || []) })),
+      emails,
     });
   }
 
-  const deadline = brief.audition_deadline
-    ? `${brief.audition_deadline}${brief.audition_deadline_time ? ' ' + brief.audition_deadline_time : ''}` : '';
-  const joinLink = `${SITE}/casting/join/${briefId}`;
-  const title = String(brief.title || brief.content_type || '');
   let sent = 0;
   for (const p of eligible) {
     const unsubLink = `${SITE}/api/prospects/unsubscribe?token=${p.unsub_token}`;
