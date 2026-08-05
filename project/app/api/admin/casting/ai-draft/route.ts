@@ -116,7 +116,11 @@ export async function GET(request: NextRequest) {
   const unauthorized = requireAdmin(request);
   if (unauthorized) return unauthorized;
   const key = process.env.MOONSHOT_API_KEY;
-  if (!key) return NextResponse.json({ error: 'MOONSHOT_API_KEY 未設定' }, { status: 500 });
+  if (!key) {
+    // 診斷:回報函式內 env 的「有/沒有」(不洩值),分辨「沒存對」vs「沒重佈」。
+    const envKeys = Object.keys(process.env).filter((k) => /MOONSHOT|KIMI|ANTHROPIC/i.test(k));
+    return NextResponse.json({ error: 'MOONSHOT_API_KEY 未設定', seen_ai_env_keys: envKeys, deployment: process.env.VERCEL_DEPLOYMENT_ID || null }, { status: 500 });
+  }
   const res = await fetch('https://api.moonshot.ai/v1/models', { headers: { Authorization: `Bearer ${key}` } });
   const j = await res.json().catch(() => ({}));
   return NextResponse.json({ status: res.status, models: (j?.data || []).map((m: { id: string }) => m.id) });
