@@ -122,12 +122,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
   sendEmail({ category: 'PRODUCTION', to: String(r.brief.client_email), subject: cm.subject, html: cm.html }).catch(() => {});
   // Tell produce@ to collect payment + start production.
-  const im = castingOrderInternalEmail({
-    orderNumber: order.order_number, briefNumber: r.brief.brief_number as string | undefined,
-    clientEmail: String(r.brief.client_email), talentName: talent?.name as string | undefined,
-    amount: Number(q.gross_amount) || 0, currency: order.currency, deliveryDate, scriptPreview: finalScript,
-  });
-  sendEmail({ category: 'PRODUCTION', to: 'produce@onyxstudios.ai', subject: im.subject, html: im.html }).catch(() => {});
-
+  // 選定成案由後台「訂單」徽章看到,不寄自我 email(對配音員/客戶的通知已於上方寄出。Wing 2026-08-05)。
   return NextResponse.json({ ok: true, order_number: order.order_number, order_id: order.id });
 }
