@@ -45,6 +45,10 @@ export default function ProspectsAdmin() {
   const [caseId, setCaseId] = useState('');
   const [preview, setPreview] = useState<{ eligible: number; cooldown_excluded: number; sample: { name: string | null; email: string; lang: string }[]; emails?: { lang: string; forName: string; subject: string; html: string }[] } | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
+  // 前端細篩:性別 / 語言 / 地區(Wing 2026-08-05 —— 邀請前先按條件圈人)
+  const [gsel, setGsel] = useState('');
+  const [lsel, setLsel] = useState('');
+  const [rsel, setRsel] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true); setErr('');
@@ -53,6 +57,7 @@ export default function ProspectsAdmin() {
       if (q.trim()) p.set('q', q.trim());
       if (kind) p.set('kind', kind);
       if (status) p.set('status', status);
+      p.set('limit', '1000');   // 一次載全量,性別/語言/地區在前端篩
       const res = await fetch(`/api/admin/prospects?${p.toString()}`, { credentials: 'include' });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || '載入失敗');
@@ -69,7 +74,13 @@ export default function ProspectsAdmin() {
   }, []);
 
   const toggleSel = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const activeRows = rows.filter((r) => r.status === 'active');   // 只有可邀的能勾
+  const visible = rows.filter((r) =>
+    (!gsel || r.gender === gsel) &&
+    (!lsel || (r.languages || []).includes(lsel)) &&
+    (!rsel || (r.country || '') === rsel));
+  const langOpts = [...new Set(rows.flatMap((r) => r.languages || []))].sort();
+  const regionOpts = [...new Set(rows.map((r) => (r.country || '').trim()).filter((c) => c && c !== '—'))].sort();
+  const activeRows = visible.filter((r) => r.status === 'active');   // 只有可邀的能勾(套用篩選後)
   const allVisibleSel = activeRows.length > 0 && activeRows.every((r) => selected.has(r.id));
   const toggleSelAll = () => setSelected((s) => {
     const n = new Set(s);
@@ -166,6 +177,20 @@ export default function ProspectsAdmin() {
         {chip('可邀', '', status === 'active', () => setStatus('active'))}
         {chip('永不寄', '', status === 'suppressed', () => setStatus('suppressed'))}
         {chip('已入駐', '', status === 'joined', () => setStatus('joined'))}
+        <span className="mx-1 text-gray-300">|</span>
+        {chip('全部性別', '', gsel === '', () => setGsel(''))}
+        {chip('男', '', gsel === 'male', () => setGsel('male'))}
+        {chip('女', '', gsel === 'female', () => setGsel('female'))}
+        <select value={lsel} onChange={(e) => setLsel(e.target.value)}
+          className="text-xs px-2 py-1.5 rounded-full border border-gray-300 bg-white text-gray-600 max-w-[160px]">
+          <option value="">全部語言</option>
+          {langOpts.map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+        <select value={rsel} onChange={(e) => setRsel(e.target.value)}
+          className="text-xs px-2 py-1.5 rounded-full border border-gray-300 bg-white text-gray-600 max-w-[160px]">
+          <option value="">全部地區</option>
+          {regionOpts.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
 
       {/* 邀請列:勾選 ≥1 人才出現。選案件 → 預覽 → 寄送。永不寄/已入駐不可勾。 */}
@@ -211,12 +236,12 @@ export default function ProspectsAdmin() {
       {loading ? <p className="text-sm text-gray-400 py-10 text-center">載入中…</p> : (
         <>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-gray-400">顯示 {rows.length} 筆（共 {total}）</p>
+            <p className="text-xs text-gray-400">顯示 {visible.length} 筆（載入 {rows.length}／共 {total}）</p>
             <button onClick={toggleSelAll} className="text-xs text-gray-600 hover:text-gray-900 underline">
               {allVisibleSel ? '取消全選' : '全選本頁(僅可邀)'}</button>
           </div>
           <div className="space-y-2">
-            {rows.map((r) => (
+            {visible.map((r) => (
               <div key={r.id} className={`border rounded-xl px-4 py-3 bg-white ${selected.has(r.id) ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-200'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSel(r.id)}
@@ -226,6 +251,7 @@ export default function ProspectsAdmin() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-gray-900">{r.name || r.email}</span>
                       <span className={`text-[11px] px-2 py-0.5 rounded-full border ${KIND_BADGE[r.kind] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>{KIND_LABEL[r.kind] || r.kind}</span>
+                      {r.gender && <span className={`text-[11px] px-2 py-0.5 rounded-full border ${r.gender === 'female' ? 'bg-pink-100 text-pink-700 border-pink-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>{r.gender === 'female' ? '女' : '男'}</span>}
                       <span className={`text-[11px] px-2 py-0.5 rounded-full border ${STATUS_BADGE[r.status] || ''}`}>{STATUS_LABEL[r.status] || r.status}</span>
                       {r.company && <span className="text-xs text-gray-500">· {r.company}</span>}
                     </div>
@@ -243,7 +269,7 @@ export default function ProspectsAdmin() {
                 </div>
               </div>
             ))}
-            {rows.length === 0 && <p className="text-sm text-gray-400 py-10 text-center">沒有符合的資料。</p>}
+            {visible.length === 0 && <p className="text-sm text-gray-400 py-10 text-center">沒有符合的資料。</p>}
           </div>
         </>
       )}
