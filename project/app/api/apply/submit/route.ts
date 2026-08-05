@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail, emailLocaleForTalent } from '@/lib/mail';
-import { applicationReceivedEmail, applicationTeamNotifyEmail } from '@/lib/mail-templates';
+import { applicationReceivedEmail } from '@/lib/mail-templates';
 import { verifyOtpProof } from '@/lib/otp-code';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -136,14 +136,7 @@ export async function POST(request: NextRequest) {
         locale: emailLocale,
       });
       await sendEmail({ category: 'HELLO', to: applicantEmail, subject: confirmSubject, html: confirmHtml });
-
-      const { subject: teamSubject, html: teamHtml } = applicationTeamNotifyEmail({
-        applicantName,
-        applicationNumber: appNumber,
-        email: applicantEmail,
-        category: formData.category || formData.talent_type || 'General',
-      });
-      await sendEmail({ category: 'HELLO', to: 'hello@onyxstudios.ai', subject: teamSubject, html: teamHtml });
+      // 新申請由後台「申請資料」徽章看到,不寄自我 email 給 hello@(Wing 2026-08-05)。
     }
 
     return NextResponse.json({
