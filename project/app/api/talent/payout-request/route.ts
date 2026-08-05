@@ -76,7 +76,10 @@ export async function PATCH(request: NextRequest) {
   const id = S(body.id, 64);
   const url = S(body.invoice_url, 1000);
   if (!id || !url) return NextResponse.json({ error: 'id 與 invoice_url 必填' }, { status: 400 });
-  if (!/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'invalid invoice_url' }, { status: 400 });
+  // 發票改存私有 invoices 桶的 storage path(payout/{本人id}/...),路徑即 ownership 檢查;
+  // 舊資料是完整 https 公開網址,保留相容(2026-08-05 私有化)。
+  const isOwnPath = url.startsWith(`payout/${talentId}/`) && !url.includes('..');
+  if (!isOwnPath && !/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'invalid invoice_url' }, { status: 400 });
   if (body.consent !== true) return NextResponse.json({ error: '請先勾選同意以此開立發票。' }, { status: 400 });
 
   // 只能改自己的、且尚未撥款的請款單。
