@@ -113,7 +113,7 @@ export default function AiCastingPage() {
     if (!draft) return;
     try {
       localStorage.setItem('onyx-draft:casting-new', JSON.stringify({ savedAt: Date.now(), data: draftToSnapshot(draft) }));
-      window.location.href = '/admin/casting/new';
+      window.location.href = '/admin/casting/new?ai=1';   // ai=1 → 表單自動恢復草稿,不用再按
     } catch { setErr('寫入草稿失敗'); }
   }
 
