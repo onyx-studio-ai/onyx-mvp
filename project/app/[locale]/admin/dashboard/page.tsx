@@ -25,6 +25,7 @@ interface RecentTx {
   email: string;
   action: string;
   amount: number;
+  currency: string;
   created_at: string;
   type: 'voice' | 'music';
 }
@@ -41,10 +42,17 @@ interface VoiceData {
   percentage: number;
 }
 
+import { EXCHANGE_RATES, currencySymbol } from '@/lib/currency';
+
+// 換算成美金(近似,供跨幣別加總;逐筆顯示用原幣別+正確符號)
+function toUSD(amt: number, cur?: string | null) {
+  return amt / (EXCHANGE_RATES[(cur || 'USD').toUpperCase()] || 1);
+}
+
 function formatCurrency(val: number) {
-  if (val >= 1000000) return `US$${(val / 1000000).toFixed(1)}M`;
-  if (val >= 1000) return `US$${(val / 1000).toFixed(1)}K`;
-  return `US$${val.toFixed(0)}`;
+  if (val >= 1000000) return `≈US$${(val / 1000000).toFixed(1)}M`;
+  if (val >= 1000) return `≈US$${(val / 1000).toFixed(1)}K`;
+  return `≈US$${val.toFixed(0)}`;
 }
 
 // 顯示字串走 i18n:把 t 傳進來,只換文字不動時間計算邏輯。
@@ -73,6 +81,7 @@ export default function AdminDashboardPage() {
         id: string;
         email: string;
         price?: string | number | null;
+        currency?: string | null;
         payment_status?: string | null;
         status?: string | null;
         paid_at?: string | null;
@@ -89,7 +98,7 @@ export default function AdminDashboardPage() {
     const paidVoice = vo.filter((o) => o.payment_status === 'completed');
     const paidMusic = mo.filter((o) => o.payment_status === 'completed');
 
-    const voiceRevenue = paidVoice.reduce((s, o) => s + parseFloat(String(o.price ?? '0')), 0);
+    const voiceRevenue = paidVoice.reduce((s, o) => s + toUSD(parseFloat(String(o.price ?? '0')), o.currency), 0);
     const musicRevenue = paidMusic.reduce((s, o) => s + parseFloat(String(o.price ?? '0')), 0);
 
     const pending = [...vo, ...mo].filter(
@@ -109,6 +118,7 @@ export default function AdminDashboardPage() {
           ? `Voice Order${o.voice_selection ? ` – ${o.voice_selection.split(' ')[0]}` : ''} (${getVoiceTierLabel(o.tier || 'tier-1')})`
           : `Music Order${o.vibe ? ` – ${o.vibe}` : ''} (${getMusicTierLabel(o.tier || '')})`,
       amount: parseFloat(String(o.price ?? '0')),
+      currency: (o.currency || 'USD').toUpperCase(),
       created_at: o.paid_at || o.created_at,
       type: o._type,
     }));
@@ -127,7 +137,7 @@ export default function AdminDashboardPage() {
       const key = (o.paid_at || o.created_at).split('T')[0];
       if (dailyMap[key]) {
         dailyMap[key].orders++;
-        dailyMap[key].revenue += parseFloat(String(o.price ?? '0'));
+        dailyMap[key].revenue += toUSD(parseFloat(String(o.price ?? '0')), (o as { currency?: string | null }).currency);
       }
     });
 
@@ -310,7 +320,7 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">{timeAgo(tx.created_at, t)}</td>
                         <td className="px-6 py-4 text-sm text-right font-semibold text-green-700">
-                          +{formatCurrency(tx.amount)}
+                          +{currencySymbol(tx.currency)}{tx.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </td>
                       </tr>
                     ))}
@@ -349,7 +359,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
               <p className="text-3xl font-bold text-green-700">
-                {s.paidOrders > 0 ? formatCurrency(s.totalRevenue / s.paidOrders) : 'US$0'}
+                {s.paidOrders > 0 ? formatCurrency(s.totalRevenue / s.paidOrders) : '≈US$0'}
               </p>
               <p className="text-gray-600 text-sm mt-1">{t('statAvgOrderValue')}</p>
             </div>
