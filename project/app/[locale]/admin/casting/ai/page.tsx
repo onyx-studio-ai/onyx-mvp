@@ -117,8 +117,8 @@ export default function AiCastingPage() {
     } catch { setErr('寫入草稿失敗'); }
   }
 
-  const inputCls = 'w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm outline-none focus:border-gray-900 bg-white transition-colors';
-  const lbl = 'block text-[10px] font-medium tracking-[0.06em] text-gray-400 mb-1';
+  const inputCls = 'w-full rounded-md border border-transparent hover:border-gray-200 focus:border-gray-900 px-2 py-1.5 text-sm bg-transparent outline-none transition-colors';
+  const lbl = 'block text-[10px] font-medium tracking-[0.14em] text-gray-400 mb-1';
   const methods = (draft?.methods && typeof draft.methods === 'object' ? draft.methods : { home: false, studio: false, online: false }) as Record<string, boolean>;
 
   return (
@@ -128,19 +128,19 @@ export default function AiCastingPage() {
         <p className="text-sm text-gray-500 mt-1">左邊聊,右邊草稿即時生成 —— 右側欄位也可以直接改,改完繼續聊 AI 會接著你的版本調。</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid lg:grid-cols-[2fr_3fr] gap-5">
         {/* 左:對話 */}
         <div className="rounded-2xl border border-gray-100 shadow-sm bg-white flex flex-col h-[74vh]">
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
             {msgs.length === 0 && (
               <div className="text-sm text-gray-500 space-y-2">
                 <p>描述你的案子,例如:</p>
                 <button onClick={() => send('我要發一個台灣國語女聲的電話語音案,大概 800 字,預算 NT$3,000 整案,下週五截止試音,居家錄音就可以。')}
-                  className="block text-left w-full rounded-xl border border-gray-200 px-3.5 py-2.5 hover:bg-gray-50 hover:border-gray-300 text-gray-600 text-xs leading-relaxed">
+                  className="block text-left w-full rounded-xl border border-gray-200 px-4 py-3 hover:bg-gray-50 hover:border-gray-300 text-gray-600 text-[13px] leading-6">
                   「台灣國語女聲電話語音,800 字,NT$3,000 整案,下週五截止試音,居家錄音。」
                 </button>
                 <button onClick={() => send('客戶要做四川話的 TTS 對話語料 5 小時,跟之前上海話那批一樣的規格,讓配音員自己報價,九月底截止。')}
-                  className="block text-left w-full rounded-xl border border-gray-200 px-3.5 py-2.5 hover:bg-gray-50 hover:border-gray-300 text-gray-600 text-xs leading-relaxed">
+                  className="block text-left w-full rounded-xl border border-gray-200 px-4 py-3 hover:bg-gray-50 hover:border-gray-300 text-gray-600 text-[13px] leading-6">
                   「四川話 TTS 對話語料 5 小時,規格同上海話那批,自報價,九月底截止。」
                 </button>
               </div>
@@ -148,12 +148,12 @@ export default function AiCastingPage() {
             {msgs.map((m, i) => (
               m.role === 'user' ? (
                 <div key={i} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-2xl rounded-br-md bg-gray-900 text-white px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                  <div className="max-w-[85%] rounded-2xl rounded-br-md bg-gray-900 text-white px-4 py-2.5 text-[15px] whitespace-pre-wrap leading-7">{m.content}</div>
                 </div>
               ) : (
                 <div key={i} className="flex items-start gap-2.5 pr-6">
                   <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">AI</div>
-                  <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                  <div className="text-[15px] text-gray-800 whitespace-pre-wrap leading-7">{m.content}</div>
                 </div>
               )
             ))}
@@ -165,7 +165,7 @@ export default function AiCastingPage() {
                     <span>{st}</span>
                   </div>
                 ))}
-                <p className="text-[11px] text-gray-400 pt-1">思考中… {elapsed}s(通常 20-40 秒)</p>
+                <p className="text-[11px] text-gray-400 pt-1">處理中 · {elapsed}s</p>
               </div>
             )}
             {err && <p className="text-xs text-red-600">{err}</p>}
@@ -187,18 +187,18 @@ export default function AiCastingPage() {
 
         {/* 右:即時草稿 */}
         <div className="rounded-2xl border border-gray-100 shadow-sm bg-white flex flex-col h-[74vh]">
-          <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between shrink-0">
+          <div className="border-b border-gray-100 px-6 py-3.5 flex items-center justify-between shrink-0">
             <p className="text-sm font-semibold text-gray-900 inline-flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-gray-500" /> 案件草稿(即時)</p>
             {draft ? (complete
               ? <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200"><CheckCircle2 className="w-3 h-3" /> 資訊已齊</span>
               : <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">收集中…</span>)
               : <span className="text-[11px] text-gray-400">開始對話後這裡會即時出現</span>}
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto p-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
             {!draft && <p className="text-sm text-gray-400 pt-8 text-center">草稿會隨對話即時填入,也可以直接在這裡修改。</p>}
             {draft && (
-              <div className="space-y-3">
-                <div><label className={lbl}>標題</label><input className={inputCls} value={sv('title')} onChange={(e) => setF('title', e.target.value)} /></div>
+              <div className="space-y-4">
+                <div><label className={lbl}>標題</label><input className="w-full rounded-md border border-transparent hover:border-gray-200 focus:border-gray-900 px-2 py-1.5 text-lg font-semibold text-gray-900 bg-transparent outline-none transition-colors" value={sv('title')} onChange={(e) => setF('title', e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-2">
                   <div><label className={lbl}>類別</label>
                     <select className={inputCls} value={sv('category')} onChange={(e) => setF('category', e.target.value)}>
@@ -253,9 +253,9 @@ export default function AiCastingPage() {
                   </div>
                 </div>
                 <div><label className={lbl}>案件說明(對配音員展示)</label>
-                  <textarea rows={8} className={`${inputCls} resize-y`} value={sv('brief')} onChange={(e) => setF('brief', e.target.value)} /></div>
+                  <textarea rows={9} className="w-full rounded-xl border border-transparent hover:border-gray-200 focus:border-gray-900 bg-gray-50 focus:bg-white px-3.5 py-3 text-[13.5px] leading-6 outline-none transition-colors resize-y" value={sv('brief')} onChange={(e) => setF('brief', e.target.value)} /></div>
                 <div><label className={lbl}>試音稿(選填;空 = 用 demo 應徵)</label>
-                  <textarea rows={3} className={`${inputCls} resize-y`} value={sv('audition_script')} onChange={(e) => setF('audition_script', e.target.value)} /></div>
+                  <textarea rows={3} className="w-full rounded-xl border border-transparent hover:border-gray-200 focus:border-gray-900 bg-gray-50 focus:bg-white px-3.5 py-3 text-[13.5px] leading-6 outline-none transition-colors resize-y" value={sv('audition_script')} onChange={(e) => setF('audition_script', e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-2">
                   <div><label className={lbl}>聲音風格</label><input className={inputCls} value={sv('voice_style')} onChange={(e) => setF('voice_style', e.target.value)} /></div>
                   <div><label className={lbl}>內部客戶備註</label><input className={inputCls} value={sv('client_note')} onChange={(e) => setF('client_note', e.target.value)} /></div>
@@ -286,7 +286,7 @@ export default function AiCastingPage() {
               </div>
             )}
           </div>
-          <div className="border-t border-gray-200 p-3 flex items-center gap-2 shrink-0">
+          <div className="border-t border-gray-100 px-6 py-3.5 flex items-center gap-2 shrink-0">
             <button onClick={applyDraft} disabled={!draft || !sv('title')}
               className="inline-flex items-center gap-1.5 text-sm bg-gray-900 hover:bg-gray-700 text-white font-semibold rounded-full px-5 py-2.5 disabled:opacity-30 transition-colors">
               帶入發案表單發佈 <ArrowRight className="w-4 h-4" />
