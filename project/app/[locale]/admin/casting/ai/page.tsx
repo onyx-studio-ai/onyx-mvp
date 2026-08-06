@@ -260,6 +260,28 @@ export default function AiCastingPage() {
                   <div><label className={lbl}>聲音風格</label><input className={inputCls} value={sv('voice_style')} onChange={(e) => setF('voice_style', e.target.value)} /></div>
                   <div><label className={lbl}>內部客戶備註</label><input className={inputCls} value={sv('client_note')} onChange={(e) => setF('client_note', e.target.value)} /></div>
                 </div>
+
+                {/* 其他條件(交付/授權/修改)—— 與發案表單一一對應,帶入後不再有沒看過的欄位 */}
+                <p className="pt-1 text-[10px] font-semibold tracking-[0.08em] text-gray-400 border-t border-gray-100">其他條件</p>
+                {sv('rate_mode') === 'range' && (
+                  <div><label className={lbl}>金額上限(區間)</label><input className={inputCls} value={sv('rate_amount2')} onChange={(e) => setF('rate_amount2', e.target.value)} /></div>
+                )}
+                <div className="grid grid-cols-3 gap-2">
+                  <div><label className={lbl}>交付截止(選填)</label><input type="date" className={inputCls} value={sv('delivery_deadline')} onChange={(e) => setF('delivery_deadline', e.target.value)} /></div>
+                  <div><label className={lbl}>時間</label><input type="time" className={inputCls} value={sv('delivery_deadline_time')} onChange={(e) => setF('delivery_deadline_time', e.target.value)} /></div>
+                  <div><label className={lbl}>聲齡</label><input className={inputCls} value={sv('voice_age')} onChange={(e) => setF('voice_age', e.target.value)} placeholder="青年 / 熟齡…" /></div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div><label className={lbl}>使用範圍</label><input className={inputCls} value={sv('media_scope')} onChange={(e) => setF('media_scope', e.target.value)} placeholder="網路廣告 / 全媒體…" /></div>
+                  <div><label className={lbl}>授權地區</label><input className={inputCls} value={sv('territory')} onChange={(e) => setF('territory', e.target.value)} placeholder="全球 / 台灣…" /></div>
+                  <div><label className={lbl}>授權期間</label><input className={inputCls} value={sv('license_term')} onChange={(e) => setF('license_term', e.target.value)} placeholder="1 年 / 永久…" /></div>
+                </div>
+                <div className="grid grid-cols-4 gap-2 items-end">
+                  <div><label className={lbl}>含修改次數</label><input type="number" min={0} className={inputCls} value={sv('base_revisions') || '1'} onChange={(e) => setF('base_revisions', e.target.value)} /></div>
+                  <div><label className={lbl}>修改上限</label><input type="number" min={0} className={inputCls} value={sv('revision_cap') || '5'} onChange={(e) => setF('revision_cap', e.target.value)} /></div>
+                  <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer pb-1.5"><input type="checkbox" className="accent-violet-600" checked={!!draft.has_singing} onChange={(e) => setF('has_singing', e.target.checked)} />需要唱歌</label>
+                  <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer pb-1.5"><input type="checkbox" className="accent-violet-600" checked={!!draft.wants_director} onChange={(e) => setF('wants_director', e.target.checked)} />線上監錄導演</label>
+                </div>
                 <details className="text-[11px] text-gray-400"><summary className="cursor-pointer">原始草稿 JSON(除錯用)</summary><pre className="whitespace-pre-wrap break-all mt-1">{JSON.stringify(draft, null, 1)}</pre></details>
               </div>
             )}
