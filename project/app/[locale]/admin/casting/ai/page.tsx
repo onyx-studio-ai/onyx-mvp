@@ -8,7 +8,7 @@
 */
 
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, ArrowRight, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Send, ArrowRight, RotateCcw, CheckCircle2, ClipboardList } from 'lucide-react';
 import { LANGUAGES } from '@/lib/languages';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -103,7 +103,7 @@ export default function AiCastingPage() {
       setComplete(!!j.complete);
       const q = String(j.question || '').trim();
       const note = changed.length ? `✓ 已更新:${changed.map((k) => FIELD_LABELS[k]).join('、')}` : '';
-      const bodyText = q || '✅ 資訊齊了,右側草稿已完成 —— 檢查一下,沒問題就按「帶入發案表單」。要調整直接改右側或跟我說。';
+      const bodyText = q || '資訊齊了,右側草稿已完成 —— 檢查一下,沒問題就按「帶入發案表單」。要調整直接改右側或跟我說。';
       setMsgs((m) => [...m, { role: 'assistant', content: note ? `${bodyText}\n\n${note}` : bodyText }]);
     } catch (e) { setErr(e instanceof Error ? e.message : '失敗'); }
     finally { setBusy(false); }
@@ -188,7 +188,7 @@ export default function AiCastingPage() {
         {/* 右:即時草稿 */}
         <div className="rounded-2xl border border-gray-100 shadow-sm bg-white flex flex-col h-[74vh]">
           <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between shrink-0">
-            <p className="text-sm font-semibold text-gray-900">📋 案件草稿(即時)</p>
+            <p className="text-sm font-semibold text-gray-900 inline-flex items-center gap-1.5"><ClipboardList className="w-4 h-4 text-gray-500" /> 案件草稿(即時)</p>
             {draft ? (complete
               ? <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200"><CheckCircle2 className="w-3 h-3" /> 資訊已齊</span>
               : <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">收集中…</span>)
