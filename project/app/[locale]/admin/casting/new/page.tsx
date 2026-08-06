@@ -243,6 +243,12 @@ function NewCasting() {
     setRefLinks(d.refLinks?.length ? d.refLinks : ['']); setRefFiles(d.refFiles || []); setAiType(d.aiType);
   }, !search?.get('from'));
 
+  // 從「AI 發案」帶入(?ai=1):草稿直接自動恢復,不需要再按「恢復草稿」(Wing 2026-08-06)。
+  useEffect(() => {
+    if (search?.get('ai') && draft.pending) draft.restore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.pending]);
+
   function pickCategory(label: string) {
     setCategory(label);
     const m = CATEGORIES.find((c) => c.label === label)?.mode;
