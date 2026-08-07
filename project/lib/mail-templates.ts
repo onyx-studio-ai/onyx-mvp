@@ -2085,7 +2085,7 @@ export function prospectInviteEmail(p: {
 <p>We've built our own voice-casting platform, running both <b>live human voiceover</b> and <b>AI / TTS voice</b> projects. We'd love to have you join as a talent — set up your profile once, and future projects are matched to you directly.</p>
 ${proj ? `<p>${p.language ? `A <b>${p.language}</b> project just opened and you were the first person we thought of` : 'We have a project that suits you right now'}:<br><b>${proj}</b>${dl}</p>` : ''}
 ${btn('Audition here')}
-<p>If the platform isn't convenient right now, no problem at all — <b>just reply to this email with your demo or audio file attached</b> and we'll handle the rest for you.</p>
+<p>One thing worth knowing: signing up is purely for auditions and taking on projects — <b>your profile is not shown on the public voices roster</b> and no one else can see it. You'd simply be one of our internal, dedicated collaborators. Listing yourself publicly for more work is a separate, optional application later.</p>
 <p style="color:#6b7280;font-size:13px">First time on Onyx? On that page tap <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — about a minute.</p>
 <p>Any questions, just reply. Looking forward to working with you!</p>
 <p style="margin:16px 0 0;color:#374151">The Onyx Studios Team<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
@@ -2107,7 +2107,7 @@ ${btn('Audition here')}
 <p>我们新建了自有的配音接案平台,同时承接<b>真人配音案</b>与 <b>AI / TTS 语音案</b>。诚挚邀请您入驻成为平台配音员 —— 资料建立一次,日后案件直接与您匹配,不必重复投递。</p>
 ${proj ? `<p>${p.language ? `这次有一个 <b>${p.language}</b> 的案件,第一时间想到您` : '目前有一个适合您的案件'}:<br><b>${proj}</b>${dl}</p>` : ''}
 ${btn('前往试音')}
-<p>若暂时不方便使用平台也完全没问题 —— <b>直接回复这封邮件、附上您的 demo 或录音档</b>,后续我们替您处理。</p>
+<p>特别说明:注册只是为了试音与接案 —— <b>您的资料不会出现在前台的声音名册</b>,其他人看不到您;您就是我们内部专属合作的配音员。若日后想公开上架接更多案件,再另外申请即可。</p>
 <p style="color:#6b7280;font-size:13px">第一次用 Onyx?在页面点<b>「注册并试音」</b>(不是「登录」),用 email 注册约 1 分钟即可。</p>
 <p>有任何问题,直接回复即可。期待与您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 团队 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
@@ -2128,7 +2128,7 @@ ${btn('前往试音')}
 <p>我們新建了自有的配音接案平台,同時承接<b>真人配音案</b>與 <b>AI / TTS 語音案</b>。誠摯邀請您進駐成為平台配音員 —— 資料建立一次,日後案件直接與您媒合,不必重複投履歷。</p>
 ${proj ? `<p>${p.language ? `這次有一個 <b>${p.language}</b> 的案子,第一時間想到您` : '目前有一個適合您的案件'}:<br><b>${proj}</b>${dl}</p>` : ''}
 ${btn('前往試音')}
-<p>若暫時不方便使用平台也完全沒問題 —— <b>直接回覆這封信、附上您的 demo 或錄音檔</b>,後續我們替您處理。</p>
+<p>特別說明:註冊只是為了試音與接案 —— <b>您的資料不會出現在前台的聲音名冊</b>,其他人看不到您;您就是我們內部專屬合作的配音員。若日後想公開上架接更多案件,再另外申請即可。</p>
 <p style="color:#6b7280;font-size:13px">第一次用 Onyx?在頁面點<b>「註冊並試音」</b>(不是「登入」),用 email 註冊約 1 分鐘即可。</p>
 <p>有任何問題,直接回覆即可。期待與您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 團隊 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
