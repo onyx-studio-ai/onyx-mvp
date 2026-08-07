@@ -10,7 +10,7 @@
  *   3. Services   — 4 service cards, subtle bg-white/[0.03] styling
  *                   consistent with other pages (not heavy gradient borders)
  *   4. Workflow   — 4-step universal engagement flow
- *   5. Trust      — credentials (2008 / 1,500+ / 30+ / global)
+ *   5. Trust      — credentials (2008 / 30+ / global;人數不對外揭露)
  *   6. Transparency — AI-as-tool statement (matches pricing/dubbing)
  *   7. CTA        — contact / explore plans
  *
@@ -119,10 +119,6 @@ export default function LobbyPage() {
       label: tx('年經驗',   '年经验',   'Years'),
     },
     {
-      stat: '1,500+',
-      label: tx('配音員',   '配音员',   'Voice Talents'),
-    },
-    {
       stat: '30+',
       label: tx('語言',     '语言',     'Languages'),
     },
@@ -208,9 +204,9 @@ export default function LobbyPage() {
           </p>
           <p className="text-base text-gray-400 leading-relaxed">
             {tx(
-              '1,500+ 配音員、30+ 語種、自有錄音室、全球客戶 — 從廣告、影視、遊戲到 TTS 資料製作，一站交付。',
-              '1,500+ 配音员、30+ 语种、自有录音室、全球客户 — 从广告、影视、游戏到 TTS 资料制作，一站交付。',
-              '1,500+ talents, 30+ languages, our own studio, global clientele — ads, film, game, TTS data — delivered end-to-end.'
+              '30+ 語種、自有錄音室、全球客戶 — 從廣告、影視、遊戲到 TTS 資料製作，一站交付。',
+              '30+ 语种、自有录音室、全球客户 — 从广告、影视、游戏到 TTS 资料制作，一站交付。',
+              '30+ languages, our own studio, global clientele — ads, film, game, TTS data — delivered end-to-end.'
             )}
           </p>
         </motion.div>
@@ -348,7 +344,7 @@ export default function LobbyPage() {
             transition={{ duration: 0.6 }}
             className="rounded-2xl bg-white/[0.02] border border-white/10 p-8 md:p-10"
           >
-            <div className="grid grid-cols-3 gap-6 md:gap-4">
+            <div className="grid grid-cols-2 gap-6 md:gap-4">
               {trust.map((item, i) => (
                 <motion.div
                   key={item.label}
