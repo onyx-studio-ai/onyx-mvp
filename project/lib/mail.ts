@@ -119,7 +119,14 @@ export function emailLocaleForTalent(
   storedLocale: string | null | undefined,
   languages: unknown,
 ): string {
-  const loc = storedLocale || 'en';
-  if (loc.startsWith('zh') && !readsChinese(languages)) return 'en';
-  return loc;
+  if (storedLocale) {
+    if (storedLocale.startsWith('zh') && !readsChinese(languages)) return 'en';
+    return storedLocale;
+  }
+  // 沒有 stored locale → 由 languages 推(2026-08-07 修:原本直接回 'en',台灣配音員全收英文信)
+  if (!readsChinese(languages)) return 'en';
+  const list = Array.isArray(languages) ? languages.map(String) : [];
+  const hasTW = list.some((l) => /taiwan|cantonese|hokkien|hakka|客家|台/i.test(l));
+  const hasCN = list.some((l) => /mainland|大陆|普通话/i.test(l));
+  return hasCN && !hasTW ? 'zh-CN' : 'zh-TW';
 }
