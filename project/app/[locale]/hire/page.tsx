@@ -19,6 +19,7 @@ import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useFormDraft, DraftBanner } from '@/lib/use-form-draft';
+import HireAi from '@/components/hire/HireAi';
 
 type Opt = { v: string; tw: string; cn: string };
 type Opt3 = { v: string; tw: string; cn: string; en: string };
@@ -160,7 +161,7 @@ const STUDIO_REGIONS: Opt3[] = [
   { v: 'UK', tw: '英國', cn: '英国', en: 'UK' },
   { v: '__other__', tw: '其他(自行填寫)', cn: '其他(自行填写)', en: 'Other (type it)' },
 ];
-const CURRENCIES = ['USD', 'TWD'];   // 全站只收台幣 / 美金
+const CURRENCIES = ['USD', 'TWD', 'HKD', 'CNY'];   // 2026-08-06 加港幣/人民幣(香港與大陸案)
 const BUDGET_UNITS = ['整案', '句', '字', '分鐘', '小時']; // 整案 = whole project (the common default)
 const SCRIPT_EXT = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'md'];
 // Role-based content types — these get the per-character casting role sheet.
@@ -277,12 +278,14 @@ export default function Hire() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [aiMode, setAiMode] = useState(true);   // AI 對話發案為預設(Wing 2026-08-06);可切回傳統表單
   // Tailored entry: arriving from the "100% Live Studio" pricing card (?from=live-studio)
   // pre-selects the live online session and hides the AI-routing options (they already chose human).
   const [isLiveStudio, setIsLiveStudio] = useState(false);
   // Arriving from a talent profile's "Enquire" — pre-fills the requested talent;
   // the rest of the brief is still required.
   const [requestedTalent, setRequestedTalent] = useState('');
+  useEffect(() => { if (requestedTalent) setAiMode(false); }, [requestedTalent]);
   const [requestedTalentId, setRequestedTalentId] = useState('');
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -461,6 +464,16 @@ export default function Hire() {
           <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center mx-auto mb-5"><Check className="w-8 h-8 text-black" /></div>
           <h1 className="text-2xl font-bold mb-2">{tx('需求已送出!', '需求已送出!', 'Brief received!')}</h1>
           <p className="text-gray-400 text-sm leading-relaxed">{tx('我們已收到您的需求,團隊會盡快為您挑選合適的配音員並與您聯繫報價。', '我们已收到您的需求,团队会尽快为您挑选合适的配音员并与您联系报价。', 'We’ve received your brief — our team will shortlist suitable voices and get back to you with a quote shortly.')}</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (aiMode) {
+    return (
+      <main className="min-h-screen bg-black text-white">
+        <div className="max-w-6xl mx-auto px-4 pt-24 pb-16">
+          <HireAi locale={locale} onClassic={() => setAiMode(false)} onSuccess={() => setDone(true)} />
         </div>
       </main>
     );
