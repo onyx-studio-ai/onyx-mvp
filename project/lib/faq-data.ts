@@ -14,9 +14,9 @@ export function getClientFaqs(tx: FaqTx): FaqCategory[] {
         {
           q: tx('什麼是 Onyx Studios？', '什么是 Onyx Studios？', 'What is Onyx Studios?'),
           a: tx(
-            'Onyx Studios（onyxstudios.ai）是一間成立於 2008 年、總部位於台灣的 AI 配音與音樂製作工作室。我們提供 AI 配音、多語 AI 配音、AI 輔助音樂製作，以及企業級語音數據採集服務。所有 AI 輸出均由資深人類聲音導演審核與精修後才交付。',
-            '什么是 Onyx Studios？Onyx Studios（onyxstudios.ai）是一家成立于 2008 年、总部位于台湾的 AI 配音与音乐制作工作室。我们提供 AI 配音、多语 AI 配音、AI 辅助音乐制作，以及企业级语音数据采集服务。所有 AI 输出均由资深真人声音导演审核与精修后才交付。',
-            'Onyx Studios (onyxstudios.ai) is a professional AI voice and music production studio founded in 2008, headquartered in Taiwan. We offer AI voiceover, multilingual AI dubbing, AI-assisted music production, and enterprise speech data collection. All AI output is reviewed and refined by experienced human voice directors before delivery.'
+            'Onyx Studios（onyxstudios.ai）是一間成立於 2008 年、總部位於台灣的配音與音樂製作工作室。我們同時提供「真人配音」與「AI 配音」兩條並行的服務線：真人配音由平台上經過審核的專業配音員演繹，可線上發案、試音與選角；AI 服務涵蓋 AI 配音、多語 AI 配音、AI 輔助音樂製作與企業級語音數據採集。兩者不衝突——真人提供演繹深度，AI 提供速度與規模，且所有 AI 輸出均由資深聲音導演審核精修後才交付。',
+            'Onyx Studios（onyxstudios.ai）是一家成立于 2008 年、总部位于台湾的配音与音乐制作工作室。我们同时提供「真人配音」与「AI 配音」两条并行的服务线：真人配音由平台上经过审核的专业配音员演绎，可在线发案、试音与选角；AI 服务涵盖 AI 配音、多语 AI 配音、AI 辅助音乐制作与企业级语音数据采集。两者不冲突——真人提供演绎深度，AI 提供速度与规模，且所有 AI 输出均由资深声音导演审核精修后才交付。',
+            'Onyx Studios (onyxstudios.ai) is a voiceover and music production studio founded in 2008, headquartered in Taiwan. We run two service lines side by side: human voiceover — vetted professional voice actors you can brief, audition, and cast online — and AI services covering AI voiceover, multilingual AI dubbing, AI-assisted music production, and enterprise speech data collection. The two complement rather than compete: humans bring performance depth, AI brings speed and scale, and every AI output is still reviewed and refined by experienced voice directors before delivery.'
           ),
         },
         {
@@ -33,14 +33,26 @@ export function getClientFaqs(tx: FaqTx): FaqCategory[] {
         },
         {
           q: tx(
+            '如何發案、找真人配音員？',
+            '如何发案、找真人配音员？',
+            'How do I post a human voiceover project and find voice actors?'
+          ),
+          a: tx(
+            '到「發案」頁（onyxstudios.ai/hire），可以直接跟 AI 發案助理 Aria 用聊的整理需求，或改用傳統表單填寫，發案完全免費。送出後 Onyx 會審核並為您配對合適的配音員試音，您聽過試音、確認人選後才進入正式合作。也可以先到「聲音名冊」試聽，直接指定喜歡的配音員。',
+            '到「发案」页（onyxstudios.ai/hire），可以直接跟 AI 发案助理 Aria 用聊的整理需求，或改用传统表单填写，发案完全免费。送出后 Onyx 会审核并为您配对合适的配音员试音，您听过试音、确认人选后才进入正式合作。也可以先到「声音名册」试听，直接指定喜欢的配音员。',
+            'Head to the Post a Project page (onyxstudios.ai/hire) — describe your project to Aria, our AI assistant, or use the classic form. Posting is free. Onyx reviews your brief, matches suitable voice actors for auditions, and you only commit once you have heard the auditions and confirmed your pick. You can also browse the Voices roster and request a specific actor directly.'
+          ),
+        },
+        {
+          q: tx(
             'Onyx Studios 和其他 AI 配音平台有什麼不同？',
             'Onyx Studios 和其他 AI 配音平台有什么不同？',
             'What makes Onyx Studios different from other AI voice platforms?'
           ),
           a: tx(
-            'Onyx Studios 不是自助式 TTS 工具。每個專案由製作團隊端到端處理：AI 生成初版，人類聲音導演再精修語調、節奏、發音與情感，直到可交付為止。我們的聲音模型均來自授權合作的簽約專業配音員，而非爬取或匿名來源。',
-            'Onyx Studios 不是自助式 TTS 工具。每个项目由制作团队端到端处理：AI 生成初版，真人声音导演再精修语调、节奏、发音与情感，直到可交付为止。我们的声音模型均来自授权合作的签约专业配音员，而非抓取或匿名来源。',
-            'Onyx Studios is not a self-serve TTS tool. Every project is handled end-to-end by a production team: AI generates the first pass, then human voice directors refine tone, pacing, pronunciation, and emotion for delivery-ready results. Our voice models are built from recordings by contracted, consenting voice actors — not scraped or anonymous data.'
+            'Onyx Studios 不是自助式 TTS 工具。每個專案由製作團隊端到端處理：AI 生成初版，人類聲音導演再精修語調、節奏、發音與情感，直到可交付為止。我們的聲音模型均來自授權合作的簽約專業配音員，而非爬取或匿名來源。此外我們不只有 AI——同一個平台也能直接發案給專業真人配音員試音選角，AI 與真人可依專案自由搭配。',
+            'Onyx Studios 不是自助式 TTS 工具。每个项目由制作团队端到端处理：AI 生成初版，真人声音导演再精修语调、节奏、发音与情感，直到可交付为止。我们的声音模型均来自授权合作的签约专业配音员，而非抓取或匿名来源。此外我们不只有 AI——同一个平台也能直接发案给专业真人配音员试音选角，AI 与真人可依项目自由搭配。',
+            'Onyx Studios is not a self-serve TTS tool. Every project is handled end-to-end by a production team: AI generates the first pass, then human voice directors refine tone, pacing, pronunciation, and emotion for delivery-ready results. Our voice models are built from recordings by contracted, consenting voice actors — not scraped or anonymous data. And we are not AI-only — on the same platform you can brief and cast professional human voice actors, mixing human and AI per project.'
           ),
         },
       ],
