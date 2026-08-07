@@ -2078,13 +2078,14 @@ export function prospectInviteEmail(p: {
       ? `We previously connected with you through localization / voiceover work via ${p.company}, and your voice left a strong impression.`
       : `We've been in touch before on voiceover work, and we've always admired your voice.`;
     return {
-      subject: `Onyx Studios — an invitation to join, and a project for you`,
+      subject: proj ? `An audition invitation for you — ${proj}` : `Onyx Studios — an invitation to join, and a project for you`,
       html: wrap(
         `<p>Hi${p.name ? ` ${p.name}` : ''},</p>
 <p>This is the team at <b>Onyx Studios</b>. ${rel}</p>
 <p>We've built our own voice-casting platform, running both <b>live human voiceover</b> and <b>AI / TTS voice</b> projects. We'd love to have you join as a talent — set up your profile once, and future projects are matched to you directly.</p>
-${proj ? `<p>We have a project that suits you right now:<br><b>${proj}</b>${dl}</p>` : ''}
+${proj ? `<p>${p.language ? `A <b>${p.language}</b> project just opened and you were the first person we thought of` : 'We have a project that suits you right now'}:<br><b>${proj}</b>${dl}</p>` : ''}
 ${btn('Audition here')}
+<p>If the platform isn't convenient right now, no problem at all — <b>just reply to this email with your demo or audio file attached</b> and we'll handle the rest for you.</p>
 <p style="color:#6b7280;font-size:13px">First time on Onyx? On that page tap <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — about a minute.</p>
 <p>Any questions, just reply. Looking forward to working with you!</p>
 <p style="margin:16px 0 0;color:#374151">The Onyx Studios Team<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
@@ -2099,13 +2100,14 @@ ${btn('Audition here')}
       ? `我们先前曾通过 ${p.company} 的本地化 / 配音案件与您联系过,对您的声音印象深刻。`
       : `我们先前曾在配音案件上与您联系过,一直很欣赏您的声音。`;
     return {
-      subject: `Onyx Studios(凡音)· 诚邀您加入平台,有新案件`,
+      subject: proj ? `想邀您试音:${proj}|Onyx Studios(凡音)` : `Onyx Studios(凡音)· 诚邀您加入平台,有新案件`,
       html: wrap(
         `<p>${p.name || ''}您好,</p>
 <p>我们是 <b>Onyx Studios(凡音文化)</b> 团队。${rel}</p>
 <p>我们新建了自有的配音接案平台,同时承接<b>真人配音案</b>与 <b>AI / TTS 语音案</b>。诚挚邀请您入驻成为平台配音员 —— 资料建立一次,日后案件直接与您匹配,不必重复投递。</p>
-${proj ? `<p>目前有一个适合您的案件:<br><b>${proj}</b>${dl}</p>` : ''}
+${proj ? `<p>${p.language ? `这次有一个 <b>${p.language}</b> 的案件,第一时间想到您` : '目前有一个适合您的案件'}:<br><b>${proj}</b>${dl}</p>` : ''}
 ${btn('前往试音')}
+<p>若暂时不方便使用平台也完全没问题 —— <b>直接回复这封邮件、附上您的 demo 或录音档</b>,后续我们替您处理。</p>
 <p style="color:#6b7280;font-size:13px">第一次用 Onyx?在页面点<b>「注册并试音」</b>(不是「登录」),用 email 注册约 1 分钟即可。</p>
 <p>有任何问题,直接回复即可。期待与您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 团队 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
@@ -2119,13 +2121,14 @@ ${btn('前往试音')}
     ? `我們先前曾透過 ${p.company} 的在地化 / 配音案件與您聯繫過,對您的聲音印象深刻。`
     : `我們先前曾在配音案件上與您聯繫過,一直很欣賞您的聲音。`;
   return {
-    subject: `Onyx Studios(凡音)· 誠邀您加入平台,有新案件`,
+    subject: proj ? `想邀您試音:${proj}|Onyx Studios(凡音)` : `Onyx Studios(凡音)· 誠邀您加入平台,有新案件`,
     html: wrap(
       `<p>${p.name || ''}您好,</p>
 <p>我們是 <b>Onyx Studios(凡音文化)</b> 團隊。${rel}</p>
 <p>我們新建了自有的配音接案平台,同時承接<b>真人配音案</b>與 <b>AI / TTS 語音案</b>。誠摯邀請您進駐成為平台配音員 —— 資料建立一次,日後案件直接與您媒合,不必重複投履歷。</p>
-${proj ? `<p>目前有一個適合您的案件:<br><b>${proj}</b>${dl}</p>` : ''}
+${proj ? `<p>${p.language ? `這次有一個 <b>${p.language}</b> 的案子,第一時間想到您` : '目前有一個適合您的案件'}:<br><b>${proj}</b>${dl}</p>` : ''}
 ${btn('前往試音')}
+<p>若暫時不方便使用平台也完全沒問題 —— <b>直接回覆這封信、附上您的 demo 或錄音檔</b>,後續我們替您處理。</p>
 <p style="color:#6b7280;font-size:13px">第一次用 Onyx?在頁面點<b>「註冊並試音」</b>(不是「登入」),用 email 註冊約 1 分鐘即可。</p>
 <p>有任何問題,直接回覆即可。期待與您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 團隊 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
