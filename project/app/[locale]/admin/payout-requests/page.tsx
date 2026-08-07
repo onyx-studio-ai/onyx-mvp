@@ -29,7 +29,7 @@ async function openInvoice(invoiceUrl: string) {
   }
 }
 
-const STATUS_LABEL: Record<string, string> = { pending: '待處理', invoice_uploaded: '已上傳發票', paid: '已撥款', rejected: '已退回' };
+const STATUS_LABEL: Record<string, string> = { pending: '待處理', invoice_uploaded: '已上傳發票', paid: '已安排撥款', rejected: '已退回' };
 const STATUS_CLS: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-700 border-gray-300',
   invoice_uploaded: 'bg-sky-50 text-sky-700 border-sky-300',
