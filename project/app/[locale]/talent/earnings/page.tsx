@@ -358,7 +358,7 @@ function RequestRow({ r, tx, onChanged }: { r: PayoutReq; tx: (a: string, b: str
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const SL: Record<string, string> = { pending: tx('待完成發票', '待完成发票', 'Invoice pending'), invoice_uploaded: tx('已送出 · 待撥款', '已送出 · 待拨款', 'Submitted'), paid: tx('已撥款', '已拨款', 'Paid'), rejected: tx('已退回', '已退回', 'Rejected') };
+  const SL: Record<string, string> = { pending: tx('待完成發票', '待完成发票', 'Invoice pending'), invoice_uploaded: tx('已送出 · 待撥款', '已送出 · 待拨款', 'Submitted'), paid: tx('已安排撥款 · 約7個工作日入帳', '已安排拨款 · 约7个工作日入账', 'Payment scheduled · arrives in ~7 business days'), rejected: tx('已退回', '已退回', 'Rejected') };
 
   async function viewInvoice() {
     const res = await authedFetch(`/api/talent/invoice?id=${r.id}`);
