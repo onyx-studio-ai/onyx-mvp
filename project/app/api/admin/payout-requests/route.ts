@@ -68,9 +68,13 @@ export async function PATCH(request: NextRequest) {
   let emailWarning: string | undefined;
   if (isPaying) {
     try {
-      const { data: talent } = await db.from('talents')
-        .select('name, email, locale, languages').eq('id', cur.talent_id).maybeSingle();
-      if (!talent?.email) {
+      // 🚨 別 select 不存在的欄位:生產 talents 無 locale 欄,select 到會整查詢炸掉回 null,
+      // 曾被誤報成「配音員無 email」(2026-08-07 布魯麵撥款)。語系用 languages 推即可。
+      const { data: talent, error: talentErr } = await db.from('talents')
+        .select('name, email, languages').eq('id', cur.talent_id).maybeSingle();
+      if (talentErr) {
+        emailWarning = `查配音員資料失敗(${talentErr.message}),通知信未寄。`;
+      } else if (!talent?.email) {
         emailWarning = '配音員無 email,已跳過通知信。';
       } else {
         // 解密收款資料以推扣繳試算(生產環境 PAYOUT_ENC_KEY 在 Vercel)。解不到就以「無扣繳明細」寄出,信照發。
@@ -82,7 +86,7 @@ export async function PATCH(request: NextRequest) {
             try { details = decryptJson(pd.enc_payload as string); } catch { /* 解密失敗→無扣繳明細,不擋信 */ }
           }
         }
-        const locale = emailLocaleForTalent(talent.locale as string | null, talent.languages);
+        const locale = emailLocaleForTalent(null, talent.languages);
         const dd = deductionsForPayout(Number(cur.amount) || 0, cur.currency, details, locale);
         const { subject, html } = payoutPaidEmail({
           talentName: talent.name as string | undefined,
