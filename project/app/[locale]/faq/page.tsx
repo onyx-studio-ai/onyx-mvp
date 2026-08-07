@@ -49,9 +49,9 @@ export default async function FAQPage({ params }: { params: Promise<{ locale: st
             </h1>
             <p className="text-lg text-gray-400 leading-relaxed">
               {tx(
-                '關於 AI 配音、多語配音、音樂製作與語音數據服務的常見問題。',
-                '关于 AI 配音、多语配音、音乐制作与语音数据服务的常见问题。',
-                'Everything you need to know about our AI voiceover, dubbing, music production, and speech data services.'
+                '關於真人配音發案、AI 配音、多語配音、音樂製作與語音數據服務的常見問題。',
+                '关于真人配音发案、AI 配音、多语配音、音乐制作与语音数据服务的常见问题。',
+                'Everything you need to know about our human voiceover casting, AI voiceover, dubbing, music production, and speech data services.'
               )}
             </p>
           </div>
