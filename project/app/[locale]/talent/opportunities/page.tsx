@@ -1650,7 +1650,8 @@ function GeneralResponse({
   templates: Templates;
   onTemplates: (t: Templates) => void;
 }) {
-  const [src, setSrc] = useState<'demo' | 'upload'>(myDemos.length ? 'demo' : 'upload');
+  const hasScript = !!(brief.audition_script || '').trim(); // 有指定試音稿 → 必須依稿新錄,不收現有 demo
+  const [src, setSrc] = useState<'demo' | 'upload'>(!hasScript && myDemos.length ? 'demo' : 'upload');
   const [pickedDemo, setPickedDemo] = useState(myDemos[0]?.url || '');
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -1662,7 +1663,7 @@ function GeneralResponse({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   useQuoteDefaults(templates, setIntro, setRevPolicy, setIncludedRev);
-  const sampleUrl = src === 'demo' ? pickedDemo : audioUrl;
+  const sampleUrl = !hasScript && src === 'demo' ? pickedDemo : audioUrl;
   const grossN = Number(gross);
   const closed = auditionClosed(brief); // 截止後:上傳 / 報價 / 送出全部停用(內容照看)
 
@@ -1686,7 +1687,7 @@ function GeneralResponse({
   async function submit() {
     setErr('');
     if (brief.license_summary && !licenseOk) return setErr(tx('請先勾選同意授權要點', '请先勾选同意授权要点', 'Please agree to the license terms first'));
-    if (!sampleUrl) return setErr(tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
+    if (!sampleUrl) return setErr(hasScript ? tx('此案有指定試音稿,請依稿錄製並上傳', '此案有指定试音稿,请依稿录制并上传', 'This case has an audition script — record it and upload') : tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
     const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
     const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
@@ -1714,9 +1715,13 @@ function GeneralResponse({
 
   return (
     <div className="border-t border-white/10 pt-3 space-y-2">
-      <p className="text-xs text-gray-300">{tx('依案件說明 —— 有指定稿件就依稿試音;沒有的話,直接用 demo 應徵(挑現有的或上傳新的)+ 報價即可。', '依案件说明 —— 有指定稿件就依稿试音;没有的话,直接用 demo 应征(挑现有的或上传新的)+ 报价即可。', 'Per the case brief — if a script is provided, audition with it; if not, apply with a demo (pick one or upload), then quote.')}</p>
+      {hasScript ? (
+        <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx('此案有指定試音稿 —— 請依上方稿件錄製後上傳;直接以現有 demo 應徵恕不受理。', '此案有指定试音稿 —— 请依上方稿件录制后上传;直接以现有 demo 应征恕不受理。', 'This case has an audition script — record it and upload your take. Existing demos are not accepted.')}</p>
+      ) : (
+        <p className="text-xs text-gray-300">{tx('此案無指定稿件 —— 直接用 demo 應徵(挑現有的或上傳新的)+ 報價即可。', '此案无指定稿件 —— 直接用 demo 应征(挑现有的或上传新的)+ 报价即可。', 'No script for this case — apply with a demo (pick one or upload), then quote.')}</p>
+      )}
       {closed && <ClosedNotice tx={tx} />}
-      {myDemos.length > 0 && (
+      {!hasScript && myDemos.length > 0 && (
         <div className="flex gap-2 text-xs">
           {([['demo', '挑現有 demo', '挑现有 demo', 'My demos'], ['upload', '上傳新 demo', '上传新 demo', 'Upload']] as const).map(([k, twl, cnl, enl]) => (
             <button key={k} type="button" onClick={() => setSrc(k)}
