@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Brief must exist and be open.
     const { data: brief } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline, created_at, license_summary')
+      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline, created_at, license_summary, audition_script')
       .eq('id', briefId)
       .maybeSingle();
     if (!brief) return NextResponse.json({ error: 'Brief not found' }, { status: 404 });
@@ -61,6 +61,12 @@ export async function POST(request: NextRequest) {
     // 授權前置閘:案件掛了授權要點 → 必須勾同意才能試音(中選後才反悔授權 = 全部白忙,Wing 2026-07-21)
     if ((brief as { license_summary?: string | null }).license_summary && body.license_agreed !== true) {
       return NextResponse.json({ error: '此案需先同意授權要點才能試音。' }, { status: 400 });
+    }
+    // 有指定試音稿的案子必須依稿新錄:試音檔一定走 audition-upload(casting/auditions/ 路徑),
+    // 直接丟現有 demo 網址不受理(Wing 2026-08-08:很多人拿舊 demo 充試音)。
+    if (String((brief as { audition_script?: string | null }).audition_script || '').trim()
+        && sampleUrl && !sampleUrl.includes('/casting/auditions/')) {
+      return NextResponse.json({ error: '此案有指定試音稿,請依稿錄製並上傳試音,不接受現有 demo。' }, { status: 400 });
     }
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
