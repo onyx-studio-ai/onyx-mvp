@@ -1650,8 +1650,9 @@ function GeneralResponse({
   templates: Templates;
   onTemplates: (t: Templates) => void;
 }) {
-  const hasScript = !!(brief.audition_script || '').trim(); // 有指定試音稿 → 必須依稿新錄,不收現有 demo
+  const hasScript = !!(brief.audition_script || '').trim(); // 有指定試音稿 → 依稿新錄為必,現有 demo 只能當補充
   const [src, setSrc] = useState<'demo' | 'upload'>(!hasScript && myDemos.length ? 'demo' : 'upload');
+  const [suppDemo, setSuppDemo] = useState(''); // 有稿案:選填的現有 demo 補充(送出後掛 extra_samples)
   const [pickedDemo, setPickedDemo] = useState(myDemos[0]?.url || '');
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -1700,6 +1701,13 @@ function GeneralResponse({
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', '送出失败', 'Submit failed'));
+    // 有稿案的選填補充 demo:掛到 extra_samples(失敗不擋應徵成功)
+    if (hasScript && suppDemo && j.quote?.id) {
+      await authedFetch('/api/talent/quotes', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: j.quote.id, add_extra_sample: suppDemo, label: tx('現有 demo(補充)', '现有 demo(补充)', 'Existing demo (supplement)') }),
+      }).catch(() => {});
+    }
     onQuoted(j.quote);
   }
 
@@ -1716,7 +1724,7 @@ function GeneralResponse({
   return (
     <div className="border-t border-white/10 pt-3 space-y-2">
       {hasScript ? (
-        <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx('此案有指定試音稿 —— 請依上方稿件錄製後上傳;直接以現有 demo 應徵恕不受理。', '此案有指定试音稿 —— 请依上方稿件录制后上传;直接以现有 demo 应征恕不受理。', 'This case has an audition script — record it and upload your take. Existing demos are not accepted.')}</p>
+        <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx('此案有指定試音稿 —— 請依上方稿件錄製後上傳(必);另可加附一段現有 demo 補充聲音感覺(選填)。', '此案有指定试音稿 —— 请依上方稿件录制后上传(必);另可加附一段现有 demo 补充声音感觉(选填)。', 'This case has an audition script — record it and upload your take (required). You may also attach an existing demo as a supplement (optional).')}</p>
       ) : (
         <p className="text-xs text-gray-300">{tx('此案無指定稿件 —— 直接用 demo 應徵(挑現有的或上傳新的)+ 報價即可。', '此案无指定稿件 —— 直接用 demo 应征(挑现有的或上传新的)+ 报价即可。', 'No script for this case — apply with a demo (pick one or upload), then quote.')}</p>
       )}
@@ -1745,6 +1753,16 @@ function GeneralResponse({
           {uploading && <p className="text-xs text-gray-300">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
           {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
         </>
+      )}
+      {hasScript && myDemos.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] text-gray-400">{tx('加附現有 demo(選填,補充聲音感覺,不取代試音)', '加附现有 demo(选填,补充声音感觉,不取代试音)', 'Attach an existing demo (optional — supplements, does not replace your audition)')}</p>
+          <select className={inputCls} value={suppDemo} onChange={(e) => setSuppDemo(e.target.value)}>
+            <option value="" className="bg-black">{tx('不加附', '不加附', 'None')}</option>
+            {myDemos.map((d, i) => (<option key={i} value={d.url} className="bg-black">{[d.category, d.name, d.language].filter(Boolean).join(' · ') || `Demo ${i + 1}`}</option>))}
+          </select>
+          {suppDemo && <audio controls src={suppDemo} className="w-full h-9" />}
+        </div>
       )}
       {/* 報價 — Voices 式:您的報酬 ↔ 平台費 連動;客戶支付比對客戶預算 */}
       {(() => {
