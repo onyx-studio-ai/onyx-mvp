@@ -71,7 +71,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   // 已徵得的角色(只給角色名,不露指派給誰)—— 前台標「已徵得」。
   const { data: aos } = await db.from('voice_orders').select('role_name').eq('brief_id', invite.brief_id).not('role_name', 'is', null);
   const assignedRoles = [...new Set((aos || []).map((o) => String(o.role_name)))];
-  return NextResponse.json({ brief: safeBrief, roleCounts, myAuditions, assignedRoles, invite: { email: invite.email, name: invite.name }, closed: castingClosed(brief) });
+  // 幣別(非金額)必須給前端,報價框才不會用錯幣 —— 金額底牌仍不外洩。
+  const dealCurrency = String((brief as { budget_currency?: string | null }).budget_currency || '').toUpperCase() || null;
+  return NextResponse.json({ brief: safeBrief, dealCurrency, roleCounts, myAuditions, assignedRoles, invite: { email: invite.email, name: invite.name }, closed: castingClosed(brief) });
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -90,7 +92,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const sampleUrl = String(body.sample_url || '').slice(0, 1000);
   const intro = String(body.intro || '').slice(0, 3000) || null;
   const gross = Number(body.gross_amount);
-  const currency = CURRENCIES.includes(String(body.currency)) ? String(body.currency) : 'TWD';
+  // 🚨 幣別跟著案件走:案件有指定 budget_currency 就強制使用(deal currency 唯一真相),
+  // 否則才收前端值。之前預設寫死 TWD → HKD 案被報成 TWD(VO-260808-0001 事故)。
+  const dealCurrency = String((brief as { budget_currency?: string | null }).budget_currency || '').toUpperCase();
+  const currency = /^[A-Z]{3}$/.test(dealCurrency) ? dealCurrency : (CURRENCIES.includes(String(body.currency)) ? String(body.currency) : 'TWD');
   if (!sampleUrl) return NextResponse.json({ error: '請先上傳試音音檔' }, { status: 400 });
   if (!isFinite(gross) || gross <= 0) return NextResponse.json({ error: '請填報價' }, { status: 400 });
 
