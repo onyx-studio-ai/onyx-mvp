@@ -110,7 +110,8 @@ export async function PATCH(request: NextRequest) {
       signatureDataUri: sigUri,
     });
     const path = `payout/${talentId}/${Date.now()}_signed.html`;
-    const { error: upErr } = await r.db.storage.from('invoices').upload(path, html, { contentType: 'text/html; charset=utf-8' });
+    // 桶 mime 白名單是精確比對 —— 帶 charset 會被拒(text/html; charset=utf-8 ≠ text/html)
+    const { error: upErr } = await r.db.storage.from('invoices').upload(path, html, { contentType: 'text/html' });
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
     const { error } = await r.db.from('payout_requests').update({
       invoice_url: path, consent_at: new Date().toISOString(), status: 'invoice_uploaded', updated_at: new Date().toISOString(),
