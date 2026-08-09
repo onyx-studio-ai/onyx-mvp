@@ -1093,6 +1093,7 @@
     "acceptableUsePolicy": "可接受使用政策",
     "and": "與",
     "errorTermsRequired": "您必須同意服務條款、隱私權政策及可接受使用政策才能繼續",
+    "errorBotCheck": "安全驗證未通過(驗證已重新載入),請再按一次送出即可。",
     "toastAccountCreated": "帳號已建立！請查看您的 Email 以完成驗證。"
   },
   "authConfirm": {
