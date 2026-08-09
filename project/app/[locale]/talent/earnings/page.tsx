@@ -258,9 +258,46 @@ function PayoutSettings({ tx, locale, pending }: { tx: (a: string, b: string, c:
   );
 }
 
+// 簽名檔 — 上傳一次存檔;之後請款可勾「使用已存簽名檔」由系統直接開立已簽名發票。
+function SignatureCard({ tx, sigUrl, onChanged }: { tx: (a: string, b: string, c: string) => string; sigUrl: string | null; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  async function upload(file: File) {
+    setErr(''); setBusy(true);
+    try {
+      const u = await authedFetch('/api/talent/signature', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json(); if (!u.ok) throw new Error(uj.error || 'upload prep failed');
+      const { error } = await supabase.storage.from('invoices').uploadToSignedUrl(uj.path, uj.token, file);
+      if (error) throw new Error(error.message);
+      onChanged();
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); }
+    finally { setBusy(false); }
+  }
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-8">
+      <h2 className="text-sm font-semibold text-white mb-1">{tx('簽名檔', '签名档', 'Signature on file')}</h2>
+      <p className="text-xs text-gray-300 mb-3">{tx('上傳一次您的簽名(白底圖檔),之後每次請款可直接勾選使用,由系統開立已簽名發票,不必再列印、簽名、掃描上傳。', '上传一次您的签名(白底图档),之后每次请款可直接勾选使用,由系统开立已签名发票,不必再打印、签名、扫描上传。', 'Upload your signature once (image on white background). Future payout requests can reuse it — the system issues the signed invoice for you, no more print-sign-scan.')}</p>
+      {sigUrl && (
+        <div className="mb-3 inline-block bg-white rounded-lg p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={sigUrl} alt="signature" className="max-h-16 max-w-[240px]" />
+        </div>
+      )}
+      <div>
+        <label className="inline-flex items-center gap-1.5 text-sm bg-white/[0.06] border border-white/15 text-gray-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-white/[0.1]">
+          {busy ? tx('上傳中…', '上传中…', 'Uploading…') : sigUrl ? tx('更換簽名檔', '更换签名档', 'Replace signature') : tx('上傳簽名檔', '上传签名档', 'Upload signature')}
+          <input type="file" accept=".png,.jpg,.jpeg,.webp,image/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+        </label>
+      </div>
+      {err && <p className="text-xs text-red-400 mt-2">{err}</p>}
+    </div>
+  );
+}
+
 // 請款 — 配音員發起請款、系統生成發票、他同意+簽名上傳(或上傳自家發票)。
 function PayoutRequest({ tx, pending, pendingText }: { tx: (a: string, b: string, c: string) => string; pending: number; pendingText: string }) {
   const [reqs, setReqs] = useState<PayoutReq[]>([]);
+  const [sigUrl, setSigUrl] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [amount, setAmount] = useState(pending > 0 ? String(pending) : '');
   const [currency, setCurrency] = useState('TWD');   // 平台配音酬勞以台幣為主,預設 TWD
@@ -281,6 +318,12 @@ function PayoutRequest({ tx, pending, pendingText }: { tx: (a: string, b: string
       const pd = await authedFetch('/api/talent/payout-details');
       const pj = await pd.json();
       setFeeInfo({ usdMethod: pj.usd?.method === 'paypal' ? 'paypal' : 'bank', taxLoc: pj.tax?.tax_location === 'TW' ? 'TW' : 'overseas', twResident: pj.tax?.tw_resident === true });
+    } catch { /* ignore */ }
+    // 簽名檔:有存 → 請款單可一鍵開立
+    try {
+      const sg = await authedFetch('/api/talent/signature');
+      const sj = await sg.json();
+      setSigUrl(sj.exists ? sj.url || '' : null);
     } catch { /* ignore */ }
     setLoaded(true);
   }
@@ -308,6 +351,8 @@ function PayoutRequest({ tx, pending, pendingText }: { tx: (a: string, b: string
   if (!loaded) return null;
 
   return (
+    <>
+    <SignatureCard tx={tx} sigUrl={sigUrl} onChanged={load} />
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 mb-8">
       <h2 className="text-sm font-semibold text-white mb-1">{tx('請款', '请款', 'Request a payout')}</h2>
       <p className="text-xs text-gray-300 mb-4">{tx(`可請款餘額參考:${pendingText}。填金額 → 系統生成發票 → 您確認後簽名上傳(或上傳個人/公司發票)。`, `可请款余额参考:${pendingText}。填金额 → 系统生成发票 → 您确认后签名上传(或上传个人/公司发票)。`, `Pending balance ref: ${pendingText}. Enter an amount → we generate an invoice → confirm, sign & upload (or upload your personal/company invoice).`)}</p>
@@ -347,17 +392,30 @@ function PayoutRequest({ tx, pending, pendingText }: { tx: (a: string, b: string
       {reqs.length > 0 && (
         <div className="mt-6 space-y-3">
           <div className="text-xs font-semibold text-gray-300">{tx('我的請款單', '我的请款单', 'My requests')}</div>
-          {reqs.map((r) => <RequestRow key={r.id} r={r} tx={tx} onChanged={load} />)}
+          {reqs.map((r) => <RequestRow key={r.id} r={r} tx={tx} onChanged={load} hasSignature={sigUrl !== null} />)}
         </div>
       )}
     </div>
+    </>
   );
 }
 
-function RequestRow({ r, tx, onChanged }: { r: PayoutReq; tx: (a: string, b: string, c: string) => string; onChanged: () => void }) {
+function RequestRow({ r, tx, onChanged, hasSignature }: { r: PayoutReq; tx: (a: string, b: string, c: string) => string; onChanged: () => void; hasSignature: boolean }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+
+  // 一鍵開立:用已存簽名檔,系統生成已簽名發票直接送出
+  async function issueWithSignature() {
+    if (!consent) { setErr(tx('請先勾選「我同意以此開立發票」。', '请先勾选「我同意以此开立发票」。', 'Please tick consent first.')); return; }
+    setErr(''); setBusy(true);
+    try {
+      const p = await authedFetch('/api/talent/payout-request', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id, use_signature: true, consent: true }) });
+      const pj = await p.json(); if (!p.ok) throw new Error(pj.error || 'failed');
+      onChanged();
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('開立失敗', '开立失败', 'Failed')); }
+    finally { setBusy(false); }
+  }
   const SL: Record<string, string> = { pending: tx('待完成發票', '待完成发票', 'Invoice pending'), invoice_uploaded: tx('已送出 · 待撥款', '已送出 · 待拨款', 'Submitted'), paid: tx('已安排撥款 · 約7個工作日入帳', '已安排拨款 · 约7个工作日入账', 'Payment scheduled · arrives in ~7 business days'), rejected: tx('已退回', '已退回', 'Rejected') };
 
   async function viewInvoice() {
@@ -404,11 +462,21 @@ function RequestRow({ r, tx, onChanged }: { r: PayoutReq; tx: (a: string, b: str
             <input type="checkbox" className="mt-0.5 accent-amber-500" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             <span>{tx('我同意以此金額、以我(或公司)名義開立此發票。', '我同意以此金额、以我(或公司)名义开立此发票。', 'I agree to issue this invoice for this amount in my (or the company’s) name.')}</span>
           </label>
-          <label className="inline-flex items-center gap-1.5 text-sm bg-amber-500/15 border border-amber-500/40 text-amber-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-amber-500/25">
-            {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('上傳發票(已簽名 或 公司發票)', '上传发票(已签名 或 公司发票)', 'Upload invoice (signed or company invoice)')}
-            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-          </label>
-          <p className="text-xs text-gray-400">{tx('可接受 PDF 或圖檔。', '可接受 PDF 或图档。', 'PDF or image accepted.')}</p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {hasSignature && (
+              <button onClick={issueWithSignature} disabled={busy}
+                className="text-sm bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg px-4 py-2 transition">
+                {busy ? tx('開立中…', '开立中…', 'Issuing…') : tx('使用已存簽名檔開立並送出', '使用已存签名档开立并送出', 'Issue & submit with my saved signature')}
+              </button>
+            )}
+            <label className="inline-flex items-center gap-1.5 text-sm bg-amber-500/15 border border-amber-500/40 text-amber-200 rounded-lg px-4 py-2 cursor-pointer hover:bg-amber-500/25">
+              {busy ? tx('處理中…', '处理中…', 'Working…') : hasSignature ? tx('或自行上傳發票', '或自行上传发票', 'Or upload an invoice') : tx('上傳發票(已簽名 或 公司發票)', '上传发票(已签名 或 公司发票)', 'Upload invoice (signed or company invoice)')}
+              <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+            </label>
+          </div>
+          <p className="text-xs text-gray-400">{hasSignature
+            ? tx('一鍵開立會以您存的簽名檔生成已簽名發票;也可自行上傳 PDF 或圖檔。', '一键开立会以您存的签名档生成已签名发票;也可自行上传 PDF 或图档。', 'One-click issuing uses your saved signature; you can also upload a PDF or image yourself.')
+            : tx('可接受 PDF 或圖檔。想省事?先到上方「簽名檔」存一次簽名,之後可一鍵開立。', '可接受 PDF 或图档。想省事?先到上方「签名档」存一次签名,之后可一键开立。', 'PDF or image accepted. Tip: save your signature above once, then future invoices are one click.')}</p>
           {err && <p className="text-xs text-red-400">{err}</p>}
         </div>
       )}
