@@ -21,17 +21,24 @@ export function AdminHeader({ title, subtitle, action }: { title: ReactNode; sub
   );
 }
 
-export function AdminStats({ items }: { items: { label: ReactNode; value: ReactNode; color?: string }[] }) {
+export function AdminStats({ items }: { items: { label: ReactNode; value: ReactNode; color?: string; onClick?: () => void; active?: boolean }[] }) {
   if (!items.length) return null;
   const cols = items.length <= 4 ? 'md:grid-cols-4' : items.length === 5 ? 'md:grid-cols-5' : items.length === 6 ? 'md:grid-cols-6' : 'md:grid-cols-7';
   return (
     <div className={`grid grid-cols-2 ${cols} gap-4 mb-8`}>
-      {items.map((s, i) => (
-        <div key={i} className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">{s.label}</p>
-          <p className={`text-2xl font-bold mt-1 ${s.color || 'text-gray-900'}`}>{s.value}</p>
-        </div>
-      ))}
+      {items.map((s, i) => {
+        const cls = `bg-white border rounded-xl p-4 text-left ${s.active ? 'border-gray-900 ring-2 ring-gray-900/10' : 'border-gray-200'} ${s.onClick ? 'cursor-pointer hover:border-gray-400 transition' : ''}`;
+        const body = (
+          <>
+            <p className="text-gray-600 text-sm">{s.label}</p>
+            <p className={`text-2xl font-bold mt-1 ${s.color || 'text-gray-900'}`}>{s.value}</p>
+          </>
+        );
+        // 可點的統計格=篩選器(點同一格再點一次取消);沒 onClick 維持純顯示
+        return s.onClick
+          ? <button key={i} type="button" onClick={s.onClick} className={cls}>{body}</button>
+          : <div key={i} className={cls}>{body}</div>;
+      })}
     </div>
   );
 }
