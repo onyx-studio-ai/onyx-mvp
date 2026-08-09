@@ -37,7 +37,7 @@ export interface TaxProfile {
 export function taxNotice(p: TaxProfile, locale?: string): string {
   const L = locale === 'zh-CN' ? 'cn' : locale?.startsWith('zh') ? 'tw' : 'en';
   if (p.taxLocation === 'overseas') {
-    return { tw: '你的工作在台灣境外完成,不扣台灣稅;轉帳手續費由我方負擔。', cn: '你的工作在台湾境外完成,不扣台湾税;转账手续费由我方负担。', en: 'Your work is performed outside Taiwan — no Taiwan tax is withheld; the transfer fee is on us.' }[L];
+    return { tw: '你的工作在台灣境外完成,不扣繳台灣稅;台灣轉帳手續費由我方負擔。', cn: '你的工作在台湾境外完成,不扣缴台湾税;台湾转账手续费由我方负担。', en: 'Your work is performed outside Taiwan — no Taiwan tax is withheld; the Taiwan transfer fee is on us.' }[L];
   }
   if (p.twResident) {
     return { tw: '台灣居住者:所得稅單筆「超過」NT$20,000 才代扣 10%;二代健保單筆「達」NT$20,000(含)代扣 2.11%。轉帳手續費由我方負擔。', cn: '台湾居住者:所得税单笔「超过」NT$20,000 才代扣 10%;二代健保单笔「达」NT$20,000(含)代扣 2.11%。转账手续费由我方负担。', en: 'Taiwan tax resident: 10% income tax applies above NT$20,000; 2.11% NHI premium applies at or above NT$20,000. The transfer fee is on us.' }[L];
