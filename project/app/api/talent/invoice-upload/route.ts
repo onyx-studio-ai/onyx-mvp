@@ -45,6 +45,13 @@ export async function GET(request: NextRequest) {
   if (!pr?.invoice_url) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
   const path = storagePathFromRef(String(pr.invoice_url), BUCKET);
+  // 系統一鍵開立的發票是 .html —— Supabase 簽名網址會強制 text/plain(防釣魚)變原始碼,
+  // 所以 html 直接回內容,前端以 blob 開新分頁正常顯示;其他檔照舊給簽名網址。
+  if (path.endsWith('.html')) {
+    const { data: file, error } = await r.db.storage.from(BUCKET).download(path);
+    if (error || !file) return NextResponse.json({ error: error?.message || 'Could not load invoice' }, { status: 500 });
+    return NextResponse.json({ html: await file.text() });
+  }
   const { data, error } = await r.db.storage.from(BUCKET).createSignedUrl(path, 300);
   if (error || !data?.signedUrl) return NextResponse.json({ error: error?.message || 'Could not generate link' }, { status: 500 });
   return NextResponse.json({ url: data.signedUrl });
