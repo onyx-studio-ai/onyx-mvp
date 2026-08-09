@@ -98,6 +98,7 @@ export default function AdminMarketplace() {
   const [editRate, setEditRate] = useState<{ id: string; val: string } | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState(''); // ''=全部;live/ended/reviewing/awarded/closed
   // 指定邀請(可含未上線):對已發佈案件按名字點名,系統用存的 email 免註冊發。
   const [directory, setDirectory] = useState<{ id: string; name: string; email: string; active: boolean }[]>([]);
   const [pinFor, setPinFor] = useState<Brief | null>(null);
@@ -285,15 +286,23 @@ export default function AdminMarketplace() {
   const quotesFor = (briefId: string) => quotes.filter((q) => q.brief_id === briefId);
 
   const q = search.trim().toLowerCase();
-  const filtered = !q ? briefs : briefs.filter((b) =>
+  // 案件分類:徵集中(open 未截止)/已截止(open 但過截止)/決選中/已錄取/已定案
+  const catOf = (b: Brief) => (b.status === 'open' ? (auditionDeadlinePassed(b) ? 'ended' : 'live') : (b.status || ''));
+  const byCat = statusFilter ? briefs.filter((b) => catOf(b) === statusFilter) : briefs;
+  const filtered = !q ? byCat : byCat.filter((b) =>
     [b.title, b.client_name, b.client_email, b.internal_client_note, b.brief_number, caseCode(b), b.language]
       .some((v) => (v || '').toString().toLowerCase().includes(q)));
 
+  // 統計格=可點的分類篩選器(Wing 2026-08-09:一眼分清各狀態,點格子只看那一類)
+  const pick = (cat: string) => setStatusFilter((cur) => (cur === cat ? '' : cat));
+  const count = (cat: string) => briefs.filter((b) => catOf(b) === cat).length;
   const stats = [
-    { label: t('statTotal'), value: briefs.length },
-    { label: t('statOpen'), value: briefs.filter((b) => b.status === 'open').length, color: 'text-green-700' },
-    { label: t('statAwarded'), value: briefs.filter((b) => b.status === 'awarded').length, color: 'text-blue-700' },
-    { label: t('statClosed'), value: briefs.filter((b) => b.status === 'closed').length, color: 'text-gray-500' },
+    { label: t('statTotal'), value: briefs.length, onClick: () => setStatusFilter(''), active: !statusFilter },
+    { label: '徵集中', value: count('live'), color: 'text-green-700', onClick: () => pick('live'), active: statusFilter === 'live' },
+    { label: '已截止', value: count('ended'), color: 'text-red-700', onClick: () => pick('ended'), active: statusFilter === 'ended' },
+    { label: '決選中', value: count('reviewing'), color: 'text-amber-700', onClick: () => pick('reviewing'), active: statusFilter === 'reviewing' },
+    { label: '已錄取', value: count('awarded'), color: 'text-blue-700', onClick: () => pick('awarded'), active: statusFilter === 'awarded' },
+    { label: '已定案', value: count('closed'), color: 'text-gray-500', onClick: () => pick('closed'), active: statusFilter === 'closed' },
   ];
 
   return (
