@@ -618,7 +618,141 @@ const sunoGema: BlogPost = {
   ],
 };
 
-export const posts: BlogPost[] = [sunoGema, euLabeling, mapsMaori, wilderConsent, langQA, ...morePosts];
+const japanVoiceRights: BlogPost = {
+  slug: 'japan-voice-publicity-rights-guideline',
+  date: '2026-08-09',
+  readMins: 7,
+  cover: '/blog/that-ad-voice-might-be-borrowed-hero.png',
+  tags: ['AI Voice', 'Legal', 'Publicity Rights', 'Japan'],
+  title: {
+    en: 'Japan Just Wrote Down the Rule for AI Voices. The Test Is Not How Similar It Sounds.',
+    'zh-TW': '日本把 AI 聲音的規則寫下來了。判斷標準,不是「像不像」。',
+    'zh-CN': '日本把 AI 声音的规则写下来了。判断标准,不是「像不像」。',
+  },
+  dek: {
+    en: "On 7 August Japan's Ministry of Justice published an interpretive guideline confirming that a person's voice is protected the same way their face is. It is not a new law. It is a written answer to the question every AI voice project eventually runs into.",
+    'zh-TW': '8 月 7 日,日本法務省公布了一份解釋指針,確認一個人的「聲音」受到與「肖像」相同的保護。它不是一部新法。它是一份寫下來的答案,回答每個 AI 聲音專案遲早會撞上的那個問題。',
+    'zh-CN': '8 月 7 日,日本法务省公布了一份解释指针,确认一个人的「声音」受到与「肖像」相同的保护。它不是一部新法。它是一份写下来的答案,回答每个 AI 声音项目迟早会撞上的那个问题。',
+  },
+  body: [
+    {
+      t: 'p',
+      text: {
+        en: "On 7 August 2026, Japan's Ministry of Justice published a document that almost nobody outside Japan will read, and that anyone commissioning voice work probably should. Its title is the “Report of the Study Group on Civil Liability for the Unauthorised Use of Likeness, Voice and the Like,” and its subtitle says exactly what it is: “Interpretive Guidelines on Publicity Rights Infringement by Generative AI.” The panel behind it was convened in April and met five times, from 24 April to 27 July. What it produced is an official answer to a question that has been argued in comment threads for two years: does a person's voice carry the same legal weight as their face? In Japan, that answer is now on paper, and it is yes.",
+        'zh-TW': '2026 年 8 月 7 日,日本法務省公布了一份幾乎不會有日本以外的人去讀、但只要是發配音案的人都該讀一下的文件。它的名字是《肖像、聲音等之無斷利用所生民事責任應有樣態之檢討會 彙整報告書》,副標題把它是什麼講得很清楚:《關於生成 AI 侵害形象權等之解釋指針》。背後的檢討會於 4 月成立,自 4 月 24 日至 7 月 27 日共開了五次會。它產出的,是對一個在留言區吵了兩年的問題的官方回答:一個人的「聲音」,是否和他的「臉」具有同等的法律份量?在日本,這個答案現在白紙黑字寫下來了,而答案是:是。',
+        'zh-CN': '2026 年 8 月 7 日,日本法务省公布了一份几乎不会有日本以外的人去读、但只要是发配音项目的人都该读一下的文件。它的名字是《肖像、声音等之无断利用所生民事责任应有样态之检讨会 汇整报告书》,副标题把它是什么讲得很清楚:《关于生成 AI 侵害形象权等之解释指针》。背后的检讨会于 4 月成立,自 4 月 24 日至 7 月 27 日共开了五次会。它产出的,是对一个在评论区吵了两年的问题的官方回答:一个人的「声音」,是否和他的「脸」具有同等的法律分量?在日本,这个答案现在白纸黑字写下来了,而答案是:是。',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "Start with what it is not. It is not new legislation, and it creates no penalties. The report describes itself as presenting its content as interpretive guidance, written in the hope that people whose business involves likeness and voice, legal professionals, and those who develop, provide or use generative AI can all better predict where civil liability falls. That distinction is worth holding onto, because it cuts both ways. Nothing became illegal on 7 August that was legal on 6 August. What changed is that the reading a Japanese court is likely to apply is now written down, in detail, by the ministry — which makes it considerably harder for anyone to say they did not know.",
+        'zh-TW': '先講它不是什麼。它不是新立法,也沒有創設任何罰則。報告書自己說明,它是以「解釋指針」的形式呈現這些內容,期望從事肖像、聲音相關業務的人、法律實務工作者,以及開發、提供、使用生成 AI 的人,都能更好地預測民事責任落在哪裡。這個區別值得記住,因為它是兩面刃。8 月 6 日還合法的事,不會在 8 月 7 日變成違法。真正改變的是:日本法院很可能採取的那套解讀,現在被主管機關詳細地寫下來了——這讓「我不知道」這句話,變得難講得多。',
+        'zh-CN': '先讲它不是什么。它不是新立法,也没有创设任何罚则。报告书自己说明,它是以「解释指针」的形式呈现这些内容,期望从事肖像、声音相关业务的人、法律实务工作者,以及开发、提供、使用生成 AI 的人,都能更好地预测民事责任落在哪里。这个区别值得记住,因为它是两面刃。8 月 6 日还合法的事,不会在 8 月 7 日变成违法。真正改变的是:日本法院很可能采取的那套解读,现在被主管机关详细地写下来了——这让「我不知道」这句话,变得难讲得多。',
+      },
+    },
+    {
+      t: 'h2',
+      text: {
+        en: 'The test is commercial pull, not resemblance',
+        'zh-TW': '判斷標準是「吸客力」,不是「相似度」',
+        'zh-CN': '判断标准是「吸客力」,不是「相似度」',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "The anchor is a 2012 Supreme Court judgment, decided on 2 February that year and known as the Pink Lady case — the first time Japan's Supreme Court squarely recognised a publicity right, derived from personality rights. It set out three situations: using the likeness itself as a product to be appreciated on its own, attaching it to goods to differentiate them, and using it as advertising. Infringement arises where the use can be said to be **solely for the purpose of exploiting the customer-drawing power** the likeness carries. The 2026 report confirms that a voice sits inside the “likeness and the like” of that judgment — a voice is information that identifies one person from another, and a symbol of that person's personality. The panel records no dissent on the point.",
+        'zh-TW': '整套判斷的錨,是 2012 年 2 月 2 日的一則最高裁判決,一般稱為「粉紅淑女(Pink Lady)事件」——那是日本最高裁第一次正面承認源自人格權的形象權(パブリシティ権)。判決列出三種情形:把肖像本身當作可獨立鑑賞的商品來使用、為了差異化而把肖像附加在商品上、以及把肖像用作商品的廣告。當該利用可以說是**專以利用肖像所具有的吸客力為目的**時,即構成侵害。2026 年的這份報告書確認:「聲音」落在該判決所稱「肖像等」的範圍內——聲音是能把一個人與他人區分開來的識別資訊,也是那個人人格的象徵。檢討會對這一點沒有異議。',
+        'zh-CN': '整套判断的锚,是 2012 年 2 月 2 日的一则最高裁判决,一般称为「粉红淑女(Pink Lady)事件」——那是日本最高裁第一次正面承认源自人格权的形象权(パブリシティ権)。判决列出三种情形:把肖像本身当作可独立鉴赏的商品来使用、为了差异化而把肖像附加在商品上、以及把肖像用作商品的广告。当该利用可以说是**专以利用肖像所具有的吸客力为目的**时,即构成侵害。2026 年的这份报告书确认:「声音」落在该判决所称「肖像等」的范围内——声音是能把一个人与他人区分开来的识别信息,也是那个人人格的象征。检讨会对这一点没有异议。',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "Then comes the part worth internalising, because it is the opposite of how most people assume this works. The report notes that scientific comparison of voiceprints can be one factor, but never a decisive one — the question is not how closely two waveforms match, it is whether that person's pull is being used. And a voice that merely resembles someone can still count as theirs: where the degree of similarity, taken together with the surrounding cues that call the person to mind, means the audience identifies the voice as that person's, the report treats it as use of that person's voice. Sounding “close but not identical” is not a safe harbour. Impressions are the instructive counter-example. Mimicry normally does not infringe, precisely because the performer states their own name — the identifying information points at the performer, not the target. Drop the name, let listeners mistake it for the real person, and the report says infringement becomes possible. The line is attribution, not similarity.",
+        'zh-TW': '接著是真正該記住的一段,因為它跟多數人以為的邏輯正好相反。報告書指出,聲紋的科學比對可以是考量因素之一,但永遠不會是決定性的——問題不在兩條波形有多吻合,而在那個人的吸客力有沒有被拿來用。而且,只是「相似」的聲音,仍可能被認定為本人的聲音:當相似的程度,連同周邊那些會讓人聯想到本人的資訊一併考量後,足以讓受眾把這把聲音辨識為本人的聲音時,報告書即認定為使用了本人的「聲音」。做到「像、但不完全一樣」,不是一個安全港。而「模仿(物真似、聲音模仿)」正是那個有啟發性的反例:模仿表演通常不構成侵害,恰恰是因為表演者會標明自己的名字——識別資訊指向的是表演者,不是被模仿的人。把名字拿掉、讓聽眾誤以為那就是本人,報告書則認為有構成侵害的餘地。界線在「歸屬」,不在「相似」。',
+        'zh-CN': '接着是真正该记住的一段,因为它跟多数人以为的逻辑正好相反。报告书指出,声纹的科学比对可以是考量因素之一,但永远不会是决定性的——问题不在两条波形有多吻合,而在那个人的吸客力有没有被拿来用。而且,只是「相似」的声音,仍可能被认定为本人的声音:当相似的程度,连同周边那些会让人联想到本人的信息一并考量后,足以让受众把这把声音辨识为本人的声音时,报告书即认定为使用了本人的「声音」。做到「像、但不完全一样」,不是一个安全港。而「模仿(物真似、声音模仿)」正是那个有启发性的反例:模仿表演通常不构成侵害,恰恰是因为表演者会标明自己的名字——识别信息指向的是表演者,不是被模仿的人。把名字拿掉、让听众误以为那就是本人,报告书则认为有构成侵害的余地。界线在「归属」,不在「相似」。',
+      },
+    },
+    {
+      t: 'h2',
+      text: {
+        en: 'Narration and audiobooks are explicitly in the frame',
+        'zh-TW': '旁白與有聲書,明確被畫進了範圍裡',
+        'zh-CN': '旁白与有声书,明确被画进了范围里',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "For the first of the three situations — the voice itself as a product to be appreciated on its own — the report's examples start where you would expect, with celebrity voice messages and voice stamps, and then keep going: it records the scholarly view placing narration, audiobooks, car navigation and smart speakers in the same category. That is not an exotic edge case. That is the ordinary catalogue of what AI voices are sold to do. Two further points should give the supply chain pause. First, fame is not the threshold: the report is explicit that it is enough for the voice itself to have the power to promote sales, and that the actor's name or face need not be widely known — a voice recognised only within one genre, or one region, still qualifies if it moves that audience. Second, it reaches upstream. Selling a training dataset built specifically around a particular actor's likeness or voice can itself fall within the framework, potentially as differentiation of the dataset as a product. The exposure is not confined to the finished ad.",
+        'zh-TW': '關於三種情形中的第一種——把聲音本身當作可獨立鑑賞的商品——報告書的例子從你預期的地方開始:名人的語音訊息、語音貼圖,然後繼續往下:它記載了將旁白、有聲書、車用導航、智慧音箱歸入同一類的學說見解。這不是什麼冷僻的邊緣案例,這正是 AI 聲音被拿來賣的那份日常清單。另外兩點,值得整條供應鏈停下來想一下。第一,知名度不是門檻:報告書明白指出,只要該聲音本身具有促進商品銷售的效力即為已足,配音員的姓名或肖像不需要廣為人知——一把只在某個類型、或某個地區被認得的聲音,只要能打動那群受眾,同樣成立。第二,它往上游延伸。專門圍繞某位演員的肖像或某位配音員的聲音所建立的訓練資料集,其「販售」行為本身就可能落入這套框架,例如被評價為對資料集這項商品的差異化。風險並不侷限在最後那支成品廣告。',
+        'zh-CN': '关于三种情形中的第一种——把声音本身当作可独立鉴赏的商品——报告书的例子从你预期的地方开始:名人的语音消息、语音贴图,然后继续往下:它记载了将旁白、有声书、车载导航、智能音箱归入同一类的学说见解。这不是什么冷僻的边缘案例,这正是 AI 声音被拿来卖的那份日常清单。另外两点,值得整条供应链停下来想一下。第一,知名度不是门槛:报告书明白指出,只要该声音本身具有促进商品销售的效力即为已足,配音员的姓名或肖像不需要广为人知——一把只在某个类型、或某个地区被认得的声音,只要能打动那群受众,同样成立。第二,它往上游延伸。专门围绕某位演员的肖像或某位配音员的声音所建立的训练数据集,其「销售」行为本身就可能落入这套框架,例如被评价为对数据集这项商品的差异化。风险并不局限在最后那支成品广告。',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "It is also not only about famous people. Alongside the publicity right sits a separate right not to have your likeness — and now, expressly, your voice — used at will, which protects mental rather than commercial value, and which belongs to everyone. In one of the report's worked examples, a synthesised voice made to read obscene text, it concludes that there is unlikely to be much difference in the analysis depending on whether the person is a professional voice actor or an ordinary member of the public: the shame, the discomfort, the injury to self-respect do not scale with fame.",
+        'zh-TW': '而且,這也不只關乎名人。在形象權旁邊,還坐著另一項獨立的權利:不被隨意利用肖像——現在明確包括聲音——的權利。它保護的是精神價值而非商業價值,而且屬於每一個人。在報告書的其中一個設例中(以合成聲音朗讀猥褻文字),結論是:當事人是專業配音員或一般民眾,在判斷上不太可能出現重大差異——羞恥、不適、自尊受到的傷害,並不隨知名度而放大或縮小。',
+        'zh-CN': '而且,这也不只关乎名人。在形象权旁边,还坐着另一项独立的权利:不被随意利用肖像——现在明确包括声音——的权利。它保护的是精神价值而非商业价值,而且属于每一个人。在报告书的其中一个设例中(以合成声音朗读猥亵文字),结论是:当事人是专业配音员或一般民众,在判断上不太可能出现重大差异——羞耻、不适、自尊受到的伤害,并不随知名度而放大或缩小。',
+      },
+    },
+    {
+      t: 'h2',
+      text: {
+        en: 'Why the guidance arrived now',
+        'zh-TW': '這份指針,為什麼在此刻出現',
+        'zh-CN': '这份指针,为什么在此刻出现',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "The scale explains the timing. On 25 June 2026 a Japanese non-profit that monitors likeness and publicity rights published its survey for the year running April 2025 to March 2026. Across TikTok, X and YouTube it counted **more than 40,000 posts suspected of infringement, drawing roughly 335 million views**, with economic loss to performers estimated on the order of ¥2 to 4.5 billion. Of the 174 companies that responded to its industry survey, **1.1% had a response policy in place** — 46.6% had no plans to write one. The group also tested removal one layer up, filing against 20 unauthorised models trained on a single actor's likeness and getting all 20 taken down, after which new models of the same person were posted. A 100% removal rate that does not stay removed is a fair picture of the problem the ministry is answering.",
+        'zh-TW': '規模說明了時機。2026 年 6 月 25 日,日本一個監測肖像與形象權的非營利組織公布了 2025 年 4 月至 2026 年 3 月這一年度的調查。在 TikTok、X、YouTube 三大平台上,它清點出**超過 4 萬則涉嫌侵權的貼文,累計約 3.35 億次觀看**,對藝人造成的經濟損失推估約在 20 億至 45 億日圓之譜。而在回覆其業界調查的 174 家公司中,**只有 1.1% 已訂定應對指引**,46.6% 則沒有訂定的打算。該組織還往上一層測試了刪除:針對 20 個以某位演員肖像訓練的未授權模型提出申請,20 個全數下架;然後,同一個人的新模型又被上傳了。一個「刪得掉、但刪不完」的 100% 下架率,大致就是這份指針要回應的問題的樣子。',
+        'zh-CN': '规模说明了时机。2026 年 6 月 25 日,日本一个监测肖像与形象权的非营利组织公布了 2025 年 4 月至 2026 年 3 月这一年度的调查。在 TikTok、X、YouTube 三大平台上,它清点出**超过 4 万则涉嫌侵权的帖文,累计约 3.35 亿次观看**,对艺人造成的经济损失推估约在 20 亿至 45 亿日元之谱。而在回复其业界调查的 174 家公司中,**只有 1.1% 已订定应对指引**,46.6% 则没有订定的打算。该组织还往上一层测试了删除:针对 20 个以某位演员肖像训练的未授权模型提出申请,20 个全数下架;然后,同一个人的新模型又被上传了。一个「删得掉、但删不完」的 100% 下架率,大致就是这份指针要回应的问题的样子。',
+      },
+    },
+    {
+      t: 'h2',
+      text: {
+        en: 'What it changes if you are the one buying the voice',
+        'zh-TW': '如果你是那個買聲音的人,這改變了什麼',
+        'zh-CN': '如果你是那个买声音的人,这改变了什么',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "Two obligations now sit on the same audio file, and they are asking different questions. Europe asks whether it is labelled: the EU AI Act's transparency rules for synthetic audio have applied since 2 August 2026. Japan asks whose voice it is, and whether that person agreed. Neither question is answered by how good the output sounds, and neither is answered for you by a self-serve tool. So the practical version, before you generate anything you intend to publish, is short: can you name the human this voice came from, and can you produce the document in which they agreed to this use, in this market, for this length of time? It is also fair to say this is still moving. The panel did not reach consensus on everything — whether an agency, as distinct from the person, can bring a claim was left open — and Japan's IP strategy plan adopted on 12 June 2026 keeps hard law on the table, including whether the Unfair Competition Prevention Act should be amended.",
+        'zh-TW': '現在有兩項義務,同時坐在同一個音檔上,而它們問的是不同的問題。歐洲問的是「有沒有標示」:歐盟《AI 法案》針對合成音訊的透明度規定,已自 2026 年 8 月 2 日起適用。日本問的則是「這是誰的聲音、那個人同意了嗎」。這兩個問題,都不會因為產出聽起來夠好而得到解答;也都不會有哪個自助工具幫你解答。所以,在你生成任何打算對外發佈的東西之前,實務版的問法很短:你說得出這把聲音來自哪一位真人嗎?你拿得出那份文件,證明他同意了這個用途、這個市場、這個期間嗎?另外也該說清楚,這件事還在動。檢討會並非所有議題都取得共識——經紀公司(而非本人)能否提出請求,就被留了下來;而 2026 年 6 月 12 日通過的日本智慧財產推進計畫,也仍把硬性立法留在桌上,包括是否修正《不正競爭防止法》。',
+        'zh-CN': '现在有两项义务,同时坐在同一个音频文件上,而它们问的是不同的问题。欧洲问的是「有没有标示」:欧盟《AI 法案》针对合成音频的透明度规定,已自 2026 年 8 月 2 日起适用。日本问的则是「这是谁的声音、那个人同意了吗」。这两个问题,都不会因为产出听起来够好而得到解答;也都不会有哪个自助工具帮你解答。所以,在你生成任何打算对外发布的东西之前,实务版的问法很短:你说得出这把声音来自哪一位真人吗?你拿得出那份文件,证明他同意了这个用途、这个市场、这个期间吗?另外也该说清楚,这件事还在动。检讨会并非所有议题都取得共识——经纪公司(而非本人)能否提出请求,就被留了下来;而 2026 年 6 月 12 日通过的日本知识产权推进计划,也仍把硬性立法留在桌上,包括是否修正《不正当竞争防止法》。',
+      },
+    },
+    {
+      t: 'p',
+      text: {
+        en: "None of this makes AI voice a bad idea. It makes provenance the thing you buy alongside the audio. That is the part we did not change when we moved from running a voice studio in Taiwan since 2008 into AI: every AI voice in the Onyx library traces back to a named professional who recorded it under a written licence that says what it may be used for, and what comes back to you carries that trail rather than leaving it on your side of the table. If you cannot answer “whose voice is this” for a file you are about to publish, that is worth finding out before it runs, not after. Tell us what you need voiced and where it will run, and we will make sure the answer comes with it.",
+        'zh-TW': '這一切並不代表 AI 聲音是個壞主意。它代表的是:你買的,除了那段音訊,還有它的來源。這正是我們從 2008 年在台灣經營配音、一路走進 AI 時沒有改掉的那一塊:Onyx 聲音庫裡的每一把 AI 聲音,都能追溯到一位有名有姓的專業配音員,在一份載明可用於什麼用途的書面授權下錄音;而交到你手上的成品,帶著這條線索,而不是把它留在你那一側的桌上。如果對一個你正要發佈的檔案,你答不出「這是誰的聲音」,那現在弄清楚,總比播出去之後才弄清楚好。把你要配的內容、要投放的地方告訴我們,我們會確保答案跟著一起交過去。',
+        'zh-CN': '这一切并不代表 AI 声音是个坏主意。它代表的是:你买的,除了那段音频,还有它的来源。这正是我们从 2008 年在台湾经营配音、一路走进 AI 时没有改掉的那一块:Onyx 声音库里的每一把 AI 声音,都能追溯到一位有名有姓的专业配音员,在一份载明可用于什么用途的书面授权下录音;而交到你手上的成品,带着这条线索,而不是把它留在你那一侧的桌上。如果对一个你正要发布的文件,你答不出「这是谁的声音」,那现在弄清楚,总比播出去之后才弄清楚好。把你要配的内容、要投放的地方告诉我们,我们会确保答案跟着一起交过去。',
+      },
+    },
+  ],
+  sources: [
+    { label: "Ministry of Justice (Japan) — publication of the study group report, 7 August 2026: “Report of the Study Group on Civil Liability for the Unauthorised Use of Likeness, Voice and the Like — Interpretive Guidelines on Publicity Rights Infringement by Generative AI”", url: "https://www.moj.go.jp/MINJI/minji05_00778.html" },
+    { label: "Ministry of Justice (Japan) — full report (PDF): voice as identifying information and a symbol of personality; voiceprint analysis as a non-decisive factor; similar-sounding voices; mimicry and attribution; narration, audiobooks, car navigation and smart speakers; sale of training datasets; ordinary people; unresolved questions", url: "https://www.moj.go.jp/content/001468288.pdf" },
+    { label: "Ministry of Justice (Japan) — 1st session of the study group, 24 April 2026", url: "https://www.moj.go.jp/MINJI/minji07_00399.html" },
+    { label: "Ministry of Justice (Japan) — 5th and final session, 27 July 2026, at which the draft report was tabled", url: "https://www.moj.go.jp/MINJI/minji07_00412.html" },
+    { label: "Japan Actors Union (Nippairen) — the union's note on the ministry's guideline: voice recognised as identifying information and a symbol of personality; not yet final legislation", url: "https://www.nippairen.com/about/post-moj-guideline-2026.html" },
+    { label: "Kotto Dori Law Office — the Pink Lady judgment, Supreme Court of Japan, 2 February 2012: the three situations and the “solely for the purpose of exploiting customer-drawing power” test", url: "https://www.kottolaw.com/column/000371.html" },
+    { label: "Likeness and Publicity Rights Protection Organization — FY2025 survey published 25 June 2026: 40,000+ suspected infringing posts, ~335 million views, ¥2–4.5bn estimated loss, 174 companies surveyed with 1.1% having a policy, and the 20-model removal test", url: "https://prtimes.jp/main/html/rd/p/000000024.000164682.html" },
+    { label: "EU Artificial Intelligence Act — Article 50 transparency obligations for synthetic audio, applicable from 2 August 2026", url: "https://artificialintelligenceact.eu/article/50/" },
+  ],
+};
+
+export const posts: BlogPost[] = [japanVoiceRights, sunoGema, euLabeling, mapsMaori, wilderConsent, langQA, ...morePosts];
 
 // Server-evaluated "today" in Asia/Taipei (UTC+8) so posts go live on their
 // date in Taiwan time. With ISR revalidate on the pages, future-dated posts
