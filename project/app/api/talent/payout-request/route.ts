@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const r = await resolveTalentFromRequest(request, 'id');
+  const r = await resolveTalentFromRequest(request, 'id, name'); // name = 一鍵開立發票的賣方名 fallback
   if ('error' in r) return NextResponse.json({ error: r.error }, { status: r.status });
   const talentId = (r.talent as { id: string }).id;
 
