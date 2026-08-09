@@ -26,6 +26,7 @@ export interface InvoiceData {
   amount: number;               // 請款額 gross
   currency: string;
   note?: string;
+  signatureDataUri?: string;    // 已存簽名檔(data URI)→ 簽名欄直接嵌圖 + 帶日期(一鍵開立用)
 }
 
 // 回傳一張完整、可列印(A4)的 HTML 發票。是獨立頁面,故含 <html>。
@@ -73,8 +74,12 @@ export function renderInvoiceHtml(p: InvoiceData): string {
     <tfoot><tr><td class="total">合計 Total</td><td class="amt total">${money(p.amount, p.currency)}</td></tr></tfoot>
   </table>
   <div class="sign">
-    <div><div class="sigline"></div><div class="muted">賣方簽名 Signature</div></div>
-    <div><div class="sigline"></div><div class="muted">日期 Date</div></div>
+    <div>${p.signatureDataUri
+      ? `<div style="height:56px;display:flex;align-items:flex-end"><img src="${p.signatureDataUri}" alt="signature" style="max-height:56px;max-width:220px" /></div><div style="border-top:1px solid #999;margin-top:4px"></div>`
+      : '<div class="sigline"></div>'}<div class="muted">賣方簽名 Signature</div></div>
+    <div>${p.signatureDataUri
+      ? `<div style="height:56px;display:flex;align-items:flex-end">${esc(date)}</div><div style="border-top:1px solid #999;margin-top:4px"></div>`
+      : '<div class="sigline"></div>'}<div class="muted">日期 Date</div></div>
   </div>
   <p class="muted" style="margin-top:32px">此發票由 Onyx Studios 平台依配音員提供之收款資料自動生成,經配音員確認簽署後生效。</p>
 </body></html>`;
