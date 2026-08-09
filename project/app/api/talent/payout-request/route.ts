@@ -40,8 +40,9 @@ export async function POST(request: NextRequest) {
   const { data: pd } = await r.db.from('talent_payout_details').select('completed').eq('talent_id', talentId).maybeSingle();
   if (!pd?.completed) return NextResponse.json({ error: 'payout_details_required' }, { status: 400 });
 
-  // 🔒 堵漏洞:沒有可請款款項就不能請款。可請款餘額 = 未付(pending)earnings 加總(USD)。
-  const { data: earns } = await r.db.from('talent_earnings').select('commission_amount').eq('talent_id', talentId).eq('status', 'pending');
+  // 🔒 堵漏洞:沒有可請款款項就不能請款。可請款餘額 = 未付且未鏈結請款單的 earnings 加總
+  //(payout_id 有值 = 已在某張請款單裡,不能重複請;status 只有 pending/paid 兩態)。
+  const { data: earns } = await r.db.from('talent_earnings').select('commission_amount').eq('talent_id', talentId).eq('status', 'pending').is('payout_id', null);
   const balance = (earns || []).reduce((sum, x) => sum + (Number(x.commission_amount) || 0), 0);
   if (balance <= 0) return NextResponse.json({ error: 'no_balance' }, { status: 400 });
   // 餘額以 USD 計;請款金額一律換算成 USD 後比對上限(台幣用匯率換算,不再只擋 USD、TWD 也擋)。
@@ -63,6 +64,12 @@ export async function POST(request: NextRequest) {
     invoice_type: invoiceType, status: 'pending',
   }).select('id, invoice_number, amount, currency, invoice_type, status, created_at').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // 🔒 把這次請款涵蓋的 earnings 鏈到請款單(payout_id = 已請款記號;status 受
+  // check 約束只有 pending/paid,撥款時才轉 paid)。不鏈結的話 earnings 永遠停在
+  // 可請款狀態 → 撥款後餘額照顯示、可重複請款,名單/報表全誤報(2026-08-09 布魯麵)。
+  await r.db.from('talent_earnings')
+    .update({ payout_id: data.id, updated_at: new Date().toISOString() })
+    .eq('talent_id', talentId).eq('status', 'pending').is('payout_id', null);
   return NextResponse.json({ ok: true, request: data });
 }
 
