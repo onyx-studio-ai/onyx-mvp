@@ -62,6 +62,19 @@ export async function PATCH(request: NextRequest) {
   const { error } = await db.from('payout_requests').update(updates).eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // 🔒 同步回寫 earnings(2026-08-09:少了這步,已撥款的人仍顯示有餘額、名單全誤報):
+  // 撥款 → 鏈結的 earnings 標 paid;退回(rejected)→ 解除鏈結還原 pending 讓配音員可再請。
+  if (isPaying) {
+    await db.from('talent_earnings')
+      .update({ status: 'paid', talent_paid: true, talent_paid_at: paidAtIso, updated_at: paidAtIso })
+      .eq('payout_id', id);
+  } else if (status === 'rejected') {
+    // 退回 → 解除鏈結(status 本來就還是 pending),配音員可重新請款
+    await db.from('talent_earnings')
+      .update({ payout_id: null, updated_at: paidAtIso })
+      .eq('payout_id', id).neq('status', 'paid');
+  }
+
   // ── 撥款完成 → 寄收款通知信給配音員 ──────────────────────────────
   // 交易優先於通知:撥款狀態已成功寫入,寄信在 try/catch 內,失敗只記 log + 回 warning,
   // 絕不讓通知信把撥款動作整個 fail 掉(老闆按了「已撥款」就一定算數)。
