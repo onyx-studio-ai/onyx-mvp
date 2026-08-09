@@ -25,6 +25,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = getSupabaseServiceClient();
+    // 一鍵開立的 .html 發票:簽名網址會被 Supabase 強制 text/plain 變原始碼 → 直接回內容
+    if (path.endsWith('.html')) {
+      const { data: file, error: dlErr } = await db.storage.from(BUCKET).download(path);
+      if (dlErr || !file) return NextResponse.json({ error: dlErr?.message || 'Could not load invoice' }, { status: 500 });
+      return NextResponse.json({ html: await file.text() });
+    }
     const { data, error } = await db.storage.from(BUCKET).createSignedUrl(path, 300); // 5 分鐘
     if (error || !data?.signedUrl) {
       return NextResponse.json({ error: error?.message || 'Could not generate link' }, { status: 500 });
