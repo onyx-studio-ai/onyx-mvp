@@ -372,6 +372,14 @@ export function getTalentFaqs(tx: FaqTx): FaqCategory[] {
           ),
         },
         {
+          q: tx('忘記密碼 / 重設密碼怎麼辦？', '忘记密码 / 重设密码怎么办？', 'I forgot my password — how do I reset it?'),
+          a: tx(
+            '到 onyxstudios.ai/auth 登入頁點「忘記密碼」，輸入你註冊的 email，我們會寄出重設連結（連結 24 小時內有效）。沒收到請先查垃圾信件匣；仍有問題可透過此對話轉真人，我們幫你補寄。',
+            '到 onyxstudios.ai/auth 登录页点「忘记密码」，输入你注册的 email，我们会寄出重设链接（链接 24 小时内有效）。没收到请先查垃圾邮件夹；仍有问题可通过此对话转真人，我们帮你补寄。',
+            'On the sign-in page at onyxstudios.ai/auth, click "Forgot password", enter your registered email, and we will send a reset link (valid for 24 hours). If it does not arrive, check your spam folder — or ask to reach the team here and we will resend it.'
+          ),
+        },
+        {
           q: tx('我怎麼收款？什麼時候會付？', '我怎么收款？什么时候会付？', 'How and when do I get paid?'),
           a: tx(
             '在後台填寫你的收款資料即可。款項經核准撥付後，約 7 個工作日內匯出、陸續入帳。台灣配音員一般以銀行匯款支付;海外配音員可用 PayPal 或國際電匯。每次撥款都會附上撥款證明供你留存。',
