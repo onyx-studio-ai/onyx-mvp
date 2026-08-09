@@ -3311,7 +3311,10 @@
       "prStatus_pending": "待處理",
       "prStatus_invoice_uploaded": "已上傳發票",
       "prStatus_paid": "已安排撥款",
-      "prStatus_rejected": "已退回"
+      "prStatus_rejected": "已退回",
+      "prStatus_completed": "撥款已完成",
+      "markCompleted": "撥款完成",
+      "confirmCompleted": "確認這筆款項已實際撥出、標記為「撥款已完成」?(不會寄信,僅更新狀態)"
     },
     "finance": {
       "loadFailed": "載入失敗,請稍後再試",
