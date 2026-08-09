@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest) {
   const id = String(body.id || '');
   const status = body.status;
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-  if (status && !['paid', 'rejected', 'pending', 'invoice_uploaded'].includes(status)) {
+  if (status && !['paid', 'rejected', 'pending', 'invoice_uploaded', 'completed'].includes(status)) {
     return NextResponse.json({ error: 'invalid status' }, { status: 400 });
   }
 
@@ -47,12 +47,16 @@ export async function PATCH(request: NextRequest) {
     .select('status, talent_id, invoice_number, amount, currency, certificate_code')
     .eq('id', id).maybeSingle();
   if (!cur) return NextResponse.json({ error: 'not found' }, { status: 404 });
-  if (cur.status === 'paid') return NextResponse.json({ error: '此請款單已撥款,無法再變更。' }, { status: 400 });
+  // paid 之後只剩一條路:標「撥款已完成」(不寄信、純狀態);completed 為終態不可再動。
+  if (cur.status === 'completed') return NextResponse.json({ error: '此請款單已完成,無法再變更。' }, { status: 400 });
+  if (cur.status === 'paid' && status !== 'completed') return NextResponse.json({ error: '此請款單已撥款,只能標記「撥款完成」。' }, { status: 400 });
 
   const isPaying = status === 'paid';
   const paidAtIso = new Date().toISOString();
   const updates: Record<string, unknown> = { updated_at: paidAtIso };
-  if (status) { updates.status = status; updates.paid_at = isPaying ? paidAtIso : null; }
+  // completed 保留原 paid_at(那是安排撥款的時間);其餘照舊
+  if (status === 'completed') updates.status = 'completed';
+  else if (status) { updates.status = status; updates.paid_at = isPaying ? paidAtIso : null; }
   if (typeof body.admin_note === 'string') updates.admin_note = body.admin_note.slice(0, 500);
 
   // 撥款時生成證明碼(idempotent:已有就沿用,不覆寫)。撥款單號 = 收款憑證 + 對帳鍵。
