@@ -37,6 +37,9 @@ export default function AuthPage() {
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [signupEmailSent, setSignupEmailSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
+  // Turnstile 權杖是一次性的:任何送出失敗/切換模式後必須重掛元件拿新權杖,
+  // 否則第二次送出必吃「Bot check failed」(2026-08-09 真用戶被擋)
+  const [capKey, setCapKey] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +112,10 @@ export default function AuthPage() {
         setResetEmailSent(true);
       }
     } catch (err: any) {
-      const errorMessage = err.message || 'An unexpected error occurred.';
+      // 權杖已被消耗 → 重掛 Turnstile 拿新權杖,下一次送出才會過
+      setCapKey((k) => k + 1); setCaptchaToken('');
+      const raw = err.message || 'An unexpected error occurred.';
+      const errorMessage = /bot check/i.test(raw) ? t('errorBotCheck') : raw;
       // Surface the real error to the user. Previous code silently routed
       // Supabase-API-key failures to /dashboard with a fake "Demo Mode: Logged
       // in visually" toast — dangerous after Paddle went live because a real
@@ -128,6 +134,7 @@ export default function AuthPage() {
     setAgreedToTerms(false);
     setConfirmPassword('');
     setCaptchaToken('');
+    setCapKey((k) => k + 1); // 換模式重掛驗證元件(舊權杖可能已被消耗)
   };
 
   const handleGoogleSignIn = async () => {
@@ -320,7 +327,7 @@ export default function AuthPage() {
                   </div>
                 )}
 
-                <Turnstile onToken={setCaptchaToken} />
+                <Turnstile key={capKey} onToken={setCaptchaToken} />
 
                 <Button
                   type="submit"
