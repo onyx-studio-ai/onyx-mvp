@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { EXCHANGE_RATES } from '@/lib/currency';
+import { renderInvoiceHtml } from '@/lib/invoice';
+import { sellerFromPayoutDetails } from '@/lib/payout-seller';
+import { signatureDataUri } from '@/lib/talent-signature';
 
 /*
   配音員自己的請款單。
@@ -81,6 +84,41 @@ export async function PATCH(request: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
   const id = S(body.id, 64);
+
+  // ── 一鍵開立:使用已存簽名檔,由系統生成已簽名發票直接送出(免列印/掃描/上傳)──
+  if (body.use_signature === true) {
+    if (!id) return NextResponse.json({ error: 'id 必填' }, { status: 400 });
+    if (body.consent !== true) return NextResponse.json({ error: '請先勾選同意以此開立發票。' }, { status: 400 });
+    const { data: pr } = await r.db.from('payout_requests')
+      .select('id, status, invoice_number, amount, currency, note, created_at')
+      .eq('id', id).eq('talent_id', talentId).maybeSingle();
+    if (!pr) return NextResponse.json({ error: 'not your request' }, { status: 403 });
+    if (pr.status === 'paid') return NextResponse.json({ error: '已撥款,無法修改。' }, { status: 400 });
+
+    const sigUri = await signatureDataUri(r.db, talentId);
+    if (!sigUri) return NextResponse.json({ error: '尚未上傳簽名檔,請先在上方「簽名檔」上傳一次。' }, { status: 400 });
+
+    const { sellerName, sellerAddress, sellerTaxId } = await sellerFromPayoutDetails(r.db, talentId);
+    const html = renderInvoiceHtml({
+      invoiceNumber: pr.invoice_number as string,
+      dateISO: (pr.created_at as string) || new Date().toISOString(),
+      sellerName: sellerName || (r.talent as { name?: string }).name || '',
+      sellerAddress, sellerTaxId,
+      amount: Number(pr.amount) || 0,
+      currency: (pr.currency as string) || 'USD',
+      note: (pr.note as string) || '',
+      signatureDataUri: sigUri,
+    });
+    const path = `payout/${talentId}/${Date.now()}_signed.html`;
+    const { error: upErr } = await r.db.storage.from('invoices').upload(path, html, { contentType: 'text/html; charset=utf-8' });
+    if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
+    const { error } = await r.db.from('payout_requests').update({
+      invoice_url: path, consent_at: new Date().toISOString(), status: 'invoice_uploaded', updated_at: new Date().toISOString(),
+    }).eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   const url = S(body.invoice_url, 1000);
   if (!id || !url) return NextResponse.json({ error: 'id 與 invoice_url 必填' }, { status: 400 });
   // 發票改存私有 invoices 桶的 storage path(payout/{本人id}/...),路徑即 ownership 檢查;
