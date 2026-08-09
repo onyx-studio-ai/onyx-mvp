@@ -29,11 +29,12 @@ async function openInvoice(invoiceUrl: string) {
   }
 }
 
-const STATUS_LABEL: Record<string, string> = { pending: '待處理', invoice_uploaded: '已上傳發票', paid: '已安排撥款', rejected: '已退回' };
+const STATUS_LABEL: Record<string, string> = { pending: '待處理', invoice_uploaded: '已上傳發票', paid: '已安排撥款', completed: '撥款已完成', rejected: '已退回' };
 const STATUS_CLS: Record<string, string> = {
   pending: 'bg-gray-100 text-gray-700 border-gray-300',
   invoice_uploaded: 'bg-sky-50 text-sky-700 border-sky-300',
   paid: 'bg-emerald-50 text-emerald-700 border-emerald-300',
+  completed: 'bg-emerald-100 text-emerald-800 border-emerald-400',
   rejected: 'bg-red-50 text-red-700 border-red-300',
 };
 
@@ -41,7 +42,7 @@ export default function PayoutRequestsPage() {
   const t = useTranslations('admin.payoutRequests');
   const [rows, setRows] = useState<Req[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'invoice_uploaded' | 'paid'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'invoice_uploaded' | 'paid' | 'completed'>('all');
   const [busy, setBusy] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   // 會計對帳匯出:預設今年;月份空 = 整年。
@@ -63,6 +64,7 @@ export default function PayoutRequestsPage() {
 
   async function setStatus(id: string, status: string) {
     if (status === 'paid' && !confirm(t('confirmPaid'))) return;
+    if (status === 'completed' && !confirm(t('confirmCompleted'))) return;
     if (status === 'rejected' && !confirm(t('confirmReject'))) return;
     setBusy(id);
     try {
@@ -135,7 +137,7 @@ export default function PayoutRequestsPage() {
         </div>
 
         <div className="flex gap-2 mb-4">
-          {([['filterAll', 'all'], ['statPending', 'pending'], ['statInvoiceUploaded', 'invoice_uploaded'], ['statPaid', 'paid']] as const).map(([labelKey, key]) => (
+          {([['filterAll', 'all'], ['statPending', 'pending'], ['statInvoiceUploaded', 'invoice_uploaded'], ['statPaid', 'paid'], ['prStatus_completed', 'completed']] as const).map(([labelKey, key]) => (
             <button key={key} onClick={() => setFilter(key)} className={`text-xs px-3 py-1.5 rounded-full border ${filter === key ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-300'}`}>{t(labelKey)}</button>
           ))}
         </div>
@@ -169,7 +171,10 @@ export default function PayoutRequestsPage() {
                     <button onClick={() => setExpanded(expanded === r.id ? null : r.id)} className="text-xs px-3 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 inline-flex items-center gap-1">
                       {t('payoutDetails')} <ChevronDown className={`w-3 h-3 transition-transform ${expanded === r.id ? 'rotate-180' : ''}`} />
                     </button>
-                    {r.status !== 'paid' && (
+                    {r.status === 'paid' && (
+                      <button onClick={() => setStatus(r.id, 'completed')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 inline-flex items-center gap-1">{busy === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} {t('markCompleted')}</button>
+                    )}
+                    {r.status !== 'paid' && r.status !== 'completed' && (
                       <div className="flex gap-2">
                         <button onClick={() => setStatus(r.id, 'paid')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 inline-flex items-center gap-1">{busy === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />} {t('markPaid')}</button>
                         {r.status !== 'rejected' && <button onClick={() => setStatus(r.id, 'rejected')} disabled={busy === r.id} className="text-xs px-3 py-1 rounded-md bg-white text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-50 inline-flex items-center gap-1"><RotateCcw className="w-3 h-3" /> {t('reject')}</button>}
