@@ -128,18 +128,14 @@ export default function PayoutRequestsPage() {
           <span className="text-xs text-gray-400">{t('exportNote')}</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {([['statPending', 'pending'], ['statInvoiceUploaded', 'invoice_uploaded'], ['statPaid', 'paid']] as const).map(([labelKey, key]) => (
-            <div key={key} className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-xs text-gray-500">{t(labelKey)}</div>
-              <div className="text-2xl font-bold text-gray-900">{count(key)}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-2 mb-4">
+        {/* 統計格=可點分類篩選(比照案件·發案,Wing 2026-08-09):點哪格只看那類,「全部」還原 */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           {([['filterAll', 'all'], ['statPending', 'pending'], ['statInvoiceUploaded', 'invoice_uploaded'], ['statPaid', 'paid'], ['prStatus_completed', 'completed']] as const).map(([labelKey, key]) => (
-            <button key={key} onClick={() => setFilter(key)} className={`text-xs px-3 py-1.5 rounded-full border ${filter === key ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-gray-600 border-gray-300'}`}>{t(labelKey)}</button>
+            <button key={key} type="button" onClick={() => setFilter(key)}
+              className={`rounded-xl border bg-white p-4 text-left cursor-pointer transition ${filter === key ? 'border-gray-900 ring-2 ring-gray-900/10' : 'border-gray-200 hover:border-gray-400'}`}>
+              <div className="text-xs text-gray-500">{t(labelKey)}</div>
+              <div className="text-2xl font-bold text-gray-900">{key === 'all' ? rows.length : count(key)}</div>
+            </button>
           ))}
         </div>
 
