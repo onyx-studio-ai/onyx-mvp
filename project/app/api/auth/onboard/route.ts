@@ -33,17 +33,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '這個帳號還沒有可登入的 Email,請先聯絡我們補上常用信箱。' }, { status: 400 });
   }
 
-  // 設密碼:有 auth 帳號就改,沒有就建(email_confirm 直接視為已驗證)
+  // 先確保 auth 帳號存在(沒有就建;email_confirm 直接視為已驗證),再統一設密碼。
   let authId = t.auth_user_id;
-  if (authId) {
-    const { error } = await db.auth.admin.updateUserById(authId, { password });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  } else {
-    const { data, error } = await db.auth.admin.createUser({ email: t.email, password, email_confirm: true });
+  if (!authId) {
+    const { data, error } = await db.auth.admin.createUser({ email: t.email, email_confirm: true });
     authId = data?.user?.id || null;
-    if (error && !authId) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (authId) await db.from('talents').update({ auth_user_id: authId }).eq('id', t.id);
+    // email 已有 auth 帳號但 talents 沒鏈到 → createUser 撞「已存在」;
+    // 用 email 找回既有帳號沿用,不然真人點連結會卡 500(2026-08-09 寄信前檢查抓到)
+    if (!authId) {
+      const { data: list } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      authId = list?.users?.find((u) => (u.email || '').toLowerCase() === t.email.toLowerCase())?.id || null;
+    }
+    if (!authId) return NextResponse.json({ error: error?.message || '帳號建立失敗,請稍後再試。' }, { status: 500 });
+    await db.from('talents').update({ auth_user_id: authId }).eq('id', t.id);
   }
+  const { error: pwErr } = await db.auth.admin.updateUserById(authId, { password });
+  if (pwErr) return NextResponse.json({ error: pwErr.message }, { status: 500 });
 
   await consumeOnboardingToken(db, t.id);   // 用掉,不能再用
   return NextResponse.json({ ok: true, email: t.email });
