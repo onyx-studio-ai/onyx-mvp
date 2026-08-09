@@ -3311,7 +3311,10 @@
       "prStatus_pending": "Pending",
       "prStatus_invoice_uploaded": "Invoice uploaded",
       "prStatus_paid": "Payment scheduled",
-      "prStatus_rejected": "Rejected"
+      "prStatus_rejected": "Rejected",
+      "prStatus_completed": "Payout completed",
+      "markCompleted": "Mark completed",
+      "confirmCompleted": "Confirm the funds have actually been sent and mark this as completed? (No email is sent — status only.)"
     },
     "finance": {
       "loadFailed": "Load failed, please try again later",
