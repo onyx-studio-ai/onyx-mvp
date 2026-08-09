@@ -486,7 +486,8 @@ function RequestRow({ r, tx, onChanged, hasSignature }: { r: PayoutReq; tx: (a: 
             // 私有桶 → 每次點都換一條 5 分鐘簽名網址(舊資料的公開網址也走同一端點)。
             const res = await authedFetch(`/api/talent/invoice-upload?id=${r.id}`);
             const j = await res.json().catch(() => ({}));
-            if (res.ok && j.url) window.open(j.url, '_blank', 'noopener,noreferrer');
+            if (res.ok && j.html) window.open(URL.createObjectURL(new Blob([j.html], { type: 'text/html' })), '_blank');
+            else if (res.ok && j.url) window.open(j.url, '_blank', 'noopener,noreferrer');
             else setErr(tx('發票開啟失敗,請稍後再試。', '发票打开失败,请稍后再试。', 'Could not open the invoice — please try again.'));
           }}
           className="text-[11px] text-gray-300 hover:underline mt-1 inline-block"
