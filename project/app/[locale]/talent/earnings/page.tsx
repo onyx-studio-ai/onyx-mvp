@@ -416,7 +416,7 @@ function RequestRow({ r, tx, onChanged, hasSignature }: { r: PayoutReq; tx: (a: 
     } catch (e) { setErr(e instanceof Error ? e.message : tx('開立失敗', '开立失败', 'Failed')); }
     finally { setBusy(false); }
   }
-  const SL: Record<string, string> = { pending: tx('待完成發票', '待完成发票', 'Invoice pending'), invoice_uploaded: tx('已送出 · 待撥款', '已送出 · 待拨款', 'Submitted'), paid: tx('已安排撥款 · 約7個工作日入帳', '已安排拨款 · 约7个工作日入账', 'Payment scheduled · arrives in ~7 business days'), rejected: tx('已退回', '已退回', 'Rejected') };
+  const SL: Record<string, string> = { pending: tx('待完成發票', '待完成发票', 'Invoice pending'), invoice_uploaded: tx('已送出 · 待撥款', '已送出 · 待拨款', 'Submitted'), paid: tx('已安排撥款 · 約7個工作日入帳', '已安排拨款 · 约7个工作日入账', 'Payment scheduled · arrives in ~7 business days'), completed: tx('撥款已完成', '拨款已完成', 'Payout completed'), rejected: tx('已退回', '已退回', 'Rejected') };
 
   async function viewInvoice() {
     const res = await authedFetch(`/api/talent/invoice?id=${r.id}`);
@@ -440,7 +440,7 @@ function RequestRow({ r, tx, onChanged, hasSignature }: { r: PayoutReq; tx: (a: 
     finally { setBusy(false); }
   }
 
-  const paid = r.status === 'paid', done = r.status === 'invoice_uploaded' || paid;
+  const paid = r.status === 'paid' || r.status === 'completed', done = r.status === 'invoice_uploaded' || paid;
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
