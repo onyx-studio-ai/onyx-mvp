@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
-import { decryptJson, payoutEncConfigured } from '@/lib/payout-crypto';
 import { renderInvoiceHtml } from '@/lib/invoice';
+import { sellerFromPayoutDetails } from '@/lib/payout-seller';
 
 /*
   GET /api/talent/invoice?id=<payout_request id> → 回傳該請款單的可列印 HTML 發票。
@@ -20,24 +20,8 @@ export async function GET(request: NextRequest) {
     .eq('id', id).eq('talent_id', talentId).maybeSingle();
   if (!pr) return NextResponse.json({ error: 'not your request' }, { status: 403 });
 
-  // 賣方(配音員)姓名 + 地址 + 稅籍編號 ← 解密收款資料。
-  // 收款資料是兩組結構 {twd,usd,tax}:姓名取台幣戶名,沒有再取美金戶名;地址/稅籍取稅務區。
-  let sellerName = '', sellerAddress = '', sellerTaxId = '';
-  if (payoutEncConfigured()) {
-    const { data: pd } = await r.db.from('talent_payout_details').select('enc_payload').eq('talent_id', talentId).maybeSingle();
-    if (pd?.enc_payload) {
-      try {
-        const d = decryptJson<Record<string, unknown>>(pd.enc_payload as string);
-        const twd = (d.twd && typeof d.twd === 'object' ? d.twd : {}) as Record<string, string>;
-        const usd = (d.usd && typeof d.usd === 'object' ? d.usd : {}) as Record<string, string>;
-        const tax = (d.tax && typeof d.tax === 'object' ? d.tax : {}) as Record<string, string>;
-        sellerName = twd.account_holder || usd.account_holder || '';
-        sellerAddress = tax.tax_address || '';
-        // 稅籍編號:優先用自填的;台灣人沒填就自動帶身分證(national_id),海外只用自填的。
-        sellerTaxId = tax.tax_id || (tax.tax_location === 'TW' ? tax.national_id : '') || '';
-      } catch { /* 解不開就留空 */ }
-    }
-  }
+  // 賣方(配音員)資訊 ← 共用 helper(lib/payout-seller)。
+  const { sellerName, sellerAddress, sellerTaxId } = await sellerFromPayoutDetails(r.db, talentId);
 
   const html = renderInvoiceHtml({
     invoiceNumber: pr.invoice_number as string,
