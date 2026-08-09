@@ -1093,6 +1093,7 @@
     "acceptableUsePolicy": "Acceptable Use Policy",
     "and": "and",
     "errorTermsRequired": "You must agree to the Terms, Privacy Policy, and AUP to continue",
+    "errorBotCheck": "Security check didn't pass — it has been refreshed, please submit again.",
     "toastAccountCreated": "Account created! Please check your email to confirm."
   },
   "authConfirm": {
