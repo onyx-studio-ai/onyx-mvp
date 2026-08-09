@@ -1093,6 +1093,7 @@
     "acceptableUsePolicy": "可接受使用政策",
     "and": "和",
     "errorTermsRequired": "您必须同意服务条款、隐私政策和可接受使用政策才能继续",
+    "errorBotCheck": "安全验证未通过(验证已重新加载),请再点一次提交即可。",
     "toastAccountCreated": "账户已创建！请查看邮箱以完成确认。"
   },
   "authConfirm": {
