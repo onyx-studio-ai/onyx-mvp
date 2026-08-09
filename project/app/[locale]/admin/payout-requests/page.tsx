@@ -21,6 +21,7 @@ async function openInvoice(invoiceUrl: string) {
   try {
     const res = await fetch(`/api/admin/payout-requests/signed-url?u=${encodeURIComponent(invoiceUrl)}`, { credentials: 'include' });
     const j = await res.json().catch(() => ({}));
+    if (res.ok && j.html) { window.open(URL.createObjectURL(new Blob([j.html], { type: 'text/html' })), '_blank'); return; }
     if (res.ok && j.url) { window.open(j.url, '_blank', 'noopener,noreferrer'); return; }
     // 拿不到簽名 URL(例如舊路徑),退回直接開原網址,別讓使用者完全點不動。
     window.open(invoiceUrl, '_blank', 'noopener,noreferrer');
