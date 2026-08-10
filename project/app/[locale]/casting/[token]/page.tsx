@@ -19,7 +19,7 @@ import { tzLabel } from '@/lib/case-time';
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string; license_summary?: string | null };
+type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string; license_summary?: string | null; audition_parts?: { name?: string; instructions?: string }[] | null };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -142,7 +142,7 @@ export default function GuestCasting() {
         </>
       ) : (
         /* General (single-voice) call — upload a demo + price (no per-role audition). */
-        <GuestGeneral token={token} dealCurrency={dealCurrency} source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type} licenseSummary={brief.license_summary} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
+        <GuestGeneral token={token} dealCurrency={dealCurrency} source={brief.source} rateNote={brief.rate_note} budget={brief.budget} budgetType={brief.budget_type} licenseSummary={brief.license_summary} parts={Array.isArray(brief.audition_parts) ? brief.audition_parts : []} done={mine.find((m) => !m.role_name)} closed={closed} tx={tx} onDone={(a) => setMine((p) => [a, ...p])} />
       )}
 
       <div className="mt-8 border-t border-white/10 pt-4 text-center">
@@ -181,23 +181,32 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
   const [open, setOpen] = useState(false);
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [partUrls, setPartUrls] = useState<Record<number, string>>({});
+  const [partUploading, setPartUploading] = useState<number | null>(null);
   const [gross, setGross] = useState('');
   const [currency, setCurrency] = useState(dealCurrency || 'TWD');   // 案件幣別優先(deal currency 唯一真相)
   const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
+  async function doUpload(rawFile: File): Promise<string> {
+    const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
+    const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+    const uj = await u.json();
+    if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
+    const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+    if (error) throw new Error(error.message);
+    return uj.publicUrl;
+  }
   async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
-    try {
-      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
-      const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
-      const uj = await u.json();
-      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
-      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
-      if (error) throw new Error(error.message);
-      setAudioUrl(uj.publicUrl);
-    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
+    try { setAudioUrl(await doUpload(rawFile)); }
+    catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
+  }
+  async function uploadPart(rawFile: File, idx: number) {
+    setErr(''); setPartUploading(idx);
+    try { const url = await doUpload(rawFile); setPartUrls((mp) => ({ ...mp, [idx]: url })); }
+    catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setPartUploading(null); }
   }
   const [licenseOk, setLicenseOk] = useState(false);
   async function submit() {
@@ -308,41 +317,54 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
 }
 
 // General (single-voice) guest response: upload one demo + price. No roles.
-function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetType, licenseSummary, dealCurrency, tx, onDone }: {
+function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetType, licenseSummary, dealCurrency, parts = [], tx, onDone }: {
   token: string; done?: Audition; closed: boolean; source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string; licenseSummary?: string | null;
   dealCurrency?: string | null;
+  parts?: { name?: string; instructions?: string }[];
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [partUrls, setPartUrls] = useState<Record<number, string>>({});
+  const [partUploading, setPartUploading] = useState<number | null>(null);
   const [gross, setGross] = useState('');
   const [currency, setCurrency] = useState(dealCurrency || 'TWD');   // 案件幣別優先(deal currency 唯一真相)
   const [intro, setIntro] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
+  async function doUpload(rawFile: File): Promise<string> {
+    const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
+    const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+    const uj = await u.json();
+    if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
+    const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+    if (error) throw new Error(error.message);
+    return uj.publicUrl;
+  }
   async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
-    try {
-      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
-      const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
-      const uj = await u.json();
-      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
-      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
-      if (error) throw new Error(error.message);
-      setAudioUrl(uj.publicUrl);
-    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
+    try { setAudioUrl(await doUpload(rawFile)); }
+    catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
+  }
+  async function uploadPart(rawFile: File, idx: number) {
+    setErr(''); setPartUploading(idx);
+    try { const url = await doUpload(rawFile); setPartUrls((mp) => ({ ...mp, [idx]: url })); }
+    catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setPartUploading(null); }
   }
   const [licenseOk, setLicenseOk] = useState(false);
   async function submit() {
     setErr('');
     if (licenseSummary && !licenseOk) return setErr(tx('請先勾選同意授權要點', 'Please agree to the license terms first'));
-    if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
+    if (parts.length) {
+      const missing = parts.map((_, i) => i).filter((i) => !partUrls[i]);
+      if (missing.length) return setErr(tx(`還有 ${missing.length} 段未上傳(共 ${parts.length} 段)`, `${missing.length} of ${parts.length} parts still need an upload`));
+    } else if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
     const earn = Number(gross);
     if (!(earn > 0)) return setErr(tx('請填報價', 'Enter your price'));
     const grossAmount = source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
     setBusy(true);
-    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: audioUrl, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: parts.length ? partUrls[0] : audioUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: pt.name || `Part ${i + 1}` })) : undefined, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
@@ -358,11 +380,32 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+      {parts.length > 0 ? (
+        <>
+          <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 每段依指示各錄一檔上傳,全部上傳完才能送出。`, `This audition has ${parts.length} parts — record and upload one file per part. All parts are required.`)}</p>
+          {parts.map((pt, i) => (
+            <div key={i} className={`rounded-xl border p-3 ${partUrls[i] ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${partUrls[i] ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{partUrls[i] ? '✓' : i + 1}</span>
+                <span className="text-sm font-medium text-white">{pt.name || `Part ${i + 1}`}</span>
+              </div>
+              {pt.instructions && <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.instructions}</div>}
+              <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPart(f, i); }}
+                className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
+              {partUploading === i && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
+              {partUrls[i] && <audio controls src={partUrls[i]} className="w-full h-9 mt-1.5" />}
+            </div>
+          ))}
+        </>
+      ) : (
+        <>
       <p className="text-xs text-gray-500">{tx('依上方試音稿錄製並上傳你的試音,再填報價。', 'Record your audition from the script above, upload it, then enter your price.')}</p>
       <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={uploading || closed} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }}
         className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
       {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
       {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
+        </>
+      )}
       {(() => {
         const isClient = source === 'client';
         const bt = budgetType === 'Up to' ? tx('上限 ', 'Up to ') : budgetType === 'Fixed' ? tx('固定 ', 'Fixed ') : '';
