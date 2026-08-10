@@ -22,7 +22,7 @@ type Brief = {
   media_scope?: string | null; territory?: string | null; license_term?: string | null;
   accent?: string | null; voice_style?: string | null; voice_age?: string | null;
   recording_methods?: string[] | null; recording_start?: string | null; base_revisions?: number | null;
-  brief?: string | null; audition_script?: string | null; audition_parts?: { name?: string; instructions?: string }[] | null;
+  brief?: string | null; audition_script?: string | null; audition_parts?: { name?: string; instructions?: string; options?: { label: string; instructions: string }[] }[] | null;
   reference_links?: string[] | null; reference_files?: { name?: string; url: string }[] | null;
   roles?: Role[] | null;
 };
@@ -82,6 +82,12 @@ export default function CastingPreview() {
             <div key={i} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
               <div className="text-sm font-medium text-white mb-1.5">{pt.name || `Part ${i + 1}`}</div>
               {pt.instructions && <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5">{pt.instructions}</div>}
+              {(pt.options || []).map((op, oi) => (
+                <details key={oi} className="mt-1.5 rounded-lg border border-white/10 bg-black/20 px-2.5 py-1.5">
+                  <summary className="text-xs text-gray-200 cursor-pointer">{op.label}</summary>
+                  <div className="mt-1.5 text-xs text-gray-300 whitespace-pre-wrap">{op.instructions}</div>
+                </details>
+              ))}
             </div>
           ))}
         </div>
