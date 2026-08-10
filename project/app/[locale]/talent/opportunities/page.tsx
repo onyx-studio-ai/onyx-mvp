@@ -75,8 +75,12 @@ function parseCcy(s: string | null | undefined): string | null {
   if (!s) return null;
   const code = s.toUpperCase().match(/\b(USD|TWD|CNY|RMB|GBP|EUR|JPY|KRW|HKD)\b/);
   if (code) return code[1] === 'RMB' ? 'CNY' : code[1];
-  if (/NT\$/i.test(s)) return 'TWD';
-  if (/US\$/i.test(s)) return 'USD';
+  {
+    const nt = s.search(/NT\$/i), us = s.search(/US\$/i);
+    if (nt >= 0 && us >= 0) return us < nt ? 'USD' : 'TWD';
+    if (nt >= 0) return 'TWD';
+    if (us >= 0) return 'USD';
+  }
   if (/£/.test(s)) return 'GBP';
   if (/€/.test(s)) return 'EUR';
   return null;
@@ -1136,7 +1140,9 @@ function BriefCard({
     : { label: tx('徵集中', '徵集中', 'Hiring'), cls: 'bg-[#6FCF97]/15 text-[#6FCF97] border-[#6FCF97]/30' };
   const [open, setOpen] = useState(!!defaultOpen);
   const [gross, setGross] = useState('');
-  const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
+  const lockedCur = brief.budget_currency ? dealCurrency(brief) : null; // 有明定預算幣別才鎖(HKD 案教訓);平台案未定 → 自選
+  const [curSel, setCurSel] = useState(dealCurrency(brief));
+  const currency = lockedCur || curSel;
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -1316,7 +1322,9 @@ function BriefCard({
             <div className="border-t border-white/10 pt-3 space-y-2">
               {closed && <ClosedNotice tx={tx} />}
               <div className="flex gap-2">
-                <span className={`${inputCls} w-24 flex items-center justify-center font-medium text-gray-200 bg-white/[0.07]`} title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
+                {lockedCur
+                  ? <span className={`${inputCls} w-24 flex items-center justify-center font-medium text-gray-200 bg-white/[0.07]`} title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
+                  : <select className={`${inputCls} w-24 cursor-pointer`} value={curSel} onChange={(e) => setCurSel(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>}
                 <input type="number" min="0" disabled={closed} className={`${inputCls} ${closed ? closedFieldCls : ''}`} value={gross} onChange={(e) => setGross(e.target.value)}
                   placeholder={tx('客戶支付金額(報價)', '客户支付金额(报价)', 'Amount the client pays (your quote)')} />
               </div>
@@ -1445,7 +1453,9 @@ function RoleAudition({
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
+  const lockedCur = brief.budget_currency ? dealCurrency(brief) : null; // 有明定預算幣別才鎖(HKD 案教訓);平台案未定 → 自選
+  const [curSel, setCurSel] = useState(dealCurrency(brief));
+  const currency = lockedCur || curSel;
   const [intro, setIntro] = useState('');
   const [revPolicy, setRevPolicy] = useState('');
   const [includedRev, setIncludedRev] = useState('1'); // revisions included in the quote (999 = unlimited)
@@ -1594,7 +1604,9 @@ function RoleAudition({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-300">{tx('你的報價', '你的报价', 'Your quote')}</span>
-                    <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
+                    {lockedCur
+                      ? <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
+                      : <select className="bg-white/[0.07] border border-white/10 rounded-lg px-2 py-1 text-xs text-gray-200 font-medium cursor-pointer" value={curSel} onChange={(e) => setCurSel(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>}
                   </div>
                   <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
                     <div className={`bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2 ${closed ? closedFieldCls : ''}`}>
@@ -1666,7 +1678,9 @@ function GeneralResponse({
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [gross, setGross] = useState('');
-  const currency = dealCurrency(brief); // fixed by the client's posting budget — not picked by the talent
+  const lockedCur = brief.budget_currency ? dealCurrency(brief) : null; // 有明定預算幣別才鎖(HKD 案教訓);平台案未定 → 自選
+  const [curSel, setCurSel] = useState(dealCurrency(brief));
+  const currency = lockedCur || curSel;
   const [intro, setIntro] = useState('');
   const [revPolicy, setRevPolicy] = useState('');
   const [includedRev, setIncludedRev] = useState('1'); // revisions included in the quote (999 = unlimited)
@@ -1834,7 +1848,9 @@ function GeneralResponse({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-300">{tx('你的報價', '你的报价', 'Your quote')}</span>
-              <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
+              {lockedCur
+                ? <span className="bg-white/[0.07] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-medium" title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
+                : <select className="bg-white/[0.07] border border-white/10 rounded-lg px-2 py-1 text-xs text-gray-200 font-medium cursor-pointer" value={curSel} onChange={(e) => setCurSel(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>}
             </div>
             <div className={`grid ${isClient ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
               <div className={`bg-[#1d1b25] border border-[#C9A86A]/50 rounded-xl px-3 py-2 ${closed ? closedFieldCls : ''}`}>
