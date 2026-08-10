@@ -4,6 +4,7 @@ import RecoveryRedirect from '@/components/RecoveryRedirect';
 import PageViewTracker from '@/components/PageViewTracker';
 import HelpWidget from '@/components/support/HelpWidget';
 import { SelectionProvider } from '@/contexts/SelectionContext';
+import SingleAudioPlayback from '@/components/SingleAudioPlayback';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
@@ -121,6 +122,7 @@ export default async function LocaleLayout({
         <SelectionProvider>
           <RecoveryRedirect />
           <PageViewTracker />
+          <SingleAudioPlayback />
           <Navbar />
           {children}
           <HelpWidget locale={locale} />
