@@ -22,7 +22,7 @@ const CURRENCIES = ['USD', 'TWD'];
 const GUEST_BRIEF_FIELDS = [
   'id', 'brief_number', 'kind', 'content_type', 'title', 'language', 'rate_note', 'status', 'created_at',
   'budget', 'budget_type',
-  'brief', 'audition_script', 'audition_deadline', 'audition_deadline_time', 'deadline', 'deadline_time', 'timezone', 'recording_start', 'recording_methods',
+  'brief', 'audition_script', 'audition_parts', 'audition_deadline', 'audition_deadline_time', 'deadline', 'deadline_time', 'timezone', 'recording_start', 'recording_methods',
   'reference_files', 'reference_links', 'roles', 'audition_cap', 'base_revisions', 'length', 'license_summary',
   'media_scope', 'territory', 'license_term', 'accent', 'voice_style', 'voice_age',
 ] as const;
@@ -89,7 +89,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if ((brief as { license_summary?: string | null }).license_summary && body.license_agreed !== true) {
     return NextResponse.json({ error: '此案需先同意授權要點才能試音。' }, { status: 400 });
   }
-  const sampleUrl = String(body.sample_url || '').slice(0, 1000);
+  let sampleUrl = String(body.sample_url || '').slice(0, 1000);
+  // 分段試音(audition_parts):每段各一檔,全齊才收;第 1 段進 sample_url,其餘進 extra_samples(帶段名)
+  const rawSamples = Array.isArray((body as { samples?: unknown[] }).samples) ? (body as { samples: { url?: string; label?: string }[] }).samples : [];
+  const samples = rawSamples
+    .map((x) => ({ url: String(x?.url || '').slice(0, 1000), label: String(x?.label || '').slice(0, 80) }))
+    .filter((x) => /^https?:\/\//i.test(x.url));
+  const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string }[] }).audition_parts : [];
+  let extraSamples: { url: string; label: string | null; created_at: string }[] | null = null;
+  if (parts.length) {
+    if (samples.length < parts.length) return NextResponse.json({ error: `此案試音分 ${parts.length} 段,每段都需上傳一檔後再送出。` }, { status: 400 });
+    sampleUrl = samples[0].url;
+    extraSamples = samples.slice(1).map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
+  }
   const intro = String(body.intro || '').slice(0, 3000) || null;
   const gross = Number(body.gross_amount);
   // 🚨 幣別跟著案件走:案件有指定 budget_currency 就強制使用(deal currency 唯一真相),
@@ -126,7 +138,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   // Platform-posted = no cut (take-home); client-posted = 20% commission.
   const commissionRate = isPlatformCase(brief.client_email as string | null | undefined) ? 0 : 0.20; // 平台案判定統一(lib/casting)
   const { data, error } = await db.from('marketplace_quotes')
-    .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id, commission_rate: commissionRate, license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null })
+    .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, extra_samples: extraSamples, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id, commission_rate: commissionRate, license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null })
     .select('id, brief_id, role_name, gross_amount, currency, status, sample_url').single();
   if (error) {
     if (error.code === '23505') return NextResponse.json({ error: '你已經試過這個角色了' }, { status: 409 });
