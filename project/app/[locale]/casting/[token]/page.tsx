@@ -19,7 +19,7 @@ import { tzLabel } from '@/lib/case-time';
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
 type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
-type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string; license_summary?: string | null; audition_parts?: { name?: string; instructions?: string }[] | null };
+type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string; license_summary?: string | null; audition_parts?: { name?: string; instructions?: string; optional?: boolean }[] | null };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
 export default function GuestCasting() {
@@ -320,7 +320,7 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
 function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetType, licenseSummary, dealCurrency, parts = [], tx, onDone }: {
   token: string; done?: Audition; closed: boolean; source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string; licenseSummary?: string | null;
   dealCurrency?: string | null;
-  parts?: { name?: string; instructions?: string }[];
+  parts?: { name?: string; instructions?: string; optional?: boolean }[];
   tx: (zh: string, en: string) => string; onDone: (a: Audition) => void;
 }) {
   const [audioUrl, setAudioUrl] = useState('');
@@ -357,14 +357,15 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
     setErr('');
     if (licenseSummary && !licenseOk) return setErr(tx('請先勾選同意授權要點', 'Please agree to the license terms first'));
     if (parts.length) {
-      const missing = parts.map((_, i) => i).filter((i) => !partUrls[i]);
-      if (missing.length) return setErr(tx(`還有 ${missing.length} 段未上傳(共 ${parts.length} 段)`, `${missing.length} of ${parts.length} parts still need an upload`));
+      const missing = parts.map((_, i) => i).filter((i) => !parts[i].optional && !partUrls[i]);
+      if (missing.length) return setErr(tx(`還有 ${missing.length} 個必填段未上傳`, `${missing.length} required part(s) still need an upload`));
+      if (!Object.values(partUrls).some(Boolean)) return setErr(tx('請至少上傳一段', 'Upload at least one part'));
     } else if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
     const earn = Number(gross);
     if (!(earn > 0)) return setErr(tx('請填報價', 'Enter your price'));
     const grossAmount = source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
     setBusy(true);
-    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: parts.length ? partUrls[0] : audioUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: pt.name || `Part ${i + 1}` })) : undefined, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: parts.length ? partUrls[0] : audioUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: pt.name || `Part ${i + 1}` })).filter((x) => x.url) : undefined, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
@@ -382,12 +383,13 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
       {parts.length > 0 ? (
         <>
-          <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 每段依指示各錄一檔上傳,全部上傳完才能送出。`, `This audition has ${parts.length} parts — record and upload one file per part. All parts are required.`)}</p>
+          <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 依各段指示錄製上傳;標「選填」的段落依指示選錄。`, `This audition has ${parts.length} parts — follow each part's instructions. Parts marked "optional" are recorded per the instructions.`)}</p>
           {parts.map((pt, i) => (
             <div key={i} className={`rounded-xl border p-3 ${partUrls[i] ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
               <div className="flex items-center gap-2 mb-1.5">
                 <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${partUrls[i] ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{partUrls[i] ? '✓' : i + 1}</span>
                 <span className="text-sm font-medium text-white">{pt.name || `Part ${i + 1}`}</span>
+                {pt.optional && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-300">{tx('選填', 'optional')}</span>}
               </div>
               {pt.instructions && <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.instructions}</div>}
               <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPart(f, i); }}
