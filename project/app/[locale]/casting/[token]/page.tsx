@@ -326,9 +326,10 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
 }) {
   const [audioUrl, setAudioUrl] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [partUrls, setPartUrls] = useState<Record<number, string>>({});
+  const [partUrls, setPartUrls] = useState<Record<string, string>>({});
   const [partChoice, setPartChoice] = useState<Record<number, number>>({});
-  const [partUploading, setPartUploading] = useState<number | null>(null);
+  const [partUploading, setPartUploading] = useState<string | null>(null);
+  const partHasUpload = (i: number) => Object.keys(partUrls).some((key) => key === String(i) || key.startsWith(`${i}:`));
   const [gross, setGross] = useState('');
   const [currency, setCurrency] = useState(dealCurrency || 'TWD');   // 案件幣別優先(deal currency 唯一真相)
   const [intro, setIntro] = useState('');
@@ -349,9 +350,9 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
     try { setAudioUrl(await doUpload(rawFile)); }
     catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setUploading(false); }
   }
-  async function uploadPart(rawFile: File, idx: number) {
-    setErr(''); setPartUploading(idx);
-    try { const url = await doUpload(rawFile); setPartUrls((mp) => ({ ...mp, [idx]: url })); }
+  async function uploadPart(rawFile: File, key: string) {
+    setErr(''); setPartUploading(key);
+    try { const url = await doUpload(rawFile); setPartUrls((mp) => ({ ...mp, [key]: url })); }
     catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setPartUploading(null); }
   }
   const [licenseOk, setLicenseOk] = useState(false);
@@ -359,7 +360,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
     setErr('');
     if (licenseSummary && !licenseOk) return setErr(tx('請先勾選同意授權要點', 'Please agree to the license terms first'));
     if (parts.length) {
-      const missing = parts.map((_, i) => i).filter((i) => !parts[i].optional && !partUrls[i]);
+      const missing = parts.map((_, i) => i).filter((i) => !parts[i].optional && !partHasUpload(i));
       if (missing.length) return setErr(tx(`還有 ${missing.length} 個必填段未上傳`, `${missing.length} required part(s) still need an upload`));
       if (!Object.values(partUrls).some(Boolean)) return setErr(tx('請至少上傳一段', 'Upload at least one part'));
     } else if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
@@ -367,7 +368,9 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
     if (!(earn > 0)) return setErr(tx('請填報價', 'Enter your price'));
     const grossAmount = source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
     setBusy(true);
-    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: parts.length ? partUrls[0] : audioUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: (pt.options && partChoice[i] != null ? pt.options[partChoice[i]]?.label : pt.name) || `Part ${i + 1}` })).filter((x) => x.url) : undefined, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
+    const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: parts.length ? (Object.entries(partUrls).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))[0]?.[1] || '') : audioUrl, samples: parts.length ? parts.flatMap((pt, i) => pt.options?.length
+      ? pt.options.map((op, oi) => ({ url: partUrls[`${i}:${oi}`], label: op.label })).filter((x) => x.url)
+      : (partUrls[String(i)] ? [{ url: partUrls[String(i)], label: pt.name || `Part ${i + 1}` }] : [])) : undefined, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
     if (!res.ok) return setErr(j.error || tx('送出失敗', 'Submit failed'));
@@ -386,26 +389,38 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
       {parts.length > 0 ? (
         <>
           <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 依各段指示錄製上傳;標「選填」的段落依指示選錄。`, `This audition has ${parts.length} parts — follow each part's instructions. Parts marked "optional" are recorded per the instructions.`)}</p>
-          {parts.map((pt, i) => (
-            <div key={i} className={`rounded-xl border p-3 ${partUrls[i] ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
+          {parts.map((pt, i) => {
+            const hasOpts = !!pt.options?.length;
+            const curKey = hasOpts ? (partChoice[i] != null ? `${i}:${partChoice[i]}` : null) : String(i);
+            const done2 = partHasUpload(i);
+            return (
+            <div key={i} className={`rounded-xl border p-3 ${done2 ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
               <div className="flex items-center gap-2 mb-1.5">
-                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${partUrls[i] ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{partUrls[i] ? '✓' : i + 1}</span>
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${done2 ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{done2 ? '✓' : i + 1}</span>
                 <span className="text-sm font-medium text-white">{pt.name || `Part ${i + 1}`}</span>
                 {pt.optional && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-300">{tx('選填', 'optional')}</span>}
               </div>
-              {pt.options?.length ? (
+              {hasOpts && (
                 <select className={`${cls} mb-2`} value={partChoice[i] ?? ''} onChange={(e) => setPartChoice((m) => ({ ...m, [i]: Number(e.target.value) }))}>
                   <option value="" className="bg-black">{tx('請先選擇…', 'Select…')}</option>
-                  {pt.options.map((op, oi) => (<option key={oi} value={oi} className="bg-black">{op.label}</option>))}
+                  {pt.options!.map((op, oi) => (<option key={oi} value={oi} className="bg-black">{op.label}{partUrls[`${i}:${oi}`] ? ' ✓' : ''}</option>))}
                 </select>
-              ) : null}
-              {(pt.options?.length ? (partChoice[i] != null ? pt.options[partChoice[i]]?.instructions : '') : pt.instructions) && <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.options?.length ? pt.options[partChoice[i]!]?.instructions : pt.instructions}</div>}
-              <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed || (!!pt.options?.length && partChoice[i] == null)} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPart(f, i); }}
+              )}
+              {(hasOpts ? (partChoice[i] != null ? pt.options![partChoice[i]]?.instructions : '') : pt.instructions) && <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{hasOpts ? pt.options![partChoice[i]!]?.instructions : pt.instructions}</div>}
+              <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed || !curKey} onChange={(e) => { const f = e.target.files?.[0]; if (f && curKey) uploadPart(f, curKey); e.target.value = ''; }}
                 className="block w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs" />
-              {partUploading === i && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
-              {partUrls[i] && <audio controls src={partUrls[i]} className="w-full h-9 mt-1.5" />}
+              {partUploading != null && partUploading.startsWith(hasOpts ? `${i}:` : String(i)) && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
+              {hasOpts
+                ? pt.options!.map((op, oi) => partUrls[`${i}:${oi}`] ? (
+                    <div key={oi} className="mt-1.5">
+                      <p className="text-[11px] text-green-300 mb-0.5">✓ {op.label}</p>
+                      <audio controls src={partUrls[`${i}:${oi}`]} className="w-full h-9" />
+                    </div>
+                  ) : null)
+                : (partUrls[String(i)] ? <audio controls src={partUrls[String(i)]} className="w-full h-9 mt-1.5" /> : null)}
             </div>
-          ))}
+            );
+          })}
         </>
       ) : (
         <>
