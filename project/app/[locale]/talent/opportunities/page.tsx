@@ -119,7 +119,7 @@ type Brief = {
   title?: string | null;
   roles?: Role[] | null;
   audition_script?: string | null;  // shown view-only (no download)
-  audition_parts?: { name?: string; instructions?: string }[] | null; // 分段試音:每段一檔
+  audition_parts?: { name?: string; instructions?: string; optional?: boolean }[] | null; // 分段試音:每段一檔(optional=選填段)
   reference_links?: string[] | null;
   reference_files?: { name?: string; url: string }[] | null;
   recording_start?: string | null;
@@ -1708,8 +1708,9 @@ function GeneralResponse({
     setErr('');
     if (brief.license_summary && !licenseOk) return setErr(tx('請先勾選同意授權要點', '请先勾选同意授权要点', 'Please agree to the license terms first'));
     if (parts.length) {
-      const missing = parts.map((_, i) => i).filter((i) => !partUrls[i]);
-      if (missing.length) return setErr(tx(`還有 ${missing.length} 段未上傳(共 ${parts.length} 段,每段各一檔)`, `还有 ${missing.length} 段未上传(共 ${parts.length} 段,每段各一档)`, `${missing.length} of ${parts.length} parts still need an upload`));
+      const missing = parts.map((_, i) => i).filter((i) => !parts[i].optional && !partUrls[i]);
+      if (missing.length) return setErr(tx(`還有 ${missing.length} 個必填段未上傳`, `还有 ${missing.length} 个必填段未上传`, `${missing.length} required part(s) still need an upload`));
+      if (!Object.values(partUrls).some(Boolean)) return setErr(tx('請至少上傳一段', '请至少上传一段', 'Upload at least one part'));
     } else if (!sampleUrl) return setErr(hasScript ? tx('此案有指定試音稿,請依稿錄製並上傳', '此案有指定试音稿,请依稿录制并上传', 'This case has an audition script — record it and upload') : tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
     const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
@@ -1717,7 +1718,7 @@ function GeneralResponse({
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: parts.length ? partUrls[0] : sampleUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: pt.name || `Part ${i + 1}` })) : undefined, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: parts.length ? partUrls[0] : sampleUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: pt.name || `Part ${i + 1}` })).filter((x) => x.url) : undefined, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
@@ -1747,7 +1748,7 @@ function GeneralResponse({
     <div className="border-t border-white/10 pt-3 space-y-2">
       {parts.length > 0 ? (
         <>
-          <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 每段依指示各錄一檔上傳,全部上傳完才能送出。`, `此案试音分 ${parts.length} 段 —— 每段依指示各录一档上传,全部上传完才能送出。`, `This audition has ${parts.length} parts — record and upload one file per part. All parts are required.`)}</p>
+          <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 依各段指示錄製上傳;標「選填」的段落依指示選錄。`, `此案试音分 ${parts.length} 段 —— 依各段指示录制上传;标「选填」的段落依指示选录。`, `This audition has ${parts.length} parts — follow each part's instructions. Parts marked "optional" are recorded per the instructions.`)}</p>
           {closed && <ClosedNotice tx={tx} />}
           <div className="space-y-3">
             {parts.map((pt, i) => (
@@ -1755,6 +1756,7 @@ function GeneralResponse({
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${partUrls[i] ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{partUrls[i] ? '✓' : i + 1}</span>
                   <span className="text-sm font-medium text-white">{pt.name || `Part ${i + 1}`}</span>
+                  {pt.optional && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-300">{tx('選填', '选填', 'optional')}</span>}
                 </div>
                 {pt.instructions && (
                   <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.instructions}</div>
