@@ -69,15 +69,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '此案有指定試音稿,請依稿錄製並上傳試音,不接受現有 demo。' }, { status: 400 });
     }
     // 分段試音(audition_parts):每段各一檔且必須是新錄音;第 1 段進 sample_url,其餘進 extra_samples
-    const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string }[] }).audition_parts : [];
+    const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string; optional?: boolean }[] }).audition_parts : [];
     const rawSamples = Array.isArray(body.samples) ? (body.samples as { url?: string; label?: string }[]) : [];
     let partSamples: { url: string; label: string | null; created_at: string }[] | null = null;
     let sampleUrlFinal = sampleUrl;
     if (parts.length) {
+      const required = parts.filter((pt) => !pt.optional).length;
       const clean = rawSamples
         .map((x) => ({ url: String(x?.url || '').slice(0, 1000), label: String(x?.label || '').slice(0, 80) }))
         .filter((x) => /^https?:\/\//i.test(x.url) && x.url.includes('/casting/auditions/'));
-      if (clean.length < parts.length) return NextResponse.json({ error: `此案試音分 ${parts.length} 段,每段都需錄製並上傳一檔。` }, { status: 400 });
+      if (clean.length < Math.max(required, 1)) return NextResponse.json({ error: `此案試音必填 ${required} 段,每段各上傳一檔。` }, { status: 400 });
       sampleUrlFinal = clean[0].url;
       partSamples = clean.slice(1).map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
     }
