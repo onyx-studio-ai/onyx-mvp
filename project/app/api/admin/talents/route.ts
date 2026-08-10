@@ -19,7 +19,21 @@ export async function GET(request: NextRequest) {
 
     const { data: earnings } = await db
       .from('talent_earnings')
-      .select('talent_id, status, commission_amount');
+      .select('talent_id, status, commission_amount, order_id, order_type, cost_breakdown');
+    // 幣別跟來源訂單走(manual 用 cost_breakdown.currency;查不到當 TWD)——
+    // 之前沒解析幣別,前端寫死 US$,台幣案被顯示成美金(2026-08-10 Eric NT$4,000 → US$4,000)。
+    const ORDER_TABLE: Record<string, string> = { voice: 'voice_orders', music: 'music_orders', strings: 'orchestra_orders' };
+    const curByOrder = new Map<string, string>();
+    const idsByType: Record<string, string[]> = {};
+    for (const e of earnings || []) if (e.order_id && e.order_type !== 'manual') (idsByType[e.order_type || 'voice'] ||= []).push(String(e.order_id));
+    for (const [ot, ids] of Object.entries(idsByType)) {
+      const { data: os } = await db.from(ORDER_TABLE[ot] || 'voice_orders').select('id, currency').in('id', ids);
+      for (const o of os || []) curByOrder.set(String(o.id), String(o.currency || 'TWD').toUpperCase());
+    }
+    const curOf = (e: { order_id?: string | null; order_type?: string | null; cost_breakdown?: { currency?: unknown } | null }) =>
+      e.order_type === 'manual'
+        ? String((e.cost_breakdown as { currency?: string } | null)?.currency || 'TWD').toUpperCase()
+        : (curByOrder.get(String(e.order_id)) || 'TWD');
 
     // Which talents are casting-invite accounts? These are the lightweight rows
     // auto-created when a talent is invited to audition (magic-link, no signup).
@@ -43,14 +57,15 @@ export async function GET(request: NextRequest) {
       inviteNames.set(r.talent_id, arr);
     }
 
-    const earningsMap: Record<string, { pending: number; paid: number; total: number; count: number }> = {};
+    // 分幣別彙總:byCur = { TWD: {paid, pending}, USD: {...} }(不同幣別不可加總)
+    const earningsMap: Record<string, { count: number; byCur: Record<string, { pending: number; paid: number }> }> = {};
     for (const e of (earnings || [])) {
-      if (!earningsMap[e.talent_id]) earningsMap[e.talent_id] = { pending: 0, paid: 0, total: 0, count: 0 };
+      if (!earningsMap[e.talent_id]) earningsMap[e.talent_id] = { count: 0, byCur: {} };
       const amount = Number(e.commission_amount) || 0;
-      earningsMap[e.talent_id].total += amount;
+      const cur = curOf(e);
+      const slot = (earningsMap[e.talent_id].byCur[cur] ||= { pending: 0, paid: 0 });
       earningsMap[e.talent_id].count += 1;
-      if (e.status === 'paid') earningsMap[e.talent_id].paid += amount;
-      else earningsMap[e.talent_id].pending += amount;
+      if (e.status === 'paid') slot.paid += amount; else slot.pending += amount;
     }
 
     // Strip columns that are purely secret machinery — one-time signing tokens
