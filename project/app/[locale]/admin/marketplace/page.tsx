@@ -18,7 +18,7 @@ import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 const SITE = 'https://www.onyxstudios.ai';
 
 type Brief = {
-  audition_parts?: { name?: string; instructions?: string }[] | null;
+  audition_parts?: { name?: string; instructions?: string; options?: { label: string; instructions: string }[] }[] | null;
   audition_script?: string | null;
   id: string;
   brief_number: string;
@@ -456,6 +456,12 @@ export default function AdminMarketplace() {
                     <div key={i} className="rounded-lg border border-gray-200 bg-white p-2.5">
                       <div className="text-xs font-semibold text-gray-800 mb-1">{pt.name || `Part ${i + 1}`}</div>
                       {pt.instructions && <div className="text-xs text-gray-600 whitespace-pre-wrap">{pt.instructions}</div>}
+                      {(pt.options || []).map((op, oi) => (
+                        <details key={oi} className="mt-1 rounded border border-gray-200 bg-gray-50 px-2 py-1">
+                          <summary className="text-xs text-gray-700 cursor-pointer">{op.label}</summary>
+                          <div className="mt-1 text-xs text-gray-600 whitespace-pre-wrap">{op.instructions}</div>
+                        </details>
+                      ))}
                     </div>
                   ))}
                 </div>
