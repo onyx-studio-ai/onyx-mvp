@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: briefsRaw, error: bErr } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, kind, title, roles, audition_script, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, accent, voice_style, voice_age, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, audition_deadline_time, timezone, language, length, budget, budget_type, budget_currency, deadline, deadline_time, brief, created_at, status, client_email, ai_type, gender_needs, license_summary')
+      .select('id, brief_number, kind, title, roles, audition_script, audition_parts, reference_links, reference_files, recording_start, recording_methods, rate_note, base_revisions, audition_cap, categories, content_type, media_scope, territory, license_term, accent, voice_style, voice_age, script_status, has_singing, wants_director, wants_live_session, live_session_tool, audition_deadline, audition_deadline_time, timezone, language, length, budget, budget_type, budget_currency, deadline, deadline_time, brief, created_at, status, client_email, ai_type, gender_needs, license_summary')
       // 市場透明(Wing 2026-07-25):配音員看自己語系內「所有階段」的案(徵集中/決選中/已錄取/已定案),
       // 不再只給 open —— 讓他感覺平台有案在走、自己可能有機會。近 60 天,維持新鮮感 + 清單不無限長。
       // 'reviewing' 刻意不收(那多半是未發佈的客戶請求收件匣,不可外露給配音員)。
