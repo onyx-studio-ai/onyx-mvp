@@ -18,6 +18,8 @@ import { AdminHeader, AdminStats } from '@/components/admin/list-ui';
 const SITE = 'https://www.onyxstudios.ai';
 
 type Brief = {
+  audition_parts?: { name?: string; instructions?: string }[] | null;
+  audition_script?: string | null;
   id: string;
   brief_number: string;
   kind: string | null;        // 'casting' = our self-posted audition call
@@ -446,6 +448,25 @@ export default function AdminMarketplace() {
               {b.language && <span className="text-xs text-green-700">{b.language}</span>}
             </div>
             <p className="text-sm text-gray-800 whitespace-pre-wrap mb-2">{b.brief}</p>
+            {Array.isArray(b.audition_parts) && b.audition_parts.length > 0 && (
+              <details className="mb-2 rounded-lg border border-violet-200 bg-violet-50/50 px-3 py-2">
+                <summary className="text-xs font-semibold text-violet-800 cursor-pointer">分段試音 × {b.audition_parts.length}(點開看各段指示)</summary>
+                <div className="mt-2 space-y-2">
+                  {b.audition_parts.map((pt, i) => (
+                    <div key={i} className="rounded-lg border border-gray-200 bg-white p-2.5">
+                      <div className="text-xs font-semibold text-gray-800 mb-1">{pt.name || `Part ${i + 1}`}</div>
+                      {pt.instructions && <div className="text-xs text-gray-600 whitespace-pre-wrap">{pt.instructions}</div>}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+            {b.audition_script && (
+              <details className="mb-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <summary className="text-xs font-semibold text-gray-700 cursor-pointer">試音稿(點開)</summary>
+                <div className="mt-2 text-xs text-gray-600 whitespace-pre-wrap">{b.audition_script}</div>
+              </details>
+            )}
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
               {b.media_scope && <span>{t('metaMedia')} {b.media_scope}</span>}
               {b.territory && <span>{t('metaTerritory')} {b.territory}</span>}
