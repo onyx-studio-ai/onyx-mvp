@@ -77,7 +77,7 @@ export default function CastingPreview() {
 
       {Array.isArray(b.audition_parts) && b.audition_parts.length > 0 && (
         <div className="mb-4 space-y-3">
-          <h2 className="text-sm font-semibold text-white">Audition — {b.audition_parts.length} parts(每段各上傳一檔)</h2>
+          <h2 className="text-sm font-semibold text-white">Audition — {b.audition_parts.length} parts (one file per part)</h2>
           {b.audition_parts.map((pt, i) => (
             <div key={i} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
               <div className="text-sm font-medium text-white mb-1.5">{pt.name || `Part ${i + 1}`}</div>
