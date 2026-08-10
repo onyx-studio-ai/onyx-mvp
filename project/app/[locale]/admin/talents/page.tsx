@@ -1673,17 +1673,22 @@ export default function AdminTalentsPage() {
                 </TableCell>
                 <TableCell>
                   {(() => {
-                    const es = (talent as any).earnings_summary;
-                    if (!es) return <span className="text-gray-600 text-sm">—</span>;
+                    const es = (talent as any).earnings_summary as { count: number; byCur?: Record<string, { pending: number; paid: number }> } | null;
+                    if (!es || !es.byCur) return <span className="text-gray-600 text-sm">—</span>;
+                    // 幣別跟訂單走,分幣別各自列(NT$/US$…),絕不混加(2026-08-10 修 US$ 寫死)
+                    const SYM: Record<string, string> = { TWD: 'NT$', USD: 'US$', HKD: 'HK$', CNY: '¥', EUR: '€', GBP: '£' };
+                    const fmt = (cur: string, n: number) => `${SYM[cur] || cur + ' '}${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                    const paid = Object.entries(es.byCur).filter(([, v]) => v.paid > 0).map(([c, v]) => fmt(c, v.paid)).join(' + ');
+                    const pending = Object.entries(es.byCur).filter(([, v]) => v.pending > 0).map(([c, v]) => fmt(c, v.pending)).join(' + ');
                     return (
                       <a href={`/admin/payouts?talent=${talent.id}`} className="group space-y-0.5">
                         <div className="text-xs">
-                          <span className="text-green-700 font-medium">US${es.paid.toFixed(0)}</span>
+                          <span className="text-green-700 font-medium">{paid || fmt('TWD', 0)}</span>
                           <span className="text-gray-500"> {t('earningsPaid')}</span>
                         </div>
-                        {es.pending > 0 && (
+                        {pending && (
                           <div className="text-xs">
-                            <span className="text-amber-700 font-medium">US${es.pending.toFixed(0)}</span>
+                            <span className="text-amber-700 font-medium">{pending}</span>
                             <span className="text-gray-500"> {t('earningsPending')}</span>
                           </div>
                         )}
