@@ -1669,9 +1669,11 @@ function GeneralResponse({
 }) {
   const hasScript = !!(brief.audition_script || '').trim(); // 有指定試音稿 → 依稿新錄為必,現有 demo 只能當補充
   const parts = Array.isArray(brief.audition_parts) ? brief.audition_parts : []; // 分段試音:每段一格、全齊才能送
-  const [partUrls, setPartUrls] = useState<Record<number, string>>({});
-  const [partChoice, setPartChoice] = useState<Record<number, number>>({}); // options 段:選了哪個選項
-  const [partUploading, setPartUploading] = useState<number | null>(null);
+  // 選項段(options)每個選項各自一格:key = "段:選項"(如 "0:2"),檔案在上傳當下就綁定選項
+  const [partUrls, setPartUrls] = useState<Record<string, string>>({});
+  const [partChoice, setPartChoice] = useState<Record<number, number>>({}); // options 段:目前選到哪個選項
+  const [partUploading, setPartUploading] = useState<string | null>(null);
+  const partHasUpload = (i: number) => Object.keys(partUrls).some((key) => key === String(i) || key.startsWith(`${i}:`));
   const [src, setSrc] = useState<'demo' | 'upload'>(!hasScript && myDemos.length ? 'demo' : 'upload');
   const [suppDemo, setSuppDemo] = useState(''); // 有稿案:選填的現有 demo 補充(送出後掛 extra_samples)
   const [pickedDemo, setPickedDemo] = useState(myDemos[0]?.url || '');
@@ -1687,7 +1689,8 @@ function GeneralResponse({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   useQuoteDefaults(templates, setIntro, setRevPolicy, setIncludedRev);
-  const sampleUrl = !hasScript && src === 'demo' ? pickedDemo : audioUrl;
+  const firstPartUrl = Object.entries(partUrls).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))[0]?.[1] || '';
+  const sampleUrl = parts.length ? firstPartUrl : (!hasScript && src === 'demo' ? pickedDemo : audioUrl);
   const grossN = Number(gross);
   const closed = auditionClosed(brief); // 截止後:上傳 / 報價 / 送出全部停用(內容照看)
 
@@ -1710,11 +1713,11 @@ function GeneralResponse({
     if (upErr) throw new Error(upErr.message);
     return uj.publicUrl;
   }
-  async function uploadPart(rawFile: File, idx: number) {
-    setErr(''); setPartUploading(idx);
+  async function uploadPart(rawFile: File, key: string) {
+    setErr(''); setPartUploading(key);
     try {
       const url = await doAuditionUpload(rawFile);
-      setPartUrls((m) => ({ ...m, [idx]: url }));
+      setPartUrls((m) => ({ ...m, [key]: url }));
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setPartUploading(null); }
   }
 
@@ -1723,7 +1726,7 @@ function GeneralResponse({
     setErr('');
     if (brief.license_summary && !licenseOk) return setErr(tx('請先勾選同意授權要點', '请先勾选同意授权要点', 'Please agree to the license terms first'));
     if (parts.length) {
-      const missing = parts.map((_, i) => i).filter((i) => !parts[i].optional && !partUrls[i]);
+      const missing = parts.map((_, i) => i).filter((i) => !parts[i].optional && !partHasUpload(i));
       if (missing.length) return setErr(tx(`還有 ${missing.length} 個必填段未上傳`, `还有 ${missing.length} 个必填段未上传`, `${missing.length} required part(s) still need an upload`));
       if (!Object.values(partUrls).some(Boolean)) return setErr(tx('請至少上傳一段', '请至少上传一段', 'Upload at least one part'));
     } else if (!sampleUrl) return setErr(hasScript ? tx('此案有指定試音稿,請依稿錄製並上傳', '此案有指定试音稿,请依稿录制并上传', 'This case has an audition script — record it and upload') : tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
@@ -1733,7 +1736,9 @@ function GeneralResponse({
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: parts.length ? partUrls[0] : sampleUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: (pt.options && partChoice[i] != null ? pt.options[partChoice[i]]?.label : pt.name) || `Part ${i + 1}` })).filter((x) => x.url) : undefined, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, samples: parts.length ? parts.flatMap((pt, i) => pt.options?.length
+        ? pt.options.map((op, oi) => ({ url: partUrls[`${i}:${oi}`], label: op.label })).filter((x) => x.url)
+        : (partUrls[String(i)] ? [{ url: partUrls[String(i)], label: pt.name || `Part ${i + 1}` }] : [])) : undefined, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
@@ -1766,29 +1771,42 @@ function GeneralResponse({
           <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 依各段指示錄製上傳;標「選填」的段落依指示選錄。`, `此案试音分 ${parts.length} 段 —— 依各段指示录制上传;标「选填」的段落依指示选录。`, `This audition has ${parts.length} parts — follow each part's instructions. Parts marked "optional" are recorded per the instructions.`)}</p>
           {closed && <ClosedNotice tx={tx} />}
           <div className="space-y-3">
-            {parts.map((pt, i) => (
-              <div key={i} className={`rounded-xl border p-3 ${partUrls[i] ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
+            {parts.map((pt, i) => {
+              const hasOpts = !!pt.options?.length;
+              const curKey = hasOpts ? (partChoice[i] != null ? `${i}:${partChoice[i]}` : null) : String(i);
+              const done = partHasUpload(i);
+              return (
+              <div key={i} className={`rounded-xl border p-3 ${done ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${partUrls[i] ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{partUrls[i] ? '✓' : i + 1}</span>
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${done ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{done ? '✓' : i + 1}</span>
                   <span className="text-sm font-medium text-white">{pt.name || `Part ${i + 1}`}</span>
                   {pt.optional && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-300">{tx('選填', '选填', 'optional')}</span>}
                 </div>
-                {pt.options?.length ? (
+                {hasOpts && (
                   <select className={`${inputCls} mb-2`} value={partChoice[i] ?? ''} onChange={(e) => setPartChoice((m) => ({ ...m, [i]: Number(e.target.value) }))}>
                     <option value="" className="bg-black">{tx('請先選擇…', '请先选择…', 'Select…')}</option>
-                    {pt.options.map((op, oi) => (<option key={oi} value={oi} className="bg-black">{op.label}</option>))}
+                    {pt.options!.map((op, oi) => (<option key={oi} value={oi} className="bg-black">{op.label}{partUrls[`${i}:${oi}`] ? ' ✓' : ''}</option>))}
                   </select>
-                ) : null}
-                {(pt.options?.length ? (partChoice[i] != null ? pt.options[partChoice[i]]?.instructions : '') : pt.instructions) && (
-                  <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.options?.length ? pt.options[partChoice[i]!]?.instructions : pt.instructions}</div>
                 )}
-                <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed || (!!pt.options?.length && partChoice[i] == null)}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPart(f, i); }}
+                {(hasOpts ? (partChoice[i] != null ? pt.options![partChoice[i]]?.instructions : '') : pt.instructions) && (
+                  <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{hasOpts ? pt.options![partChoice[i]!]?.instructions : pt.instructions}</div>
+                )}
+                {/* 上傳格跟著目前選項走:檔案上傳當下即綁定該選項;想多試角色 → 換選項再傳一檔 */}
+                <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed || !curKey}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f && curKey) uploadPart(f, curKey); e.target.value = ''; }}
                   className={`block w-full text-xs text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs ${closed ? closedFieldCls : ''}`} />
-                {partUploading === i && <p className="text-xs text-gray-300 mt-1">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
-                {partUrls[i] && <audio controls src={partUrls[i]} className="w-full h-9 mt-1.5" />}
+                {partUploading != null && partUploading.startsWith(hasOpts ? `${i}:` : String(i)) && <p className="text-xs text-gray-300 mt-1">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
+                {hasOpts
+                  ? pt.options!.map((op, oi) => partUrls[`${i}:${oi}`] ? (
+                      <div key={oi} className="mt-1.5">
+                        <p className="text-[11px] text-green-300 mb-0.5">✓ {op.label}</p>
+                        <audio controls src={partUrls[`${i}:${oi}`]} className="w-full h-9" />
+                      </div>
+                    ) : null)
+                  : (partUrls[String(i)] ? <audio controls src={partUrls[String(i)]} className="w-full h-9 mt-1.5" /> : null)}
               </div>
-            ))}
+              );
+            })}
           </div>
         </>
       ) : (
