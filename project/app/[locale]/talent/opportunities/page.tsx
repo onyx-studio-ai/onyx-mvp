@@ -119,7 +119,7 @@ type Brief = {
   title?: string | null;
   roles?: Role[] | null;
   audition_script?: string | null;  // shown view-only (no download)
-  audition_parts?: { name?: string; instructions?: string; optional?: boolean }[] | null; // 分段試音:每段一檔(optional=選填段)
+  audition_parts?: { name?: string; instructions?: string; optional?: boolean; options?: { label: string; instructions: string }[] }[] | null; // 分段試音:每段一檔;options=先選(角色/語言)再現稿與上傳格
   reference_links?: string[] | null;
   reference_files?: { name?: string; url: string }[] | null;
   recording_start?: string | null;
@@ -1658,6 +1658,7 @@ function GeneralResponse({
   const hasScript = !!(brief.audition_script || '').trim(); // 有指定試音稿 → 依稿新錄為必,現有 demo 只能當補充
   const parts = Array.isArray(brief.audition_parts) ? brief.audition_parts : []; // 分段試音:每段一格、全齊才能送
   const [partUrls, setPartUrls] = useState<Record<number, string>>({});
+  const [partChoice, setPartChoice] = useState<Record<number, number>>({}); // options 段:選了哪個選項
   const [partUploading, setPartUploading] = useState<number | null>(null);
   const [src, setSrc] = useState<'demo' | 'upload'>(!hasScript && myDemos.length ? 'demo' : 'upload');
   const [suppDemo, setSuppDemo] = useState(''); // 有稿案:選填的現有 demo 補充(送出後掛 extra_samples)
@@ -1718,7 +1719,7 @@ function GeneralResponse({
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: parts.length ? partUrls[0] : sampleUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: pt.name || `Part ${i + 1}` })).filter((x) => x.url) : undefined, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: parts.length ? partUrls[0] : sampleUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: (pt.options && partChoice[i] != null ? pt.options[partChoice[i]]?.label : pt.name) || `Part ${i + 1}` })).filter((x) => x.url) : undefined, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
@@ -1758,10 +1759,16 @@ function GeneralResponse({
                   <span className="text-sm font-medium text-white">{pt.name || `Part ${i + 1}`}</span>
                   {pt.optional && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-gray-300">{tx('選填', '选填', 'optional')}</span>}
                 </div>
-                {pt.instructions && (
-                  <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.instructions}</div>
+                {pt.options?.length ? (
+                  <select className={`${inputCls} mb-2`} value={partChoice[i] ?? ''} onChange={(e) => setPartChoice((m) => ({ ...m, [i]: Number(e.target.value) }))}>
+                    <option value="" className="bg-black">{tx('請先選擇…', '请先选择…', 'Select…')}</option>
+                    {pt.options.map((op, oi) => (<option key={oi} value={oi} className="bg-black">{op.label}</option>))}
+                  </select>
+                ) : null}
+                {(pt.options?.length ? (partChoice[i] != null ? pt.options[partChoice[i]]?.instructions : '') : pt.instructions) && (
+                  <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.options?.length ? pt.options[partChoice[i]!]?.instructions : pt.instructions}</div>
                 )}
-                <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed}
+                <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed || (!!pt.options?.length && partChoice[i] == null)}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPart(f, i); }}
                   className={`block w-full text-xs text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs ${closed ? closedFieldCls : ''}`} />
                 {partUploading === i && <p className="text-xs text-gray-300 mt-1">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
