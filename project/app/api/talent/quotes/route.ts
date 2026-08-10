@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Brief must exist and be open.
     const { data: brief } = await r.db
       .from('marketplace_briefs')
-      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline, created_at, license_summary, audition_script')
+      .select('id, brief_number, status, kind, client_email, audition_deadline, deadline, created_at, license_summary, audition_script, audition_parts')
       .eq('id', briefId)
       .maybeSingle();
     if (!brief) return NextResponse.json({ error: 'Brief not found' }, { status: 404 });
@@ -68,6 +68,19 @@ export async function POST(request: NextRequest) {
         && sampleUrl && !sampleUrl.includes('/casting/auditions/')) {
       return NextResponse.json({ error: '此案有指定試音稿,請依稿錄製並上傳試音,不接受現有 demo。' }, { status: 400 });
     }
+    // 分段試音(audition_parts):每段各一檔且必須是新錄音;第 1 段進 sample_url,其餘進 extra_samples
+    const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string }[] }).audition_parts : [];
+    const rawSamples = Array.isArray(body.samples) ? (body.samples as { url?: string; label?: string }[]) : [];
+    let partSamples: { url: string; label: string | null; created_at: string }[] | null = null;
+    let sampleUrlFinal = sampleUrl;
+    if (parts.length) {
+      const clean = rawSamples
+        .map((x) => ({ url: String(x?.url || '').slice(0, 1000), label: String(x?.label || '').slice(0, 80) }))
+        .filter((x) => /^https?:\/\//i.test(x.url) && x.url.includes('/casting/auditions/'));
+      if (clean.length < parts.length) return NextResponse.json({ error: `此案試音分 ${parts.length} 段,每段都需錄製並上傳一檔。` }, { status: 400 });
+      sampleUrlFinal = clean[0].url;
+      partSamples = clean.slice(1).map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
+    }
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
 
@@ -80,7 +93,7 @@ export async function POST(request: NextRequest) {
       .from('marketplace_quotes')
       .insert({
         brief_id: briefId, talent_id: talent.id, gross_amount: gross, currency, message,
-        sample_url: sampleUrl, intro, included_revisions: inclRev, extra_revision_price: extraRevPrice,
+        sample_url: parts.length ? sampleUrlFinal : sampleUrl, extra_samples: partSamples, intro, included_revisions: inclRev, extra_revision_price: extraRevPrice,
         license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null,
         role_name: roleName,
         commission_rate: isPlatform ? 0 : 0.20,
