@@ -22,7 +22,7 @@ type Brief = {
   media_scope?: string | null; territory?: string | null; license_term?: string | null;
   accent?: string | null; voice_style?: string | null; voice_age?: string | null;
   recording_methods?: string[] | null; recording_start?: string | null; base_revisions?: number | null;
-  brief?: string | null; audition_script?: string | null;
+  brief?: string | null; audition_script?: string | null; audition_parts?: { name?: string; instructions?: string }[] | null;
   reference_links?: string[] | null; reference_files?: { name?: string; url: string }[] | null;
   roles?: Role[] | null;
 };
@@ -75,6 +75,17 @@ export default function CastingPreview() {
       </div>
       {b.brief && <p className="text-sm text-gray-200 whitespace-pre-wrap mb-3">{b.brief}</p>}
 
+      {Array.isArray(b.audition_parts) && b.audition_parts.length > 0 && (
+        <div className="mb-4 space-y-3">
+          <h2 className="text-sm font-semibold text-white">Audition — {b.audition_parts.length} parts(每段各上傳一檔)</h2>
+          {b.audition_parts.map((pt, i) => (
+            <div key={i} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <div className="text-sm font-medium text-white mb-1.5">{pt.name || `Part ${i + 1}`}</div>
+              {pt.instructions && <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5">{pt.instructions}</div>}
+            </div>
+          ))}
+        </div>
+      )}
       {b.audition_script && (
         <div className="mb-3">
           <p className="text-xs text-gray-500 mb-1.5">試音方向 / 聲音方向</p>
