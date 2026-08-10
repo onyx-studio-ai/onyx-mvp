@@ -119,6 +119,7 @@ type Brief = {
   title?: string | null;
   roles?: Role[] | null;
   audition_script?: string | null;  // shown view-only (no download)
+  audition_parts?: { name?: string; instructions?: string }[] | null; // 分段試音:每段一檔
   reference_links?: string[] | null;
   reference_files?: { name?: string; url: string }[] | null;
   recording_start?: string | null;
@@ -1457,17 +1458,21 @@ function RoleAudition({
   async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
     try {
-      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
-      const u = await authedFetch('/api/talent/audition-upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name }),
-      });
-      const uj = await u.json().catch(() => ({}));
-      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
-      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
-      if (upErr) throw new Error(upErr.message);
-      setAudioUrl(uj.publicUrl);
+      setAudioUrl(await doAuditionUpload(rawFile));
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setUploading(false); }
+  }
+  // 共用:壓成 MP3 → 簽名上傳 → 回公開網址
+  async function doAuditionUpload(rawFile: File): Promise<string> {
+    const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
+    const u = await authedFetch('/api/talent/audition-upload', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName: file.name }),
+    });
+    const uj = await u.json().catch(() => ({}));
+    if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+    const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+    if (upErr) throw new Error(upErr.message);
+    return uj.publicUrl;
   }
 
   const [licenseOk, setLicenseOk] = useState(false);
@@ -1651,6 +1656,9 @@ function GeneralResponse({
   onTemplates: (t: Templates) => void;
 }) {
   const hasScript = !!(brief.audition_script || '').trim(); // 有指定試音稿 → 依稿新錄為必,現有 demo 只能當補充
+  const parts = Array.isArray(brief.audition_parts) ? brief.audition_parts : []; // 分段試音:每段一格、全齊才能送
+  const [partUrls, setPartUrls] = useState<Record<number, string>>({});
+  const [partUploading, setPartUploading] = useState<number | null>(null);
   const [src, setSrc] = useState<'demo' | 'upload'>(!hasScript && myDemos.length ? 'demo' : 'upload');
   const [suppDemo, setSuppDemo] = useState(''); // 有稿案:選填的現有 demo 補充(送出後掛 extra_samples)
   const [pickedDemo, setPickedDemo] = useState(myDemos[0]?.url || '');
@@ -1671,31 +1679,45 @@ function GeneralResponse({
   async function uploadAudio(rawFile: File) {
     setErr(''); setUploading(true);
     try {
-      const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
-      const u = await authedFetch('/api/talent/audition-upload', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name }),
-      });
-      const uj = await u.json().catch(() => ({}));
-      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
-      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
-      if (upErr) throw new Error(upErr.message);
-      setAudioUrl(uj.publicUrl);
+      setAudioUrl(await doAuditionUpload(rawFile));
     } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setUploading(false); }
+  }
+  // 共用:壓成 MP3 → 簽名上傳 → 回公開網址
+  async function doAuditionUpload(rawFile: File): Promise<string> {
+    const file = await toMp3(rawFile); // normalize to MP3 (falls back to original on failure)
+    const u = await authedFetch('/api/talent/audition-upload', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName: file.name }),
+    });
+    const uj = await u.json().catch(() => ({}));
+    if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+    const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+    if (upErr) throw new Error(upErr.message);
+    return uj.publicUrl;
+  }
+  async function uploadPart(rawFile: File, idx: number) {
+    setErr(''); setPartUploading(idx);
+    try {
+      const url = await doAuditionUpload(rawFile);
+      setPartUrls((m) => ({ ...m, [idx]: url }));
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setPartUploading(null); }
   }
 
   const [licenseOk, setLicenseOk] = useState(false);
   async function submit() {
     setErr('');
     if (brief.license_summary && !licenseOk) return setErr(tx('請先勾選同意授權要點', '请先勾选同意授权要点', 'Please agree to the license terms first'));
-    if (!sampleUrl) return setErr(hasScript ? tx('此案有指定試音稿,請依稿錄製並上傳', '此案有指定试音稿,请依稿录制并上传', 'This case has an audition script — record it and upload') : tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
+    if (parts.length) {
+      const missing = parts.map((_, i) => i).filter((i) => !partUrls[i]);
+      if (missing.length) return setErr(tx(`還有 ${missing.length} 段未上傳(共 ${parts.length} 段,每段各一檔)`, `还有 ${missing.length} 段未上传(共 ${parts.length} 段,每段各一档)`, `${missing.length} of ${parts.length} parts still need an upload`));
+    } else if (!sampleUrl) return setErr(hasScript ? tx('此案有指定試音稿,請依稿錄製並上傳', '此案有指定试音稿,请依稿录制并上传', 'This case has an audition script — record it and upload') : tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
     const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
     const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, sample_url: sampleUrl, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
+      body: JSON.stringify({ brief_id: brief.id, sample_url: parts.length ? partUrls[0] : sampleUrl, samples: parts.length ? parts.map((pt, i) => ({ url: partUrls[i], label: pt.name || `Part ${i + 1}` })) : undefined, gross_amount: grossAmount, currency, intro, message, included_revisions: includedRev === 'unlimited' ? 999 : Number(includedRev), extra_revision_price: revPolicy.trim() || undefined, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     if (typeof window !== 'undefined') window.localStorage.setItem(LAST_REV_KEY, includedRev); // remember for next quote
     setBusy(false);
@@ -1723,6 +1745,31 @@ function GeneralResponse({
 
   return (
     <div className="border-t border-white/10 pt-3 space-y-2">
+      {parts.length > 0 ? (
+        <>
+          <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx(`此案試音分 ${parts.length} 段 —— 每段依指示各錄一檔上傳,全部上傳完才能送出。`, `此案试音分 ${parts.length} 段 —— 每段依指示各录一档上传,全部上传完才能送出。`, `This audition has ${parts.length} parts — record and upload one file per part. All parts are required.`)}</p>
+          {closed && <ClosedNotice tx={tx} />}
+          <div className="space-y-3">
+            {parts.map((pt, i) => (
+              <div key={i} className={`rounded-xl border p-3 ${partUrls[i] ? 'border-green-500/40 bg-green-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ${partUrls[i] ? 'bg-green-500 text-black' : 'bg-white/10 text-gray-200'}`}>{partUrls[i] ? '✓' : i + 1}</span>
+                  <span className="text-sm font-medium text-white">{pt.name || `Part ${i + 1}`}</span>
+                </div>
+                {pt.instructions && (
+                  <div className="text-xs text-gray-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-lg p-2.5 mb-2 select-none" onContextMenu={(e) => e.preventDefault()}>{pt.instructions}</div>
+                )}
+                <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" disabled={partUploading !== null || closed}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPart(f, i); }}
+                  className={`block w-full text-xs text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:text-xs ${closed ? closedFieldCls : ''}`} />
+                {partUploading === i && <p className="text-xs text-gray-300 mt-1">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
+                {partUrls[i] && <audio controls src={partUrls[i]} className="w-full h-9 mt-1.5" />}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+      <>
       {hasScript ? (
         <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-400/30 rounded-lg px-3 py-2">{tx('此案有指定試音稿 —— 請依上方稿件錄製後上傳(必);另可加附一段現有 demo 補充聲音感覺(選填)。', '此案有指定试音稿 —— 请依上方稿件录制后上传(必);另可加附一段现有 demo 补充声音感觉(选填)。', 'This case has an audition script — record it and upload your take (required). You may also attach an existing demo as a supplement (optional).')}</p>
       ) : (
@@ -1763,6 +1810,8 @@ function GeneralResponse({
           </select>
           {suppDemo && <audio controls src={suppDemo} className="w-full h-9" />}
         </div>
+      )}
+      </>
       )}
       {/* 報價 — Voices 式:您的報酬 ↔ 平台費 連動;客戶支付比對客戶預算 */}
       {(() => {
