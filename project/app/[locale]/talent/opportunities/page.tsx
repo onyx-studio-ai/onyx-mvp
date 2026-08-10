@@ -1247,7 +1247,7 @@ function BriefCard({
                 <p className="text-xs text-gray-300 mb-1.5">{tx('參考素材', '参考素材', 'Reference')}</p>
                 <div className="space-y-2">
                   {refs.map((r, i) => (
-                    isAudio(r.url) ? <audio key={i} controls src={r.url} className="w-full h-9" />
+                    isAudio(r.url) ? <div key={i}>{r.name && <p className="text-[11px] text-gray-300 mb-0.5">{r.name}</p>}<audio controls src={r.url} className="w-full h-9" /></div>
                       : isImg(r.url) ? <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"><img src={r.url} alt={r.name || 'reference'} className="max-h-40 rounded-lg border border-white/10" /></a>
                       : <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline break-all">{r.name || r.url}</a>
                   ))}
