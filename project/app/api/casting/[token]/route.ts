@@ -95,10 +95,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const samples = rawSamples
     .map((x) => ({ url: String(x?.url || '').slice(0, 1000), label: String(x?.label || '').slice(0, 80) }))
     .filter((x) => /^https?:\/\//i.test(x.url));
-  const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string }[] }).audition_parts : [];
+  const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string; optional?: boolean }[] }).audition_parts : [];
   let extraSamples: { url: string; label: string | null; created_at: string }[] | null = null;
   if (parts.length) {
-    if (samples.length < parts.length) return NextResponse.json({ error: `此案試音分 ${parts.length} 段,每段都需上傳一檔後再送出。` }, { status: 400 });
+    const required = parts.filter((pt) => !pt.optional).length;
+    if (samples.length < Math.max(required, 1)) return NextResponse.json({ error: `此案試音必填 ${required} 段,每段各上傳一檔後再送出。` }, { status: 400 });
     sampleUrl = samples[0].url;
     extraSamples = samples.slice(1).map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
   }
