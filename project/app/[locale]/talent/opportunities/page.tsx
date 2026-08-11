@@ -1242,12 +1242,14 @@ function BriefCard({
             const ext = (u: string) => (u.split('?')[0].split('.').pop() || '').toLowerCase();
             const isAudio = (u: string) => ['wav', 'wave', 'mp3', 'm4a', 'aac', 'ogg', 'flac'].includes(ext(u));
             const isImg = (u: string) => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'bmp'].includes(ext(u));
+            const isVideo = (u: string) => ['mp4', 'mov', 'webm', 'm4v'].includes(ext(u));
             return (
               <div className="mb-4">
                 <p className="text-xs text-gray-300 mb-1.5">{tx('參考素材', '参考素材', 'Reference')}</p>
                 <div className="space-y-2">
                   {refs.map((r, i) => (
                     isAudio(r.url) ? <div key={i}>{r.name && <p className="text-[11px] text-gray-300 mb-0.5">{r.name}</p>}<audio controls src={r.url} className="w-full h-9" /></div>
+                      : isVideo(r.url) ? <div key={i}>{r.name && <p className="text-[11px] text-gray-300 mb-0.5">{r.name}</p>}<video controls preload="metadata" src={r.url} className="w-full max-h-72 rounded-lg border border-white/10 bg-black" /></div>
                       : isImg(r.url) ? <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"><img src={r.url} alt={r.name || 'reference'} className="max-h-40 rounded-lg border border-white/10" /></a>
                       : <a key={i} href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline break-all">{r.name || r.url}</a>
                   ))}
