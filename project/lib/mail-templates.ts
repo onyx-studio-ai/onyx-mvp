@@ -1362,15 +1362,15 @@ export function castingInviteEmail(p: { title?: string; link: string; locale?: s
     tw: { subject: `Onyx Studios · 試音邀請${title ? ` —— ${title}` : ''}`, headline: '試音邀請', sub: '邀請您參與一個配音試音案', card: title || '配音試音案',
       l1: `Onyx Studios 誠摯邀請您試音 ——「${strong}」。`,
       l2: '點下方按鈕即可<strong style="color:#f3f4f6;">直接試音,免註冊、免密碼</strong>。您可以先查看案件內容,有空再回來上傳;隨時點同一條連結都能回到原進度。',
-      note: '這是您專屬的試音連結,建議保留此信,方便日後回來上傳。', cta: '前往試音', sign: 'Onyx Studios 配音團隊 敬上' },
+      note: '這是您專屬的試音連結,建議保留此信,方便日後回來上傳。另外建議登入配音員後台綁定 LINE 或 Telegram —— 開錄、訊息、案件通知即時推播,不怕漏接 email。', cta: '前往試音', sign: 'Onyx Studios 配音團隊 敬上' },
     cn: { subject: `Onyx Studios · 试音邀请${title ? ` —— ${title}` : ''}`, headline: '试音邀请', sub: '邀请您参与一个配音试音案', card: title || '配音试音案',
       l1: `Onyx Studios 诚挚邀请您试音 ——「${strong}」。`,
       l2: '点下方按钮即可<strong style="color:#f3f4f6;">直接试音,免注册、免密码</strong>。您可以先查看案件内容,有空再回来上传;随时点同一条链接都能回到原进度。',
-      note: '这是您专属的试音链接,建议保留此邮件,方便日后回来上传。', cta: '前往试音', sign: 'Onyx Studios 配音团队 敬上' },
+      note: '这是您专属的试音链接,建议保留此邮件,方便日后回来上传。另外建议登录配音员后台绑定 Telegram(或 LINE)—— 开录、消息、案件通知实时推送,不怕漏接 email。', cta: '前往试音', sign: 'Onyx Studios 配音团队 敬上' },
     en: { subject: `Onyx Studios · Audition invitation${title ? ` — ${title}` : ''}`, headline: 'Audition invitation', sub: 'You’re invited to audition for a voiceover casting', card: title || 'Voiceover casting',
       l1: `Onyx Studios would be glad to have you audition for ${strong}.`,
       l2: 'Use the button below to <strong style="color:#f3f4f6;">audition directly — no sign-up, no password</strong>. You can review the brief first and come back to upload later; the same link always returns you to where you left off.',
-      note: 'This is your personal audition link — keep this email so you can return to upload.', cta: 'Go to audition', sign: 'The Onyx Studios Talent Team' },
+      note: 'This is your personal audition link — keep this email so you can return to upload. Tip: after logging in to your talent dashboard, link LINE or Telegram — recording calls, messages and new-case alerts get pushed instantly, so nothing gets lost in email.', cta: 'Go to audition', sign: 'The Onyx Studios Talent Team' },
   }[L];
   const content = `
     ${headlineBlock(C.headline, C.sub, BRAND_GREEN)}
@@ -2091,7 +2091,7 @@ ${btn('Audition here')}
 <li><b>Your profile is never shown on the public voices roster.</b> Being visible to clients requires a separate application and our approval — it only happens if you choose it.</li>
 <li>Human voiceover stays human — <b>your voice is never used for AI training or synthesis</b>. Any AI-related use would require a separately signed agreement first.</li>
 </ul>
-<p style="color:#6b7280;font-size:13px">First time on Onyx? On that page tap <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — about a minute.</p>
+<p style="color:#6b7280;font-size:13px">First time on Onyx? On that page tap <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — about a minute. After signing up, link <b>LINE or Telegram</b> in your dashboard — recording calls, messages and new-case alerts get pushed instantly, so nothing gets lost in email.</p>
 <p>Any questions, just reply. Looking forward to working with you!</p>
 <p style="margin:16px 0 0;color:#374151">The Onyx Studios Team<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
 <p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">Note: your voice is used only for client preview on the platform and is not repurposed. Any downloaded preview is automatically marked with an audio watermark and platform tag for anti-piracy tracing. Any AI-related use is negotiated separately under a signed agreement and is never applied to model training or synthesis without it.</p>
@@ -2118,7 +2118,7 @@ ${btn('前往试音')}
 <li><b>您的资料不会出现在前台声音名册</b>;要公开给客户看到,必须您另外申请并通过审核才会上架,完全由您决定。</li>
 <li>真人配音就是真人配音 —— <b>您的声音不会被用于任何 AI 训练或合成</b>;AI 相关用途一律要另外签署授权才可能发生。</li>
 </ul>
-<p style="color:#6b7280;font-size:13px">第一次用 Onyx?在页面点<b>「注册并试音」</b>(不是「登录」),用 email 注册约 1 分钟即可。</p>
+<p style="color:#6b7280;font-size:13px">第一次用 Onyx?在页面点<b>「注册并试音」</b>(不是「登录」),用 email 注册约 1 分钟即可。注册后建议到后台<b>绑定 Telegram(或 LINE)</b>—— 开录、消息、新案通知实时推送,不怕漏接 email。</p>
 <p>有任何问题,直接回复即可。期待与您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 团队 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
 <p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">说明:您的声音仅放在平台供客户试听,不会挪作他用;下载的试听档均自动加上语音水印与平台标记,可防盗追踪。AI 相关用途一律单独另议并签署授权,不会径行用于任何模型训练或合成。</p>
@@ -2144,7 +2144,7 @@ ${btn('前往試音')}
 <li><b>您的資料不會出現在前台聲音名冊</b>;要公開給客戶看到,必須您另外申請並通過審核才會上架,完全由您決定。</li>
 <li>真人配音就是真人配音 —— <b>您的聲音不會被用於任何 AI 訓練或合成</b>;AI 相關用途一律要另外簽署授權才可能發生。</li>
 </ul>
-<p style="color:#6b7280;font-size:13px">第一次用 Onyx?在頁面點<b>「註冊並試音」</b>(不是「登入」),用 email 註冊約 1 分鐘即可。</p>
+<p style="color:#6b7280;font-size:13px">第一次用 Onyx?在頁面點<b>「註冊並試音」</b>(不是「登入」),用 email 註冊約 1 分鐘即可。註冊後建議到後台<b>綁定 LINE 或 Telegram</b> —— 開錄、訊息、新案通知即時推播,不怕漏接 email。</p>
 <p>有任何問題,直接回覆即可。期待與您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 團隊 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
 <p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">說明:您的聲音僅放在平台供客戶試聽,不會挪作他用;下載的試聽檔均自動加上語音浮水印與平台標記,可防盜追蹤。AI 相關用途一律單獨另議並簽署授權,不會逕行用於任何模型訓練或合成。</p>
