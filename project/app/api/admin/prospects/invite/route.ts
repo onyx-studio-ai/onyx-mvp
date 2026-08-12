@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   const db = getSupabaseServiceClient();
   const { data: brief } = await db.from('marketplace_briefs')
-    .select('id,title,content_type,language,kind,status,audition_deadline,audition_deadline_time,timezone')
+    .select('id,title,content_type,language,kind,status,audition_deadline,audition_deadline_time,timezone,ai_type')
     .eq('id', briefId).maybeSingle();
   if (!brief) return NextResponse.json({ error: 'brief not found' }, { status: 404 });
   if (send && brief.status !== 'open') return NextResponse.json({ error: '案件未發佈(open),無法邀請' }, { status: 400 });
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
     joinLink, unsubLink: `${SITE}/api/prospects/unsubscribe?token=${p.unsub_token}`, deadline,
     lang: pickLang(p.languages || []),
     name: p.name || undefined, company: p.company || undefined,
+    aiType: (brief as { ai_type?: 'clone' | 'training' | null }).ai_type || null,
   });
 
   if (!send) {
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
       lang: pickLang(p.languages || []),
       name: p.name || undefined,
       company: p.company || undefined,
+      aiType: (brief as { ai_type?: 'clone' | 'training' | null }).ai_type || null,
     });
     const r = await sendEmail({ category: 'HELLO', to: p.email, subject: mail.subject, html: mail.html, bcc: 'onyxstudios.ai@gmail.com' })
       .catch(() => ({ success: false } as { success: boolean }));
