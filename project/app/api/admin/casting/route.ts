@@ -408,6 +408,32 @@ export async function PATCH(request: NextRequest) {
     for (const k of ['has_singing', 'wants_director', 'wants_live_session']) if (e[k] !== undefined) upd[k] = !!e[k];
     if (e.timezone !== undefined && CASE_TIMEZONES.some((t) => t.v === e.timezone)) upd.timezone = String(e.timezone);
     if (Array.isArray(e.recording_methods)) upd.recording_methods = (e.recording_methods as unknown[]).map(String).filter((x) => ['home', 'studio', 'online'].includes(x));
+    // 分段試音稿(含選項式)/參考素材/AI 案型別 —— 腳本開的案後台也要能看能改(Wing 2026-08-12)
+    if (Array.isArray(e.audition_parts)) {
+      const parts = (e.audition_parts as { name?: string; instructions?: string; optional?: boolean; options?: { label?: string; instructions?: string }[] }[])
+        .filter((p) => p && (String(p.name || '').trim() || String(p.instructions || '').trim() || (Array.isArray(p.options) && p.options.length > 0)))
+        .slice(0, 20)
+        .map((p) => {
+          const options = Array.isArray(p.options)
+            ? p.options.filter((o) => o && String(o.label || '').trim()).slice(0, 30)
+                .map((o) => ({ label: String(o.label || '').trim().slice(0, 120), instructions: String(o.instructions || '').trim().slice(0, 20000) }))
+            : [];
+          return {
+            name: String(p.name || '').trim().slice(0, 200),
+            ...(String(p.instructions || '').trim() ? { instructions: String(p.instructions || '').trim().slice(0, 20000) } : {}),
+            ...(p.optional === true ? { optional: true } : {}),
+            ...(options.length ? { options } : {}),
+          };
+        });
+      upd.audition_parts = parts.length ? parts : null;
+    }
+    if (Array.isArray(e.reference_files)) {
+      upd.reference_files = (e.reference_files as { name?: string; url?: string }[])
+        .filter((f) => f && f.url).slice(0, 30)
+        .map((f) => ({ name: String(f.name || '').slice(0, 120), url: String(f.url || '').slice(0, 1000) }));
+    }
+    if (Array.isArray(e.reference_links)) upd.reference_links = (e.reference_links as unknown[]).map((l) => String(l || '').trim()).filter(Boolean).slice(0, 30);
+    if (e.ai_type !== undefined) upd.ai_type = ['clone', 'training'].includes(String(e.ai_type)) ? String(e.ai_type) : null;
     if (Array.isArray(e.roles)) {
       upd.roles = (e.roles as RoleIn[]).filter((r) => r && String(r.name || '').trim()).slice(0, 100).map((r) => ({
         name: String(r.name).trim().slice(0, 80),
