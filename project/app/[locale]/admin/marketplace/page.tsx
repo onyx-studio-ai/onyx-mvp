@@ -72,6 +72,17 @@ type Quote = {
   talents?: { name: string; email: string } | null;
 };
 
+// 一筆試音的完整檔案清單:主檔(sample_url)在前,其餘段在後。
+// extra_samples 自 2026-08-12 起「含第 1 段(帶標籤)」,這裡以 url 去重,舊資料(不含第 1 段)也相容。
+const quoteFiles = (q: Quote): { url: string; label: string | null }[] => {
+  const extras = (q.extra_samples || []).filter((s) => s && s.url);
+  const firstLabel = extras.find((s) => s.url === q.sample_url)?.label || null;
+  const files: { url: string; label: string | null }[] = q.sample_url ? [{ url: q.sample_url, label: firstLabel }] : [];
+  for (const s of extras) if (s.url !== q.sample_url) files.push({ url: s.url, label: s.label || null });
+  return files;
+};
+const extraFiles = (q: Quote) => quoteFiles(q).slice(1);
+
 const BRIEF_NEXT: Record<string, string[]> = {
   open: ['reviewing', 'closed', 'cancelled'],
   reviewing: ['open', 'closed', 'cancelled'],
@@ -568,24 +579,30 @@ export default function AdminMarketplace() {
                       </div>
                     </div>
                     {q.sample_url
-                      ? <audio controls src={q.sample_url} className="w-full h-9 mt-2" />
+                      ? (
+                        <div className="mt-2">
+                          {quoteFiles(q)[0]?.label && <p className="text-[11px] text-violet-700 mb-0.5">{quoteFiles(q)[0].label}</p>}
+                          <audio controls src={q.sample_url} className="w-full h-9" />
+                        </div>
+                      )
                       : <p className="text-xs text-gray-400 mt-1">{t('noSampleAudio')}</p>}
 
                     {/* 追加 demo:請這位再多提供 demo(其他語氣/角色)+ 已上傳的追加 demo(後台下載乾淨檔) */}
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <button onClick={() => requestMoreDemos(q.id)} className="text-xs bg-violet-100 hover:bg-violet-200 text-violet-700 rounded px-2 py-0.5" title={t('moreDemosBtnTitle')}>{t('moreDemosBtn')}</button>
-                      {q.more_demos_requested_at && !((q.extra_samples || []).length) && (
+                      {q.more_demos_requested_at && !extraFiles(q).length && (
                         <span className="text-xs text-amber-600" title={q.more_demos_note || ''}>{t('moreDemosPending')}</span>
                       )}
-                      {q.more_demos_requested_at && ((q.extra_samples || []).length) > 0 && (
-                        <span className="text-xs text-violet-700" title={q.more_demos_note || ''}>{t('moreDemosReceived', { count: (q.extra_samples || []).length })}</span>
+                      {q.more_demos_requested_at && extraFiles(q).length > 0 && (
+                        <span className="text-xs text-violet-700" title={q.more_demos_note || ''}>{t('moreDemosReceived', { count: extraFiles(q).length })}</span>
                       )}
                     </div>
-                    {(q.extra_samples || []).length > 0 && (
+                    {extraFiles(q).length > 0 && (
                       <div className="mt-2 space-y-1.5 rounded-lg bg-violet-50 border border-violet-200 px-2.5 py-2">
-                        <p className="text-xs font-medium text-violet-700">{t('extraDemosTitle', { count: (q.extra_samples || []).length })}</p>
-                        {(q.extra_samples || []).map((s, i) => (
+                        <p className="text-xs font-medium text-violet-700">{t('extraDemosTitle', { count: extraFiles(q).length })}</p>
+                        {extraFiles(q).map((s, i) => (
                           <div key={i} className="flex items-center gap-2">
+                            {s.label && <span className="text-[11px] text-violet-700 whitespace-nowrap max-w-[180px] truncate" title={s.label}>{s.label}</span>}
                             <audio controls src={s.url} className="h-8 flex-1 min-w-0" />
                             <a href={s.url} target="_blank" rel="noreferrer" download className="text-xs text-violet-700 underline whitespace-nowrap">{t('download')}</a>
                           </div>
@@ -677,26 +694,30 @@ function DownloadAllAuditions({ briefId, quotes, label }: { briefId: string; quo
     if (typeof window === 'undefined') return new Set();
     try { return new Set(JSON.parse(window.localStorage.getItem(storeKey) || '[]') as string[]); } catch { return new Set(); }
   });
-  const items = quotes.filter((q) => q.sample_url);
-  const newItems = items.filter((q) => !downloaded.has(q.sample_url as string));
+  // 檔案層打包:主檔+分段檔全部進 zip(以前只抓 sample_url,分段案其他段全漏 —— 2026-08-12 Wing 抓到)。
+  // 命名規則(客戶未指定時的統一格式):配音員_角色或段標籤;不含任何費用資訊。
+  type DlFile = { url: string; label: string | null; q: Quote };
+  const allFiles: DlFile[] = quotes.flatMap((q) => quoteFiles(q).map((f) => ({ ...f, q })));
+  const newFiles = allFiles.filter((f) => !downloaded.has(f.url));
   const clean = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '').trim();
 
-  const run = async (list: Quote[], suffix: string) => {
+  const run = async (list: DlFile[], suffix: string) => {
     if (busy || !list.length) return;
     setBusy(true); setProg({ done: 0, total: list.length, fail: 0 });
     const zip = new JSZip();
     let done = 0, fail = 0; const used: Record<string, number> = {}; const got: string[] = [];
-    for (const q of list) {
+    for (const f of list) {
       try {
-        const res = await fetch(q.sample_url as string);
+        const res = await fetch(f.url);
         if (!res.ok) throw new Error('fetch failed');
         const blob = await res.blob();
-        const ext = ((q.sample_url as string).split('?')[0].split('.').pop() || 'mp3').toLowerCase().slice(0, 4);
-        let base = `${clean(q.role_name || t('fileAudition'))}_${clean(q.talents?.name || t('talentFallback'))}`;
+        const ext = (f.url.split('?')[0].split('.').pop() || 'mp3').toLowerCase().slice(0, 4);
+        const tag = clean(f.label || f.q.role_name || t('fileAudition'));
+        let base = `${clean(f.q.talents?.name || t('talentFallback'))}_${tag}`;
         used[base] = (used[base] || 0) + 1;
         if (used[base] > 1) base += `_${used[base]}`;
         zip.file(`${base}.${ext}`, blob);
-        got.push(q.sample_url as string);
+        got.push(f.url);
       } catch { fail++; }
       done++; setProg({ done, total: list.length, fail });
     }
@@ -715,16 +736,16 @@ function DownloadAllAuditions({ briefId, quotes, label }: { briefId: string; quo
   if (busy) {
     return <button disabled className="text-xs bg-blue-600 disabled:opacity-60 text-white rounded px-2.5 py-1 whitespace-nowrap">{t('downloading', { done: prog.done, total: prog.total, failSuffix: prog.fail ? ` · ${prog.fail} ${t('failWord')}` : '' })}</button>;
   }
-  const hasNew = newItems.length > 0 && newItems.length < items.length; // some already downloaded
+  const hasNew = newFiles.length > 0 && newFiles.length < allFiles.length; // some already downloaded
   return (
     <span className="inline-flex items-center gap-1.5">
       {hasNew && (
-        <button onClick={() => run(newItems, t('fileSuffixNew'))} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title={t('downloadNewTitle')}>
-          {t('downloadNew', { count: newItems.length })}
+        <button onClick={() => run(newFiles, t('fileSuffixNew'))} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title={t('downloadNewTitle')}>
+          {t('downloadNew', { count: newFiles.length })}
         </button>
       )}
-      <button onClick={() => run(items, '')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title={t('downloadAllTitle')}>
-        {hasNew ? t('downloadAllShort', { count: items.length }) : newItems.length === 0 && items.length > 0 ? t('redownloadAll', { count: items.length }) : t('downloadAllAuditions', { count: items.length })}
+      <button onClick={() => run(allFiles, '')} className="text-xs bg-blue-600 hover:bg-blue-500 text-white rounded px-2.5 py-1 whitespace-nowrap" title={t('downloadAllTitle')}>
+        {hasNew ? t('downloadAllShort', { count: allFiles.length }) : newFiles.length === 0 && allFiles.length > 0 ? t('redownloadAll', { count: allFiles.length }) : t('downloadAllAuditions', { count: allFiles.length })}
       </button>
     </span>
   );
