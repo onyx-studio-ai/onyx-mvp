@@ -86,9 +86,11 @@ export default function CastingJoin() {
       </div>
       {info.ai_type && !info.closed && (
         <p className="text-xs text-[#6FCF97] bg-[#6FCF97]/[0.08] border border-[#6FCF97]/25 rounded-lg px-3 py-2 mb-4">
+          {/* 措辭刻意分成「這是什麼案 → 中選才會用於訓練 → 屆時另簽授權 → 先進去看詳情」——
+              舊版寫成既成事實+像要先簽約才能試音,會在門口就勸退一批人(Wing 2026-08-12)。 */}
           {info.ai_type === 'training'
-            ? tx('這是一個 AI 訓練素材案 —— 錄音會用於訓練 AI(不會複製你的聲音)。接案後將另簽客戶的授權書。', 'This is an AI training-data project — recordings train an AI (your own voice isn’t cloned). You’ll sign the client’s authorization if you take it.')
-            : tx('這是一個 TTS / AI 語音案 —— 你的錄音會被製成 AI 語音模型(用你的音色合成語音)。接案後將另簽客戶的授權書。', 'This is a TTS / AI voice project — your recordings become an AI voice model (your voice, synthesized). You’ll sign the client’s authorization if you take it.')}
+            ? tx('這是一個 AI 訓練素材案。若你中選並接案,錄音將用於 AI 模型訓練(不會複製你的聲音),屆時會有一份客戶授權書需要簽署。詳細條款可先進入案件內容閱讀。', 'This is an AI training-data project. If you’re selected and take the job, the recordings will be used to train an AI model (your own voice isn’t cloned), and a client authorization document will be signed at that point. Full terms are inside the brief — have a look first.')
+            : tx('這是一個 TTS / AI 語音案。若你中選並接案,錄音將用於訓練語音模型(以你的音色合成語音),屆時會有一份客戶授權書需要簽署。詳細條款可先進入案件內容閱讀。', 'This is a TTS / AI voice project. If you’re selected and take the job, the recordings will be used to train a voice model (speech synthesized in your voice), and a client authorization document will be signed at that point. Full terms are inside the brief — have a look first.')}
         </p>
       )}
 
