@@ -168,7 +168,9 @@ export default function GuestCasting() {
 function LicenseGate({ summary, ok, setOk, tx }: { summary: string; ok: boolean; setOk: (v: boolean) => void; tx: (zh: string, en: string) => string }) {
   return (
     <div className="border border-rose-400/30 bg-rose-500/[0.06] rounded-lg p-3">
-      <p className="text-xs font-semibold text-rose-200 mb-1.5">⚖ {tx('授權要點(試音前必讀)', 'License terms — read before auditioning')}</p>
+      <p className="text-xs font-semibold text-rose-200 mb-1">⚖ {tx('授權要點(試音前必讀)', 'License terms — read before auditioning')}</p>
+      {/* 同 opportunities:先講「現在不用簽」,免得像要先簽約才能試音(Wing 2026-08-12) */}
+      <p className="text-[11px] text-gray-300 mb-2">{tx('試音階段不需簽署任何文件。以下是中選並接案後的合作條件,請先確認可以接受再投遞。', 'Nothing to sign at the audition stage. The terms below apply if you’re selected and take the job — just make sure you’re comfortable with them before submitting.')}</p>
       <div className="text-xs text-gray-200 whitespace-pre-wrap mb-2">{summary.split(/(https?:\/\/\S+)/g).map((part, i) => /^https?:\/\//.test(part)
         ? <a key={i} href={part} target="_blank" rel="noreferrer" className="text-sky-300 underline break-all">{part}</a> : part)}</div>
       <label className="flex items-start gap-2 cursor-pointer">
