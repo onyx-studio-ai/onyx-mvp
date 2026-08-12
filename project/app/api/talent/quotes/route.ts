@@ -80,7 +80,9 @@ export async function POST(request: NextRequest) {
         .filter((x) => /^https?:\/\//i.test(x.url) && x.url.includes('/casting/auditions/'));
       if (clean.length < Math.max(required, 1)) return NextResponse.json({ error: `此案試音必填 ${required} 段,每段各上傳一檔。` }, { status: 400 });
       sampleUrlFinal = clean[0].url;
-      partSamples = clean.slice(1).map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
+      // 全部檔(含第 1 段)帶標籤存 extra_samples —— 第 1 段的標籤以前被丟掉,批次下載命名就斷了
+      // (2026-08-12 Wing 抓到)。顯示端以 url !== sample_url 去重,不會重複計數。
+      partSamples = clean.map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
     }
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
