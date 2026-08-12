@@ -2066,8 +2066,12 @@ export function plainNoticeEmail(p: {
 export function prospectInviteEmail(p: {
   briefTitle: string; language?: string; joinLink: string; unsubLink: string; deadline?: string;
   lang?: 'zh-TW' | 'zh-CN' | 'en'; name?: string; company?: string;
+  /** AI 案(clone/training)→ 換掉「聲音不會用於 AI」那段承諾,改成據實揭露。
+   *  一般案沿用原承諾。🚨 AI 案漏傳 = 信裡承諾與案件內容互相矛盾(2026-08-12)。 */
+  aiType?: 'clone' | 'training' | null;
 }): { subject: string; html: string } {
   const L = p.lang === 'zh-CN' ? 'cn' : p.lang === 'en' ? 'en' : 'tw';
+  const isAI = p.aiType === 'clone' || p.aiType === 'training';
   const proj = p.briefTitle || '';
   const btn = (label: string) => `<p style="margin:16px 0"><a href="${p.joinLink}" style="background:#0b8;color:#fff;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600">${label}</a></p>`;
   const wrap = (inner: string) => `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px;line-height:1.7;color:#111;max-width:560px">${inner}</div>`;
@@ -2089,12 +2093,15 @@ ${btn('Audition here')}
 <ul style="margin:0 0 12px;padding-left:20px">
 <li>Signing up simply opens a working channel — you become one of our <b>internal, dedicated voice talents</b>, and we send suitable projects straight to you.</li>
 <li><b>Your profile is never shown on the public voices roster.</b> Being visible to clients requires a separate application and our approval — it only happens if you choose it.</li>
-<li>Human voiceover stays human — <b>your voice is never used for AI training or synthesis</b>. Any AI-related use would require a separately signed agreement first.</li>
+${isAI
+  ? `<li><b>This is an AI voice project</b> — your recordings will be used to build an AI voice model for commercial use. The full licence terms (redacted review copy) are published on the brief page; <b>please read and confirm you accept them before auditioning</b>. The formal agreement is signed only if you're selected.</li>
+<li>Not for you? No problem at all — we also run <b>standard human voiceover projects</b>, where your voice is never used for AI training or synthesis.</li>`
+  : `<li>Human voiceover stays human — <b>your voice is never used for AI training or synthesis</b>. Any AI-related use would require a separately signed agreement first.</li>`}
 </ul>
 <p style="color:#6b7280;font-size:13px">First time on Onyx? On that page tap <b>“Sign up &amp; audition”</b> (not “Log in”) and register with your email — about a minute. After signing up, link <b>LINE or Telegram</b> in your dashboard — recording calls, messages and new-case alerts get pushed instantly, so nothing gets lost in email.</p>
 <p>Any questions, just reply. Looking forward to working with you!</p>
 <p style="margin:16px 0 0;color:#374151">The Onyx Studios Team<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
-<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">Note: your voice is used only for client preview on the platform and is not repurposed. Any downloaded preview is automatically marked with an audio watermark and platform tag for anti-piracy tracing. Any AI-related use is negotiated separately under a signed agreement and is never applied to model training or synthesis without it.</p>
+<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">Note: your audition is used only for client review. Any downloaded preview is automatically marked with an audio watermark and platform tag for anti-piracy tracing. ${isAI ? 'This is an AI voice project — the scope is governed by the licence published on the brief page, and no model training takes place before that agreement is signed.' : 'Any AI-related use is negotiated separately under a signed agreement and is never applied to model training or synthesis without it.'}</p>
 <p style="margin:10px 0 0;color:#9ca3af;font-size:12px">Prefer not to receive these? <a href="${p.unsubLink}" style="color:#9ca3af">Unsubscribe in one click</a> — no reply needed.</p>`),
     };
   }
@@ -2116,12 +2123,15 @@ ${btn('前往试音')}
 <ul style="margin:0 0 12px;padding-left:20px">
 <li>注册只是建立合作管道 —— 您会是我们<b>内部专属合作的配音员</b>,有合适案件我们直接发给您。</li>
 <li><b>您的资料不会出现在前台声音名册</b>;要公开给客户看到,必须您另外申请并通过审核才会上架,完全由您决定。</li>
-<li>真人配音就是真人配音 —— <b>您的声音不会被用于任何 AI 训练或合成</b>;AI 相关用途一律要另外签署授权才可能发生。</li>
+${isAI
+  ? `<li><b>这是一个 AI 语音案</b> —— 您的录音会用于制作 AI 语音模型并作商业用途。完整授权条款(去识别化审阅版)在案件页公开,<b>试音前请先阅读并确认可接受</b>;中选后才签署正式授权书。</li>
+<li>不接受也完全没关系 —— 我们同时有<b>一般真人配音案</b>,那类案件您的声音不会用于任何 AI 训练或合成。</li>`
+  : `<li>真人配音就是真人配音 —— <b>您的声音不会被用于任何 AI 训练或合成</b>;AI 相关用途一律要另外签署授权才可能发生。</li>`}
 </ul>
 <p style="color:#6b7280;font-size:13px">第一次用 Onyx?在页面点<b>「注册并试音」</b>(不是「登录」),用 email 注册约 1 分钟即可。注册后建议到后台<b>绑定 Telegram(或 LINE)</b>—— 开录、消息、新案通知实时推送,不怕漏接 email。</p>
 <p>有任何问题,直接回复即可。期待与您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 团队 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
-<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">说明:您的声音仅放在平台供客户试听,不会挪作他用;下载的试听档均自动加上语音水印与平台标记,可防盗追踪。AI 相关用途一律单独另议并签署授权,不会径行用于任何模型训练或合成。</p>
+<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">说明:您的试音档仅供客户评选使用,下载的试听档均自动加上语音水印与平台标记,可防盗追踪。${isAI ? '本案为 AI 语音案,授权范围以案件页公开的授权书为准,未签署授权书前不会进行任何模型训练。' : 'AI 相关用途一律单独另议并签署授权,不会径行用于任何模型训练或合成。'}</p>
 <p style="margin:10px 0 0;color:#9ca3af;font-size:12px">不想再收到这类邀请?<a href="${p.unsubLink}" style="color:#9ca3af">点此一键退订</a> —— 点一下即可,不用回信。</p>`),
     };
   }
@@ -2142,12 +2152,15 @@ ${btn('前往試音')}
 <ul style="margin:0 0 12px;padding-left:20px">
 <li>註冊只是建立合作管道 —— 您會是我們<b>內部專屬合作的配音員</b>,有合適案件我們直接發給您。</li>
 <li><b>您的資料不會出現在前台聲音名冊</b>;要公開給客戶看到,必須您另外申請並通過審核才會上架,完全由您決定。</li>
-<li>真人配音就是真人配音 —— <b>您的聲音不會被用於任何 AI 訓練或合成</b>;AI 相關用途一律要另外簽署授權才可能發生。</li>
+${isAI
+  ? `<li><b>這是一個 AI 語音案</b> —— 您的錄音會用於製作 AI 語音模型並作商業用途。完整授權條款(去識別化審閱版)在案件頁公開,<b>試音前請先閱讀並確認可接受</b>;中選後才簽署正式授權書。</li>
+<li>不接受也完全沒關係 —— 我們同時有<b>一般真人配音案</b>,那類案件您的聲音不會用於任何 AI 訓練或合成。</li>`
+  : `<li>真人配音就是真人配音 —— <b>您的聲音不會被用於任何 AI 訓練或合成</b>;AI 相關用途一律要另外簽署授權才可能發生。</li>`}
 </ul>
 <p style="color:#6b7280;font-size:13px">第一次用 Onyx?在頁面點<b>「註冊並試音」</b>(不是「登入」),用 email 註冊約 1 分鐘即可。註冊後建議到後台<b>綁定 LINE 或 Telegram</b> —— 開錄、訊息、新案通知即時推播,不怕漏接 email。</p>
 <p>有任何問題,直接回覆即可。期待與您合作!</p>
 <p style="margin:16px 0 0;color:#374151">Onyx Studios 團隊 敬上<br><a href="https://onyxstudios.ai" style="color:#0b8">onyxstudios.ai</a></p>
-<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">說明:您的聲音僅放在平台供客戶試聽,不會挪作他用;下載的試聽檔均自動加上語音浮水印與平台標記,可防盜追蹤。AI 相關用途一律單獨另議並簽署授權,不會逕行用於任何模型訓練或合成。</p>
+<p style="margin:18px 0 0;color:#9ca3af;font-size:12px;line-height:1.5">說明:您的試音檔僅供客戶評選使用,下載的試聽檔均自動加上語音浮水印與平台標記,可防盜追蹤。${isAI ? '本案為 AI 語音案,授權範圍以案件頁公開的授權書為準,未簽署授權書前不會進行任何模型訓練。' : 'AI 相關用途一律單獨另議並簽署授權,不會逕行用於任何模型訓練或合成。'}</p>
 <p style="margin:10px 0 0;color:#9ca3af;font-size:12px">不想再收到這類邀請?<a href="${p.unsubLink}" style="color:#9ca3af">點此一鍵退訂</a> —— 點一下即可,不用回信。</p>`),
   };
 }
