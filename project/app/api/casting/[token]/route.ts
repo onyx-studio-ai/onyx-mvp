@@ -101,7 +101,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const required = parts.filter((pt) => !pt.optional).length;
     if (samples.length < Math.max(required, 1)) return NextResponse.json({ error: `此案試音必填 ${required} 段,每段各上傳一檔後再送出。` }, { status: 400 });
     sampleUrl = samples[0].url;
-    extraSamples = samples.slice(1).map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
+    // 全部檔(含第 1 段)帶標籤存 extra_samples —— 第 1 段的標籤以前被丟掉,批次下載命名就斷了
+    // (2026-08-12 Wing 抓到)。顯示端以 url !== sample_url 去重,不會重複計數。
+    extraSamples = samples.map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
   }
   const intro = String(body.intro || '').slice(0, 3000) || null;
   const gross = Number(body.gross_amount);
