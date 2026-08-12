@@ -85,6 +85,9 @@ export default function EditCasting() {
   const [f, setF] = useState({ title: '', internal_client_note: '', license_summary: '', content_type: '', language: '', brief: '', rate_note: '', audition_deadline: '', audition_deadline_time: '', recording_start: '', deadline: '', deadline_time: '', length: '', audition_script: '', base_revisions: '1', audition_cap: '5', accent: '', voice_style: '', voice_age: '', media_scope: '', territory: '', license_term: '', timezone: 'Asia/Taipei' });
   const [maleVoices, setMaleVoices] = useState('0');
   const [femaleVoices, setFemaleVoices] = useState('0');
+  // 原始 gender_needs:若是自由文字(解析不出人數),儲存時不可被空的下拉覆蓋掉
+  // —— 2026-08-12 Wing 按儲存後需求人數整欄消失。
+  const rawGenderNeeds = useRef('');
   // 含唱歌 / 聲音導演 / 線上監錄 / 錄音方式 —— 之前只在發案表單有,編輯頁沒有,導致從客戶請求
   // 帶入時自動勾的(如含唱歌)在此關不掉。補上讓已發佈案件也能改。
   const [hasSinging, setHasSinging] = useState(false);
@@ -243,7 +246,7 @@ export default function EditCasting() {
       accent: bf.accent || '', voice_style: bf.voice_style || '', voice_age: bf.voice_age || '',
       media_scope: bf.media_scope || '', territory: bf.territory || '', license_term: bf.license_term || '',
     });
-    { const g = parseGenderNeeds(bf.gender_needs); setMaleVoices(g.male); setFemaleVoices(g.female); }
+    { const g = parseGenderNeeds(bf.gender_needs); setMaleVoices(g.male); setFemaleVoices(g.female); rawGenderNeeds.current = String(bf.gender_needs || ''); }
     setHasSinging(!!bf.has_singing); setWantsDirector(!!bf.wants_director); setWantsLive(!!bf.wants_live_session);
     setRecMethods({ home: false, studio: false, online: false, ...Object.fromEntries((Array.isArray(bf.recording_methods) ? bf.recording_methods : []).map((k: string) => [k, true])) });
     setRoles(Array.isArray(bf.roles) ? bf.roles : []);
@@ -259,7 +262,7 @@ export default function EditCasting() {
     setMsg(''); setSaving(true);
     const res = await fetch('/api/admin/casting', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ id, edit: { ...f, base_revisions: Number(f.base_revisions) || 0, audition_cap: Number(f.audition_cap) || 5, roles, has_singing: hasSinging, wants_director: wantsDirector, wants_live_session: wantsLive, recording_methods: Object.keys(recMethods).filter((k) => recMethods[k]), gender_needs: buildGenderNeeds(maleVoices, femaleVoices), audition_parts: parts, reference_files: refFiles, reference_links: refLinksText.split('\n').map((s) => s.trim()).filter(Boolean), ai_type: aiType || null } }),
+      body: JSON.stringify({ id, edit: { ...f, base_revisions: Number(f.base_revisions) || 0, audition_cap: Number(f.audition_cap) || 5, roles, has_singing: hasSinging, wants_director: wantsDirector, wants_live_session: wantsLive, recording_methods: Object.keys(recMethods).filter((k) => recMethods[k]), gender_needs: buildGenderNeeds(maleVoices, femaleVoices) || rawGenderNeeds.current, audition_parts: parts, reference_files: refFiles, reference_links: refLinksText.split('\n').map((s) => s.trim()).filter(Boolean), ai_type: aiType || null } }),
     });
     const j = await res.json().catch(() => ({}));
     setSaving(false);
