@@ -16,6 +16,7 @@ import { LANGUAGES, langLabel } from '@/lib/languages';
 import { CASE_TIMEZONES } from '@/lib/case-time';
 
 type Role = { name?: string; gender?: string; age?: string; personality?: string; emotion?: string; speed?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type APart = { name?: string; instructions?: string; optional?: boolean; options?: { label: string; instructions: string }[] };
 const input = 'w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500';
 // 與發案表單同一套選項(編輯頁補齊,讓幾乎全欄位可編)。
 const USAGE_OPTS = ['', '遊戲內', '網路廣告', '電視廣告', '影片旁白', '廣播', 'App / 軟體', '社群媒體', '簡報 / 企業內訓', '有聲書 / 平台', '全媒體(所有用途)', '其他'];
@@ -92,8 +93,16 @@ export default function EditCasting() {
   const [recMethods, setRecMethods] = useState<Record<string, boolean>>({ home: false, studio: false, online: false });
   const [roles, setRoles] = useState<Role[]>([]);
   const [imgBusy, setImgBusy] = useState<number | null>(null);
+  // 分段試音稿/參考素材/AI 型別 —— 腳本開的案這些欄位後台也要能看能改(Wing 2026-08-12)
+  const [parts, setParts] = useState<APart[]>([]);
+  const [refFiles, setRefFiles] = useState<{ name?: string; url: string }[]>([]);
+  const [refLinksText, setRefLinksText] = useState('');
+  const [aiType, setAiType] = useState('');
+  const [refBusy, setRefBusy] = useState(false);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const setRole = (i: number, k: keyof Role, v: string | boolean) => setRoles((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+  const setPart = (i: number, patch: Partial<APart>) => setParts((ps) => ps.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+  const setPartOpt = (i: number, oi: number, patch: Partial<{ label: string; instructions: string }>) => setParts((ps) => ps.map((p, j) => (j === i ? { ...p, options: (p.options || []).map((o, k) => (k === oi ? { ...o, ...patch } : o)) } : p)));
 
   // ── Direct assignment (managed production): pick roles → assign to a talent
   // (existing or invite by email) with a fixed pay-per-role. Admin-only. ──
@@ -178,6 +187,19 @@ export default function EditCasting() {
     } catch (e) { setMsg(e instanceof Error ? e.message : '換圖失敗'); } finally { setImgBusy(null); }
   }
 
+  // 參考素材上傳:走與角色圖同一條 signed-upload 通道(casting 桶),任何檔型皆可。
+  async function uploadRefFile(file: File) {
+    setMsg(''); setRefBusy(true);
+    try {
+      const u = await fetch('/api/admin/casting/upload', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json();
+      if (!u.ok) throw new Error(uj.error || '上傳準備失敗');
+      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (error) throw new Error(error.message);
+      setRefFiles((p) => [...p, { name: file.name.replace(/\.[^.]+$/, ''), url: uj.publicUrl }]);
+    } catch (e) { setMsg(e instanceof Error ? e.message : '上傳失敗'); } finally { setRefBusy(false); }
+  }
+
   // 補發/重開通知共用流程:先 send:false 拿可通知人數 → confirm → send:true 實寄。
   // extra 原樣帶進 PATCH body(重開鈕帶 exclude_quoted / reopened)。
   const notifyFlow = async (extra: Record<string, unknown>) => {
@@ -225,6 +247,10 @@ export default function EditCasting() {
     setHasSinging(!!bf.has_singing); setWantsDirector(!!bf.wants_director); setWantsLive(!!bf.wants_live_session);
     setRecMethods({ home: false, studio: false, online: false, ...Object.fromEntries((Array.isArray(bf.recording_methods) ? bf.recording_methods : []).map((k: string) => [k, true])) });
     setRoles(Array.isArray(bf.roles) ? bf.roles : []);
+    setParts(Array.isArray(bf.audition_parts) ? bf.audition_parts : []);
+    setRefFiles(Array.isArray(bf.reference_files) ? bf.reference_files : []);
+    setRefLinksText((Array.isArray(bf.reference_links) ? bf.reference_links : []).join('\n'));
+    setAiType(bf.ai_type || '');
     setPhase('ready');
   }, [id]);
   useEffect(() => { load(); }, [load]);
@@ -233,7 +259,7 @@ export default function EditCasting() {
     setMsg(''); setSaving(true);
     const res = await fetch('/api/admin/casting', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ id, edit: { ...f, base_revisions: Number(f.base_revisions) || 0, audition_cap: Number(f.audition_cap) || 5, roles, has_singing: hasSinging, wants_director: wantsDirector, wants_live_session: wantsLive, recording_methods: Object.keys(recMethods).filter((k) => recMethods[k]), gender_needs: buildGenderNeeds(maleVoices, femaleVoices) } }),
+      body: JSON.stringify({ id, edit: { ...f, base_revisions: Number(f.base_revisions) || 0, audition_cap: Number(f.audition_cap) || 5, roles, has_singing: hasSinging, wants_director: wantsDirector, wants_live_session: wantsLive, recording_methods: Object.keys(recMethods).filter((k) => recMethods[k]), gender_needs: buildGenderNeeds(maleVoices, femaleVoices), audition_parts: parts, reference_files: refFiles, reference_links: refLinksText.split('\n').map((s) => s.trim()).filter(Boolean), ai_type: aiType || null } }),
     });
     const j = await res.json().catch(() => ({}));
     setSaving(false);
@@ -316,6 +342,69 @@ export default function EditCasting() {
           <label className="block"><span className="text-xs text-gray-600 mb-1 block">熱門門檻(人數提示)</span><input type="number" min={1} className={input} value={f.audition_cap} onChange={(e) => set('audition_cap', e.target.value)} /></label>
         </div>
         <label className="block"><span className="text-xs text-gray-600 mb-1 block">試音方向 / 聲音方向(選填)</span><AutoTextarea className={`${input} min-h-[120px]`} value={f.audition_script} onChange={(v) => set('audition_script', v)} /></label>
+
+        {/* 分段試音稿(選項式):腳本開的案這裡看得到、改得了(Wing 2026-08-12) */}
+        <div className="border border-violet-200 rounded-lg p-3 bg-violet-50/40 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-gray-700">分段試音稿 —— 配音員每段一個上傳格;段內有「選項」時,選了哪個選項才會看到對應稿件(可多選項都試)</span>
+            <button type="button" onClick={() => setParts((p) => [...p, { name: '', instructions: '' }])} className="text-xs border border-violet-400 text-violet-700 rounded px-2 py-1 hover:bg-violet-100 whitespace-nowrap">+ 加一段</button>
+          </div>
+          {parts.length === 0 && <p className="text-[11px] text-gray-500">此案沒有分段試音稿(配音員只看上面的「試音方向」)。</p>}
+          {parts.map((pt, i) => (
+            <div key={i} className="bg-white border border-violet-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-violet-700 font-semibold shrink-0">段 {i + 1}</span>
+                <input className={input} value={pt.name || ''} onChange={(e) => setPart(i, { name: e.target.value })} placeholder="段名(配音員看得到)" />
+                <label className="flex items-center gap-1 text-xs text-gray-600 shrink-0 cursor-pointer"><input type="checkbox" checked={!!pt.optional} onChange={(e) => setPart(i, { optional: e.target.checked })} /> 選填段</label>
+                <button type="button" onClick={() => setParts((ps) => ps.filter((_, j) => j !== i))} className="text-xs text-red-500 hover:underline shrink-0">刪除段</button>
+              </div>
+              {!(pt.options && pt.options.length > 0) && (
+                <label className="block"><span className="text-[11px] text-gray-500">段指示 / 稿件(此段沒有選項時直接顯示)</span>
+                  <AutoTextarea className={`${input} min-h-[80px]`} value={pt.instructions || ''} onChange={(v) => setPart(i, { instructions: v })} /></label>
+              )}
+              <div className="space-y-2">
+                {(pt.options || []).map((o, oi) => (
+                  <div key={oi} className="border border-gray-200 rounded-lg p-2 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-gray-500 shrink-0">選項 {oi + 1}</span>
+                      <input className={input} value={o.label} onChange={(e) => setPartOpt(i, oi, { label: e.target.value })} placeholder="選項名(例:女聲 · Madeline)" />
+                      <button type="button" onClick={() => setPart(i, { options: (pt.options || []).filter((_, k) => k !== oi) })} className="text-xs text-red-500 hover:underline shrink-0">刪除選項</button>
+                    </div>
+                    <AutoTextarea className={`${input} min-h-[80px]`} value={o.instructions} onChange={(v) => setPartOpt(i, oi, { instructions: v })} placeholder="這個選項的稿件/指示(配音員選了才看到)" />
+                  </div>
+                ))}
+                <button type="button" onClick={() => setPart(i, { options: [...(pt.options || []), { label: '', instructions: '' }] })} className="text-xs border border-gray-300 text-gray-600 rounded px-2 py-1 hover:bg-gray-50">+ 加選項(選了才出現對應稿)</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 參考素材:檔案(影片/音檔/圖)+連結,名稱標清楚對應誰 */}
+        <div className="border border-sky-200 rounded-lg p-3 bg-sky-50/40 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-gray-700">參考素材(名稱要標清楚對應哪個角色/音色;影片、音檔、圖片皆可)</span>
+            <label className="text-xs border border-sky-400 text-sky-700 rounded px-2 py-1 hover:bg-sky-100 cursor-pointer whitespace-nowrap">{refBusy ? '上傳中…' : '+ 上傳檔案'}
+              <input type="file" className="hidden" disabled={refBusy} onChange={(e) => { const file = e.target.files?.[0]; e.currentTarget.value = ''; if (file) uploadRefFile(file); }} />
+            </label>
+          </div>
+          {refFiles.length === 0 && <p className="text-[11px] text-gray-500">沒有參考素材檔案。</p>}
+          {refFiles.map((rf, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input className={input} value={rf.name || ''} onChange={(e) => setRefFiles((p) => p.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} placeholder="顯示名稱" />
+              <a href={rf.url} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-600 hover:underline shrink-0">開啟</a>
+              <button type="button" onClick={() => setRefFiles((p) => p.filter((_, j) => j !== i))} className="text-xs text-red-500 hover:underline shrink-0">移除</button>
+            </div>
+          ))}
+          <label className="block"><span className="text-[11px] text-gray-500">參考連結(一行一條)</span>
+            <AutoTextarea className={`${input} min-h-[40px]`} value={refLinksText} onChange={setRefLinksText} placeholder="https://…" /></label>
+        </div>
+
+        <label className="block"><span className="text-xs text-gray-600 mb-1 block">AI 案型別(影響「通知配音員」:AI 案只寄給有同意 AI 合作的人)</span>
+          <select className={input} value={aiType} onChange={(e) => setAiType(e.target.value)}>
+            <option value="">一般配音案(非 AI)</option>
+            <option value="clone">AI 聲音複製案(clone)</option>
+            <option value="training">AI 訓練數據案(training)</option>
+          </select></label>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-700 pt-1">
           <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={hasSinging} onChange={(e) => setHasSinging(e.target.checked)} className="accent-amber-500" /> 含唱歌</label>
           <label className="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" checked={wantsDirector} onChange={(e) => setWantsDirector(e.target.checked)} className="accent-amber-500" /> 需要聲音導演</label>
