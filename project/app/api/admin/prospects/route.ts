@@ -38,11 +38,13 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const rows = data || [];
 
-  // 每筆的邀請次數(這頁的人)——讓 Wing 看得到「寄過幾次」。
-  const ids = rows.map((r) => r.id as string);
+  // 每筆的邀請次數 —— 讓 Wing 看得到「寄過幾次」。
+  // 🚨 不用 .in(ids):頁面一次載 800+ 人時 URL 過長 → Bad Request → 錯誤被吞 → 全頁顯示 0 次
+  // (2026-08-12 Wing 抓到)。邀請表本身很小,全表撈回來數。
   const inviteCount: Record<string, number> = {};
-  if (ids.length) {
-    const { data: inv } = await db.from('prospect_invites').select('prospect_id').in('prospect_id', ids);
+  {
+    const { data: inv, error: invErr } = await db.from('prospect_invites').select('prospect_id');
+    if (invErr) console.error('[prospects] invite count failed:', invErr.message);
     for (const i of inv || []) inviteCount[i.prospect_id as string] = (inviteCount[i.prospect_id as string] || 0) + 1;
   }
   const prospects = rows.map((r) => ({ ...r, invite_count: inviteCount[r.id as string] || 0 }));
