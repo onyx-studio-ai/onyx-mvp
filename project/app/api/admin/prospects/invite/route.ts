@@ -62,10 +62,16 @@ export async function POST(request: NextRequest) {
   type P = { id: string; email: string; name: string | null; company: string | null; languages: string[]; unsub_token: string; status: string };
   let pool: P[];
   if (ids && ids.length) {
-    const { data } = await db.from('prospects')
-      .select('id,email,name,company,languages,unsub_token,status').in('id', ids);
+    // 🚨 分批查:一次 .in() 幾百個 UUID 會讓 URL 過長 → Bad Request(同 2026-08-12 被邀次數歸零 bug)。
+    const rows: P[] = [];
+    for (let i = 0; i < ids.length; i += 100) {
+      const { data, error } = await db.from('prospects')
+        .select('id,email,name,company,languages,unsub_token,status').in('id', ids.slice(i, i + 100));
+      if (error) return NextResponse.json({ error: `名單查詢失敗:${error.message}` }, { status: 500 });
+      rows.push(...((data || []) as P[]));
+    }
     // 硬規則:黑名單/已入駐一律不寄(即使被勾選)。
-    pool = ((data || []) as P[]).filter((p) => p.status === 'active');
+    pool = rows.filter((p) => p.status === 'active');
   } else {
     const { data } = await db.from('prospects')
       .select('id,email,name,company,languages,unsub_token,status').eq('kind', 'talent').eq('status', 'active');
