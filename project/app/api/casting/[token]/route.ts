@@ -150,3 +150,49 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   await db.from('casting_invites').update({ status: 'responded', responded_at: new Date().toISOString() }).eq('id', invite.id);
   return NextResponse.json({ audition: data });
 }
+
+/* 免註冊試音者換掉自己傳錯的檔(2026-08-13):
+   規則與登入端一致 —— 案件還開著、未截止、自己還沒被選定才可覆蓋。
+   身分靠 token→invite→talent_id,只動自己那筆 quote。 */
+export async function PATCH(request: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const { token } = await ctx.params;
+  if (!token) return NextResponse.json({ error: 'missing token' }, { status: 400 });
+  let body: { sample_url?: string; samples?: { url?: string; label?: string }[]; role_name?: string };
+  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
+
+  const db = getSupabaseServiceClient();
+  const { data: invite } = await db.from('casting_invites').select('id, brief_id, talent_id').eq('token', token).maybeSingle();
+  if (!invite?.talent_id) return NextResponse.json({ error: '找不到你的試音紀錄' }, { status: 404 });
+
+  const { data: brief } = await db.from('marketplace_briefs')
+    .select('status, audition_deadline, audition_deadline_time, timezone').eq('id', invite.brief_id).maybeSingle();
+  if (!brief || brief.status !== 'open') return NextResponse.json({ error: '案件已結束收件,無法更換試音。' }, { status: 400 });
+  if (auditionDeadlinePassed(brief)) return NextResponse.json({ error: '試音已截止,無法更換試音。' }, { status: 400 });
+
+  let q = db.from('marketplace_quotes').select('id, status, role_name')
+    .eq('brief_id', invite.brief_id).eq('talent_id', invite.talent_id);
+  if (body.role_name) q = q.eq('role_name', body.role_name);
+  const { data: quote } = await q.maybeSingle();
+  if (!quote) return NextResponse.json({ error: '找不到你的試音紀錄' }, { status: 404 });
+  if (!['submitted', 'shortlisted'].includes(String(quote.status))) {
+    return NextResponse.json({ error: '這份試音已進入評選結果階段,無法自行更換;需要更換請與我們聯繫。' }, { status: 400 });
+  }
+
+  const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (Array.isArray(body.samples)) {
+    const clean = body.samples
+      .map((x) => ({ url: String(x?.url || '').slice(0, 1000), label: String(x?.label || '').slice(0, 80) }))
+      .filter((x) => /^https?:\/\//i.test(x.url));
+    if (!clean.length) return NextResponse.json({ error: '請至少上傳一個試音檔' }, { status: 400 });
+    upd.sample_url = clean[0].url;
+    upd.extra_samples = clean.map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
+  } else {
+    const url = String(body.sample_url || '').slice(0, 1000);
+    if (!/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'invalid sample_url' }, { status: 400 });
+    upd.sample_url = url;
+  }
+  const { data, error } = await db.from('marketplace_quotes').update(upd).eq('id', quote.id)
+    .select('id, brief_id, role_name, gross_amount, currency, status, sample_url').maybeSingle();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ audition: data });
+}
