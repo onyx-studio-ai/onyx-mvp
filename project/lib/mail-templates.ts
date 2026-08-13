@@ -2164,3 +2164,85 @@ ${isAI
 <p style="margin:10px 0 0;color:#9ca3af;font-size:12px">不想再收到這類邀請?<a href="${p.unsubLink}" style="color:#9ca3af">點此一鍵退訂</a> —— 點一下即可,不用回信。</p>`),
   };
 }
+
+/**
+ * 專屬邀請信(Wing 2026-08-13,對標 Voices 的 Private Invite):
+ * 主旨帶 ★ 與匹配度、信頭寫明「沒有公開徵選」、卡片印 VoiceMatch 分數與平台實績,
+ * 用一個客觀數字回答「為什麼找你」,取代逐人手寫理由。
+ */
+export function privateInviteEmail(p: {
+  title: string; caseCode?: string; score: number; link: string;
+  rateNote?: string | null; language?: string | null; accent?: string | null;
+  genderNeeds?: string | null; contentType?: string | null; length?: string | null;
+  auditionDeadline?: string | null; auditionDeadlineTime?: string | null; timezone?: string | null;
+  completedOrders?: number; aiType?: string | null; talentName?: string | null; locale?: string;
+}): { subject: string; html: string } {
+  const L = mpLocale(p.locale);
+  const T = {
+    tw: { subject: (t: string, s: number, c?: string) => `★ 專屬邀請:${t} — ${s}% 音色匹配${c ? ` · ${c}` : ''}`,
+      headline: '★ 你收到一封專屬邀請', sub: '這個案子沒有公開徵選 —— 我們只邀請了聲音條件符合的幾位配音員',
+      badge: '✉ 專屬邀請 PRIVATE INVITE', match: '音色匹配 VoiceMatch',
+      matchNote: '依你的語言、性別、口音與作品類型計算', done: (n: number) => `Onyx Studios · 平台累計完成 ${n} 件配音專案`,
+      deadline: '試音截止', scale: '案件規模', cat: '類別', lang: '語言', acc: '口音', gender: '需求', rate: '報酬',
+      ai: '這是 AI 語音案,完整授權書已公開在案件頁,試音前可先讀過。',
+      cta: '查看案件並試音 →', ctaNote: '點連結即可直接試音,免註冊、免密碼',
+      foot: '如對案件內容、報價或授權條款有任何疑問,歡迎直接回信詢問。', sign: 'Claire Lin<br/>Onyx Studios 配音團隊' },
+    cn: { subject: (t: string, s: number, c?: string) => `★ 专属邀请:${t} — ${s}% 音色匹配${c ? ` · ${c}` : ''}`,
+      headline: '★ 你收到一封专属邀请', sub: '这个案子没有公开征选 —— 我们只邀请了声音条件符合的几位配音员',
+      badge: '✉ 专属邀请 PRIVATE INVITE', match: '音色匹配 VoiceMatch',
+      matchNote: '依你的语言、性别、口音与作品类型计算', done: (n: number) => `Onyx Studios · 平台累计完成 ${n} 件配音项目`,
+      deadline: '试音截止', scale: '案件规模', cat: '类别', lang: '语言', acc: '口音', gender: '需求', rate: '报酬',
+      ai: '这是 AI 语音案,完整授权书已公开在案件页,试音前可先读过。',
+      cta: '查看案件并试音 →', ctaNote: '点链接即可直接试音,免注册、免密码',
+      foot: '如对案件内容、报价或授权条款有任何疑问,欢迎直接回信询问。', sign: 'Claire Lin<br/>Onyx Studios 配音团队' },
+    en: { subject: (t: string, s: number, c?: string) => `★ Private Invite: ${t} — ${s}% VoiceMatch${c ? ` · ${c}` : ''}`,
+      headline: '★ You’ve been privately invited', sub: 'This project was never posted publicly — we invited only a handful of voices that fit',
+      badge: '✉ PRIVATE INVITE', match: 'VoiceMatch', matchNote: 'Based on your language, gender, accent and past work',
+      done: (n: number) => `Onyx Studios · ${n} voice projects delivered to date`,
+      deadline: 'Auditions close', scale: 'Scale', cat: 'Category', lang: 'Language', acc: 'Accent', gender: 'Casting', rate: 'Rate',
+      ai: 'This is an AI voice project. The full licence is published on the brief page — please read it before auditioning.',
+      cta: 'View brief & audition →', ctaNote: 'Audition directly — no sign-up, no password',
+      foot: 'Any questions about the brief, the rate or the licence terms — just reply to this email.', sign: 'Claire Lin<br/>The Onyx Studios Talent Team' },
+  }[L];
+
+  const esc = mpEsc;
+  const dl = [p.auditionDeadline, p.auditionDeadlineTime].filter(Boolean).join(' ');
+  const rows: [string, string | null | undefined][] = [
+    [T.cat, p.contentType], [T.lang, p.language], [T.acc, p.accent],
+    [T.gender, p.genderNeeds], [T.scale, p.length], [T.rate, p.rateNote],
+  ];
+  const specs = rows.filter(([, v]) => v && String(v).trim()).map(([k, v]) => `
+    <tr><td style="padding:7px 0;color:#9ca3af;font-size:13px;width:34%;">${esc(k)}</td>
+        <td style="padding:7px 0;color:#e5e9ed;font-size:13px;">${esc(v)}</td></tr>`).join('');
+
+  const content = `
+    ${headlineBlock(T.headline, T.sub, BRAND_GREEN)}
+    <tr><td style="background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px 22px 20px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td style="color:#f3f4f6;font-size:17px;font-weight:700;">${esc(p.title)}</td>
+          ${p.rateNote ? `<td align="right" style="color:${BRAND_GREEN};font-size:15px;font-weight:700;white-space:nowrap;padding-left:12px;">${esc(String(p.rateNote).split('·')[0].trim())}</td>` : ''}
+        </tr>
+      </table>
+      <div style="color:#8b95a0;font-size:12px;margin-top:6px;">${p.caseCode ? esc(p.caseCode) + ' · ' : ''}${T.done(p.completedOrders ?? 0)}</div>
+      <div style="display:inline-block;margin-top:12px;background:rgba(74,222,128,.14);border:1px solid rgba(74,222,128,.4);color:${BRAND_GREEN};font-size:11px;font-weight:700;border-radius:99px;padding:5px 12px;">${T.badge}</div>
+      <div style="margin-top:16px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.3);border-radius:10px;padding:12px 14px;">
+        <span style="color:${BRAND_GREEN};font-size:21px;font-weight:800;">${p.score}%</span>
+        <span style="color:#d7dde3;font-size:13px;"> ${T.match}</span>
+        <div style="color:#8b95a0;font-size:11.5px;margin-top:4px;">${T.matchNote}</div>
+      </div>
+      ${dl ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);color:#9ca3af;font-size:13px;">${T.deadline}:<span style="color:#e5e9ed;"> ${esc(dl)}${p.timezone ? ` (${esc(p.timezone)})` : ''}</span></div>` : ''}
+      ${specs ? `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;">${specs}</table>` : ''}
+      ${p.aiType ? `<div style="margin-top:14px;color:#9ca3af;font-size:12px;line-height:1.6;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;">${T.ai}</div>` : ''}
+    </td></tr>
+    <tr><td style="height:20px;"></td></tr>
+    ${ctaRow(T.cta, p.link, BRAND_GREEN)}
+    <tr><td align="center" style="padding-top:10px;color:#8b95a0;font-size:12px;">${T.ctaNote}</td></tr>
+    <tr><td style="height:22px;"></td></tr>
+    <tr><td style="border-top:1px solid rgba(255,255,255,0.08);padding-top:18px;color:#9ca3af;font-size:13px;line-height:1.75;">
+      ${T.foot}<br/><br/><span style="color:#d7dde3;">${T.sign}</span>
+    </td></tr>`;
+
+  const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
+  return { subject: T.subject(p.title, p.score, p.caseCode), html: baseLayout(content, 'Studios', BRAND_GREEN, ll) };
+}
