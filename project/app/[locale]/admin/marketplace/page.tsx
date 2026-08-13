@@ -104,6 +104,7 @@ export default function AdminMarketplace() {
   const [phase, setPhase] = useState<'loading' | 'unauth' | 'ready'>('loading');
   const [unavailable, setUnavailable] = useState(false);
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [clientThread, setClientThread] = useState<string | null>(null);   // 與客戶的對話(客戶案專用)
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [notifying, setNotifying] = useState<string | null>(null);
@@ -424,7 +425,17 @@ export default function AdminMarketplace() {
                   {quotesFor(b.id).some((q) => q.sample_url) && (
                     <DownloadAllAuditions briefId={b.id} quotes={quotesFor(b.id)} label={b.kind === 'casting' ? caseCode(b) : b.brief_number} />
                   )}
+                  {/* 客戶案發佈後就從「客戶請求」頁消失(那頁只列 reviewing),對話入口也跟著不見
+                      → 在案件頁補上,用同一條 brief_messages 線(Wing 2026-08-13)。 */}
+                  {b.client_email && !isPlatformCase(b.client_email) && (
+                    <button onClick={() => setClientThread(clientThread === b.id ? null : b.id)}
+                      className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded px-2.5 py-1 whitespace-nowrap"
+                      title={`與客戶對話(${b.client_email})—— 送出後客戶會收到 email 通知`}>
+                      ✉ {clientThread === b.id ? '收起客戶訊息' : '聯絡客戶'}
+                    </button>
+                  )}
                 </div>
+                {clientThread === b.id && <ClientThread briefId={b.id} clientEmail={b.client_email} />}
                 {/* inline 報酬 edit + full case edit */}
                 <div className="flex items-center gap-2 mt-2 text-sm">
                   <span className="text-gray-500 text-xs">{t('rateLabel')}</span>
@@ -748,6 +759,62 @@ function DownloadAllAuditions({ briefId, quotes, label }: { briefId: string; quo
         {hasNew ? t('downloadAllShort', { count: allFiles.length }) : newFiles.length === 0 && allFiles.length > 0 ? t('redownloadAll', { count: allFiles.length }) : t('downloadAllAuditions', { count: allFiles.length })}
       </button>
     </span>
+  );
+}
+
+/* 與「客戶」的對話(不是配音員)—— 走 brief_messages,送出後客戶收到 email 通知,
+   可到自己的 dashboard 回覆。署名固定「Onyx Studios 製作團隊」。 */
+function ClientThread({ briefId, clientEmail }: { briefId: string; clientEmail?: string }) {
+  const [msgs, setMsgs] = useState<{ id: string; sender_type: string; sender_name: string | null; body: string; created_at?: string }[]>([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const load = useCallback(async () => {
+    const r = await fetch(`/api/admin/requests/messages?brief_id=${briefId}`, { credentials: 'include' });
+    const j = await r.json().catch(() => ({}));
+    setMsgs(j.messages || []);
+  }, [briefId]);
+  useEffect(() => { load(); }, [load]);
+  async function send() {
+    const body = text.trim();
+    if (!body) return;
+    setSending(true);
+    try {
+      const r = await fetch('/api/admin/requests/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ brief_id: briefId, body }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { alert(j.error || '送出失敗'); return; }
+      setText(''); setMsgs((m) => [...m, j.message]);
+    } catch { alert('送出失敗,請稍後再試'); } finally { setSending(false); }
+  }
+  return (
+    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+      <p className="text-xs text-amber-900 mb-2">
+        與客戶的對話{clientEmail ? `(${clientEmail})` : ''} —— 送出後客戶會立刻收到 email,並可在自己的後台回覆。署名為「Onyx Studios 製作團隊」。
+      </p>
+      <div className="space-y-2 mb-3 max-h-72 overflow-y-auto">
+        {msgs.length === 0 && <p className="text-xs text-gray-400">還沒有訊息。</p>}
+        {msgs.map((m) => (
+          <div key={m.id} className={`flex ${m.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${m.sender_type === 'admin' ? 'bg-amber-600 text-white' : 'bg-white border border-gray-200 text-gray-800'}`}>
+              <div className={`text-[10px] mb-0.5 ${m.sender_type === 'admin' ? 'text-amber-100' : 'text-gray-500'}`}>
+                {m.sender_name || (m.sender_type === 'admin' ? 'Onyx Studios' : '客戶')} · {(m.created_at || '').slice(0, 16).replace('T', ' ')}
+              </div>
+              <p className="whitespace-pre-wrap">{m.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2}
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm resize-y" placeholder="寫給客戶的訊息…" />
+        <button onClick={send} disabled={sending || !text.trim()}
+          className="text-sm bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold rounded-lg px-4 self-end py-2">
+          {sending ? '送出中…' : '送出'}
+        </button>
+      </div>
+    </div>
   );
 }
 
