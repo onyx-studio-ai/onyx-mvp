@@ -173,22 +173,47 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ quote: data });
     }
 
-    // Re-audition: the client asked this talent to re-record. They replace their
-    // sample; that clears the request. Only their own quote with a pending request.
-    if (body.sample_url && !body.delivery_url) {
-      const sampleUrl = String(body.sample_url).slice(0, 1000);
+    // 換掉自己的試音檔。兩種情境共用:
+    //  ① 客戶按了「請他再錄一次」(reaudition)—— 換完清掉該請求
+    //  ② 自己傳錯想重傳 —— 只要案件還在收件中(open)且自己還沒被選定(submitted)就允許
+    //     (2026-08-13 配音員回報:傳錯檔完全改不掉,只能等客戶叫他重錄)
+    if ((body.sample_url || Array.isArray(body.samples)) && !body.delivery_url) {
       if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
-      if (!/^https?:\/\//i.test(sampleUrl)) return NextResponse.json({ error: 'invalid sample_url' }, { status: 400 });
-      const { data, error } = await r.db
-        .from('marketplace_quotes')
-        .update({ sample_url: sampleUrl, reaudition_note: null, reaudition_requested_at: null, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .eq('talent_id', talent.id)
-        .not('reaudition_requested_at', 'is', null)
-        .select('id, brief_id, sample_url')
-        .maybeSingle();
+      const { data: cur } = await r.db.from('marketplace_quotes')
+        .select('id, brief_id, status, reaudition_requested_at, extra_samples')
+        .eq('id', id).eq('talent_id', talent.id).maybeSingle();
+      if (!cur) return NextResponse.json({ error: 'not your quote' }, { status: 403 });
+
+      const isReaudition = !!cur.reaudition_requested_at;
+      if (!isReaudition) {
+        if (!['submitted', 'shortlisted'].includes(String(cur.status))) {
+          return NextResponse.json({ error: '這份試音已進入評選結果階段,無法自行更換;需要更換請與我們聯繫。' }, { status: 400 });
+        }
+        const { data: bf } = await r.db.from('marketplace_briefs')
+          .select('status, audition_deadline, audition_deadline_time, timezone').eq('id', cur.brief_id).maybeSingle();
+        if (!bf || bf.status !== 'open') return NextResponse.json({ error: '案件已結束收件,無法更換試音。' }, { status: 400 });
+        if (auditionDeadlinePassed(bf)) return NextResponse.json({ error: '試音已截止,無法更換試音。' }, { status: 400 });
+      }
+
+      // 分段案:整份覆蓋(first→sample_url,其餘→extra_samples,與 POST 同規則)
+      const upd: Record<string, unknown> = { updated_at: new Date().toISOString(), reaudition_note: null, reaudition_requested_at: null };
+      if (Array.isArray(body.samples)) {
+        const clean = (body.samples as { url?: string; label?: string }[])
+          .map((x) => ({ url: String(x?.url || '').slice(0, 1000), label: String(x?.label || '').slice(0, 80) }))
+          .filter((x) => /^https?:\/\//i.test(x.url) && x.url.includes('/casting/auditions/'));
+        if (!clean.length) return NextResponse.json({ error: '請至少上傳一個試音檔' }, { status: 400 });
+        upd.sample_url = clean[0].url;
+        upd.extra_samples = clean.map((x) => ({ url: x.url, label: x.label || null, created_at: new Date().toISOString() }));
+      } else {
+        const sampleUrl = String(body.sample_url).slice(0, 1000);
+        if (!/^https?:\/\//i.test(sampleUrl)) return NextResponse.json({ error: 'invalid sample_url' }, { status: 400 });
+        upd.sample_url = sampleUrl;
+      }
+      const { data, error } = await r.db.from('marketplace_quotes')
+        .update(upd).eq('id', id).eq('talent_id', talent.id)
+        .select('id, brief_id, sample_url, extra_samples').maybeSingle();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      if (!data) return NextResponse.json({ error: '找不到待重錄的試音' }, { status: 400 });
+      if (!data) return NextResponse.json({ error: '更新失敗' }, { status: 400 });
       return NextResponse.json({ quote: data });
     }
 
