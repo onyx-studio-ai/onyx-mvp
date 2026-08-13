@@ -4,11 +4,16 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { CASE_TIMEZONES } from '@/lib/case-time';
 import { sendEmail } from '@/lib/mail';
-import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail } from '@/lib/mail-templates';
+import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail, privateInviteEmail } from '@/lib/mail-templates';
+import { voiceMatch, type MatchTalent, type MatchBrief } from '@/lib/voice-match';
 import { caseCode, isPlatformCase, PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 import { multicastLine } from '@/lib/line';
 import { normCaseLang, primaryLangKey } from '@/lib/languages';
 import { enqueueCastingPost } from '@/lib/social/enqueue';
+
+// VoiceMatch 門檻(Wing 2026-08-13 拍板 60):低於此分數不寄專屬邀請 —— 信上會印分數,
+// 名單不精準的話這個機制就不可信了。
+const MATCH_MIN = 60;
 
 /*
   POST /api/admin/casting — create a human-VO casting call (kind='casting').
@@ -33,7 +38,7 @@ const EN_RE = /english|英語|英语|英文/i;
 // internal Onyx personas. Invites them to audition AND finish their profile.
 async function notifyMatchingTalents(
   db: ReturnType<typeof getSupabaseServiceClient>,
-  brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null; id?: string },
+  brief: { title: string; language: string; rate_note?: string | null; code?: string; content_type?: string | null; gender_needs?: string | null; audition_deadline?: string | null; audition_deadline_time?: string | null; timezone?: string | null; accent?: string | null; length?: string | null; id?: string },
   opts: { dryRun?: boolean; mode?: 'lang' | 'all'; aiType?: string | null; excludeEmails?: string[]; excludeQuoted?: boolean; reopened?: boolean } = {},
 ) {
   // 2026-07-22 Wing:一鍵通知。mode 'lang'(預設)= 該語系;'all' = 全站。
@@ -48,7 +53,7 @@ async function notifyMatchingTalents(
   const wantPrimary = primary(lang);
   if (mode === 'lang' && !isZh && !isEn && !wantPrimary) return 0; // 沒語言可比 → 不廣播
   const { data: talents } = await db.from('talents')
-    .select('email, languages, native_languages, coop_ai_clone, coop_ai_training')
+    .select('email, languages, native_languages, coop_ai_clone, coop_ai_training, gender, accent, tags, specialties')
     .eq('type', 'VO')
     .not('application_id', 'is', null) // approved applicants only (no guests / internal personas)
     .not('email', 'is', null)
@@ -86,21 +91,50 @@ async function notifyMatchingTalents(
     seen.add(email);
     return true;
   }).slice(0, 250);
-  if (opts.dryRun) return matched.length; // preview count only — no emails sent
+
+  // ── VoiceMatch 閘(Wing 2026-08-13):只寄給 ≥60 分的人,分數高的排前面 ──
+  // 專屬邀請信會把分數印出來,所以名單本身必須真的精準;低分的人不該收到「92% 匹配」的信。
+  const scored = matched
+    .map((t) => ({ t, score: voiceMatch(t as MatchTalent, brief as MatchBrief) }))
+    .filter((x) => x.score >= MATCH_MIN)
+    .sort((a, b) => b.score - a.score);
+  if (opts.dryRun) return scored.length; // preview count only — no emails sent
+  if (!scored.length) return 0;
+
   const url = `${SITE}/${isZh ? 'zh-TW/' : ''}talent`;
-  const { subject, html } = castingNotifyEmail({
-    title: brief.title, caseCode: brief.code, language: brief.language,
-    rateNote: brief.rate_note || undefined, contentType: brief.content_type || undefined,
-    genderNeeds: brief.gender_needs || undefined, auditionDeadline: brief.audition_deadline || undefined,
-    url, locale: isZh ? 'zh-TW' : 'en', reopened: opts.reopened,
-  });
-  await Promise.all(matched.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
+  // 平台實績(專屬邀請信上的信任訊號)——真實訂單完成數,查不到就不顯示。
+  let completedOrders = 0;
+  try {
+    const { count } = await db.from('voice_orders').select('*', { count: 'exact', head: true }).eq('status', 'completed');
+    completedOrders = count || 0;
+  } catch { /* 顯示 0 即可,不影響寄信 */ }
+
+  const locale = isZh ? 'zh-TW' : 'en';
+  await Promise.all(scored.map(({ t, score }) => {
+    // 重開通知沿用舊模板(信頭有「重新開放」banner);一般通知一律走專屬邀請版。
+    const mail = opts.reopened
+      ? castingNotifyEmail({
+          title: brief.title, caseCode: brief.code, language: brief.language,
+          rateNote: brief.rate_note || undefined, contentType: brief.content_type || undefined,
+          genderNeeds: brief.gender_needs || undefined, auditionDeadline: brief.audition_deadline || undefined,
+          url, locale, reopened: true,
+        })
+      : privateInviteEmail({
+          title: brief.title, caseCode: brief.code, score, link: url,
+          rateNote: brief.rate_note, language: brief.language, accent: brief.accent,
+          genderNeeds: brief.gender_needs, contentType: brief.content_type, length: brief.length,
+          auditionDeadline: brief.audition_deadline, auditionDeadlineTime: brief.audition_deadline_time,
+          timezone: brief.timezone, completedOrders, aiType: opts.aiType, locale,
+        });
+    return sendEmail({ category: 'HELLO', to: t.email as string, subject: mail.subject, html: mail.html }).catch(() => {});
+  }));
+  const matchedEmails = scored.map((x) => x.t);
   // 重開通知:綁定 LINE 的收件者同步推播提醒(已答應配音員「綁 LINE 會收到重開通知」)。
   // 獨立查詢 + try/catch:欄位或金鑰缺就安靜跳過,絕不影響寄信主流程。
-  if (opts.reopened && matched.length) {
+  if (opts.reopened && matchedEmails.length) {
     try {
       const { data: lt } = await db.from('talents').select('line_user_id')
-        .in('email', matched.map((t) => t.email as string)).not('line_user_id', 'is', null);
+        .in('email', matchedEmails.map((t) => t.email as string)).not('line_user_id', 'is', null);
       const ids = (lt || []).map((r) => String(r.line_user_id || '')).filter(Boolean);
       const text = isZh
         ? `📢 案件重新開放試音 ——《${brief.title}》\n歡迎前往配音員後台查看並試音:${url}`
@@ -108,7 +142,7 @@ async function notifyMatchingTalents(
       if (ids.length) await multicastLine(ids, text);
     } catch { /* best-effort */ }
   }
-  return matched.length;
+  return scored.length;
 }
 
 // Email a SPECIFIC, admin-selected set of talents (the publish-time picker).
@@ -332,6 +366,7 @@ export async function POST(request: NextRequest) {
   const briefMeta = {
     title, language: row.language || '', rate_note: row.rate_note,
     content_type: row.content_type, gender_needs: (data as { gender_needs?: string | null }).gender_needs, audition_deadline: row.audition_deadline,
+    audition_deadline_time: row.audition_deadline_time, timezone: row.timezone, accent: row.accent, length: row.length,
     code: caseCode({ content_type: row.content_type, created_at: data.created_at, brief_number: data.brief_number }),
   };
   try {
@@ -471,13 +506,15 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true, notified: n, sent: true });
   }
 
-  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note, gender_needs, audition_deadline, ai_type').eq('id', id).maybeSingle();
+  const { data: brief } = await db.from('marketplace_briefs').select('title, language, kind, status, content_type, created_at, brief_number, rate_note, gender_needs, audition_deadline, audition_deadline_time, timezone, accent, length, ai_type').eq('id', id).maybeSingle();
   if (!brief || brief.kind !== 'casting') return NextResponse.json({ error: 'not a casting call' }, { status: 404 });
   if (brief.status !== 'open') return NextResponse.json({ error: '案件尚未發佈(open),無法通知' }, { status: 400 });
   // exclude_quoted=true:排除本案已投遞者(重開通知用);reopened=true:信件加「重新開放」banner + 綁 LINE 者推播。
   const notified = await notifyMatchingTalents(db, {
     title: String(brief.title || ''), language: String(brief.language || ''),
-    rate_note: brief.rate_note, content_type: brief.content_type, gender_needs: brief.gender_needs, audition_deadline: brief.audition_deadline, code: caseCode(brief), id,
+    rate_note: brief.rate_note, content_type: brief.content_type, gender_needs: brief.gender_needs,
+    audition_deadline: brief.audition_deadline, audition_deadline_time: brief.audition_deadline_time,
+    timezone: brief.timezone, accent: brief.accent, length: brief.length, code: caseCode(brief), id,
   }, { dryRun: b.send !== true, mode: b.notify_mode === 'all' ? 'all' : 'lang', aiType: (brief as { ai_type?: string | null }).ai_type, excludeQuoted: b.exclude_quoted === true, reopened: b.reopened === true });
   return NextResponse.json({ ok: true, notified, sent: b.send === true });
 }
