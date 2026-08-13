@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { RefreshCw, Download } from 'lucide-react';
+import JSZip from 'jszip';
 import { OPENCALL_CAMPAIGNS, allCaseLabels } from '@/lib/opencall-campaigns';
 
 type Row = {
@@ -18,6 +19,18 @@ type Row = {
 };
 
 const CASE_LABEL: Record<string, string> = allCaseLabels();
+
+// 檔案在 Supabase 網域上,<a download> 會被跨域忽略(只會開新分頁播放)——
+// 一律 fetch 成 blob 再觸發下載,才是真的存到電腦(Wing 2026-08-12:這頁下載不了音檔)。
+const cleanName = (s: string) => s.replace(/[\\/:*?"<>|·\s]+/g, '_').trim();
+async function downloadBlob(url: string, filename: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('fetch failed');
+  const blobUrl = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = blobUrl; a.download = filename; a.click();
+  URL.revokeObjectURL(blobUrl);
+}
 const STATUS_LABEL: Record<string, string> = { new: '未處理', shortlisted: '備取', picked: '入選', passed: '婉拒' };
 const STATUS_CLS: Record<string, string> = {
   new: 'bg-gray-100 text-gray-700', shortlisted: 'bg-amber-100 text-amber-800',
@@ -27,6 +40,8 @@ const STATUS_CLS: Record<string, string> = {
 export default function AdminOpencallPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [zipBusy, setZipBusy] = useState(false);
+  const [zipProg, setZipProg] = useState('');
   const [caseFilter, setCaseFilter] = useState('');
   const [campFilter, setCampFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -43,6 +58,32 @@ export default function AdminOpencallPage() {
   };
 
   const visible = rows.filter((r) => (!campFilter || r.campaign === campFilter) && (!caseFilter || r.cases.includes(caseFilter)) && (!statusFilter || r.status === statusFilter));
+
+  // 目前篩選出來的所有音檔打包成 zip(檔名=投稿者_語系案別)。
+  const downloadAllAudio = async () => {
+    const files = visible.flatMap((r) => (r.demos || []).map((d, i) => ({ r, d, i })));
+    if (!files.length) { alert('目前沒有音檔可下載'); return; }
+    setZipBusy(true); setZipProg(`0/${files.length}`);
+    const zip = new JSZip();
+    let done = 0, fail = 0;
+    for (const { r, d, i } of files) {
+      try {
+        const res = await fetch(d.url);
+        if (!res.ok) throw new Error('fetch failed');
+        const ext = (d.url.split('?')[0].split('.').pop() || 'mp3').slice(0, 4);
+        zip.file(`${cleanName(r.name)}_${cleanName(CASE_LABEL[d.case] || `demo${i + 1}`)}.${ext}`, await res.blob());
+      } catch { fail++; }
+      done++; setZipProg(`${done}/${files.length}`);
+    }
+    try {
+      const url = URL.createObjectURL(await zip.generateAsync({ type: 'blob' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = `公開徵集_音檔_${visible.length}人.zip`; a.click();
+      URL.revokeObjectURL(url);
+      if (fail) alert(`有 ${fail} 個檔案下載失敗,其餘已打包`);
+    } catch { alert('打包失敗'); }
+    setZipBusy(false);
+  };
 
   const exportCsv = () => {
     const esc = (s: unknown) => `"${String(s ?? '').replace(/"/g, '""')}"`;
@@ -64,7 +105,11 @@ export default function AdminOpencallPage() {
       <div className="flex items-center gap-3 mb-1">
         <h1 className="text-2xl font-bold">公開徵集</h1>
         <button onClick={load} className="text-gray-400 hover:text-gray-600"><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
-        <button onClick={exportCsv} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+        <button onClick={downloadAllAudio} disabled={zipBusy}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100 disabled:opacity-50">
+          <Download className="w-4 h-4" /> {zipBusy ? `打包中… ${zipProg}` : `下載全部音檔(${visible.reduce((n, r) => n + (r.demos || []).length, 0)})`}
+        </button>
+        <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
           <Download className="w-4 h-4" /> 匯出 CSV
         </button>
       </div>
@@ -111,12 +156,18 @@ export default function AdminOpencallPage() {
             </p>
             {r.note && <p className="text-[13px] text-gray-500 mb-2 whitespace-pre-wrap">{r.note}</p>}
             <div className="space-y-1.5 mb-3">
-              {(r.demos || []).map((d, i) => (
-                <div key={d.url} className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-blue-700 w-24 shrink-0">{CASE_LABEL[d.case] || `demo ${i + 1}`}</span>
-                  <audio controls preload="none" src={d.url} className="h-9 w-full max-w-md" />
-                </div>
-              ))}
+              {(r.demos || []).map((d, i) => {
+                const ext = (d.url.split('?')[0].split('.').pop() || 'mp3').slice(0, 4);
+                return (
+                  <div key={d.url} className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-blue-700 w-24 shrink-0">{CASE_LABEL[d.case] || `demo ${i + 1}`}</span>
+                    <audio controls preload="none" src={d.url} className="h-9 w-full max-w-md" />
+                    <button type="button" title="下載這個音檔"
+                      onClick={() => downloadBlob(d.url, `${cleanName(r.name)}_${cleanName(CASE_LABEL[d.case] || `demo${i + 1}`)}.${ext}`).catch(() => alert('下載失敗,請稍後再試'))}
+                      className="shrink-0 text-xs text-blue-600 hover:underline whitespace-nowrap">下載</button>
+                  </div>
+                );
+              })}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {(['picked', 'shortlisted', 'passed', 'new'] as const).map((st) => (
