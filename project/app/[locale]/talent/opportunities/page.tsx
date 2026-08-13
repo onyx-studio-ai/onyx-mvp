@@ -403,6 +403,40 @@ function DeliveryUpload({ quote, deliveries, tx, onChanged }: {
   );
 }
 
+/* 自己傳錯想換掉 —— 案件還開著、自己還沒被選定就能重傳(2026-08-13 配音員回報:
+   傳錯檔完全改不掉,只能等客戶按「請他再錄一次」)。走與試音相同的上傳管線。 */
+function ReplaceSample({ quoteId, tx, onDone }: { quoteId: string; tx: (a: string, b: string, c: string) => string; onDone: (url: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState(false);
+  async function upload(rawFile: File) {
+    if (!window.confirm(tx('確定用這個檔案取代目前的試音嗎?原本的試音會被換掉。', '确定用这个文件取代目前的试音吗?原本的试音会被换掉。', 'Replace your current audition with this file?'))) return;
+    setErr(''); setOk(false); setBusy(true);
+    try {
+      const file = await toMp3(rawFile);
+      const u = await authedFetch('/api/talent/audition-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json().catch(() => ({}));
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', '上传准备失败', 'Upload prep failed'));
+      const { error: upErr } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (upErr) throw new Error(upErr.message);
+      const p = await authedFetch('/api/talent/quotes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: quoteId, sample_url: uj.publicUrl }) });
+      const pj = await p.json().catch(() => ({}));
+      if (!p.ok) throw new Error(pj.error || tx('儲存失敗', '保存失败', 'Save failed'));
+      onDone(uj.publicUrl); setOk(true);
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', '上传失败', 'Upload failed')); } finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-2">
+      <label className="inline-flex items-center gap-1.5 text-xs bg-white/5 border border-white/15 text-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-white/10 transition">
+        {busy ? tx('上傳中…', '上传中…', 'Uploading…') : tx('傳錯了?重新上傳試音', '传错了?重新上传试音', 'Wrong file? Re-upload')}
+        <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) upload(f); }} />
+      </label>
+      {ok && <span className="text-[11px] text-green-300 ml-2">{tx('已更新 ✓', '已更新 ✓', 'Updated ✓')}</span>}
+      {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
+    </div>
+  );
+}
+
 // Re-audition: the client asked for a second take. Upload a new sample, which
 // replaces sample_url and clears the request (same upload pipeline as auditions).
 function ReauditUpload({ quote, tx, onDone }: { quote: Quote; tx: (a: string, b: string, c: string) => string; onDone: (q: Quote) => void }) {
@@ -1764,6 +1798,10 @@ function GeneralResponse({
         <span className="text-green-300">{tx('已應徵', '已应征', 'Applied')}: {done.currency} {done.net_amount} {tx('(淨收入)', '(净收入)', '(net)')}</span>
         <span className="text-gray-300 ml-2">· {tx('狀態', '状态', 'Status')}: {quoteStatusLabel(done.status, tx)}</span>
         {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
+        {/* 傳錯檔想換 —— 案件還開著且還沒被選定就能重傳(2026-08-13 配音員回報改不掉) */}
+        {!closed && ['submitted', 'shortlisted'].includes(done.status) && (
+          <ReplaceSample quoteId={done.id} tx={tx} onDone={(url) => onQuoted({ ...done, sample_url: url })} />
+        )}
       </div>
     );
   }
