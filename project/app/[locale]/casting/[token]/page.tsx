@@ -185,6 +185,39 @@ function Shell({ children }: { children: React.ReactNode }) {
   return <main className="min-h-screen bg-black text-white px-4 pt-24 pb-12"><div className="max-w-4xl mx-auto">{children}</div></main>;
 }
 
+/* 免註冊試音者換掉自己傳錯的檔(2026-08-13):案件還開著就能覆蓋,走 PATCH /api/casting/[token]。 */
+function GuestReplaceSample({ token, roleName, tx, onDone }: { token: string; roleName?: string; tx: (zh: string, en: string) => string; onDone: (url: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState(false);
+  async function upload(rawFile: File) {
+    if (!window.confirm(tx('確定用這個檔案取代目前的試音嗎?原本的試音會被換掉。', 'Replace your current audition with this file?'))) return;
+    setErr(''); setOk(false); setBusy(true);
+    try {
+      const file = await toMp3(rawFile);
+      const u = await fetch(`/api/casting/${token}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
+      const uj = await u.json();
+      if (!u.ok) throw new Error(uj.error || tx('上傳準備失敗', 'Upload prep failed'));
+      const { error } = await supabase.storage.from('casting').uploadToSignedUrl(uj.path, uj.token, file);
+      if (error) throw new Error(error.message);
+      const p = await fetch(`/api/casting/${token}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: uj.publicUrl, role_name: roleName }) });
+      const pj = await p.json().catch(() => ({}));
+      if (!p.ok) throw new Error(pj.error || tx('更新失敗', 'Update failed'));
+      onDone(uj.publicUrl); setOk(true);
+    } catch (e) { setErr(e instanceof Error ? e.message : tx('上傳失敗', 'Upload failed')); } finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-2">
+      <label className="inline-flex items-center gap-1.5 text-xs bg-white/5 border border-white/15 text-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-white/10 transition">
+        {busy ? tx('上傳中…', 'Uploading…') : tx('傳錯了?重新上傳試音', 'Wrong file? Re-upload')}
+        <input type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg,.flac" className="hidden" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) upload(f); }} />
+      </label>
+      {ok && <span className="text-[11px] text-green-300 ml-2">{tx('已更新 ✓', 'Updated ✓')}</span>}
+      {err && <p className="text-[10px] text-red-400 mt-1">{err}</p>}
+    </div>
+  );
+}
+
 function GuestRole({ token, role, count, popular, assigned, done, closed, source, rateNote, budget, budgetType, licenseSummary, dealCurrency, tx, onDone }: {
   token: string; role: Role; count: number; popular: boolean; assigned?: boolean; done?: Audition; closed: boolean;
   source?: 'platform' | 'client'; rateNote?: string; budget?: string; budgetType?: string; licenseSummary?: string | null;
@@ -261,7 +294,12 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
   if (done) return (
     <div className="flex rounded-2xl overflow-hidden bg-[#1d1b25] border border-[#6FCF97]/30">
       {imageLeft}
-      <div className="flex-1 min-w-0 p-4">{nameRow}<p className="text-sm text-[#6FCF97] mt-1.5">{tx('✓ 已試音', '✓ Auditioned')}</p></div>
+      <div className="flex-1 min-w-0 p-4">
+        {nameRow}
+        <p className="text-sm text-[#6FCF97] mt-1.5">{tx('✓ 已試音', '✓ Auditioned')}</p>
+        {/* 傳錯檔想換 —— 角色版同樣支援(2026-08-13) */}
+        {!closed && <GuestReplaceSample token={token} roleName={role.name} tx={tx} onDone={(url) => onDone({ ...done, sample_url: url })} />}
+      </div>
     </div>
   );
 
@@ -394,6 +432,8 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
     <div className="rounded-lg px-3 py-2 border border-green-500/30 bg-green-500/5 text-sm">
       <span className="text-green-300">{tx('✓ 已送出', '✓ Submitted')}</span>
       {done.sample_url && <audio controls src={done.sample_url} className="w-full h-9 mt-2" />}
+      {/* 傳錯檔想換 —— 案件還開著就能覆蓋(2026-08-13 配音員回報改不掉) */}
+      {!closed && <GuestReplaceSample token={token} roleName={done.role_name || undefined} tx={tx} onDone={(url) => onDone({ ...done, sample_url: url })} />}
     </div>
   );
 
