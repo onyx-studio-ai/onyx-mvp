@@ -2564,7 +2564,9 @@
       "zipBusy": "打包中…",
       "zipDone": "zip 已下載",
       "zipSkipped": "完成,但這些單的檔案抓取失敗:{orders}",
-      "zipNoVoice": "勾選裡沒有語音訂單(只有語音單有交付音檔)"
+      "zipNoVoice": "勾選裡沒有語音訂單(只有語音單有交付音檔)",
+      "platformCases": "平台案",
+      "clientCases": "客戶案"
     },
     "talents": {
       "title": "人才管理",
