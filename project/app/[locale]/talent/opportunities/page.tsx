@@ -1637,7 +1637,7 @@ function RoleAudition({
               const clientPays = isClient ? Math.round((net / 0.8) * 100) / 100 : net;
               const fee = isClient ? Math.round((clientPays - net) * 100) / 100 : 0;
               const budgetN = Number(String(brief.budget || '').replace(/[^\d.]/g, '')) || 0;
-              const over = isClient && budgetN > 0 && clientPays > budgetN;
+              const over = budgetN > 0 && clientPays > budgetN;
               return (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -1898,12 +1898,14 @@ function GeneralResponse({
       )}
       {/* 報價 — Voices 式:您的報酬 ↔ 平台費 連動;客戶支付比對客戶預算 */}
       {(() => {
-        const isClient = brief.source === 'client';
+        // 一套系統走到底(Wing 2026-08-14):不分平台案/客戶案,一律 20% 連動 ——
+        // 配音員填「您的報酬」(實拿),平台費與客戶支付自動連動。
+        const isClient = true;
         const net = Number(gross) || 0;
-        const clientPays = isClient ? Math.round((net / 0.8) * 100) / 100 : net;
-        const fee = isClient ? Math.round((clientPays - net) * 100) / 100 : 0;
+        const clientPays = Math.round((net / 0.8) * 100) / 100;
+        const fee = Math.round((clientPays - net) * 100) / 100;
         const budgetN = Number(String(brief.budget || '').replace(/[^\d.]/g, '')) || 0;
-        const over = isClient && budgetN > 0 && clientPays > budgetN;
+        const over = budgetN > 0 && clientPays > budgetN;
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -1937,7 +1939,7 @@ function GeneralResponse({
                   ? ` · ${tx(`超過客戶預算 ${currency} ${budgetN}`, `超过客户预算 ${currency} ${budgetN}`, `over budget ${currency} ${budgetN}`)}`
                   : ` · ${tx('在客戶預算內 ✓', '在客户预算内 ✓', 'within budget ✓')}`)}
               </p>
-            ) : <p className="text-xs text-[#6FCF97]">{tx('平台發案 · 不收取平台費,報價即您實際報酬', '平台发案 · 不收取平台费,报价即您实际报酬', 'Platform-posted — no fee; your quote is what you get')}</p>}
+            ) : null}
           </div>
         );
       })()}
