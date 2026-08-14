@@ -96,7 +96,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .map((x) => ({ url: String(x?.url || '').slice(0, 1000), label: String(x?.label || '').slice(0, 80) }))
     .filter((x) => /^https?:\/\//i.test(x.url));
   const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string; optional?: boolean }[] }).audition_parts : [];
-  let extraSamples: { url: string; label: string | null; created_at: string }[] | null = null;
+  // 🚨 一定是陣列不能是 null:extra_samples 有 NOT NULL 約束,沒有分段試音稿的案子
+  // 塞 null 會被 DB 擋掉,整個投稿失敗(2026-08-14 邱海靖踩到,客戶發的廣告案沒有分段稿)。
+  let extraSamples: { url: string; label: string | null; created_at: string }[] = [];
   if (parts.length) {
     const required = parts.filter((pt) => !pt.optional).length;
     if (samples.length < Math.max(required, 1)) return NextResponse.json({ error: `此案試音必填 ${required} 段,每段各上傳一檔後再送出。` }, { status: 400 });
