@@ -262,7 +262,7 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
     if (!audioUrl) return setErr(tx('請先上傳試音音檔', 'Upload your audition first'));
     const earn = Number(gross); // input = the talent's take-home fee
     if (!(earn > 0)) return setErr(tx('請填報價', 'Enter your price'));
-    const grossAmount = source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
+    const grossAmount = Math.round((earn / 0.8) * 100) / 100;   // 一律 20% 平台費(Wing 2026-08-14:一套系統走到底)
     setBusy(true);
     const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role_name: role.name, sample_url: audioUrl, gross_amount: grossAmount, currency, intro, license_agreed: licenseSummary ? licenseOk : undefined }) });
     setBusy(false);
@@ -339,7 +339,7 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
             {uploading && <p className="text-xs text-gray-400">{tx('上傳中…', 'Uploading…')}</p>}
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
             {(() => {
-              const isClient = source === 'client';
+              const isClient = true;   // 一律顯示平台費連動(Wing 2026-08-14)
               const bt = budgetType === 'Up to' ? tx('上限 ', 'Up to ') : budgetType === 'Fixed' ? tx('固定 ', 'Fixed ') : '';
               const val = isClient ? (budget ? `${bt}${budget}` : '') : (rateNote || '');
               return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', 'Client budget') : tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
@@ -351,8 +351,8 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
               <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('您的酬勞', 'Your fee')} />
             </div>
             {(() => {
-              const isClient = source === 'client'; const earn = Number(gross) || 0;
-              if (!isClient) return <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 不收取平台費', 'Platform-posted — no platform fee')}</p>;
+              // 一律顯示平台費連動(Wing 2026-08-14:一套系統走到底)
+              const earn = Number(gross) || 0;
               if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動)', 'Client brief — 20% platform fee added (auto)')}</p>;
               const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
               return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
@@ -417,7 +417,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
     } else if (!audioUrl) return setErr(tx('請先上傳 demo', 'Upload a demo first'));
     const earn = Number(gross);
     if (!(earn > 0)) return setErr(tx('請填報價', 'Enter your price'));
-    const grossAmount = source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
+    const grossAmount = Math.round((earn / 0.8) * 100) / 100;   // 一律 20% 平台費(Wing 2026-08-14:一套系統走到底)
     setBusy(true);
     const res = await fetch(`/api/casting/${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sample_url: parts.length ? (Object.entries(partUrls).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))[0]?.[1] || '') : audioUrl, samples: parts.length ? parts.flatMap((pt, i) => pt.options?.length
       ? pt.options.map((op, oi) => ({ url: partUrls[`${i}:${oi}`], label: op.label })).filter((x) => x.url)
@@ -485,7 +485,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
         </>
       )}
       {(() => {
-        const isClient = source === 'client';
+        const isClient = true;   // 一律顯示平台費連動(Wing 2026-08-14)
         const bt = budgetType === 'Up to' ? tx('上限 ', 'Up to ') : budgetType === 'Fixed' ? tx('固定 ', 'Fixed ') : '';
         const val = isClient ? (budget ? `${bt}${budget}` : '') : (rateNote || '');
         return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', 'Client budget') : tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
@@ -497,8 +497,8 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
         <input type="number" min="0" className={cls} value={gross} onChange={(e) => setGross(e.target.value)} placeholder={tx('您的酬勞', 'Your fee')} />
       </div>
       {(() => {
-        const isClient = source === 'client'; const earn = Number(gross) || 0;
-        if (!isClient) return <p className="text-[11px] text-[#6FCF97]">{tx('平台發案 · 不收取平台費', 'Platform-posted — no platform fee')}</p>;
+        // 一律顯示平台費連動(Wing 2026-08-14:一套系統走到底)
+        const earn = Number(gross) || 0;
         if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動)', 'Client brief — 20% platform fee added (auto)')}</p>;
         const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
         return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
