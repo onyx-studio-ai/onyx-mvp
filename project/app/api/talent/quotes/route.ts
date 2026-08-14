@@ -87,11 +87,7 @@ export async function POST(request: NextRequest) {
     }
     // Note: audition_cap is a SOFT "popular" threshold (a UI nudge to try other
     // roles), NOT a hard cap — a busy role can still receive more auditions.
-
-    // Commission keys off the SOURCE, not kind (every case is kind='casting' now):
-    // Onyx PLATFORM-posted cases take NO cut (the price IS the talent's take-home;
-    // Onyx's margin lives in the Onyx↔client deal). CLIENT-posted cases carry 20%.
-    const isPlatform = isPlatformCase(brief.client_email); // 平台案判定統一(lib/casting)
+    // 一套系統走到底(Wing 2026-08-14):一律 20%,配音員填實拿、平台費外加。
 
     const { data, error } = await r.db
       .from('marketplace_quotes')
@@ -100,7 +96,7 @@ export async function POST(request: NextRequest) {
         sample_url: parts.length ? sampleUrlFinal : sampleUrl, extra_samples: partSamples, intro, included_revisions: inclRev, extra_revision_price: extraRevPrice,
         license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null,
         role_name: roleName,
-        commission_rate: isPlatform ? 0 : 0.20,
+        commission_rate: 0.20,
       })
       .select('id, brief_id, role_name, gross_amount, net_amount, commission_rate, currency, status, sample_url')
       .single();
