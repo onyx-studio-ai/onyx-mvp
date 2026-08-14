@@ -2564,7 +2564,9 @@
       "zipBusy": "Zipping…",
       "zipDone": "Zip downloaded",
       "zipSkipped": "Done, but files failed for: {orders}",
-      "zipNoVoice": "No voice orders selected (only voice orders have delivery audio)"
+      "zipNoVoice": "No voice orders selected (only voice orders have delivery audio)",
+      "platformCases": "Platform Cases",
+      "clientCases": "Client Cases"
     },
     "talents": {
       "title": "Talent Management",
