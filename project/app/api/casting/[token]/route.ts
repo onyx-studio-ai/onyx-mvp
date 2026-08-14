@@ -140,8 +140,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await db.from('casting_invites').update({ talent_id: talentId }).eq('id', invite.id);
   }
 
-  // Platform-posted = no cut (take-home); client-posted = 20% commission.
-  const commissionRate = isPlatformCase(brief.client_email as string | null | undefined) ? 0 : 0.20; // 平台案判定統一(lib/casting)
+  // 一套系統走到底(Wing 2026-08-14):不分平台案/客戶案,一律 20% —— 配音員填的是
+  // 「他要實拿的錢」,平台費外加在客戶身上,前後端與 UI 三處一致。
+  const commissionRate = 0.20;
   const { data, error } = await db.from('marketplace_quotes')
     .insert({ brief_id: brief.id, talent_id: talentId, role_name: roleName, sample_url: sampleUrl, extra_samples: extraSamples, intro, message: intro, gross_amount: gross, currency, invite_id: invite.id, commission_rate: commissionRate, license_agreed_at: (brief as { license_summary?: string | null }).license_summary ? new Date().toISOString() : null })
     .select('id, brief_id, role_name, gross_amount, currency, status, sample_url').single();
