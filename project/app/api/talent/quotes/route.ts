@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
     // 分段試音(audition_parts):每段各一檔且必須是新錄音;第 1 段進 sample_url,其餘進 extra_samples
     const parts = Array.isArray((brief as { audition_parts?: unknown[] }).audition_parts) ? (brief as { audition_parts: { name?: string; optional?: boolean }[] }).audition_parts : [];
     const rawSamples = Array.isArray(body.samples) ? (body.samples as { url?: string; label?: string }[]) : [];
-    let partSamples: { url: string; label: string | null; created_at: string }[] | null = null;
+    // 🚨 一定是陣列不能是 null:extra_samples 有 NOT NULL 約束(同 casting/[token] 的修正)
+    let partSamples: { url: string; label: string | null; created_at: string }[] = [];
     let sampleUrlFinal = sampleUrl;
     if (parts.length) {
       const required = parts.filter((pt) => !pt.optional).length;
