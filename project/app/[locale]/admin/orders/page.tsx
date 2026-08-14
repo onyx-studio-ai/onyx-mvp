@@ -124,7 +124,20 @@ interface StringsOrder {
 }
 
 type AnyOrder = VoiceOrder | MusicOrder | StringsOrder;
-type StatusFilter = 'all' | 'paid' | 'processing' | 'completed' | 'pending_payment' | 'in_production' | 'version_ready' | 'awaiting_final' | 'awaiting_files' | 'delivered';
+type StatusFilter = 'all' | 'queue' | 'production' | 'revising' | 'delivered' | 'completed';
+
+// 狀態桶:統計卡、篩選鈕、列表全用同一套定義,數字與點擊結果永遠一致
+// (Wing 2026-08-14:舊版「製作中」卡算 7 種狀態、按鈕只篩 in_production,顯示 3 點進去卻空白)
+const STATUS_BUCKETS: Record<Exclude<StatusFilter, 'all'>, string[]> = {
+  queue: ['pending_payment', 'paid', 'awaiting_files'],
+  production: ['processing', 'in_production', 'demo_ready', 'client_reviewing', 'awaiting_final'],
+  revising: ['revising'],
+  delivered: ['delivered'],
+  completed: ['completed'],
+};
+
+// 平台案 = 我方自營(casting@ 開頭;歷史資料有 .ai / .io / 漏 s 的變體,一律認前綴)
+const isPlatformOrder = (email: string | null | undefined) => String(email || '').toLowerCase().startsWith('casting@onyxstudio');
 
 // 顯示文字走 i18n:把 t 傳進來,只換 badge 文字不動 status 判斷邏輯。
 function getStatusBadge(status: string, t: ReturnType<typeof useTranslations>) {
@@ -344,6 +357,7 @@ export default function AdminOrdersPage() {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('all');
   const [filterType, setFilterType] = useState<'all' | 'voice' | 'music' | 'strings'>('all');
+  const [filterSource, setFilterSource] = useState<'all' | 'platform' | 'client'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -410,20 +424,23 @@ export default function AdminOrdersPage() {
     ...stringsOrders,
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  const filtered = allOrders.filter(order => {
+  // 先套 搜尋/類型/平台客戶 → 狀態鈕上的數字就是點下去會看到的筆數
+  const base = allOrders.filter(order => {
     const term = searchTerm.toLowerCase();
     // 全文比對:案名/角色/評語等所有文字欄位都搜得到(Wing 2026-07-21)
     const matchesSearch = !term ||
       String(order.order_number).toLowerCase().includes(term) ||
       Object.values(order).some(v => typeof v === 'string' && v.toLowerCase().includes(term));
-    const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
     const matchesType = filterType === 'all' || order.type === filterType;
-    return matchesSearch && matchesStatus && matchesType;
+    const matchesSource = filterSource === 'all' || (filterSource === 'platform') === isPlatformOrder(order.email);
+    return matchesSearch && matchesType && matchesSource;
   });
 
-  const queueCount = allOrders.filter(o => o.status === 'paid').length;
-  const productionCount = allOrders.filter(o => ['processing', 'in_production', 'demo_ready', 'client_reviewing', 'revising', 'delivered', 'awaiting_final'].includes(o.status)).length;
-  const completedCount = allOrders.filter(o => o.status === 'completed').length;
+  const filtered = base.filter(order => filterStatus === 'all' || STATUS_BUCKETS[filterStatus].includes(order.status));
+
+  const bucketCount = (b: Exclude<StatusFilter, 'all'>) => base.filter(o => STATUS_BUCKETS[b].includes(o.status)).length;
+  const platformCount = allOrders.filter(o => isPlatformOrder(o.email)).length;
+  const clientCount = allOrders.length - platformCount;
 
   // ── Bulk operations on the filtered list (checkbox-select) ──
   const selectedOrders = allOrders.filter(o => selected.has(o.id));
@@ -502,23 +519,23 @@ export default function AdminOrdersPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
+      {/* 三張卡都能點:總訂單=清除平台/客戶篩選;平台案/客戶案=切換來源 */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <button onClick={() => setFilterSource('all')}
+          className={`text-left bg-white border rounded-xl p-4 transition-colors ${filterSource === 'all' ? 'border-gray-500 ring-1 ring-gray-400' : 'border-gray-200 hover:border-gray-300'}`}>
           <p className="text-gray-600 text-sm">{t('totalOrders')}</p>
           <p className="text-2xl font-bold mt-1">{allOrders.length}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">{t('inQueue')}</p>
-          <p className="text-2xl font-bold text-yellow-700 mt-1">{queueCount}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">{t('inProduction')}</p>
-          <p className="text-2xl font-bold text-orange-700 mt-1">{productionCount}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <p className="text-gray-600 text-sm">{t('completed')}</p>
-          <p className="text-2xl font-bold text-green-700 mt-1">{completedCount}</p>
-        </div>
+        </button>
+        <button onClick={() => setFilterSource(filterSource === 'platform' ? 'all' : 'platform')}
+          className={`text-left bg-white border rounded-xl p-4 transition-colors ${filterSource === 'platform' ? 'border-cyan-500 ring-1 ring-cyan-400' : 'border-gray-200 hover:border-gray-300'}`}>
+          <p className="text-gray-600 text-sm">{t('platformCases')}</p>
+          <p className="text-2xl font-bold text-cyan-700 mt-1">{platformCount}</p>
+        </button>
+        <button onClick={() => setFilterSource(filterSource === 'client' ? 'all' : 'client')}
+          className={`text-left bg-white border rounded-xl p-4 transition-colors ${filterSource === 'client' ? 'border-emerald-500 ring-1 ring-emerald-400' : 'border-gray-200 hover:border-gray-300'}`}>
+          <p className="text-gray-600 text-sm">{t('clientCases')}</p>
+          <p className="text-2xl font-bold text-emerald-700 mt-1">{clientCount}</p>
+        </button>
       </div>
 
       <div className="flex flex-col gap-3 mb-6">
@@ -557,14 +574,11 @@ export default function AdminOrdersPage() {
           <div className="flex gap-1.5 flex-wrap">
             {([
               { val: 'all', labelKey: 'statusAll', color: 'bg-gray-300' },
-              { val: 'paid', labelKey: 'statusInQueue', color: 'bg-yellow-600' },
-              { val: 'awaiting_files', labelKey: 'statusAwaitingFiles', color: 'bg-amber-700' },
-              { val: 'in_production', labelKey: 'statusInProduction', color: 'bg-orange-600' },
-              { val: 'demo_ready', labelKey: 'statusDemoReady', color: 'bg-blue-600' },
-              { val: 'delivered', labelKey: 'statusDelivered', color: 'bg-purple-600' },
+              { val: 'queue', labelKey: 'statusInQueue', color: 'bg-yellow-600' },
+              { val: 'production', labelKey: 'statusInProduction', color: 'bg-orange-600' },
               { val: 'revising', labelKey: 'statusRevising', color: 'bg-amber-600' },
+              { val: 'delivered', labelKey: 'statusDelivered', color: 'bg-purple-600' },
               { val: 'completed', labelKey: 'statusComplete', color: 'bg-green-600' },
-              { val: 'pending_payment', labelKey: 'statusPending', color: 'bg-gray-400' },
             ] as { val: StatusFilter; labelKey: string; color: string }[]).map(({ val, labelKey, color }) => (
               <button
                 key={val}
@@ -575,7 +589,7 @@ export default function AdminOrdersPage() {
                     : 'border-gray-400 text-gray-700 hover:text-gray-900 hover:border-gray-500'
                 }`}
               >
-                {t(labelKey)}
+                {t(labelKey)}{val === 'all' ? ` (${base.length})` : ` (${bucketCount(val as Exclude<StatusFilter, 'all'>)})`}
               </button>
             ))}
           </div>
