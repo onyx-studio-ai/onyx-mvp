@@ -4,6 +4,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { castingMoreDemosEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 
 /*
   POST /api/admin/marketplace/request-demos { quote_id, note? }
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
       sendEmail({ category: 'PRODUCTION', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
     }
     notifyTalentTelegram(db, q.talent_id, `🎬 想聽您更多 demo(其他語氣 / 角色)。請到後台在該案子「追加 demo」上傳幾段。${SITE}/talent/opportunities`);
+    notifyTalentExtra(db, q.talent_id, `🎬 想聽您更多 demo(其他語氣 / 角色)。請到後台在該案子「追加 demo」上傳幾段。${SITE}/talent/opportunities`);
   }
   return NextResponse.json({ ok: true });
 }
