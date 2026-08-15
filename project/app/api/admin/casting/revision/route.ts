@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/mail';
 import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentLine } from '@/lib/line';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 
 /*
   客戶修改需求(女王百貨場景,2026-07-20 Wing):客戶對已交付的單提修改——
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
     }
     notifyTalentLine(db, String(order.talent_id), msg);
     notifyTalentTelegram(db, String(order.talent_id), msg);
+    notifyTalentExtra(db, String(order.talent_id), msg);
   } catch { /* best-effort */ }
   return NextResponse.json({ ok: true });
 }
