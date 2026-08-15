@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/mail';
 import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentLine } from '@/lib/line';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 
 /*
   AI 聲音分身計畫 — 後台審核(Phase 2)。
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
     }
     notifyTalentLine(db, en.talent_id, msg);
     notifyTalentTelegram(db, en.talent_id, msg);
+    notifyTalentExtra(db, en.talent_id, msg);
   } catch { /* best-effort */ }
   return NextResponse.json({ ok: true });
 }
