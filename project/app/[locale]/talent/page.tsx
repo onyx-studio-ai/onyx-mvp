@@ -23,6 +23,8 @@ import { authedFetch } from '@/lib/authed-fetch';
 import Turnstile from '@/components/Turnstile';
 import TelegramConnect from '@/components/talent/TelegramConnect';
 import LineConnect from '@/components/talent/LineConnect';
+import DiscordConnect from '@/components/talent/DiscordConnect';
+import PushConnect from '@/components/talent/PushConnect';
 import AiTwinEntry from '@/components/talent/AiTwinEntry';
 import { Camera, Plus, Trash2, CheckCircle2, Clock, Music2, Star, LayoutDashboard, Share, Heart } from 'lucide-react';
 import {
@@ -541,6 +543,8 @@ export default function TalentDashboard() {
             <AiTwinEntry tx={tx} />
             <LineConnect tx={tx} />
             <TelegramConnect tx={tx} />
+            <DiscordConnect tx={tx} />
+            <PushConnect tx={tx} />
           </div>
           <input className="w-full bg-transparent text-2xl font-bold focus:outline-none focus:border-b focus:border-white/20 pb-0.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tx('顯示名稱', '显示名称', 'Display name')} />
           <input className="w-full bg-transparent text-sm text-gray-300 focus:outline-none focus:border-b focus:border-white/20 pb-0.5 mt-1" value={form.english_name} onChange={(e) => setForm({ ...form, english_name: e.target.value })} placeholder={tx('英文 / 羅馬拼音名(選填,英文頁顯示)', '英文 / 罗马拼音名(选填,英文页显示)', 'English / Romanized name (optional, shown on English site)')} />
