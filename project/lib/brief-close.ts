@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/mail';
 import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 import { notifyTalentLine } from '@/lib/line';
 
 /*
@@ -42,6 +43,7 @@ export async function notifyBriefClosed(
         sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
       }
       notifyTalentTelegram(db, t.id as string, `【${title}】結案通知:${reasonText}感謝您的試音,未來有新案件歡迎再來試音。`);
+      notifyTalentExtra(db, t.id as string, `【${title}】結案通知:${reasonText}感謝您的試音,未來有新案件歡迎再來試音。`);
       notifyTalentLine(db, t.id as string, `【${title}】結案通知:${reasonText}感謝您的試音,未來有新案件歡迎再來試音。`);
     }
   } catch { /* 通知 best-effort */ }
