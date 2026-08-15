@@ -4,6 +4,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 import { notifyTalentLine } from '@/lib/line';
 import { zonedTimeToUtc, fmtInTz, tzLabel } from '@/lib/case-time';
 
@@ -118,6 +119,7 @@ export async function GET(request: NextRequest) {
     }
     // Telegram(有綁才發;helper 內部自己判斷)
     await notifyTalentTelegram(db, g.talentId, `⏰ 交件提醒(${g.project}):${g.roles.join('、')} 將於 ${g.deadlineText} 截止,尚未收到音檔。請盡快到後台上傳,來不及請在後台留言。${SITE}/talent/opportunities`);
+    notifyTalentExtra(db, g.talentId, `⏰ 交件提醒(${g.project}):${g.roles.join('、')} 將於 ${g.deadlineText} 截止,尚未收到音檔。請盡快到後台上傳,來不及請在後台留言。${SITE}/talent/opportunities`);
     await notifyTalentLine(db, g.talentId, `⏰ 交件提醒(${g.project}):${g.roles.join('、')} 將於 ${g.deadlineText} 截止,尚未收到音檔。請盡快到後台上傳,來不及請在後台留言。${SITE}/talent/opportunities`);
 
     await db.from('voice_orders').update({ delivery_reminder_at: new Date().toISOString() }).in('id', g.orderIds);
