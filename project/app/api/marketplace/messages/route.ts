@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/mail';
 import { newMessageEmail } from '@/lib/mail-templates';
 import { sanitizeMessage } from '@/lib/message-filter';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 import { isPlatformCase } from '@/lib/casting';
 
 /*
@@ -105,7 +106,10 @@ export async function POST(request: NextRequest) {
       sendEmail({ category: 'PRODUCTION', to, subject: note.subject, html: note.html }).catch(() => {});
     }
     // The talent gets a Telegram ping too (client→talent messages only).
-    if (role !== 'talent') notifyTalentTelegram(c.db, talentId, `💬 客戶在案件 ${brief?.brief_number || ''} 給您留言。${SITE}/talent/messages`);
+    if (role !== 'talent') {
+      notifyTalentTelegram(c.db, talentId, `💬 客戶在案件 ${brief?.brief_number || ''} 給您留言。${SITE}/talent/messages`);
+      notifyTalentExtra(c.db, talentId, `💬 客戶在案件 ${brief?.brief_number || ''} 給您留言。${SITE}/talent/messages`);
+    }
 
     return NextResponse.json({ message: msg });
   } catch (err) {
