@@ -3,6 +3,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { castingReauditionEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 
 /*
   POST /api/client/requests/[id]/reaudition { quote_id, note? } — the CLIENT asks a
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       sendEmail({ category: 'PRODUCTION', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
     }
     notifyTalentTelegram(db, q.talent_id, `🔁 客戶請您重錄一段試音。請到後台查看方向並重新上傳。${SITE}/talent/opportunities`);
+    notifyTalentExtra(db, q.talent_id, `🔁 客戶請您重錄一段試音。請到後台查看方向並重新上傳。${SITE}/talent/opportunities`);
   }
   return NextResponse.json({ ok: true });
 }
