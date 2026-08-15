@@ -3,6 +3,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { sendEmail } from '@/lib/mail';
 import { castingRevisionTalentEmail, castingApprovedTalentEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 
 /*
   POST /api/client/orders/[id]/review { action: 'approve' | 'revise', feedback? }
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         sendEmail({ category: 'PRODUCTION', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
       }
       notifyTalentTelegram(db, order.talent_id, `✅ 客戶已驗收結案:${title}。感謝您的配音!`);
+      notifyTalentExtra(db, order.talent_id, `✅ 客戶已驗收結案:${title}。感謝您的配音!`);
     }
     // 客戶驗收/結案 = 資訊性,不需我方動作;不寄自我 email(Wing 2026-08-05)。
     return NextResponse.json({ ok: true, status: newStatus });
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       sendEmail({ category: 'PRODUCTION', to: talent.email as string, subject: m.subject, html: m.html }).catch(() => {});
     }
     notifyTalentTelegram(db, order.talent_id, `🔧 客戶要求修改:${title}\n請到後台查看意見並重新交付。${SITE}/talent/opportunities`);
+    notifyTalentExtra(db, order.talent_id, `🔧 客戶要求修改:${title}\n請到後台查看意見並重新交付。${SITE}/talent/opportunities`);
   }
   // 客戶要求修改 → 配音員已收到(上面 email + Telegram);訂單回 in_production,
   // 後台「訂單」徽章看得到,不寄自我 email(Wing 2026-08-05)。
