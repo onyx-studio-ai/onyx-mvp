@@ -4,6 +4,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { sendEmail } from '@/lib/mail';
 import { plainNoticeEmail } from '@/lib/mail-templates';
 import { notifyTalentTelegram } from '@/lib/telegram';
+import { notifyTalentExtra } from '@/lib/notify-extra';
 import { notifyTalentLine } from '@/lib/line';
 
 /*
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest) {
         sendEmail({ category: 'PRODUCTION', to: email, subject: note.subject, html: note.html }).catch(() => {});
       }
       notifyTalentTelegram(db, talentId, `💬 Onyx 新訊息(${title}):${body.slice(0, 200)}${body.length > 200 ? '…' : ''}\nhttps://www.onyxstudios.ai/talent/opportunities`);
+      notifyTalentExtra(db, talentId, `💬 Onyx 新訊息(${title}):${body.slice(0, 200)}${body.length > 200 ? '…' : ''}\nhttps://www.onyxstudios.ai/talent/opportunities`);
       notifyTalentLine(db, talentId, `💬 Onyx 新訊息(${title}):${body.slice(0, 200)}${body.length > 200 ? '…' : ''}${attachments.length ? `(含 ${attachments.length} 個附件)` : ''}\nhttps://www.onyxstudios.ai/talent/opportunities`);
     } catch { /* 通知失敗不影響訊息已送 */ }
     return NextResponse.json({ message: data });
