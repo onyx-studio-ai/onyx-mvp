@@ -2,7 +2,6 @@ import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
 import { getAllPosts } from '@/lib/blog/posts';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
-import { VO_ROUTES } from '@/lib/voice-over-pages';
 
 // Revalidate hourly so scheduled blog posts (and newly-published talents) enter
 // the sitemap on their date.
@@ -30,8 +29,6 @@ const publicRoutes = [
   '/legal/refund',
   '/tools',
   '/blog',
-  // 程序化 SEO 著陸頁(/voice-over/{語言}/{用途},定義見 lib/voice-over-pages)
-  ...VO_ROUTES,
 ] as const;
 
 function toLocalePath(locale: string, route: string) {
