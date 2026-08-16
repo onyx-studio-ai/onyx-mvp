@@ -29,6 +29,81 @@ const fmt = (n: number, cur = 'USD') => currencySymbol(cur) + Math.round(n || 0)
 const usd = (n: number) => fmt(n, 'USD'); // talent_earnings ledger has no currency → USD
 const ym = (iso?: string | null) => (iso || '').slice(0, 7); // YYYY-MM
 
+/*
+  月營收一本帳(含線下收款)— 痛點:線下(微信/LINE/Fiverr)收款不入 price,報表看不到
+  真實營收。這裡吃 /api/admin/revenue-report:GMV/配音員成本/毛利三層、各幣別分開,
+  並列出「未記價」訂單催補登(2026-08-15 月報決議)。
+*/
+type LedgerData = {
+  month: string; orders: number;
+  byCurrency: Record<string, { gmv: number; talentCost: number; gross: number; orders: number }>;
+  byChannel: Record<string, number>;
+  unpriced: { order_number: string | number | null; project: string; type: string; created_at: string }[];
+};
+
+function MonthlyLedger({ t }: { t: ReturnType<typeof useTranslations> }) {
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [data, setData] = useState<LedgerData | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let dead = false;
+    setBusy(true);
+    fetch(`/api/admin/revenue-report?month=${month}`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!dead) setData(j); })
+      .catch(() => { if (!dead) setData(null); })
+      .finally(() => { if (!dead) setBusy(false); });
+    return () => { dead = true; };
+  }, [month]);
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-sm font-semibold text-gray-700">{t('ledgerTitle')}</h2>
+        <input type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)}
+          className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 [color-scheme:light] focus:border-blue-400 focus:outline-none" />
+      </div>
+      <p className="text-xs text-gray-500 mb-3">{t('ledgerHint')}</p>
+      {busy && !data ? (
+        <div className="text-center py-10 text-gray-500 bg-white border border-gray-200 rounded-xl">{t('loading')}</div>
+      ) : !data || !data.orders ? (
+        <div className="text-center py-10 text-gray-500 bg-white border border-gray-200 rounded-xl">{t('ledgerNoData')}</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Object.entries(data.byCurrency).map(([c, v]) => (
+              <div key={c} className="bg-white border border-gray-200 rounded-xl p-4">
+                <p className="text-xs text-gray-500 mb-2">{c} · {t('ledgerOrders', { count: v.orders })}</p>
+                <div className="flex items-baseline justify-between"><span className="text-xs text-gray-600">{t('ledgerGmv')}</span><span className="text-sm font-bold text-gray-900">{fmt(v.gmv, c)}</span></div>
+                <div className="flex items-baseline justify-between"><span className="text-xs text-gray-600">{t('ledgerCost')}</span><span className="text-sm font-semibold text-red-700">{fmt(v.talentCost, c)}</span></div>
+                <div className="flex items-baseline justify-between border-t border-gray-100 mt-1.5 pt-1.5"><span className="text-xs text-gray-600">{t('ledgerGross')}</span><span className={`text-sm font-bold ${v.gross >= 0 ? 'text-green-700' : 'text-red-700'}`}>{fmt(v.gross, c)}</span></div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {Object.entries(data.byChannel).map(([ch, n]) => (
+              <span key={ch} className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">{ch} × {n}</span>
+            ))}
+          </div>
+          {data.unpriced.length > 0 && (
+            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-amber-800 mb-2">{t('ledgerUnpriced', { count: data.unpriced.length })}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {data.unpriced.map((o, i) => (
+                  <a key={i} href={`/admin/orders?search=${encodeURIComponent(String(o.order_number || o.project))}`}
+                    className="text-[11px] px-2 py-0.5 rounded-full bg-white text-amber-800 border border-amber-300 hover:border-amber-500 transition-colors">
+                    #{o.order_number || '—'} {o.project.slice(0, 16)}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AdminFinance() {
   const t = useTranslations('admin.finance');
   const [phase, setPhase] = useState<'loading' | 'ready'>('loading');
@@ -167,6 +242,8 @@ export default function AdminFinance() {
           ))}
         </div>
       )}
+
+      <MonthlyLedger t={t} />
 
       {/* Cross-links to the other money views */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
