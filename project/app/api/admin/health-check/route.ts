@@ -84,6 +84,16 @@ export async function GET(request: NextRequest) {
     // D. 訪客埋點心跳:48 小時完全零筆 = 幾乎必然是斷了(page_views 曾因缺欄位靜默斷一週)
     if ((pv48.count || 0) === 0) warn.push('訪客埋點 page_views 過去 48 小時 0 筆 —— 埋點很可能又斷了(上次是缺欄位靜默失敗)');
 
+    // D2. 開錄了但付款仍 pending → 配音員端上傳被「等待客戶付款」閘卡死。
+    // 線上刷卡案 = 真的在等客戶;平台自營線下收款案 = 忘了標「已付款(線下)」
+    // (2026-08-16 茹芸案例:開錄兩天後要交件才發現傳不了)。兩種都該人工看一眼。
+    const { data: stuck } = await db.from('voice_orders')
+      .select('order_number, project_name, voice_selection')
+      .not('released_at', 'is', null).not('talent_id', 'is', null)
+      .not('status', 'in', '("completed","cancelled")')
+      .eq('payment_status', 'pending');
+    if (stuck?.length) warn.push(`已開錄但付款仍 pending(配音員無法上傳交付;線下收款案請標「已付款」):${cap(stuck.map((o) => `${o.order_number} ${o.voice_selection || o.project_name || ''}`))}`);
+
     // E. 上線但性別空白(男/女篩選、發案配對都算不到他)
     // C5. 聯絡黑洞:上線真人配音員,無電話且無 LINE/Telegram —— 只有 email 一條線,
     // 催件/急件找不到人(2026-07-17 Erica Chang 案例)。目標是這名單歸零。
