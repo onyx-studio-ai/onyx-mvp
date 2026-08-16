@@ -3342,7 +3342,15 @@
       "linkPayableTitle": "配音員應付明細",
       "linkPayableSubtitle": "每位配音員的待付/已付、月結批次 → 人才分潤",
       "linkPocketsTitle": "現金分倉",
-      "linkPocketsSubtitle": "Profit First 收入分配與支出 → 口袋"
+      "linkPocketsSubtitle": "Profit First 收入分配與支出 → 口袋",
+      "ledgerTitle": "月營收一本帳(含線下收款)",
+      "ledgerHint": "口徑:GMV=客戶價合計(含線下收款,price 有填就算)・成本=配音員酬勞・毛利=GMV−成本。各幣別分開計,不換匯。",
+      "ledgerGmv": "GMV(客戶價)",
+      "ledgerCost": "配音員成本",
+      "ledgerGross": "毛利",
+      "ledgerOrders": "{count} 張單",
+      "ledgerNoData": "本月無訂單",
+      "ledgerUnpriced": "⚠️ 未記價訂單 {count} 張 — 看不出真實營收,點單號到訂單管理補「客戶價」(線下收款也要填)"
     },
     "certificates": {
       "pageTitle": "授權證書",
