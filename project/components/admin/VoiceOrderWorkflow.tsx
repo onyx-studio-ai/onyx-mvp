@@ -43,6 +43,7 @@ interface VoiceOrder {
   order_number: string;
   email: string;
   status: string;
+  payment_status?: string | null;
   tier: string;
   revision_count: number;
   max_revisions: number;
@@ -662,8 +663,9 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
         <p className="text-[11px] text-gray-500 mt-2">客戶會在訂單頁看到這個預計交期(不寄通知信)。</p>
       </div>
 
-      {/* Pending Payment */}
-      {order.status === 'pending_payment' && (
+      {/* Pending Payment — 綁「付款欄位」不綁「狀態」:狀態被手動推進(跳過付款步驟)時
+          按鈕以前會消失,線下收款永遠補標不了,配音員端上傳被鎖死(2026-08-16 茹芸案例) */}
+      {!['paid', 'completed'].includes(order.payment_status || '') && !['completed', 'cancelled'].includes(order.status) && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-amber-300 font-semibold">Awaiting payment — ${order.price?.toLocaleString() || '—'}</p>
@@ -679,7 +681,9 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                 // Route through the admin API (service role) — a financial change must
                 // not rely on the browser anon client, which RLS silently blocks (the
                 // update affected 0 rows and looked like nothing happened).
-                await updateVoiceOrderStatus(order.id, 'paid', { payment_status: 'completed', paid_at: new Date().toISOString() });
+                // 已推進到製作中/已交付的單補標付款時,狀態保持原樣,不倒退回排隊。
+                const nextStatus = order.status === 'pending_payment' ? 'paid' : order.status;
+                await updateVoiceOrderStatus(order.id, nextStatus, { payment_status: 'completed', paid_at: new Date().toISOString() });
                 toast({ title: 'Payment confirmed', description: 'Order moved to production queue.' });
                 onStatusChange();
               } catch (err: unknown) {
