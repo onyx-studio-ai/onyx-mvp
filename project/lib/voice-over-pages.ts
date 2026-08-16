@@ -27,3 +27,4 @@ export const VO_USES: VoUse[] = [
 export const voLang = (slug: string) => VO_LANGS.find((l) => l.slug === slug);
 export const voUse = (slug: string) => VO_USES.find((u) => u.slug === slug);
 export const VO_ROUTES = VO_LANGS.flatMap((l) => VO_USES.map((u) => `/voice-over/${l.slug}/${u.slug}`));
+// v1.0.1 — 重新部署觸發用(2026-08-16 部署競態:舊 commit 的 build 較晚完成蓋掉新版)
