@@ -3342,7 +3342,15 @@
       "linkPayableTitle": "配音员应付明细",
       "linkPayableSubtitle": "每位配音员的待付/已付、月结批次 → 人才分润",
       "linkPocketsTitle": "现金分仓",
-      "linkPocketsSubtitle": "Profit First 收入分配与支出 → 口袋"
+      "linkPocketsSubtitle": "Profit First 收入分配与支出 → 口袋",
+      "ledgerTitle": "月营收一本账(含线下收款)",
+      "ledgerHint": "口径:GMV=客户价合计(含线下收款,price 有填就算)・成本=配音员酬劳・毛利=GMV−成本。各币别分开计,不换汇。",
+      "ledgerGmv": "GMV(客户价)",
+      "ledgerCost": "配音员成本",
+      "ledgerGross": "毛利",
+      "ledgerOrders": "{count} 张单",
+      "ledgerNoData": "本月无订单",
+      "ledgerUnpriced": "⚠️ 未记价订单 {count} 张 — 看不出真实营收,点单号到订单管理补「客户价」(线下收款也要填)"
     },
     "certificates": {
       "pageTitle": "授权证书",
