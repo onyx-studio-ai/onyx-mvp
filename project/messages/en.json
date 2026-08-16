@@ -3342,7 +3342,15 @@
       "linkPayableTitle": "Talent Payable Details",
       "linkPayableSubtitle": "Each talent's pending/paid, monthly batches → Talent Payouts",
       "linkPocketsTitle": "Cash Allocation",
-      "linkPocketsSubtitle": "Profit First income allocation and spending → Pockets"
+      "linkPocketsSubtitle": "Profit First income allocation and spending → Pockets",
+      "ledgerTitle": "Monthly Revenue Ledger (incl. offline)",
+      "ledgerHint": "Definitions: GMV = total client price (offline payments count when price is filled) · Cost = talent pay · Gross = GMV − cost. Per currency, no FX conversion.",
+      "ledgerGmv": "GMV (client price)",
+      "ledgerCost": "Talent cost",
+      "ledgerGross": "Gross profit",
+      "ledgerOrders": "{count} orders",
+      "ledgerNoData": "No orders this month",
+      "ledgerUnpriced": "⚠️ {count} unpriced orders — real revenue is invisible; open each and fill the client price (offline payments too)"
     },
     "certificates": {
       "pageTitle": "License Certificates",
