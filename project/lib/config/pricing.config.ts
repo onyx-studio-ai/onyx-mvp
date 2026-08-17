@@ -203,7 +203,7 @@ export const VOICE_TIERS = [
     features: [
       'Pure AI generation',
       'Standard Commercial Rights included',
-      '2 rounds of AI retakes & regenerations',
+      '1 round of AI retakes & regenerations',
       'Minor script updates allowed',
       '24-hour fast delivery',
       'WAV + MP3 high-quality delivery',
@@ -223,7 +223,7 @@ export const VOICE_TIERS = [
     features: [
       'AI + Human Director emotional tuning',
       'Standard Commercial Rights included',
-      '2 rounds of Director revisions',
+      '1 round of Director revisions',
       'Original actor micro-patching included (if needed)',
       '100% perfect pronunciation guarantee',
       'Priority delivery queue',
@@ -249,7 +249,7 @@ export const VOICE_TIERS = [
       'Custom delivery formats & stems',
       'Multi-language project coordination',
     ],
-    priceLabel: 'from US$229 / 0-60s package',
+    priceLabel: 'Custom quote per selected talent',   // 2026-08-17 Wing:真人方案依人選個案報價
     gradient: 'from-amber-600 to-orange-600',
     popular: false,
     isCustom: false,
@@ -445,7 +445,7 @@ export const PRICING_TIERS = [
     features: [
       'Pure AI generation',
       'Standard Commercial Rights included',
-      '2 rounds of AI retakes & regenerations',
+      '1 round of AI retakes & regenerations',
       'Minor script updates allowed',
       '24-hour fast delivery',
       'WAV + MP3 high-quality delivery',
@@ -489,7 +489,7 @@ export const PRICING_TIERS = [
     features: [
       'AI + Human Director emotional tuning',
       'Standard Commercial Rights included',
-      '2 rounds of Director revisions',
+      '1 round of Director revisions',
       'Original actor micro-patching included (if needed)',
       '100% perfect pronunciation guarantee',
       'Priority delivery queue',
