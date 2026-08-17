@@ -20,7 +20,8 @@ export default function CompactPricing() {
       badge: plan.badge ? t(`${k}Badge`) : null,
       subtitle: t(`${k}Subtitle`),
       audience: t(`${k}Audience`),
-      price: plan.id === 'tier-3' ? `${t('tier3PricePrefix')} US$${plan.numericPrice}` : `US$${plan.numericPrice}`,
+      // tier-3(真人錄音室)不掛固定價:依選中配音員個案報價(Wing 2026-08-17)
+      price: plan.id === 'tier-3' ? t('tier3CustomQuote') : `US$${plan.numericPrice}`,
       unit: t(`${k}Unit`),
       buttonText: t(`${k}Button`),
     };
