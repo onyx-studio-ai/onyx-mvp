@@ -94,6 +94,22 @@ export async function GET(request: NextRequest) {
       .eq('payment_status', 'pending');
     if (stuck?.length) warn.push(`已開錄但付款仍 pending(配音員無法上傳交付;線下收款案請標「已付款」):${cap(stuck.map((o) => `${o.order_number} ${o.voice_selection || o.project_name || ''}`))}`);
 
+    // D3. 申請核准 >7 天仍未上架:公開名冊長不出來的隱形庫存(2026-08-17 小琴案例
+    // 挖出 51 位卡關)。附缺件原因,才知道是等對方補件還是等我們審。
+    const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const { data: stale } = await db.from('talents')
+      .select('name, headshot_url, demos, created_at')
+      .not('application_id', 'is', null).eq('is_active', false).lt('created_at', weekAgo);
+    if (stale?.length) {
+      const withReason = stale.map((t) => {
+        const lacks: string[] = [];
+        if (!t.headshot_url) lacks.push('頭像');
+        if (!((t.demos as unknown[] | null)?.length)) lacks.push('分類demo');
+        return `${t.name}${lacks.length ? `(缺${lacks.join('、')})` : '(資料齊,待審上架)'}`;
+      });
+      info.push(`核准逾 7 天仍未上架 ${stale.length} 位:${cap(withReason)}`);
+    }
+
     // E. 上線但性別空白(男/女篩選、發案配對都算不到他)
     // C5. 聯絡黑洞:上線真人配音員,無電話且無 LINE/Telegram —— 只有 email 一條線,
     // 催件/急件找不到人(2026-07-17 Erica Chang 案例)。目標是這名單歸零。
