@@ -47,6 +47,7 @@ export default function PayoutRequestsPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'invoice_uploaded' | 'paid' | 'completed'>('all');
   const [busy, setBusy] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [ordersOpen, setOrdersOpen] = useState<string | null>(null);   // 訂單明細收合(一次開一張)
   // 會計對帳匯出:預設今年;月份空 = 整年。
   const thisYear = String(new Date().getFullYear());
   const [expYear, setExpYear] = useState(thisYear);
@@ -161,16 +162,25 @@ export default function PayoutRequestsPage() {
                     {r.certificate_code && (
                       <div className="text-[11px] text-emerald-700 mt-1">{t('certificateCodeLabel')}<span className="font-mono select-all">{r.certificate_code}</span></div>
                     )}
-                    {/* 訂單明細:請款單→訂單→(點了跳訂單管理該張單)。匯款對帳一條龍(Wing 2026-08-17) */}
+                    {/* 訂單明細:預設收合,點了才展開(Wing 2026-08-17:直接攤開太亂)。
+                        展開後每筆點了跳訂單管理該張單 → 匯款對帳一條龍 */}
                     {(r.earnings || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {r.earnings!.map((e, i) => (
-                          <a key={i} href={`/admin/orders?search=${encodeURIComponent(String(e.order_number || ''))}`}
-                            className="text-[11px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-300 hover:border-violet-400 hover:text-violet-700 transition-colors"
-                            title={e.project_name || ''}>
-                            #{e.order_number}{e.project_name ? ` ${e.project_name.slice(0, 12)}` : ''} · {money(e.commission_amount || 0, r.currency)}
-                          </a>
-                        ))}
+                      <div className="mt-2">
+                        <button onClick={() => setOrdersOpen(ordersOpen === r.id ? null : r.id)}
+                          className="text-[11px] text-gray-500 hover:text-violet-700 inline-flex items-center gap-1">
+                          訂單明細({r.earnings!.length})<ChevronDown className={`w-3 h-3 transition-transform ${ordersOpen === r.id ? 'rotate-180' : ''}`} />
+                        </button>
+                        {ordersOpen === r.id && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {r.earnings!.map((e, i) => (
+                              <a key={i} href={`/admin/orders?search=${encodeURIComponent(String(e.order_number || ''))}`}
+                                className="text-[11px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-300 hover:border-violet-400 hover:text-violet-700 transition-colors"
+                                title={e.project_name || ''}>
+                                #{e.order_number}{e.project_name ? ` ${e.project_name.slice(0, 12)}` : ''} · {money(e.commission_amount || 0, r.currency)}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
