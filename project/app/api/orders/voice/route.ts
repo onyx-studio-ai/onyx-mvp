@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       db, resolvedTier, resolvedUseCase, resolvedBroadcast, resolvedBillingType, now
     );
 
-    const maxRevisions = resolvedTier === 'tier-3' ? 1 : 2;
+    const maxRevisions = 1;   // 2026-08-17 Wing:全方案免費修改一律 1 輪(原 tier-1/2 為 2)
 
     const resolvedRightsLevel = (rights_level || (resolvedBroadcast ? 'broadcast' : 'standard')) as VoiceRightsLevel;
     const resolvedScriptText = (script_text || '').trim();
