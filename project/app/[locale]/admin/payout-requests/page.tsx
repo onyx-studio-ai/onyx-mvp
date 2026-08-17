@@ -14,6 +14,7 @@ type Req = {
   note: string | null; invoice_type: string; invoice_url: string | null; consent_at: string | null;
   status: string; admin_note: string | null; paid_at: string | null; certificate_code: string | null; created_at: string;
   talents: { name: string | null; email: string | null } | null;
+  earnings?: { order_number: string | null; order_type: string | null; commission_amount: number | null; project_name?: string | null }[];
 };
 
 // 撥款發票 = 金流敏感檔,透過簽名 URL route 開(不管 casting bucket 公開或被鎖成私有都打得開)。
@@ -159,6 +160,18 @@ export default function PayoutRequestsPage() {
                     <div className="text-[11px] text-gray-400 mt-1">{t('requestedAt', { time: fmt(r.created_at) })} · {t('consentedAt', { time: fmt(r.consent_at) })}{r.paid_at ? t('paidAt', { time: fmt(r.paid_at) }) : ''}</div>
                     {r.certificate_code && (
                       <div className="text-[11px] text-emerald-700 mt-1">{t('certificateCodeLabel')}<span className="font-mono select-all">{r.certificate_code}</span></div>
+                    )}
+                    {/* 訂單明細:請款單→訂單→(點了跳訂單管理該張單)。匯款對帳一條龍(Wing 2026-08-17) */}
+                    {(r.earnings || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {r.earnings!.map((e, i) => (
+                          <a key={i} href={`/admin/orders?search=${encodeURIComponent(String(e.order_number || ''))}`}
+                            className="text-[11px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-300 hover:border-violet-400 hover:text-violet-700 transition-colors"
+                            title={e.project_name || ''}>
+                            #{e.order_number}{e.project_name ? ` ${e.project_name.slice(0, 12)}` : ''} · {money(e.commission_amount || 0, r.currency)}
+                          </a>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
