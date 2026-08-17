@@ -681,7 +681,7 @@ export default function Opportunities() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [roleCounts, setRoleCounts] = useState<Record<string, Record<string, number>>>({});
   const [myDemos, setMyDemos] = useState<Demo[]>([]);
-  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; ai_type?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null; created_at?: string | null }[] }[]>([]);
+  const [wonBriefs, setWonBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; language?: string | null; accent?: string | null; rate_note?: string | null; status: string; ai_type?: string | null; media_scope?: string | null; territory?: string | null; license_term?: string | null; deadline?: string | null; order_created?: string | null; order_id?: string | null; order_status?: string | null; order_payment_status?: string | null; final_script?: string | null; final_script_url?: string | null; final_script_files?: { name?: string; url: string }[] | null; order_production_notes?: string | null; order_voice_samples?: { name?: string; url: string }[] | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; client_feedback?: string | null; created_at?: string | null }[] }[]>([]);
   const [selectingBriefs, setSelectingBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status?: string | null }[]>([]);
   const [endedBriefs, setEndedBriefs] = useState<{ id: string; brief_number: string; title?: string | null; content_type?: string | null; status: string; close_reason?: string | null }[]>([]);
   const [assignedOrders, setAssignedOrders] = useState<{ id: string; brief_id: string; role_name?: string | null; project_name?: string | null; script_text?: string | null; script_file_url?: string | null; production_notes?: string | null; revision_note?: string | null; revision_files?: { name?: string; url: string }[] | null; revision_count?: number | null; revision_fee?: number | null; revision_fee_status?: string | null; revision_fee_total?: number | null; revision_fee_agreed_at?: string | null; reference_files?: { name?: string; url: string }[] | null; voice_sample_files?: { name?: string; url: string }[] | null; role_images?: { name?: string; url: string }[] | null; script_files?: { name?: string; url: string }[] | null; deadline?: string | null; deadline_time?: string | null; case_timezone?: string | null; status?: string | null; talent_price?: number | null; currency?: string | null; deliveries?: { id: string; file_name: string; file_url: string; status?: string | null; created_at?: string | null }[] }[]>([]);
@@ -959,7 +959,7 @@ export default function Opportunities() {
                     ? <span className="text-xs px-2.5 py-1 rounded-full border bg-[#6FCF97]/20 text-[#6FCF97] border-[#6FCF97]/40 whitespace-nowrap">{tx('已完成', '已完成', 'Completed')}</span>
                     : <span className="text-xs px-2.5 py-1 rounded-full border bg-green-500/15 text-green-200 border-green-500/30 whitespace-nowrap">{tx('製作中', '制作中', 'In production')}</span>}
                 >
-                  {(w.final_script || w.final_script_url) && (
+                  {(w.final_script || w.final_script_url || (w.final_script_files || []).length > 0) && (
                     <div className="mb-3">
                       <p className="text-xs text-gray-300 mb-1.5">{tx('正式稿件(客戶提供 · 請依此錄製)', '正式稿件(客户提供 · 请依此录制)', 'Final script (from the client — record this)')}</p>
                       {w.final_script && (
@@ -971,6 +971,26 @@ export default function Opportunities() {
                       {w.final_script_url && (
                         <a href={w.final_script_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-sky-300 hover:underline mt-1.5">{tx('下載正式稿件檔', '下载正式稿件档', 'Download script file')}</a>
                       )}
+                      {(w.final_script_files || []).map((f, i) => (
+                        <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-sky-300 hover:underline mt-1.5">📄 {f.name || tx('稿件檔', '稿件档', 'Script file')}</a>
+                      ))}
+                    </div>
+                  )}
+                  {w.order_production_notes && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-300 mb-1.5">{tx('製作說明', '制作说明', 'Production notes')}</p>
+                      <div className="text-sm text-gray-100 whitespace-pre-wrap bg-black/40 border border-white/10 rounded-lg p-3">{w.order_production_notes}</div>
+                    </div>
+                  )}
+                  {(w.order_voice_samples || []).length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-300 mb-1.5">{tx('參考音', '参考音', 'Reference audio')}</p>
+                      {(w.order_voice_samples || []).map((f, i) => (
+                        <div key={i} className="mb-1.5">
+                          <p className="text-[11px] text-gray-400 mb-0.5">{f.name || ''}</p>
+                          <audio controls preload="none" src={f.url} className="w-full h-9" onContextMenu={(e) => e.preventDefault()} controlsList="nodownload" />
+                        </div>
+                      ))}
                     </div>
                   )}
                   {(() => {
