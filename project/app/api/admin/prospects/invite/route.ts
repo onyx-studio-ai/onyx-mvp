@@ -84,7 +84,18 @@ export async function POST(request: NextRequest) {
   const { data: recent } = await db.from('prospect_invites')
     .select('prospect_id').eq('brief_id', briefId).gte('sent_at', sinceIso);
   const recentSet = new Set((recent || []).map((r) => r.prospect_id));
-  const eligible = pool.filter((p) => !recentSet.has(p.id));
+
+  // 已是平台配音員的一律不寄「建立個人檔案」邀請(2026-08-17:小琴當天註冊完又收到
+  // 建檔邀請,以為資料白填)。prospects.status 可能還停在 active,所以要對 talents 比 email;
+  // 順手把 prospects 標成 joined,之後自動模式也不會再撈到。
+  const { data: registered } = await db.from('talents').select('email');
+  const regSet = new Set((registered || []).map((t) => String(t.email || '').toLowerCase()).filter(Boolean));
+  const alreadyJoined = pool.filter((p) => regSet.has(String(p.email || '').toLowerCase()));
+  if (alreadyJoined.length) {
+    await db.from('prospects').update({ status: 'joined' }).in('id', alreadyJoined.map((p) => p.id)).then(() => {}, () => {});
+  }
+  const joinedSet = new Set(alreadyJoined.map((p) => p.id));
+  const eligible = pool.filter((p) => !recentSet.has(p.id) && !joinedSet.has(p.id));
 
   const deadline = brief.audition_deadline
     ? `${brief.audition_deadline}${brief.audition_deadline_time ? ' ' + brief.audition_deadline_time : ''}` : '';
