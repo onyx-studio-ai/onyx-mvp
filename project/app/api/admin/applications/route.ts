@@ -3,6 +3,7 @@ import { sendEmail } from '@/lib/mail';
 import { applicationStatusEmail } from '@/lib/mail-templates';
 import { signOnboardToken } from '@/lib/onboard-token';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
+import { talentFieldsFromApplication } from '@/lib/application-to-talent';
 import {
   getSupabaseServiceClient,
   supabaseErrorResponse,
@@ -217,6 +218,10 @@ export async function PATCH(request: NextRequest) {
             coop_proofread: !!application.coop_proofread,
             coop_voice_director: !!application.coop_voice_director,
             low_price_data_optin: !!application.low_price_data_optin,
+            // 申請表填的聲線特質/專長/年齡感/設備 → 帳號的結構化欄位。
+            // 2026-08-17 修:先前只進 tags,結構化欄位全空 → 配音員登入看到半空檔案、
+            // 審核也永遠不合格(小琴回報)。
+            ...talentFieldsFromApplication(application),
           }]).select('id').single();
 
           if (talentError) {
