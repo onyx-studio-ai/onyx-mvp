@@ -25,7 +25,34 @@ export async function GET(request: NextRequest) {
   if (status) q = q.eq('status', status);
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ requests: data || [] });
+
+  // 每張請款單附訂單明細(匯款對帳鏈:請款單號→訂單→案卡;Wing 2026-08-17)。
+  // earnings 掛 payout_id;案名再從 voice_orders 補。查詢失敗不擋列表(明細顯示空)。
+  const reqs = (data || []) as { id: string }[];
+  const byPayout: Record<string, { order_number: string | null; order_type: string | null; commission_amount: number | null; project_name?: string | null }[]> = {};
+  try {
+    const ids = reqs.map((r) => r.id);
+    if (ids.length) {
+      const { data: es } = await db.from('talent_earnings')
+        .select('payout_id, order_id, order_number, order_type, commission_amount')
+        .in('payout_id', ids);
+      const orderIds = [...new Set((es || []).map((e) => e.order_id).filter(Boolean))] as string[];
+      const nameById = new Map<string, string>();
+      for (let i = 0; i < orderIds.length; i += 100) {
+        const { data: os } = await db.from('voice_orders').select('id, project_name, voice_selection').in('id', orderIds.slice(i, i + 100));
+        for (const o of os || []) nameById.set(String(o.id), String(o.project_name || o.voice_selection || ''));
+      }
+      for (const e of es || []) {
+        const k = String(e.payout_id);
+        (byPayout[k] ||= []).push({
+          order_number: e.order_number, order_type: e.order_type,
+          commission_amount: e.commission_amount,
+          project_name: e.order_id ? nameById.get(String(e.order_id)) || null : null,
+        });
+      }
+    }
+  } catch { /* 明細補不到就空著,列表照出 */ }
+  return NextResponse.json({ requests: reqs.map((r) => ({ ...r, earnings: byPayout[r.id] || [] })) });
 }
 
 export async function PATCH(request: NextRequest) {
