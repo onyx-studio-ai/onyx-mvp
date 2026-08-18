@@ -157,6 +157,9 @@ export default function TalentApply() {
   const [lowData, setLowData] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
+  // 大頭照(選填;上架公開名冊才需要 —— 2026-08-17 補收,先前申請表沒這欄)
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState('');
   const [agreeOwn, setAgreeOwn] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -243,6 +246,14 @@ export default function TalentApply() {
     setFile(f);
   };
 
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError('');
+    const f = e.target.files?.[0]; if (!f) return;
+    if (!/\.(jpe?g|png|webp)$/i.test(f.name)) { setPhotoError(tx('只接受 JPG / PNG / WEBP 圖片', '只接受 JPG / PNG / WEBP 图片', 'Only JPG / PNG / WEBP images')); setPhoto(null); return; }
+    if (f.size > 8 * 1024 * 1024) { setPhotoError(tx('圖片請小於 8MB', '图片请小于 8MB', 'Image must be under 8 MB')); setPhoto(null); return; }
+    setPhoto(f);
+  };
+
   const handleSubmit = async () => {
     setError('');
     for (let s = 0; s < STEPS.length - 1; s++) { const e = stepError(s); if (e) { setError(e); setStep(s); return; } }
@@ -264,6 +275,20 @@ export default function TalentApply() {
           .uploadToSignedUrl(urlJson.path, urlJson.token, file);
         if (upErr) throw new Error(`${tx('上傳失敗', '上传失败', 'Upload failed')}: ${upErr.message}`);
         fileUrl = urlJson.path as string; fileSize = file.size;
+      }
+
+      let photoUrl = '';
+      if (photo) {
+        const ext = photo.name.split('.').pop();
+        const pRes = await fetch('/api/apply/upload-url', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: `headshot.${ext}`, kind: 'photo' }),
+        });
+        const pJson = await pRes.json();
+        if (pRes.ok) {
+          const { error: pErr } = await supabase.storage.from('talent-submissions').uploadToSignedUrl(pJson.path, pJson.token, photo);
+          if (!pErr) photoUrl = pJson.path as string;   // 照片失敗不擋送出(選填)
+        }
       }
 
       const payload = {
@@ -299,7 +324,7 @@ export default function TalentApply() {
         consent_voice_id: false,
         consent_age_verified: agreeTerms,
         consent_legal_agreement: agreeTerms,
-        fileUrl, fileName, fileSize,
+        fileUrl, fileName, fileSize, photoUrl,
         // OTP 證明 —— 後端用同一套 HMAC 重驗這個 email 真的通過驗證(不信前端布林)
         otpCode: otpProof?.code ?? '',
         otpToken: otpProof?.token ?? '',
@@ -537,6 +562,18 @@ export default function TalentApply() {
               </label>
               {file && <p className="text-xs text-amber-300 mt-2">{tx('已選:', '已选:', 'Selected: ')}{file.name}（{Math.round(file.size / 1024)} KB）</p>}
               {fileError && <p className="text-xs text-red-400 mt-2">{fileError}</p>}
+
+              {/* 大頭照:選填,但公開上架需要 —— 在這裡一次收齊,免得核准後還要回頭補 */}
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <p className="text-sm text-gray-200 mb-1">{tx('大頭照', '大头照', 'Profile photo')} <span className="text-xs text-gray-500">{tx('(選填)', '(选填)', '(optional)')}</span></p>
+                <p className="text-xs text-gray-400 leading-relaxed mb-3">{tx('若您希望個人頁在平台公開上架(讓客戶主動搜尋、試聽找到您),需要一張清晰的正方形照片。不上傳也可以報名與接案,之後隨時能在後台補上。JPG / PNG / WEBP,8MB 以內。', '若您希望个人页在平台公开上架(让客户主动搜索、试听找到您),需要一张清晰的正方形照片。不上传也可以报名与接案,之后随时能在后台补上。JPG / PNG / WEBP,8MB 以内。', 'A clear, square photo is needed if you want your profile listed publicly so clients can find and audition you. You can still apply and take jobs without it, and add it later in your dashboard. JPG / PNG / WEBP, up to 8 MB.')}</p>
+                <label className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-zinc-600 text-sm text-gray-300 cursor-pointer hover:border-amber-500 w-fit">
+                  <Upload className="w-4 h-4" /> {photo ? tx('更換照片', '更换照片', 'Replace photo') : tx('選擇照片', '选择照片', 'Choose a photo')}
+                  <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhoto} />
+                </label>
+                {photo && <p className="text-xs text-amber-300 mt-2">{tx('已選:', '已选:', 'Selected: ')}{photo.name}（{Math.round(photo.size / 1024)} KB）</p>}
+                {photoError && <p className="text-xs text-red-400 mt-2">{photoError}</p>}
+              </div>
             </div>
           )}
 
