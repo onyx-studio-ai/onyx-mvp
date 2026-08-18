@@ -391,9 +391,9 @@ export default function AdminMarketplace() {
                   </div>
                 )}
                 {/* shareable open link — paste into WeChat/LINE; anyone joins & auditions without registering */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <input readOnly value={`${SITE}/casting/join/${b.id}`} onFocus={(e) => e.target.select()}
-                    className="flex-1 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 font-mono" />
+                    className="flex-1 min-w-0 basis-full sm:basis-auto bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-600 font-mono" />
                   <a href={`/casting/preview/${b.id}`} target="_blank" rel="noopener noreferrer"
                     className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded px-2.5 py-1 whitespace-nowrap" title={t('previewFrontTitle')}>{t('previewFront')}</a>
                   <button onClick={() => { navigator.clipboard?.writeText(`${SITE}/casting/join/${b.id}`); setCopiedId(b.id); setTimeout(() => setCopiedId(null), 1500); }}
