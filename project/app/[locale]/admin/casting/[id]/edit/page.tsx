@@ -225,11 +225,14 @@ export default function EditCasting() {
     // 本案試音者:每人取最低報價,指派下拉置頂 + 自動帶價。
     {
       const best = new Map<string, { talent_id: string; name: string; amount?: number; currency?: string }>();
-      for (const q of (j.quotes || []) as { talent_id?: string; talent_name?: string; gross_amount?: number; currency?: string }[]) {
+      for (const q of (j.quotes || []) as { net_amount?: number; talent_id?: string; talent_name?: string; gross_amount?: number; currency?: string }[]) {
         if (!q.talent_id) continue;
         const cur = best.get(q.talent_id);
-        if (!cur || (q.gross_amount != null && (cur.amount == null || q.gross_amount < cur.amount))) {
-          best.set(q.talent_id, { talent_id: q.talent_id, name: q.talent_name || '(未命名)', amount: q.gross_amount ?? cur?.amount, currency: q.currency || cur?.currency });
+        // 派工價 = 配音員實拿(net);舊資料沒有 net 才退回 gross(2026-08-18 修:原本一律取
+        // gross,等於把「客戶支付(含 20% 外加)」當成配音員酬勞帶入,平台會多付 25%)
+        const takeHome = q.net_amount ?? q.gross_amount;
+        if (!cur || (takeHome != null && (cur.amount == null || takeHome < cur.amount))) {
+          best.set(q.talent_id, { talent_id: q.talent_id, name: q.talent_name || '(未命名)', amount: takeHome ?? cur?.amount, currency: q.currency || cur?.currency });
         }
       }
       setAuditioned([...best.values()].sort((a, b) => a.name.localeCompare(b.name)));
