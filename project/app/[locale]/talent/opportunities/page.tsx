@@ -1203,7 +1203,8 @@ function BriefCard({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const grossN = Number(gross);
-  const netPreview = isFinite(grossN) && grossN > 0 ? Math.round(grossN * (1 - COMMISSION) * 100) / 100 : 0;
+  // 填的是「實拿」→ 預覽客戶支付金額(= 實拿/0.8)。2026-08-18 統一口徑,原本反過來算。
+  const clientPaysPreview = isFinite(grossN) && grossN > 0 ? Math.round((grossN / (1 - COMMISSION)) * 100) / 100 : 0;
 
   const [licenseOk, setLicenseOk] = useState(false);
   async function submitQuote() {
@@ -1214,7 +1215,7 @@ function BriefCard({
     const res = await authedFetch('/api/talent/quotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief_id: brief.id, gross_amount: grossN, currency, message, license_agreed: brief.license_summary ? licenseOk : undefined }),
+      body: JSON.stringify({ brief_id: brief.id, gross_amount: Math.round((grossN / 0.8) * 100) / 100, currency, message, license_agreed: brief.license_summary ? licenseOk : undefined }),
     });
     setBusy(false);
     const j = await res.json().catch(() => ({}));
@@ -1384,10 +1385,10 @@ function BriefCard({
                   ? <span className={`${inputCls} w-24 flex items-center justify-center font-medium text-gray-200 bg-white/[0.07]`} title={tx('幣別依案件預算', '币别依案件预算', 'Currency set by the brief')}>{currency}</span>
                   : <select className={`${inputCls} w-24 cursor-pointer`} value={curSel} onChange={(e) => setCurSel(e.target.value)}>{['USD', 'TWD'].map((c) => <option key={c} value={c} className="bg-black">{c}</option>)}</select>}
                 <input type="number" min="0" disabled={closed} className={`${inputCls} ${closed ? closedFieldCls : ''}`} value={gross} onChange={(e) => setGross(e.target.value)}
-                  placeholder={tx('客戶支付金額(報價)', '客户支付金额(报价)', 'Amount the client pays (your quote)')} />
+                  placeholder={tx('您的報酬(實拿金額)', '您的报酬(实拿金额)', 'Your fee (take-home)')} />
               </div>
               {grossN > 0 && (
-                <p className="text-xs text-green-300">{tx('您的淨收入', '您的净收入', 'Your net take-home')}: {currency} {netPreview} <span className="text-gray-300">({tx('已扣 20% 平台費', '已扣 20% 平台费', 'after 20% fee')})</span></p>
+                <p className="text-xs text-green-300">{tx('客戶支付', '客户支付', 'Client pays')}: {currency} {clientPaysPreview} <span className="text-gray-300">({tx('您實拿 20% 平台費外加', '您实拿 20% 平台费外加', 'you keep your fee; 20% platform fee on top')})</span></p>
               )}
               <textarea className={`${inputCls} min-h-[60px] resize-y ${closed ? closedFieldCls : ''}`} disabled={closed} value={message} onChange={(e) => setMessage(e.target.value)}
                 placeholder={tx('附註(選填):為什麼您適合這個案子…', '附注(选填):为什么您适合这个案子…', 'Note (optional): why you fit this brief…')} />
@@ -1551,7 +1552,10 @@ function RoleAudition({
     const earn = Number(gross); // input = the talent's take-home fee
     if (!isFinite(earn) || earn <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
     // client cases: platform adds 20% on top → the client pays earn / 0.8
-    const grossAmount = brief.source === 'client' ? Math.round((earn / 0.8) * 100) / 100 : earn;
+    // 一律「填實拿 → 客戶付 = 實拿/0.8」(Wing 2026-08-14 一套系統走到底)。
+    // 2026-08-18 修:先前判斷 source,平台自營案把實拿當客戶付送出,後端再扣 20%,
+    // 配音員填 4000 送出後變 3200(羅郁晴回報)。UI 早已寫死 isClient=true,送出端沒跟上。
+    const grossAmount = Math.round((earn / 0.8) * 100) / 100;
     const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
@@ -1789,7 +1793,7 @@ function GeneralResponse({
       if (!Object.values(partUrls).some(Boolean)) return setErr(tx('請至少上傳一段', '请至少上传一段', 'Upload at least one part'));
     } else if (!sampleUrl) return setErr(hasScript ? tx('此案有指定試音稿,請依稿錄製並上傳', '此案有指定试音稿,请依稿录制并上传', 'This case has an audition script — record it and upload') : tx('請選一個 demo 或上傳一段', '请选一个 demo 或上传一段', 'Pick a demo or upload one'));
     if (!isFinite(grossN) || grossN <= 0) return setErr(tx('請填報價', '请填报价', 'Enter your price'));
-    const grossAmount = brief.source === 'client' ? Math.round((grossN / 0.8) * 100) / 100 : grossN; // client: +20% on top
+    const grossAmount = Math.round((grossN / 0.8) * 100) / 100;   // 同上:一律外加 20%,不分案件來源
     const message = [intro.trim(), revPolicy.trim() && `${tx('修改政策', '修改政策', 'Revisions')}: ${revPolicy.trim()}`].filter(Boolean).join('\n\n');
     setBusy(true);
     const res = await authedFetch('/api/talent/quotes', {
