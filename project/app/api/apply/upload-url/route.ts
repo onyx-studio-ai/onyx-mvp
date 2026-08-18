@@ -3,29 +3,33 @@ import { getSupabaseServiceClient, supabaseErrorResponse } from '@/lib/supabase-
 
 const BUCKET = 'talent-submissions';
 const ALLOWED_EXT = ['wav', 'wave', 'mp3', 'm4a', 'aac', 'ogg', 'flac'];
+// 大頭照(2026-08-17 補:申請表原本沒收頭像,每個核准的人都要事後補才上得了架)
+const PHOTO_EXT = ['jpg', 'jpeg', 'png', 'webp'];
 
 // Public (apply form): mint a one-time signed UPLOAD url so applicants can
 // upload their demo directly to storage WITHOUT the bucket allowing anon
 // writes. The signed token (created by service_role) authorizes this single
 // upload; the bucket can then be private + anon-insert policy removed.
 export async function POST(request: NextRequest) {
-  let body: { fileName?: string; role?: string };
+  let body: { fileName?: string; role?: string; kind?: 'demo' | 'photo' };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
+  const isPhoto = body.kind === 'photo';
   const fileName = (body.fileName || '').trim();
   const ext = (fileName.split('.').pop() || '').toLowerCase();
-  if (!ext || !ALLOWED_EXT.includes(ext)) {
+  const allowed = isPhoto ? PHOTO_EXT : ALLOWED_EXT;
+  if (!ext || !allowed.includes(ext)) {
     return NextResponse.json(
-      { error: 'Only audio files (wav, mp3, m4a, aac, ogg, flac) are accepted' },
+      { error: isPhoto ? 'Only images (jpg, png, webp) are accepted' : 'Only audio files (wav, mp3, m4a, aac, ogg, flac) are accepted' },
       { status: 400 }
     );
   }
 
-  const folder = body.role === 'Singer' ? 'singers' : 'voice-actors';
+  const folder = isPhoto ? 'headshots' : body.role === 'Singer' ? 'singers' : 'voice-actors';
   // Opaque filename — the original can carry a phone/PII that would leak in the URL.
   const path = `${folder}/${Date.now()}_${crypto.randomUUID()}.${ext}`;
 
