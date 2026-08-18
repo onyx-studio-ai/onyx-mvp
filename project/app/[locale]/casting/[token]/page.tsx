@@ -353,7 +353,7 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
             {(() => {
               // 一律顯示平台費連動(Wing 2026-08-14:一套系統走到底)
               const earn = Number(gross) || 0;
-              if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('填您的實拿金額;平台費 20% 外加,不從您的報酬扣', 'Enter your take-home fee — the 20% platform fee is added on top, not deducted')}</p>;
+              if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('請填寫您的實得酬勞;平台服務費 20% 另計', 'Please enter your net fee. A 20% platform service fee applies on top.')}</p>;
               const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
               return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
             })()}
@@ -499,7 +499,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
       {(() => {
         // 一律顯示平台費連動(Wing 2026-08-14:一套系統走到底)
         const earn = Number(gross) || 0;
-        if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('填您的實拿金額;平台費 20% 外加,不從您的報酬扣', 'Enter your take-home fee — the 20% platform fee is added on top, not deducted')}</p>;
+        if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('請填寫您的實得酬勞;平台服務費 20% 另計', 'Please enter your net fee. A 20% platform service fee applies on top.')}</p>;
         const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
         return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
       })()}
