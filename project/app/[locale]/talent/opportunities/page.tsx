@@ -1656,10 +1656,12 @@ function RoleAudition({
             {uploading && <p className="text-xs text-gray-300">{tx('上傳中…', '上传中…', 'Uploading…')}</p>}
             {audioUrl && <audio controls src={audioUrl} className="w-full h-9" />}
             {(() => {
-              const isClient = brief.source === 'client';
+              // 2026-08-18:一律 20% 外加(與送出端、另一張報價卡同源);原本分 source 導致
+        // 平台案隱藏平台費欄、超預算判斷拿 net 比預算,與實際收費不符。
+        const isClient = true;
               const net = Number(gross) || 0;
-              const clientPays = isClient ? Math.round((net / 0.8) * 100) / 100 : net;
-              const fee = isClient ? Math.round((clientPays - net) * 100) / 100 : 0;
+              const clientPays = Math.round((net / 0.8) * 100) / 100;
+              const fee = Math.round((clientPays - net) * 100) / 100;
               const budgetN = Number(String(brief.budget || '').replace(/[^\d.]/g, '')) || 0;
               const over = budgetN > 0 && clientPays > budgetN;
               return (
