@@ -342,7 +342,7 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
               const isClient = true;   // 一律顯示平台費連動(Wing 2026-08-14)
               const bt = budgetType === 'Up to' ? tx('上限 ', 'Up to ') : budgetType === 'Fixed' ? tx('固定 ', 'Fixed ') : '';
               const val = isClient ? (budget ? `${bt}${budget}` : '') : (rateNote || '');
-              return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', 'Client budget') : tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+              return val ? <p className="text-[11px] text-gray-500">{tx('本案報酬(參考)', 'Job budget (reference)')} <span className="text-[#E4CB94]">{val}</span></p> : null;
             })()}
             <div className="flex gap-2">
               {dealCurrency
@@ -353,7 +353,7 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
             {(() => {
               // 一律顯示平台費連動(Wing 2026-08-14:一套系統走到底)
               const earn = Number(gross) || 0;
-              if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動)', 'Client brief — 20% platform fee added (auto)')}</p>;
+              if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('填您的實拿金額;平台費 20% 外加,不從您的報酬扣', 'Enter your take-home fee — the 20% platform fee is added on top, not deducted')}</p>;
               const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
               return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
             })()}
@@ -488,7 +488,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
         const isClient = true;   // 一律顯示平台費連動(Wing 2026-08-14)
         const bt = budgetType === 'Up to' ? tx('上限 ', 'Up to ') : budgetType === 'Fixed' ? tx('固定 ', 'Fixed ') : '';
         const val = isClient ? (budget ? `${bt}${budget}` : '') : (rateNote || '');
-        return val ? <p className="text-[11px] text-gray-500">{isClient ? tx('客戶預算', 'Client budget') : tx('本案報酬', 'Job budget')} <span className="text-[#E4CB94]">{val}</span></p> : null;
+        return val ? <p className="text-[11px] text-gray-500">{tx('本案報酬(參考)', 'Job budget (reference)')} <span className="text-[#E4CB94]">{val}</span></p> : null;
       })()}
       <div className="flex gap-2">
         {dealCurrency
@@ -499,7 +499,7 @@ function GuestGeneral({ token, done, closed, source, rateNote, budget, budgetTyp
       {(() => {
         // 一律顯示平台費連動(Wing 2026-08-14:一套系統走到底)
         const earn = Number(gross) || 0;
-        if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('客戶委託 · 平台另收 20% 費用(自動)', 'Client brief — 20% platform fee added (auto)')}</p>;
+        if (earn <= 0) return <p className="text-[11px] text-gray-500">{tx('填您的實拿金額;平台費 20% 外加,不從您的報酬扣', 'Enter your take-home fee — the 20% platform fee is added on top, not deducted')}</p>;
         const feeAmt = Math.round((earn / 0.8 - earn) * 100) / 100;
         return <p className="text-[11px] text-gray-400">{tx('平台費', 'Platform fee')} 20% {currency} {feeAmt}（{tx('自動', 'auto')}）</p>;
       })()}
