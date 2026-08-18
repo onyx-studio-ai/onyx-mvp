@@ -328,7 +328,7 @@ export default function ClientRequestDetail() {
                 <div key={a.id} className={`rounded-xl px-4 py-3 border ${won ? 'border-[#6FCF97]/40 bg-[#6FCF97]/[0.06]' : 'border-white/10 bg-white/[0.02]'}`}>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <span className="text-sm font-medium text-white">{tx('配音員', '配音员', 'Voice')} {a.label}{a.role_name ? ` · ${a.role_name}` : ''}</span>
-                    <span className="text-xs text-gray-400">{a.currency} {a.client_pays?.toLocaleString?.() ?? a.client_pays}</span>
+                    <span className="text-xs text-gray-400" title={tx('已含平台服務費', '已含平台服务费', 'Includes platform service fee')}>{a.currency} {a.client_pays?.toLocaleString?.() ?? a.client_pays} <span className="text-gray-500">{tx('(含服務費)', '(含服务费)', '(incl. fee)')}</span></span>
                   </div>
                   {a.intro && <p className="text-xs text-gray-400 mb-2 whitespace-pre-wrap">{a.intro}</p>}
                   {a.sample_url && <audio controls controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} src={a.sample_url} className="w-full h-9 mb-2" />}
