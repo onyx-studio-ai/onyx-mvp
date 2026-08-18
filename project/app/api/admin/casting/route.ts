@@ -229,7 +229,7 @@ export async function GET(request: NextRequest) {
   if (!brief) return NextResponse.json({ error: 'not found' }, { status: 404 });
   // 本案的試音/報價(給編輯頁「指派」下拉:有試音的人置頂+帶他的報價當預設派工價)。
   const { data: quotes } = await db.from('marketplace_quotes')
-    .select('talent_id, talent_name, role_name, gross_amount, currency, status')
+    .select('talent_id, talent_name, role_name, gross_amount, net_amount, currency, status')
     .eq('brief_id', id).neq('status', 'withdrawn');
   // 已建的角色製作單(給編輯頁標「這角色已指派給誰」)。
   // 注意:voice_orders.talent_id 沒有 FK 到 talents,PostgREST 的 talents(name) 關聯
