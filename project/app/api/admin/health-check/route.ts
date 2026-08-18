@@ -146,6 +146,39 @@ export async function GET(request: NextRequest) {
     const expired = (openCasting || []).filter((b) => auditionDeadlinePassed(b));
     if (expired.length) info.push(`open 但試音已截止的案:${expired.map((b) => b.brief_number).join('、')}(設計上不自動關,若已分完案可手動關)`);
 
+    // H. 金額一致性(2026-08-18 羅郁晴事件後加):訂單金額必須等於報價單的金額 ——
+    // 配音員報價填「實拿」,平台費 20% 外加,所以 price=gross_amount、talent_price=net_amount。
+    // 任何不符都代表某條路徑算錯錢(例如指派時把 gross 當實拿帶入 → 平台多付 25%)。
+    try {
+      const { data: paidOrders } = await db.from('voice_orders')
+        .select('order_number, voice_selection, price, talent_price, quote_id').not('quote_id', 'is', null);
+      const qIds = [...new Set((paidOrders || []).map((o) => String(o.quote_id)))];
+      const qMap = new Map<string, { gross_amount: number | null; net_amount: number | null }>();
+      for (let i = 0; i < qIds.length; i += 100) {
+        const { data: qs } = await db.from('marketplace_quotes').select('id, gross_amount, net_amount').in('id', qIds.slice(i, i + 100));
+        for (const q of qs || []) qMap.set(String(q.id), { gross_amount: q.gross_amount as number | null, net_amount: q.net_amount as number | null });
+      }
+      const mismatched: string[] = [];
+      for (const o of paidOrders || []) {
+        const q = qMap.get(String(o.quote_id));
+        if (!q) continue;
+        const talentOff = q.net_amount != null && Math.abs(Number(o.talent_price) - Number(q.net_amount)) > 1;
+        const clientOff = q.gross_amount != null && Math.abs(Number(o.price) - Number(q.gross_amount)) > 1;
+        if (talentOff || clientOff) mismatched.push(`${o.order_number} ${o.voice_selection || ''}(單:配音員 ${o.talent_price}/客戶 ${o.price} vs 報價:${q.net_amount}/${q.gross_amount})`);
+      }
+      if (mismatched.length) warn.push(`訂單金額與報價不符(可能多付/少付):${cap(mismatched)}`);
+      else info.push(`金額一致性 ✓(${paidOrders?.length || 0} 張有報價的單全部相符)`);
+    } catch (e) {
+      info.push(`金額一致性檢查未完成:${e instanceof Error ? e.message.slice(0, 80) : e}`);
+    }
+
+    // I. 狀態落差:付款已完成但訂單階段還停在「待付款」(後台列表會看不到、配音員上傳被鎖)
+    try {
+      const { data: lag } = await db.from('voice_orders')
+        .select('order_number, voice_selection').eq('status', 'pending_payment').in('payment_status', ['paid', 'completed']);
+      if (lag?.length) warn.push(`付款已完成但單子仍停在「待付款」(列表看不到、配音員無法上傳):${cap(lag.map((o) => `${o.order_number} ${o.voice_selection || ''}`))}`);
+    } catch { /* 欄位缺就跳過 */ }
+
     const report = { ok: warn.length === 0, warn, info, checkedAt: new Date().toISOString() };
 
     // 有異常級才通知(email 必發;Telegram 設了 TELEGRAM_ADMIN_CHAT_ID 才發)
