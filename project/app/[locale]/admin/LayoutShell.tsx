@@ -436,7 +436,22 @@ export default function AdminLayout({ children, buildTag }: { children: React.Re
       )}
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-14 lg:pt-0">
+      {/*
+        手機防爆版(Wing 2026-08-18:後台在手機上內容被卡住、右側點不到、也滑不動)。
+        根因:多處按鈕列是 `flex ... gap-2` 沒有 flex-wrap + 每顆 whitespace-nowrap,
+        375px 塞不下就把整個版面撐寬。與其逐一改 40+ 個容器,在外殼一次防護:
+        ① 主內容區禁止橫向溢出 ② 手機上未指定 flex-wrap 的 flex 容器一律自動換行
+        ③ 長網址/長字串強制斷行。桌機(lg 以上)完全不受影響。
+      */}
+      <style>{`
+        @media (max-width: 1023px) {
+          .onyx-admin-main { overflow-x: hidden; }
+          .onyx-admin-main .flex:not(.flex-nowrap):not(.flex-col) { flex-wrap: wrap; }
+          .onyx-admin-main input, .onyx-admin-main select, .onyx-admin-main textarea { max-width: 100%; }
+          .onyx-admin-main { overflow-wrap: anywhere; }
+        }
+      `}</style>
+      <main className="onyx-admin-main lg:ml-64 pt-14 lg:pt-0">
         {children}
       </main>
     </div>
