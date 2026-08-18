@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Share2, UserPlus , Radio } from 'lucide-react';
+import { Stethoscope, LayoutDashboard, ShoppingCart, Users, Tag, Menu, X, LogOut, Lock, Shield, Mic, FileText, MessageSquare, Award, DollarSign, PlusCircle, Volume2, Waves, Wand2, Wallet, Megaphone, Inbox, TrendingUp, Receipt, Share2, UserPlus , Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BadgeKey = 'orders' | 'inquiries' | 'applications' | 'requests' | 'demos' | 'messages' | 'payoutRequests' | 'talentReview';
@@ -16,6 +16,7 @@ const navGroups: NavGroup[] = [
     titleKey: 'orders',
     items: [
       { href: '/admin/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
+      { href: '/admin/selfcheck', labelKey: 'selfcheck', icon: Stethoscope },
       { href: '/admin/orders', labelKey: 'orders', icon: ShoppingCart, badgeKey: 'orders' },
       { href: '/admin/requests', labelKey: 'requests', icon: Inbox, badgeKey: 'requests' },
       { href: '/admin/inquiries', labelKey: 'inquiries', icon: MessageSquare, badgeKey: 'inquiries' },
@@ -63,6 +64,7 @@ export default function AdminLayout({ children, buildTag }: { children: React.Re
   const dict = isZhTW ? {
     orders: '訂單',
     dashboard: '總覽',
+    selfcheck: '系統自檢',
     requests: '客戶請求',
     inquiries: '詢問單',
     messages: '訊息',
@@ -102,6 +104,7 @@ export default function AdminLayout({ children, buildTag }: { children: React.Re
   } : {
     orders: 'Orders',
     dashboard: 'Dashboard',
+    selfcheck: 'Self-check',
     requests: 'Client Requests',
     inquiries: 'Inquiries',
     messages: 'Messages',
