@@ -157,6 +157,29 @@ export async function PATCH(request: NextRequest) {
             });
           }
 
+          // 申請時上傳的大頭照:私有 talent-submissions → 公開 talent-photos
+          // (2026-08-17 起申請表才收;舊申請沒有這欄,值為 null 就整段跳過)
+          let headshotPublicUrl: string | null = null;
+          if (application.headshot_url) {
+            try {
+              const src = storagePathFromRef(String(application.headshot_url), 'talent-submissions');
+              if (src && !src.startsWith('http')) {
+                const { data: blob } = await db.storage.from('talent-submissions').download(src);
+                if (blob) {
+                  const ext = (src.split('.').pop() || 'jpg').toLowerCase();
+                  const dest = `${id}/${Date.now()}.${ext}`;
+                  const { error: upErr } = await db.storage.from('talent-photos')
+                    .upload(dest, Buffer.from(await blob.arrayBuffer()), { contentType: blob.type || 'image/jpeg', upsert: true });
+                  if (!upErr) headshotPublicUrl = db.storage.from('talent-photos').getPublicUrl(dest).data.publicUrl;
+                }
+              } else if (src?.startsWith('http')) {
+                headshotPublicUrl = src;
+              }
+            } catch (e) {
+              console.error('[Applications] headshot copy failed:', e);
+            }
+          }
+
           // Service classification (from collaboration choices) — prepended so
           // it shows first in the roster. Lets clients see who does AI/TTS and
           // lets us target broadcasts by service type. Canonical English; the
@@ -222,6 +245,7 @@ export async function PATCH(request: NextRequest) {
             // 2026-08-17 修:先前只進 tags,結構化欄位全空 → 配音員登入看到半空檔案、
             // 審核也永遠不合格(小琴回報)。
             ...talentFieldsFromApplication(application),
+            ...(headshotPublicUrl ? { headshot_url: headshotPublicUrl } : {}),
           }]).select('id').single();
 
           if (talentError) {
