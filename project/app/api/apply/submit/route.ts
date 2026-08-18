@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // language but never reaches the insert — talent_applications has no such column.
     // otpCode/otpToken/otpExp are the OTP proof — verified here, then dropped
     // (they're not columns on talent_applications either).
-    const { fileUrl, fileName, fileSize, locale, otpCode, otpToken, otpExp, ...formData } = body;
+    const { fileUrl, fileName, fileSize, photoUrl, locale, otpCode, otpToken, otpExp, ...formData } = body;
 
     const zh = typeof locale === 'string' && locale.startsWith('zh');
     const bad = (zhMsg: string, enMsg: string) =>
@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       demo_file_url: fileUrl || '',
       demo_file_name: fileName || '',
       demo_file_size: fileSize || 0,
+      headshot_url: photoUrl || null,   // 2026-08-17 補收大頭照(選填;上架需要)
       status: 'pending',
       application_number: '',
     };
