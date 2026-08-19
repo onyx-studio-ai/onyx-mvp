@@ -26,21 +26,28 @@ export async function POST(request: NextRequest) {
   const numById = new Map((orders || []).map((o) => [o.id, o.order_number]));
 
   const { data: versions } = await db.from('voice_order_versions')
-    .select('voice_order_id, file_url, file_name, version_number')
+    .select('voice_order_id, file_url, file_name, version_number, created_at')
     .in('voice_order_id', ids)
-    .order('version_number', { ascending: true });
+    .order('created_at', { ascending: true });
 
-  // 每張單只留最新一版(照 version_number 升冪,後蓋前)
-  const latest = new Map<string, { file_url: string; file_name: string }>();
-  for (const v of versions || []) latest.set(v.voice_order_id, { file_url: v.file_url, file_name: v.file_name });
+  // 一張單可能有多個「不同的檔」(多支影片的案子:茹芸 A422 一張單交 7 支),
+  // 所以要以「單 × 檔名」為單位各取最新版,不是整張單只取一版 ——
+  // 舊寫法讓 7 支的單永遠只下載得到 1 支,配音員交了修改版也看不出來
+  // (2026-08-19 實際踩到:8/18 交的兩支修改版打包時抓不到)。
+  // 排序改用 created_at:version_number 會撞號(同批上傳的多檔拿到同一個號)。
+  const latest = new Map<string, { file_url: string; file_name: string; order_id: string }>();
+  for (const v of versions || []) {
+    const key = `${v.voice_order_id}\u0000${v.file_name}`;
+    latest.set(key, { file_url: v.file_url as string, file_name: v.file_name as string, order_id: v.voice_order_id as string });
+  }
   if (!latest.size) return NextResponse.json({ error: '勾選的訂單裡還沒有任何交付檔' }, { status: 404 });
 
   const zip = new JSZip();
   const used = new Set<string>();
   let added = 0;
   const skipped: string[] = [];
-  for (const [orderId, v] of latest) {
-    const num = String(numById.get(orderId) || orderId.slice(0, 8));
+  for (const v of latest.values()) {
+    const num = String(numById.get(v.order_id) || v.order_id.slice(0, 8));
     let name = `${clean(num)}_${clean(v.file_name)}`;
     for (let n = 2; used.has(name); n++) name = `${clean(num)}_${n}_${clean(v.file_name)}`;
     used.add(name);
