@@ -37,12 +37,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '本輪修改有加收費用,請先在單卡按「同意」後再上傳。' }, { status: 400 });
   }
 
-  const { count } = await r.db.from('voice_order_versions').select('id', { count: 'exact', head: true }).eq('voice_order_id', order.id);
-  const base = count || 0;
-  const rows = files.map((f, i) => ({
-    voice_order_id: order.id, file_url: f.url, file_name: f.name, notes: '配音員交付(指派)',
-    version_number: base + i + 1, status: 'pending_review',
-  }));
+  // version_number = 「這個檔案的第幾版」,不是「這張單的第幾筆上傳」。
+  // 舊算法(既有筆數+i+1)讓一次交 13 支不同影片的案子變成 V1~V13,看起來像同一支
+  // 改了 13 次,後台完全分不出「交了幾支」與「哪支補交過」(2026-08-19 Wing 指出)。
+  const { data: prevVers } = await r.db.from('voice_order_versions').select('file_name').eq('voice_order_id', order.id);
+  const seen = new Map<string, number>();
+  for (const p of prevVers || []) seen.set(String(p.file_name), (seen.get(String(p.file_name)) || 0) + 1);
+  const rows = files.map((f) => {
+    const n = (seen.get(f.name) || 0) + 1;
+    seen.set(f.name, n);
+    return {
+      voice_order_id: order.id, file_url: f.url, file_name: f.name, notes: '配音員交付(指派)',
+      version_number: n, status: 'pending_review',
+    };
+  });
   const { error } = await r.db.from('voice_order_versions').insert(rows);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   // download_url 指向這批最後一個檔(客戶端「最新版」用)
