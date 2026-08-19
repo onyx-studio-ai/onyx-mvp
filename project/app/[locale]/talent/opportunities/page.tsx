@@ -16,6 +16,7 @@ import { useLocale } from 'next-intl';
 import { langLabel, LANGUAGES } from '@/lib/languages';
 import Link from 'next/link';
 import { Briefcase, CheckCircle2, Archive, FileText, User, Clock } from 'lucide-react';
+import { readWavSpec, specMatchesStd, specLabel } from '@/lib/audio-spec';
 import { supabase } from '@/lib/supabase';
 import { authedFetch } from '@/lib/authed-fetch';
 import { groupByUploadDate } from '@/lib/deliveries';
@@ -256,6 +257,44 @@ function useQuoteDefaults(templates: Templates, setIntro: SetStr, setRevPolicy: 
 
 const DELIVERY_ACCEPT = '.wav,.mp3,.m4a,.aac,.ogg,.flac,.zip';
 
+/* 交付規格提示(Wing 2026-08-19:平台標準 48kHz/24bit/Mono,但**不擋上傳**,只友善告知)。
+   在配音員按下上傳的當下就讀 WAV 檔頭比對 —— 免得像 2026-08-18 茹芸那樣,交了立體聲
+   到驗收才發現。非 WAV(mp3/zip)不判,回 null 就當沒這回事。 */
+type SpecNote = { name: string; label: string; ok: boolean };
+
+async function checkDeliverySpecs(files: File[], tx: (a: string, b: string, c: string) => string): Promise<SpecNote[]> {
+  const out: SpecNote[] = [];
+  for (const f of files) {
+    const spec = await readWavSpec(f);
+    if (!spec) continue;                       // 非 WAV / 讀不到檔頭 → 不提示
+    out.push({ name: f.name, label: specLabel(spec, tx), ok: specMatchesStd(spec) });
+  }
+  return out;
+}
+
+function SpecHints({ notes, tx }: { notes: SpecNote[]; tx: (a: string, b: string, c: string) => string }) {
+  if (!notes.length) return null;
+  const bad = notes.filter((n) => !n.ok);
+  return (
+    <div className="space-y-1">
+      {notes.map((n, i) => (
+        <p key={i} className={`text-[10px] ${n.ok ? 'text-[#6FCF97]' : 'text-amber-300'}`}>
+          {n.ok ? '✓' : '•'} {n.name} — {n.label}
+        </p>
+      ))}
+      {bad.length > 0 && (
+        <p className="text-[10px] text-amber-200/90 bg-amber-500/10 border border-amber-400/30 rounded px-2 py-1.5 leading-relaxed">
+          {tx(
+            '檔案已收到,不影響交件。提醒您:本平台的交付標準是 48kHz / 24bit / 單聲道 —— 若上方標示與此不同且非本案特別指定,建議依標準重新輸出後再上傳一次(直接覆蓋即可)。如有疑問歡迎與我們聯繫。',
+            '文件已收到,不影响交付。提醒您:本平台的交付标准是 48kHz / 24bit / 单声道 —— 若上方标示与此不同且非本案特别指定,建议按标准重新导出后再上传一次(直接覆盖即可)。如有疑问欢迎与我们联系。',
+            'Your files have been received — this does not affect your delivery. A note: our standard delivery format is 48kHz / 24-bit / mono. If the specs above differ and this was not specified for this project, we recommend re-exporting to the standard and uploading again (it will simply replace the previous file). Do get in touch if anything is unclear.'
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // 逐檔進 casting storage,回傳 { delivery_url, file_name };整批收齊後才打一次交付 API。
 async function uploadOneToCasting(file: File, tx: (a: string, b: string, c: string) => string): Promise<{ delivery_url: string; file_name: string }> {
   const u = await authedFetch('/api/talent/delivery-upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: file.name }) });
@@ -322,9 +361,11 @@ function AssignedDelivery({ orderId, deliveries, tx, onChanged }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [specs, setSpecs] = useState<SpecNote[]>([]);
   // 一次選多檔 → 全部進 storage → 一次 API(整批只算一次交付、只發一封通知)。
   async function uploadFiles(files: File[]) {
     setErr(''); setBusy(true);
+    setSpecs(await checkDeliverySpecs(files, tx));   // 規格只提示,不擋
     try {
       const uploaded: { delivery_url: string; file_name: string }[] = [];
       for (const f of files) uploaded.push(await uploadOneToCasting(f, tx));
@@ -352,7 +393,8 @@ function AssignedDelivery({ orderId, deliveries, tx, onChanged }: {
         <input type="file" multiple accept={DELIVERY_ACCEPT} className="hidden" disabled={busy}
           onChange={(e) => { const fs = Array.from(e.target.files || []); e.target.value = ''; if (fs.length) uploadFiles(fs); }} />
       </label>
-      <p className="text-[10px] text-gray-300">{tx('可一次選多個檔上傳(建議 48kHz/24-bit WAV;多檔也可打包 zip)', '可一次选多个档上传(建议 48kHz/24-bit WAV;多档也可打包 zip)', 'Select several files at once (48kHz/24-bit WAV preferred; zip also fine)')}</p>
+      <p className="text-[10px] text-gray-300">{tx('可一次選多個檔上傳。交付標準:WAV / 48kHz / 24bit / 單聲道(多檔也可打包 zip)', '可一次选多个档上传。交付标准:WAV / 48kHz / 24bit / 单声道(多档也可打包 zip)', 'Select several files at once. Delivery standard: WAV / 48kHz / 24-bit / mono (zip also fine).')}</p>
+      <SpecHints notes={specs} tx={tx} />
       {err && <p className="text-[10px] text-red-400">{err}</p>}
     </div>
   );
@@ -364,8 +406,10 @@ function DeliveryUpload({ quote, deliveries, tx, onChanged }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [specs, setSpecs] = useState<SpecNote[]>([]);
   async function uploadFiles(files: File[]) {
     setErr(''); setBusy(true);
+    setSpecs(await checkDeliverySpecs(files, tx));   // 規格只提示,不擋
     try {
       const uploaded: { delivery_url: string; file_name: string }[] = [];
       for (const f of files) uploaded.push(await uploadOneToCasting(f, tx));
@@ -397,7 +441,8 @@ function DeliveryUpload({ quote, deliveries, tx, onChanged }: {
         <input type="file" multiple accept={DELIVERY_ACCEPT} className="hidden" disabled={busy}
           onChange={(e) => { const fs = Array.from(e.target.files || []); e.target.value = ''; if (fs.length) uploadFiles(fs); }} />
       </label>
-      <p className="text-[10px] text-gray-300">{tx('可一次選多個完成檔 / 修改檔(建議 48kHz/24-bit WAV;多檔可打包 zip)', '可一次选多个完成档 / 修改档(建议 48kHz/24-bit WAV;多档可打包 zip)', 'Select several final / revision files at once (48kHz/24-bit WAV preferred; zip for bundles)')}</p>
+      <p className="text-[10px] text-gray-300">{tx('可一次選多個完成檔 / 修改檔。交付標準:WAV / 48kHz / 24bit / 單聲道(多檔可打包 zip)', '可一次选多个完成档 / 修改档。交付标准:WAV / 48kHz / 24bit / 单声道(多档可打包 zip)', 'Select several final / revision files at once. Delivery standard: WAV / 48kHz / 24-bit / mono (zip for bundles).')}</p>
+      <SpecHints notes={specs} tx={tx} />
       {err && <p className="text-[10px] text-red-400">{err}</p>}
     </div>
   );
