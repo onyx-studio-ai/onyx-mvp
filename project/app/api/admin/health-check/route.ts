@@ -104,6 +104,15 @@ export async function GET(request: NextRequest) {
       .eq('payment_status', 'pending');
     if (stuck?.length) warn.push(`已開錄但付款仍 pending(配音員無法上傳交付;線下收款案請標「已付款」):${cap(stuck.map((o) => `${o.order_number} ${o.voice_selection || o.project_name || ''}`))}`);
 
+    // D2b. 已通知配音員開錄、卻沒填交期欄位(2026-08-19 A422 台語講解:交期只打在製作
+    // 說明的文字裡,deadline 欄位空 → 配音員卡片不顯示交期、交件提醒也不會排)。
+    const { data: noDue } = await db.from('voice_orders')
+      .select('order_number, project_name, role_name')
+      .not('released_at', 'is', null).not('talent_id', 'is', null)
+      .not('status', 'in', '("completed","cancelled")')
+      .is('deadline', null);
+    if (noDue?.length) warn.push(`已通知開錄但沒填交期欄位(配音員看不到期限、系統不會排提醒;寫在製作說明的文字不算):${cap(noDue.map((o) => `${o.order_number} ${o.role_name || o.project_name || ''}`))}`);
+
     // D3. 申請核准 >7 天仍未上架:公開名冊長不出來的隱形庫存(2026-08-17 小琴案例
     // 挖出 51 位卡關)。附缺件原因,才知道是等對方補件還是等我們審。
     const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
