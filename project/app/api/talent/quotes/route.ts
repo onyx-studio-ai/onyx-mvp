@@ -266,11 +266,18 @@ export async function PATCH(request: NextRequest) {
     if (order && order.status !== 'completed') {
       const { count } = await r.db.from('voice_order_versions').select('id', { count: 'exact', head: true }).eq('voice_order_id', order.id);
       firstDelivery = (count || 0) === 0;
-      const base = count || 0;
-      const rows = deliveryFiles.map((f, i) => ({
-        voice_order_id: order.id, file_url: f.url, file_name: f.name,
-        notes: '配音員交付', version_number: base + i + 1, status: 'pending_review',
-      }));
+      // 同上:版本號是「這個檔案的第幾版」,多支影片的案子一次交多檔不該變成 V1~VN。
+      const { data: prevVers } = await r.db.from('voice_order_versions').select('file_name').eq('voice_order_id', order.id);
+      const seen = new Map<string, number>();
+      for (const pv of prevVers || []) seen.set(String(pv.file_name), (seen.get(String(pv.file_name)) || 0) + 1);
+      const rows = deliveryFiles.map((f) => {
+        const n = (seen.get(f.name) || 0) + 1;
+        seen.set(f.name, n);
+        return {
+          voice_order_id: order.id, file_url: f.url, file_name: f.name,
+          notes: '配音員交付', version_number: n, status: 'pending_review',
+        };
+      });
       // 版本 insert / 訂單轉 delivered 靜默失敗 = 配音員看到「交付成功」、客戶端卻沒版本可審
       // (2026-07-23 審查)→ 接 error 回 500;quote 的 delivery_url 已寫入,log 提示人工補。
       const { error: verErr } = await r.db.from('voice_order_versions').insert(rows);
