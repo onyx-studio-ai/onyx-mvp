@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     // 需要的資料一次撈
     const [{ data: talents }, pv48, { data: openCasting }] = await Promise.all([
-      db.from('talents').select('id, name, type, gender, is_active, voice_id_status, application_id, published_snapshot, languages, native_languages, demos, demo_urls, sample_url, phone, line_user_id, telegram_chat_id'),
+      db.from('talents').select('id, name, email, type, gender, is_active, voice_id_status, application_id, published_snapshot, languages, native_languages, demos, demo_urls, sample_url, phone, line_user_id, telegram_chat_id'),
       db.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 48 * 3600_000).toISOString()),
       db.from('marketplace_briefs').select('brief_number, audition_deadline, audition_deadline_time, deadline, timezone, created_at').eq('kind', 'casting').eq('status', 'open'),
     ]);
