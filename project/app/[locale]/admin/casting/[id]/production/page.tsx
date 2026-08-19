@@ -18,7 +18,7 @@ import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null; revision_note?: string | null; revision_files?: RefFile[] | null; revision_count?: number | null; script_files?: RefFile[] | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null; revision_note?: string | null; revision_files?: RefFile[] | null; revision_count?: number | null; script_files?: RefFile[] | null; deliveries?: { file_name: string; file_url: string; created_at: string; status?: string | null }[] | null };
 // 參考音(大陸版角色參考)與中選聲線(配音員自己的中選示範)分開存、分開傳(Wing 2026-07-15)。
 type AudioField = 'reference_files' | 'voice_sample_files';
 
@@ -408,6 +408,21 @@ export default function ProductionPage() {
                 {o.talent_reach && <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5">✓{o.talent_reach}</span>}
                 {o.talent_name && !o.talent_reach && !o.talent_phone && <span className="text-[10px] text-red-700 bg-red-50 border border-red-200 rounded-full px-1.5">⚠ 僅 email</span>}
                 <span className={`text-[11px] px-2 py-0.5 rounded-full border ${o.status === 'delivered' ? 'bg-sky-50 text-sky-700 border-sky-200' : o.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-violet-50 text-violet-700 border-violet-200'}`}>{o.status === 'delivered' ? '已交付·待驗收' : o.status === 'completed' ? '已完成' : '待錄製'}</span>
+                {(o.deliveries || []).length > 0 && (
+                  <div className="w-full mt-2 border border-sky-200 bg-sky-50/60 rounded-lg p-2.5">
+                    <p className="text-[11px] font-medium text-sky-900 mb-1.5">配音員已交付 {(o.deliveries || []).length} 個檔案</p>
+                    <div className="space-y-1">
+                      {(o.deliveries || []).map((d, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-white border border-gray-200 rounded px-2 py-1">
+                          <span className="text-[11px] text-gray-800 truncate max-w-[38%]" title={d.file_name}>{d.file_name}</span>
+                          <span className="text-[10px] text-gray-400 shrink-0">{String(d.created_at).slice(5, 16).replace('T', ' ')}</span>
+                          <audio controls preload="none" src={d.file_url} className="h-8 flex-1 min-w-0" />
+                          <a href={d.file_url} download target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline shrink-0">下載</a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {(o.status === 'delivered' || o.status === 'completed' || (o.revision_count || 0) > 0) && (
                   <button onClick={() => { setRevFor(revFor === o.id ? null : o.id); setRevNote(o.revision_note || ''); setRevFiles(o.revision_files || []); setRevFee(''); }}
                     className="text-[11px] px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100">
