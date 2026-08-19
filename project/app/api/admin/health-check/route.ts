@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       .eq('payment_status', 'pending');
     if (stuck?.length) warn.push(`已開錄但付款仍 pending(配音員無法上傳交付;線下收款案請標「已付款」):${cap(stuck.map((o) => `${o.order_number} ${o.voice_selection || o.project_name || ''}`))}`);
 
-    // D2b. 已通知配音員開錄、卻沒填交期欄位(2026-08-19 A422 台語講解:交期只打在製作
+    // D2b(2026-08-19 上線). 已通知配音員開錄、卻沒填交期欄位(2026-08-19 A422 台語講解:交期只打在製作
     // 說明的文字裡,deadline 欄位空 → 配音員卡片不顯示交期、交件提醒也不會排)。
     const { data: noDue } = await db.from('voice_orders')
       .select('order_number, project_name, role_name')
