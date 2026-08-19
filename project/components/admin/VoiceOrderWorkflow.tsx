@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPlatformCase } from '@/lib/casting';
 import { groupByUploadDate } from '@/lib/deliveries';
@@ -138,6 +138,20 @@ async function assignOrderTalent(orderId: string, talentId: string) {
 export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
   const { toast } = useToast();
   const [versions, setVersions] = useState<Version[]>([]);
+  // 一張單可能是「多支不同影片」(A422 講解 7 支、Modern Caregiving 13 支),不是同一支的多版。
+  // 所以版次要按「檔名」各算各的:同檔名第 1 次上傳 = v1,補交同檔名 = v2。
+  // 不用 DB 的 version_number —— 舊資料是用「這張單第幾筆上傳」寫的(V1~V13),語意本來就錯。
+  const verIdx = useMemo(() => {
+    const byName = new Map<string, string[]>();
+    for (const v of [...versions].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))) {
+      const arr = byName.get(v.file_name) || [];
+      arr.push(v.id);
+      byName.set(v.file_name, arr);
+    }
+    const idx = new Map<string, { n: number; total: number }>();
+    for (const arr of byName.values()) arr.forEach((id, i) => idx.set(id, { n: i + 1, total: arr.length }));
+    return { idx, fileCount: byName.size };
+  }, [versions]);
   // 客戶修改需求(2026-07-20 Wing:在訂單頁驗收就在訂單頁發修改)
   const [revOpen, setRevOpen] = useState(false);
   const [revNote, setRevNote] = useState('');
@@ -736,7 +750,9 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
         <div className="bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
             <Mic className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-semibold text-cyan-400">Versions ({versions.length})</span>
+            <span className="text-sm font-semibold text-cyan-400">
+              交付檔案 ({verIdx.fileCount}{versions.length > verIdx.fileCount ? ` 個 · 共 ${versions.length} 次上傳` : ' 個'})
+            </span>
             <div className="ml-auto flex items-center gap-2">
               {/* 全部設為最終交付:多檔交付案一鍵把所有版本收成成品,不用一個一個點 */}
               {order.status !== 'completed' && versions.some((v) => !deliverables.some((d) => d.file_url === v.file_url)) && (
@@ -804,12 +820,21 @@ export default function VoiceOrderWorkflow({ order, onStatusChange }: Props) {
                     <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
                       isApproved ? 'bg-green-500 text-white' : 'bg-zinc-800'
                     }`}>
-                      {isApproved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="text-xs text-gray-500">V{ver.version_number}</span>}
+                      {isApproved
+                        ? <CheckCircle2 className="w-3.5 h-3.5" />
+                        : <span className="text-[10px] text-gray-500">{(verIdx.idx.get(ver.id)?.total || 1) > 1 ? `v${verIdx.idx.get(ver.id)?.n}` : '♪'}</span>}
                     </div>
                     <FileAudio className={`w-4 h-4 flex-shrink-0 ${isApproved ? 'text-green-400' : 'text-cyan-400'}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm text-gray-200 truncate font-medium">{ver.file_name}</p>
+                        {(() => {
+                          const vi = verIdx.idx.get(ver.id);
+                          if (!vi || vi.total < 2) return null;
+                          return vi.n === vi.total
+                            ? <Badge className="text-[10px] bg-sky-500/20 text-sky-300 border-sky-500/40">最新版(第 {vi.n} 版)</Badge>
+                            : <Badge className="text-[10px] bg-zinc-700/60 text-gray-400 border-zinc-600">舊版(第 {vi.n} 版)</Badge>;
+                        })()}
                         {isApproved && (
                           <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/40 gap-1">
                             <CheckCircle2 className="w-2.5 h-2.5" /> Approved
