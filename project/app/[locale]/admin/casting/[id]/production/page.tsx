@@ -261,7 +261,24 @@ export default function ProductionPage() {
 
   // 發出通知:把未 released 的指派單正式開給配音員(可見+寄信+Telegram)。
   // 發出前自動把「改了但沒按儲存」的單全部存一遍(Wing:一張張按怕漏)。
+  // 發出前的把關(2026-08-19 Wing 定調):平台交付標準一律 48kHz/24bit/Mono,
+  // 製作說明沒寫規格 → 配音員各交各的(女王百貨 44.1k/16bit、手遊 16bit 都是這樣來的);
+  // 交期沒填進欄位 → 配音員卡片看不到期限、系統也不會排提醒。兩者都只提醒不硬擋。
+  const SPEC_RE = /48\s*k|24\s*?bit|mono|單聲道|单声道/i;
+  const STD_SPEC_LINE = '【錄音規格】WAV / MONO 單聲道 / 24bit / 48kHz 乾聲(不加殘響、不做壓縮處理)。';
+  function preReleaseWarnings(list: Order[]): string[] {
+    const w: string[] = [];
+    const noSpec = list.filter((o) => !SPEC_RE.test(String(draft[o.id]?.notes ?? o.production_notes ?? '')));
+    const noDue = list.filter((o) => !(draft[o.id]?.deadline || o.deadline));
+    if (noSpec.length) w.push(`${noSpec.length} 張單的製作說明沒有寫錄音規格(平台標準:WAV / 48kHz / 24bit / Mono)`);
+    if (noDue.length) w.push(`${noDue.length} 張單沒有填交件期限(配音員卡片會看不到期限)`);
+    return w;
+  }
+
   async function releaseOrders(orderIds?: string[]) {
+    const targets = (orderIds?.length ? orders.filter((o) => orderIds.includes(o.id)) : unreleased);
+    const warns = preReleaseWarnings(targets);
+    if (warns.length && !window.confirm(`發出前提醒:\n\n・${warns.join('\n・')}\n\n仍要發出嗎?(有特殊規格或不設期限的案子可直接繼續)`)) return;
     setBusy('release');
     try {
       if (dirtyOrders.length) {
@@ -501,7 +518,18 @@ export default function ProductionPage() {
                   </div>
                 </div>
               )}
-              <label className="block mb-2"><span className="text-xs text-gray-600 mb-1 block">製作備註(給配音員的細則,例:台詞語感可微調,但商品名/專有名詞不可改)</span>
+              <label className="block mb-2">
+                <span className="text-xs text-gray-600 mb-1 flex items-center gap-2 flex-wrap">
+                  製作備註(給配音員的細則,例:台詞語感可微調,但商品名/專有名詞不可改)
+                  {/* 規格漏寫 = 配音員各交各的(2026-08-19)。一鍵補上平台標準,特殊案再手改。 */}
+                  {!SPEC_RE.test(d.notes) && (
+                    <button type="button"
+                      onClick={() => setDraft((st) => ({ ...st, [o.id]: { ...d, notes: `${d.notes ? d.notes.replace(/\s*$/, '') + '\n' : ''}${STD_SPEC_LINE}` } }))}
+                      className="text-[11px] px-2 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">
+                      + 插入標準規格
+                    </button>
+                  )}
+                </span>
                 <textarea className={`${input} min-h-[56px] resize-y`} value={d.notes} placeholder="例:語氣詞可依口語習慣微調;角色名、品牌名、技能名稱一律照稿,不可改。" onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, notes: e.target.value } }))} /></label>
               <label className="block mb-2"><span className="text-xs text-gray-600 mb-1 block">台詞 / 製作稿(配音員線上看)</span>
                 <textarea className={`${input} min-h-[120px] resize-y font-mono text-[13px]`} value={d.script} onChange={(e) => setDraft((s) => ({ ...s, [o.id]: { ...d, script: e.target.value } }))} /></label>
