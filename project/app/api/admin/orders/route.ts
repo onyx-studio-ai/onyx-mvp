@@ -147,10 +147,10 @@ export async function PATCH(request: NextRequest) {
             } else {
               // Voice emails are tier-aware (AI vs human) + localized — fetch both,
               // resiliently (the locale column may not be migrated yet).
-              const vq = await db.from('voice_orders').select('tier, locale, auto_approve_at').eq('id', orderId).maybeSingle();
-              const vrow = (vq.data || (await db.from('voice_orders').select('tier').eq('id', orderId).maybeSingle()).data) as { tier?: string; locale?: string; auto_approve_at?: string | null } | null;
+              const vq = await db.from('voice_orders').select('tier, locale, auto_approve_at, talent_id').eq('id', orderId).maybeSingle();
+              const vrow = (vq.data || (await db.from('voice_orders').select('tier').eq('id', orderId).maybeSingle()).data) as { tier?: string; locale?: string; auto_approve_at?: string | null; talent_id?: string | null } | null;
               // 交付信要告知自動完成日期(只有外部客戶案有值;平台自營案為 null → 信裡不出現這段)
-              emailResult = voiceWorkflowEmail({ type: notifType as VoiceNotificationType, email: orderData.email, orderNumber: orderData.order_number, orderId, dashboardLink, tier: vrow?.tier, locale: vrow?.locale, autoApproveAt: vrow?.auto_approve_at ?? null });
+              emailResult = voiceWorkflowEmail({ type: notifType as VoiceNotificationType, email: orderData.email, orderNumber: orderData.order_number, orderId, dashboardLink, tier: vrow?.tier, locale: vrow?.locale, autoApproveAt: vrow?.auto_approve_at ?? null, hasTalent: !!vrow?.talent_id });
             }
             await sendEmail({ category: 'PRODUCTION', to: orderData.email, subject: emailResult.subject, html: emailResult.html });
           }
