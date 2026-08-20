@@ -37,15 +37,15 @@ export async function GET(request: NextRequest) {
   // 導致「配音員明明交了、後台卻像沒收到」(2026-08-19 茹芸 A422 修改版)。
   // 一張單可能有多個不同的檔(多支影片),同檔名只留最新一版(照 created_at)。
   const orderIds = (orders || []).map((o) => o.id as string);
-  const delivByOrder: Record<string, { file_name: string; file_url: string; created_at: string; status?: string | null }[]> = {};
+  const delivByOrder: Record<string, { file_name: string; file_url: string; created_at: string; status?: string | null; audio_spec?: Record<string, number> | null }[]> = {};
   if (orderIds.length) {
     const { data: vers } = await db.from('voice_order_versions')
-      .select('voice_order_id, file_name, file_url, created_at, status')
+      .select('voice_order_id, file_name, file_url, created_at, status, audio_spec')
       .in('voice_order_id', orderIds)
       .order('created_at', { ascending: true });
-    const latest = new Map<string, { file_name: string; file_url: string; created_at: string; status?: string | null }>();
+    const latest = new Map<string, { file_name: string; file_url: string; created_at: string; status?: string | null; audio_spec?: Record<string, number> | null }>();
     for (const v of vers || []) {
-      latest.set(`${v.voice_order_id}\u0000${v.file_name}`, { file_name: String(v.file_name), file_url: String(v.file_url), created_at: String(v.created_at), status: (v.status as string | null) ?? null });
+      latest.set(`${v.voice_order_id}\u0000${v.file_name}`, { file_name: String(v.file_name), file_url: String(v.file_url), created_at: String(v.created_at), status: (v.status as string | null) ?? null, audio_spec: (v.audio_spec as Record<string, number> | null) ?? null });
     }
     for (const [key, v] of latest) {
       const oid = key.split('\u0000')[0];
