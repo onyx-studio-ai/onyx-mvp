@@ -113,6 +113,28 @@ export async function GET(request: NextRequest) {
       .is('deadline', null);
     if (noDue?.length) warn.push(`已通知開錄但沒填交期欄位(配音員看不到期限、系統不會排提醒;寫在製作說明的文字不算):${cap(noDue.map((o) => `${o.order_number} ${o.role_name || o.project_name || ''}`))}`);
 
+    // D2c. 交付檔規格不符平台標準(48kHz / 24bit / mono)。2026-08-18 茹芸交了假立體聲,
+    // 是交件當天人工查才發現;現在交付時會記錄 audio_spec,這裡自動抓出來。
+    // audio_spec 為 null = 非 WAV 或舊資料,不算異常。
+    const { data: badSpec } = await db.from('voice_order_versions')
+      .select('voice_order_id, file_name, audio_spec')
+      .not('audio_spec', 'is', null)
+      .limit(500);
+    const offSpec = (badSpec || []).filter((v) => {
+      const s2 = v.audio_spec as { rate?: number; bits?: number; channels?: number } | null;
+      return !!s2?.rate && !(s2.rate === 48000 && s2.bits === 24 && s2.channels === 1);
+    });
+    if (offSpec.length) {
+      const oids = [...new Set(offSpec.map((v) => v.voice_order_id as string))];
+      const { data: ords2 } = await db.from('voice_orders').select('id, order_number').in('id', oids);
+      const numById = new Map((ords2 || []).map((o) => [o.id as string, o.order_number as string]));
+      warn.push(`交付檔規格不符平台標準(48kHz/24bit/mono):${cap(offSpec.map((v) => {
+        const sp = v.audio_spec as { rate?: number; bits?: number; channels?: number };
+        const ch = sp.channels === 1 ? 'mono' : sp.channels === 2 ? 'stereo' : `${sp.channels}ch`;
+        return `${numById.get(v.voice_order_id as string) || ''} ${v.file_name}(${(sp.rate || 0) / 1000}k/${sp.bits}bit/${ch})`;
+      }))}`);
+    }
+
     // D3. 申請核准 >7 天仍未上架:公開名冊長不出來的隱形庫存(2026-08-17 小琴案例
     // 挖出 51 位卡關)。附缺件原因,才知道是等對方補件還是等我們審。
     const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
