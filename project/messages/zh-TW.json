@@ -1533,7 +1533,10 @@
       "approved": "已確認",
       "revisionRequested": "已要求修訂",
       "teamNote": "團隊備註：{notes}",
-      "yourFeedback": "您的回饋：{feedback}"
+      "yourFeedback": "您的回饋：{feedback}",
+      "filesReady": "{count} 個交付檔已就緒 — 請審核",
+      "approveDelivery": "確認這批交付({count} 個檔案)",
+      "deliveryInProduction": "製作中"
     },
     "musicDetail": {
       "productionProgress": "製作進度",
@@ -2991,7 +2994,9 @@
       "threadEmpty": "尚無訊息",
       "threadPlaceholder": "以 Onyx 身分回覆…",
       "send": "送出",
-      "internalClient": "客戶"
+      "internalClient": "客戶",
+      "toOrderSourceAsk": "這是平台自營案,還是外部客戶案?\n\n【確定】= 平台自營案 —— 帳務聯絡人自動使用平台信箱,不需輸入\n【取消】= 外部客戶案 —— 接著請輸入客戶 email",
+      "toOrderClientEmailAsk": "請輸入客戶 email(用於帳務與交付):"
     },
     "applications": {
       "title": "配音員申請",
