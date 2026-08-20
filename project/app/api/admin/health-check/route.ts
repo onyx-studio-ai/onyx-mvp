@@ -113,6 +113,15 @@ export async function GET(request: NextRequest) {
       .is('deadline', null);
     if (noDue?.length) warn.push(`已通知開錄但沒填交期欄位(配音員看不到期限、系統不會排提醒;寫在製作說明的文字不算):${cap(noDue.map((o) => `${o.order_number} ${o.role_name || o.project_name || ''}`))}`);
 
+    // D2d. 訂單的帳務信箱長得像自家 casting@ 但拼錯(2026-08-20:83 張裡曾有 5 張打成
+    // .io/.com 或少一個 s)→ isPlatformCase() 認不得,平台自營案被當成外部客戶案。
+    // 開案 UI 已改成不能手打,這裡是兜底,防止其他入口或人工改資料再種進來。
+    const { data: mailOdd } = await db.from('voice_orders')
+      .select('order_number, project_name, email')
+      .ilike('email', 'casting@%');
+    const wrongMail = (mailOdd || []).filter((o) => String(o.email || '').trim().toLowerCase() !== 'casting@onyxstudios.ai');
+    if (wrongMail.length) warn.push(`訂單帳務信箱疑似拼錯(正確為 casting@onyxstudios.ai,拼錯會讓平台自營案被當成外部客戶案):${cap(wrongMail.map((o) => `${o.order_number} ${o.email}`))}`);
+
     // D2c. 交付檔規格不符平台標準(48kHz / 24bit / mono)。2026-08-18 茹芸交了假立體聲,
     // 是交件當天人工查才發現;現在交付時會記錄 audio_spec,這裡自動抓出來。
     // audio_spec 為 null = 非 WAV 或舊資料,不算異常。
