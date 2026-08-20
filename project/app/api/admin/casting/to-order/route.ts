@@ -3,7 +3,7 @@ import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { createOrderFromAward } from '@/lib/casting-to-order';
 import { notifyBriefClosed } from '@/lib/brief-close';
-import { isPlatformCase } from '@/lib/casting';
+import { isPlatformCase, PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 
 /*
   POST /api/admin/casting/to-order — turn an AWARDED casting brief into a production
@@ -37,9 +37,17 @@ export async function POST(request: NextRequest) {
   // 平台案判定統一走 isPlatformCase(Wing 2026-07-23 拍板:空白 client_email = 客戶案;
   // 生產無空白單,零實際影響)。客戶案沿用 brief 上的 email。
   const isPlatform = isPlatformCase(brief.client_email);
-  const orderEmail = isPlatform ? clientEmailOverride : String(brief.client_email).toLowerCase();
+  // 平台自營案:帳務聯絡人一律用程式常數,不接受手打(2026-08-20)。
+  // 之前平台案會叫後台自己打一個 email,83 張裡打錯 5 張(casting@onyxstudios.io/.com、
+  // casting@onyxstudio.ai…)→ 那些單全被 isPlatformCase() 判成外部客戶案,後台少了費用
+  // 同意卡、來源標示也錯。任何長得像自家 casting@ 的變體一律正規化回常數,徹底斷根。
+  const looksLikeOurs = /^casting@onyxstudios?\.(ai|io|com)$/i.test(clientEmailOverride);
+  const wantsPlatform = String(b.caseSource || '') === 'platform';
+  const orderEmail = isPlatform
+    ? ((wantsPlatform || !clientEmailOverride || looksLikeOurs) ? PLATFORM_CASTING_EMAIL : clientEmailOverride)
+    : String(brief.client_email).toLowerCase();
   if (!orderEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(orderEmail)) {
-    return NextResponse.json({ error: '平台發案請提供客戶 email(用於帳務與交付)。' }, { status: 400 });
+    return NextResponse.json({ error: '外部客戶案請提供客戶 email(用於帳務與交付)。' }, { status: 400 });
   }
 
   // Build one production order per ACCEPTED quote — a single winner for a single-
