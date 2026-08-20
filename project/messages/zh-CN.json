@@ -1536,7 +1536,13 @@
       "yourFeedback": "您的反馈：{feedback}",
       "filesReady": "{count} 个交付档已就绪 — 请审核",
       "approveDelivery": "确认这批交付({count} 个文件)",
-      "deliveryInProduction": "制作中"
+      "deliveryInProduction": "制作中",
+      "autoCompleteNotice": "{days} 天后({date})将自动完成",
+      "autoCompleteToday": "今日即将自动完成",
+      "autoCompleteHint": "若需要更多时间审核,可延长 7 天,不限次数。",
+      "extendReview": "延长 7 天",
+      "extendReviewDone": "已延长至 {date}",
+      "extendReviewFail": "延长失败,请稍后再试"
     },
     "musicDetail": {
       "productionProgress": "制作进度",
