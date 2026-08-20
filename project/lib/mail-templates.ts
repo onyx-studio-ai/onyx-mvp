@@ -685,6 +685,10 @@ export interface VoiceWorkflowPayload {
   clientFeedback?: string;
   locale?: string;
   tier?: string;
+  /** 交付信要告知的自動完成日期(ISO);只有外部客戶案會帶。 */
+  autoApproveAt?: string | null;
+  /** 自動完成前的提醒信:還剩幾天 */
+  autoApproveDaysLeft?: number;
 }
 
 export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; html: string } {
@@ -702,6 +706,11 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
       ? tx('已由 AI 初版 + 真人總監微調完成', '已由 AI 初版 + 真人总监微调完成', 'has been produced (AI draft + human director polish)')
       : tx('已由配音員錄製完成', '已由配音员录制完成', 'has been recorded by your voice actor');
   const redoVerb = mode === 'ai' ? tx('重新生成', '重新生成', 'regenerate accordingly') : tx('調整處理', '调整处理', 'address them');
+  // 自動完成日期(台北時區,客戶多在台灣;英文信給對應的當地格式)
+  const autoDate = p.autoApproveAt
+    ? new Date(p.autoApproveAt).toLocaleDateString(L === 'en' ? 'en-US' : L === 'cn' ? 'zh-CN' : 'zh-TW',
+        { timeZone: 'Asia/Taipei', year: 'numeric', month: 'long', day: 'numeric' })
+    : '';
 
   // ── Client-facing (trilingual + tier-aware) ──
   if (type === 'version_delivered') {
@@ -715,7 +724,11 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
         <p style="color:#d1d5db;font-size:15px;line-height:1.7;margin:0;">${tx(
           `若這版符合您的需求,點「核准」即進入最終交付;否則請留下調整意見,我們會據此${redoVerb}。`,
           `若这版符合您的需求,点「核准」即进入最终交付;否则请留下调整意见,我们会据此${redoVerb}。`,
-          `If this version meets your needs, click Approve to proceed to final delivery. Otherwise leave revision notes and we'll ${redoVerb}.`)}</p>`)}
+          `If this version meets your needs, click Approve to proceed to final delivery. Otherwise leave revision notes and we'll ${redoVerb}.`)}</p>
+        ${p.autoApproveAt ? `<p style="color:#9ca3af;font-size:13px;line-height:1.7;margin:16px 0 0;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);">${tx(
+          `本次交付後 7 天內(${autoDate})未收到您的回覆,系統將自動完成本訂單。若您需要更多時間審核,可於訂單頁面自行延長 7 天,不限次數。`,
+          `本次交付后 7 天内(${autoDate})未收到您的回复,系统将自动完成本订单。若您需要更多时间审核,可于订单页面自行延长 7 天,不限次数。`,
+          `If we don't hear from you within 7 days (by ${autoDate}), this order will be completed automatically. Need more time? You can extend the review period by 7 days from the order page, as many times as you need.`)}</p>` : ''}`)}
       ${ctaRow(tx('檢視配音', '查看配音', 'Review voiceover'), p.dashboardLink, '#06b6d4')}`;
     return { subject: tx(`您的配音已就緒,請檢視 — #${orderNumber}`, `您的配音已就绪,请查看 — #${orderNumber}`, `Your voiceover is ready for review — #${orderNumber}`), html: baseLayout(content, 'Studios', '#06b6d4', ll) };
   }
