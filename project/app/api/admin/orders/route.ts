@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isPlatformCase } from '@/lib/casting';
+import { AUTO_APPROVE_DAYS } from '@/lib/auto-approve';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/mail';
 import { musicWorkflowEmail, stringsWorkflowEmail, voiceWorkflowEmail, type MusicNotificationType, type StringsNotificationType, type VoiceNotificationType } from '@/lib/mail-templates';
@@ -62,11 +64,32 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // 交付給客戶時,開始 7 天的自動完成倒數(Wing 2026-08-20)。
+    // 為什麼要有:有些客戶拿了檔案就跑,完全忘記回來按確認,配音員的錢就一直卡著。
+    // 只對「外部客戶案」生效 —— 平台自營案的帳務聯絡人是我們自己,自動完成沒有意義,
+    // 而且會在沒有人看信的情況下無聲結案。客戶可在訂單頁自行延長 7 天,次數不限,
+    // 所以真正被自動完成的一定是完全沒動作的單。
+    if (orderType === 'voice' && updates.status === 'delivered') {
+      try {
+        const { data: o } = await db.from('voice_orders').select('email, auto_approve_at').eq('id', orderId).maybeSingle();
+        if (o && !isPlatformCase(o.email as string) && !o.auto_approve_at) {
+          const at = new Date(Date.now() + AUTO_APPROVE_DAYS * 86400_000).toISOString();
+          const { error: aaErr } = await db.from('voice_orders').update({ auto_approve_at: at }).eq('id', orderId);
+          if (aaErr) console.error('[admin/orders] auto_approve_at 設定失敗', orderId, aaErr.message);
+        }
+      } catch (e) { console.error('[admin/orders] auto_approve_at error', orderId, e); }
+    }
+
     // 🔒 治本(Wing 2026-08-05):真人單只要走到 completed,就冪等補一筆 pending 收入
     // ——「可請款餘額」的唯一來源。原本 earnings 只在「指派(assign)」「量產匯入」「客戶
     // 驗收(review)」三處建;平台自營 / 後台直接按「Mark Complete」的真人單(採用建單、
     // per_line 沒跑匯入等)會整條漏掉 → 配音員收款頁顯示「無可請款款項」。這裡是所有真人
     // 單走 completed 的收斂點,idempotent(已有就跳過,不與 review 路徑重複記兩筆)。
+    // 單子已有結論(完成)或退回修改中 → 倒數失效,免得修改期間被自動結案。
+    if (orderType === 'voice' && (updates.status === 'completed' || updates.status === 'revising' || updates.status === 'in_production')) {
+      await db.from('voice_orders').update({ auto_approve_at: null }).eq('id', orderId);
+    }
+
     if (orderType === 'voice' && updates.status === 'completed') {
       try {
         const { data: o } = await db.from('voice_orders')
@@ -124,9 +147,10 @@ export async function PATCH(request: NextRequest) {
             } else {
               // Voice emails are tier-aware (AI vs human) + localized — fetch both,
               // resiliently (the locale column may not be migrated yet).
-              const vq = await db.from('voice_orders').select('tier, locale').eq('id', orderId).maybeSingle();
-              const vrow = (vq.data || (await db.from('voice_orders').select('tier').eq('id', orderId).maybeSingle()).data) as { tier?: string; locale?: string } | null;
-              emailResult = voiceWorkflowEmail({ type: notifType as VoiceNotificationType, email: orderData.email, orderNumber: orderData.order_number, orderId, dashboardLink, tier: vrow?.tier, locale: vrow?.locale });
+              const vq = await db.from('voice_orders').select('tier, locale, auto_approve_at').eq('id', orderId).maybeSingle();
+              const vrow = (vq.data || (await db.from('voice_orders').select('tier').eq('id', orderId).maybeSingle()).data) as { tier?: string; locale?: string; auto_approve_at?: string | null } | null;
+              // 交付信要告知自動完成日期(只有外部客戶案有值;平台自營案為 null → 信裡不出現這段)
+              emailResult = voiceWorkflowEmail({ type: notifType as VoiceNotificationType, email: orderData.email, orderNumber: orderData.order_number, orderId, dashboardLink, tier: vrow?.tier, locale: vrow?.locale, autoApproveAt: vrow?.auto_approve_at ?? null });
             }
             await sendEmail({ category: 'PRODUCTION', to: orderData.email, subject: emailResult.subject, html: emailResult.html });
           }
