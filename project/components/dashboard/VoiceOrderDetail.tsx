@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations, useLocale } from 'next-intl';
+import { daysUntilAutoApprove, formatAutoApproveDate } from '@/lib/auto-approve';
 import ReviewBox from '@/components/marketplace/ReviewBox';
 import { groupByUploadDate } from '@/lib/deliveries';
 
@@ -98,6 +99,9 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   const [loadingData, setLoadingData] = useState(true);
 
   const [submitting, setSubmitting] = useState(false);
+  // 交付後 7 天自動完成的倒數 + 客戶自行延期(Wing 2026-08-20)
+  const [autoAt, setAutoAt] = useState<string | null>((order as { auto_approve_at?: string | null }).auto_approve_at ?? null);
+  const [extending, setExtending] = useState(false);
   const [revisionNotes, setRevisionNotes] = useState('');
   const [showRevisionForm, setShowRevisionForm] = useState(false);
 
@@ -126,6 +130,13 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const latestVersion = versions[versions.length - 1];
+  // 一張單可能是「多支不同影片」(照護系列 12 支、A422 講解 7 支),不是同一支的多版。
+  // 舊寫法 reviewVersionNo = versions.length 把「檔案數」當「版本數」,12 支的單會跟客戶說
+  // 「第 13 版」,像是我們來回改了十幾次(2026-08-20 Wing 指出)。
+  const fileNames = [...new Set(versions.map((v) => v.file_name))];
+  const isMultiFile = fileNames.length > 1;
+  // 真正的版次 = 同一個檔名最多被交過幾次
+  const roundNo = Math.max(1, ...fileNames.map((n) => versions.filter((v) => v.file_name === n).length));
   // Casting (real-person) orders skip the team "final-prep" step — drop it so the
   // progress bar reads delivered → completed instead of leaving step 4 blank.
   const steps = order.talent_id ? VOICE_STATUS_STEPS.filter((s) => s.key !== 'awaiting_final') : VOICE_STATUS_STEPS;
@@ -133,7 +144,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   // The file to review: the latest uploaded version, or — for legacy/casting
   // deliveries that never created a version row — the order's download_url.
   const reviewUrl = cleanUrl(latestVersion?.file_url) || cleanUrl(order.download_url);
-  const reviewVersionNo = versions.length || 1;
+  const reviewVersionNo = roundNo;   // 單檔案案沿用「第 N 版」;多檔案案改用檔案數文案(見下方)
   // 交付檔按上傳日期分組(新到舊)。最新那批 = 這次要審的整批檔(可能多個)。
   const groupedVersions = groupByUploadDate(versions, (v) => v.created_at);
   const latestBatch = groupedVersions[0]?.items || [];
@@ -150,6 +161,26 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
     });
     const j = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(j.error || t('operationFailed'));
+  };
+
+  const handleExtendReview = async () => {
+    setExtending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/client/orders/${order.id}/extend-review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || t('extendReviewFail'));
+      setAutoAt(j.auto_approve_at);
+      toast({ title: t('extendReviewDone', { date: formatAutoApproveDate(j.auto_approve_at) }) });
+      onRefresh();
+    } catch (err: unknown) {
+      toast({ title: tc('error'), description: err instanceof Error ? err.message : t('extendReviewFail'), variant: 'destructive' });
+    } finally {
+      setExtending(false);
+    }
   };
 
   const handleApproveVersion = async () => {
@@ -269,7 +300,9 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
             <Mic className="w-4 h-4" />
             {versions.length === 0
               ? t('recordingInProgress')
-              : t('workingOnVersion', { version: versions.length + 1 })
+              : isMultiFile
+                ? t('deliveryInProduction')
+                : t('workingOnVersion', { version: roundNo + 1 })
             }
           </div>
           <p className="text-sm text-gray-400">
@@ -291,7 +324,7 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
           <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-5 space-y-4">
             <div>
               <p className="text-cyan-400 font-semibold text-sm mb-0.5">
-                {t('versionReady', { version: reviewVersionNo })}
+                {isMultiFile ? t('filesReady', { count: latestBatch.length || fileNames.length }) : t('versionReady', { version: reviewVersionNo })}
               </p>
               <p className="text-sm text-gray-400">
                 {t('versionReviewDesc')}
@@ -322,10 +355,32 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
               ))}
             </div>
 
+            {/* 交付後 7 天自動完成的倒數 + 延期(Wing 2026-08-20:有客戶拿了檔案就忘記回來按確認,
+                配音員的錢一直卡著。有這條倒數與延期鈕,自動完成才站得住腳)。 */}
+            {(() => {
+              const left = daysUntilAutoApprove(autoAt);
+              if (left === null) return null;   // 平台自營案不設倒數
+              return (
+                <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3 flex items-start gap-3 flex-wrap">
+                  <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-[180px]">
+                    <p className="text-sm text-amber-200 font-medium">
+                      {left <= 0 ? t('autoCompleteToday') : t('autoCompleteNotice', { days: left, date: formatAutoApproveDate(autoAt) })}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('autoCompleteHint')}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleExtendReview} disabled={extending}
+                    className="border-amber-500/40 text-amber-200 hover:bg-amber-500/10 shrink-0">
+                    {extending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('extendReview')}
+                  </Button>
+                </div>
+              );
+            })()}
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Button onClick={handleApproveVersion} disabled={submitting} className="w-full bg-green-600 hover:bg-green-700 text-white gap-2">
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {t('approveVersion', { version: reviewVersionNo })}
+                {isMultiFile ? t('approveDelivery', { count: latestBatch.length || fileNames.length }) : t('approveVersion', { version: reviewVersionNo })}
               </Button>
 
               {canRequestChanges ? (
