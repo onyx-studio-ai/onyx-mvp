@@ -1533,7 +1533,10 @@
       "approved": "Approved",
       "revisionRequested": "Revision Requested",
       "teamNote": "Team note: {notes}",
-      "yourFeedback": "Your feedback: {feedback}"
+      "yourFeedback": "Your feedback: {feedback}",
+      "filesReady": "{count} files ready — please review",
+      "approveDelivery": "Approve delivery ({count} files)",
+      "deliveryInProduction": "In production"
     },
     "musicDetail": {
       "productionProgress": "Production Progress",
@@ -2991,7 +2994,9 @@
       "threadEmpty": "No messages yet",
       "threadPlaceholder": "Reply as Onyx…",
       "send": "Send",
-      "internalClient": "Client"
+      "internalClient": "Client",
+      "toOrderSourceAsk": "Is this a platform-run case or an external client case?\n\n[OK] = Platform-run — billing contact uses our platform address automatically, nothing to type\n[Cancel] = External client — you will be asked for the client email next",
+      "toOrderClientEmailAsk": "Client email (for billing and delivery):"
     },
     "applications": {
       "title": "Talent Applications",
