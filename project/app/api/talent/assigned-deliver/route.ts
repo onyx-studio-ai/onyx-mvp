@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readWavSpecFromUrl } from '@/lib/audio-spec';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 
 /*
@@ -43,12 +44,16 @@ export async function POST(request: NextRequest) {
   const { data: prevVers } = await r.db.from('voice_order_versions').select('file_name').eq('voice_order_id', order.id);
   const seen = new Map<string, number>();
   for (const p of prevVers || []) seen.set(String(p.file_name), (seen.get(String(p.file_name)) || 0) + 1);
-  const rows = files.map((f) => {
+  // 交付檔實際規格(48k/24bit/mono 是平台標準)—— server 端讀 4KB 檔頭記錄下來,
+  // 後台一眼就看得到、健檢也抓得到。抓不到一律 null,絕不擋交件(2026-08-20)。
+  const specs = await Promise.all(files.map((f) => readWavSpecFromUrl(f.url)));
+  const rows = files.map((f, i) => {
     const n = (seen.get(f.name) || 0) + 1;
     seen.set(f.name, n);
     return {
       voice_order_id: order.id, file_url: f.url, file_name: f.name, notes: '配音員交付(指派)',
       version_number: n, status: 'pending_review',
+      ...(specs[i] ? { audio_spec: specs[i] } : {}),
     };
   });
   const { error } = await r.db.from('voice_order_versions').insert(rows);
