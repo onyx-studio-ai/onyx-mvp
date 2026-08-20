@@ -1536,7 +1536,13 @@
       "yourFeedback": "Your feedback: {feedback}",
       "filesReady": "{count} files ready — please review",
       "approveDelivery": "Approve delivery ({count} files)",
-      "deliveryInProduction": "In production"
+      "deliveryInProduction": "In production",
+      "autoCompleteNotice": "Auto-completes in {days} days (on {date})",
+      "autoCompleteToday": "Auto-completes today",
+      "autoCompleteHint": "Need more time to review? Extend by 7 days, as many times as you need.",
+      "extendReview": "Extend 7 days",
+      "extendReviewDone": "Extended to {date}",
+      "extendReviewFail": "Could not extend — please try again"
     },
     "musicDetail": {
       "productionProgress": "Production Progress",
