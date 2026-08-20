@@ -229,7 +229,12 @@ function formatCurrency(amount: number, currency = 'TWD'): string {
 // tier-1 = pure AI · tier-2 = AI + human director · tier-3 = 100% live human.
 // (self-serve voice is AI-first, so an unknown tier defaults to 'ai'.)
 type VoiceMode = 'ai' | 'hybrid' | 'live';
-function voiceMode(tier?: string): VoiceMode {
+function voiceMode(tier?: string, hasTalent?: boolean): VoiceMode {
+  // 🔒 有指派配音員 = 一律真人案,不管 tier 是什麼(Wing 2026-08-20)。
+  // 為什麼:預設值是 'ai',只要哪張真人單的 tier 沒帶到,客戶信就會寫成「已生成」——
+  // 等於告訴客戶我們拿 AI 交差。這種錯誤一次都不能出,所以用「有沒有配音員」這個
+  // 更硬的事實當第一判準,tier 只在沒有配音員時才拿來分 AI / hybrid。
+  if (hasTalent) return 'live';
   if (tier === 'tier-3') return 'live';
   if (tier === 'tier-2') return 'hybrid';
   return 'ai';
@@ -298,7 +303,7 @@ export function orderConfirmationEmail(p: OrderConfirmationPayload): { subject: 
   rows.push({ label: tx('交易編號', '交易编号', 'Transaction ID'), value: p.transactionId });
 
   // Tier-aware "what happens next" — a pure-AI order must not read like a human recording.
-  const mode = voiceMode(d.tier ? String(d.tier) : undefined);
+  const mode = voiceMode(d.tier ? String(d.tier) : undefined, !!d.talentId);
   const stepsVoiceAI = [
     tx('我們確認您的腳本與設定', '我们确认您的脚本与设置', 'We confirm your script and settings'),
     tx('AI 生成您的配音並自動品質檢查', 'AI 生成您的配音并自动质量检查', 'Your AI voiceover is generated and quality-checked'),
@@ -689,6 +694,8 @@ export interface VoiceWorkflowPayload {
   autoApproveAt?: string | null;
   /** 自動完成前的提醒信:還剩幾天 */
   autoApproveDaysLeft?: number;
+  /** 訂單有沒有指派配音員 —— 有的話一律當真人案,勝過 tier 判斷 */
+  hasTalent?: boolean;
 }
 
 export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; html: string } {
@@ -696,7 +703,7 @@ export function voiceWorkflowEmail(p: VoiceWorkflowPayload): { subject: string; 
   const L = mpLocale(p.locale);
   const ll: SupportedLocale = L === 'cn' ? 'zh-CN' : L === 'tw' ? 'zh-TW' : 'en';
   const tx = (tw: string, cn: string, en: string) => (L === 'cn' ? cn : L === 'tw' ? tw : en);
-  const mode = voiceMode(p.tier);
+  const mode = voiceMode(p.tier, p.hasTalent);
   const ord = tx(`訂單 #${orderNumber}`, `订单 #${orderNumber}`, `Order #${orderNumber}`);
   // Tier-aware wording so an AI order never reads like a human recording.
   const noun = mode === 'ai' ? tx('AI 配音', 'AI 配音', 'AI voiceover') : tx('配音', '配音', 'voiceover');
