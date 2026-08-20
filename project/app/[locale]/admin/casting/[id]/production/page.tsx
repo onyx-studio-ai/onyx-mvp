@@ -18,7 +18,7 @@ import { mediaToMp3, needsMp3Convert } from '@/lib/media-to-mp3';
 import { toast } from 'sonner';
 
 type RefFile = { name?: string; url: string };
-type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null; revision_note?: string | null; revision_files?: RefFile[] | null; revision_count?: number | null; script_files?: RefFile[] | null; deliveries?: { file_name: string; file_url: string; created_at: string; status?: string | null }[] | null };
+type Order = { id: string; order_number?: string | null; role_name?: string | null; talent_id?: string | null; talent_name?: string | null; talent_phone?: string | null; talent_reach?: string | null; status?: string | null; script_text?: string | null; production_notes?: string | null; reference_files?: RefFile[] | null; voice_sample_files?: RefFile[] | null; role_images?: RefFile[] | null; talent_price?: number | null; price?: number | null; pay_unit?: string | null; pay_rate?: number | null; currency?: string | null; deadline?: string | null; deadline_time?: string | null; released_at?: string | null; revision_note?: string | null; revision_files?: RefFile[] | null; revision_count?: number | null; script_files?: RefFile[] | null; deliveries?: { file_name: string; file_url: string; created_at: string; status?: string | null; audio_spec?: { rate?: number; bits?: number; channels?: number; seconds?: number } | null }[] | null };
 // 參考音(大陸版角色參考)與中選聲線(配音員自己的中選示範)分開存、分開傳(Wing 2026-07-15)。
 type AudioField = 'reference_files' | 'voice_sample_files';
 
@@ -431,8 +431,22 @@ export default function ProductionPage() {
                     <div className="space-y-1">
                       {(o.deliveries || []).map((d, i) => (
                         <div key={i} className="flex items-center gap-2 bg-white border border-gray-200 rounded px-2 py-1">
-                          <span className="text-[11px] text-gray-800 truncate max-w-[38%]" title={d.file_name}>{d.file_name}</span>
+                          <span className="text-[11px] text-gray-800 truncate max-w-[32%]" title={d.file_name}>{d.file_name}</span>
                           <span className="text-[10px] text-gray-400 shrink-0">{String(d.created_at).slice(5, 16).replace('T', ' ')}</span>
+                          {/* 實際音訊規格:平台標準 48k/24bit/mono,不符標紅(2026-08-20) */}
+                          {(() => {
+                            const sp = d.audio_spec;
+                            if (!sp?.rate) return null;
+                            const ok = sp.rate === 48000 && sp.bits === 24 && sp.channels === 1;
+                            const ch = sp.channels === 1 ? 'mono' : sp.channels === 2 ? 'stereo' : `${sp.channels}ch`;
+                            const dur = sp.seconds ? ` · ${Math.floor(sp.seconds / 60)}:${String(sp.seconds % 60).padStart(2, '0')}` : '';
+                            return (
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${ok ? 'bg-gray-50 text-gray-500 border-gray-200' : 'bg-red-50 text-red-700 border-red-300 font-medium'}`}
+                                title={ok ? '符合平台交付標準' : '不符平台標準(48kHz / 24bit / mono)'}>
+                                {ok ? '' : '⚠ '}{sp.rate / 1000}k/{sp.bits}bit/{ch}{dur}
+                              </span>
+                            );
+                          })()}
                           <audio controls preload="none" src={d.file_url} className="h-8 flex-1 min-w-0" />
                           <a href={d.file_url} download target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline shrink-0">下載</a>
                         </div>
