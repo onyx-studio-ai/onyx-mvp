@@ -1536,7 +1536,13 @@
       "yourFeedback": "您的回饋：{feedback}",
       "filesReady": "{count} 個交付檔已就緒 — 請審核",
       "approveDelivery": "確認這批交付({count} 個檔案)",
-      "deliveryInProduction": "製作中"
+      "deliveryInProduction": "製作中",
+      "autoCompleteNotice": "{days} 天後({date})將自動完成",
+      "autoCompleteToday": "今日即將自動完成",
+      "autoCompleteHint": "若需要更多時間審核,可延長 7 天,不限次數。",
+      "extendReview": "延長 7 天",
+      "extendReviewDone": "已延長至 {date}",
+      "extendReviewFail": "延長失敗,請稍後再試"
     },
     "musicDetail": {
       "productionProgress": "製作進度",
