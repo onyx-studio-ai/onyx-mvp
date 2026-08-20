@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readWavSpecFromUrl } from '@/lib/audio-spec';
 import { resolveTalentFromRequest } from '@/lib/talent-auth';
 import { sendEmail } from '@/lib/mail';
 import { quoteReceivedEmail, deliveryUploadedEmail, castingDeliveryClientEmail, extraDemoUploadedEmail } from '@/lib/mail-templates';
@@ -270,12 +271,15 @@ export async function PATCH(request: NextRequest) {
       const { data: prevVers } = await r.db.from('voice_order_versions').select('file_name').eq('voice_order_id', order.id);
       const seen = new Map<string, number>();
       for (const pv of prevVers || []) seen.set(String(pv.file_name), (seen.get(String(pv.file_name)) || 0) + 1);
-      const rows = deliveryFiles.map((f) => {
+      // 同上:記錄交付檔實際規格,抓不到就 null,不擋交件。
+      const specs = await Promise.all(deliveryFiles.map((f) => readWavSpecFromUrl(f.url)));
+      const rows = deliveryFiles.map((f, i) => {
         const n = (seen.get(f.name) || 0) + 1;
         seen.set(f.name, n);
         return {
           voice_order_id: order.id, file_url: f.url, file_name: f.name,
           notes: '配音員交付', version_number: n, status: 'pending_review',
+          ...(specs[i] ? { audio_spec: specs[i] } : {}),
         };
       });
       // 版本 insert / 訂單轉 delivered 靜默失敗 = 配音員看到「交付成功」、客戶端卻沒版本可審
