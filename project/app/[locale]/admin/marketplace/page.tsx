@@ -206,17 +206,24 @@ export default function AdminMarketplace() {
     const isPlatform = isPlatformCase(b.client_email); // 平台案判定統一(Wing 2026-07-23:空白 = 客戶案)
     // Platform-posted cases have no client email on file — ask for the end client's
     // email so the production order has a billing/delivery contact.
+    // 平台案不再叫人手打帳務信箱 —— 改成先選「平台自營 / 外部客戶」,自營一律用程式常數。
+    // (2026-08-20:手打害 83 張裡有 5 張打成 .io/.com/少個 s,那些單全被判成外部客戶案。)
     let clientEmail = '';
+    let caseSource: 'platform' | 'client' | undefined;
     if (isPlatform) {
-      clientEmail = (window.prompt(t('toOrderPrompt')) || '').trim();
-      if (!clientEmail) return;
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) { toast.error(t('emailInvalid')); return; }
+      const selfRun = window.confirm(t('toOrderSourceAsk'));
+      caseSource = selfRun ? 'platform' : 'client';
+      if (!selfRun) {
+        clientEmail = (window.prompt(t('toOrderClientEmailAsk')) || '').trim();
+        if (!clientEmail) return;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) { toast.error(t('emailInvalid')); return; }
+      }
     }
     if (!confirm(t('toOrderConfirm', { name: b.title || caseCode(b) }))) return;
     try {
       const res = await fetch('/api/admin/casting/to-order', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ briefId: b.id, clientEmail: clientEmail || undefined }),
+        body: JSON.stringify({ briefId: b.id, clientEmail: clientEmail || undefined, caseSource }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(j.error || t('toOrderFail')); return; }
