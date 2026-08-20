@@ -104,6 +104,18 @@ export async function POST(request: NextRequest) {
       if (['files_uploaded', 'delivery_accepted'].includes(notifType)) to = 'produce@onyxstudios.ai';
     } else if (workflow === 'voice') {
       const notifType = type as VoiceNotificationType;
+      // 這條路徑原本完全沒帶 tier/talent → voiceMode() 一律回 'ai',真人案的信會寫成
+      // 「已生成」,等於告訴客戶我們拿 AI 交差(2026-08-20 掃同類時發現)。
+      // 補撈訂單的 tier / talent_id / locale / auto_approve_at,與 admin 那條路徑一致。
+      type VoiceRow = { tier?: string; locale?: string; talent_id?: string | null; auto_approve_at?: string | null };
+      let vrow: VoiceRow | null = null;
+      if (orderId) {
+        try {
+          const { data } = await getAdminClient().from('voice_orders')
+            .select('tier, locale, talent_id, auto_approve_at').eq('id', orderId).maybeSingle();
+          vrow = (data as VoiceRow | null) ?? null;
+        } catch { /* 撈不到就退回原行為,不擋寄信 */ }
+      }
       const result = voiceWorkflowEmail({
         type: notifType,
         email,
@@ -114,6 +126,10 @@ export async function POST(request: NextRequest) {
         revisionsUsed: extra.revisionsUsed,
         maxRevisions: extra.maxRevisions,
         clientFeedback: extra.clientFeedback,
+        tier: vrow?.tier,
+        locale: vrow?.locale,
+        hasTalent: !!vrow?.talent_id,
+        autoApproveAt: vrow?.auto_approve_at ?? null,
       });
       subject = result.subject;
       html = result.html;
