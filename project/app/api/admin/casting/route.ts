@@ -26,7 +26,7 @@ const MATCH_MIN = 60;
 */
 export const maxDuration = 60; // notifying matching talents can fan out
 
-type RoleIn = { name?: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type RoleIn = { name?: string; weight?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string; ref_audio?: string };
 const METHODS = ['home', 'studio', 'online'];
 const SITE = 'https://www.onyxstudios.ai';
 const ZH_RE = /中文|國語|国语|普通话|普通話|台語|台语|粵|粤|cantonese|mandarin|chinese/i;
@@ -278,6 +278,7 @@ export async function POST(request: NextRequest) {
         sample_line: String(r.sample_line || '').trim().slice(0, 500),
         is_lead: !!r.is_lead,
         image: String(r.image || '').trim().slice(0, 1000) || undefined,
+        ref_audio: String(r.ref_audio || '').trim().slice(0, 1000) || undefined,
       }))
     : [];
   const refLinks = Array.isArray(b.reference_links)
@@ -484,6 +485,7 @@ export async function PATCH(request: NextRequest) {
         sample_line: String(r.sample_line || '').trim().slice(0, 500),
         is_lead: !!r.is_lead,
         image: String(r.image || '').trim().slice(0, 1000) || undefined,
+        ref_audio: String(r.ref_audio || '').trim().slice(0, 1000) || undefined,
       }));
     }
     const { data, error } = await db.from('marketplace_briefs').update(upd).eq('id', id).eq('kind', 'casting').select('id').single();
