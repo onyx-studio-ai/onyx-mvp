@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { requireAdmin } from '@/app/api/admin/_utils/requireAdmin';
 import { getSupabaseServiceClient } from '@/lib/supabase-server';
 import { CASE_TIMEZONES } from '@/lib/case-time';
-import { sendEmail } from '@/lib/mail';
+import { sendEmail, sendBulk } from '@/lib/mail';
 import { castingNotifyEmail, clientBriefPublishedEmail, castingInviteEmail, privateInviteEmail } from '@/lib/mail-templates';
 import { voiceMatch, type MatchTalent, type MatchBrief } from '@/lib/voice-match';
 import { caseCode, isPlatformCase, PLATFORM_CASTING_EMAIL } from '@/lib/casting';
@@ -110,7 +110,7 @@ async function notifyMatchingTalents(
   } catch { /* 顯示 0 即可,不影響寄信 */ }
 
   const locale = isZh ? 'zh-TW' : 'en';
-  await Promise.all(scored.map(({ t, score }) => {
+  const bulk = await sendBulk(scored.map(({ t, score }) => {
     // 重開通知沿用舊模板(信頭有「重新開放」banner);一般通知一律走專屬邀請版。
     const mail = opts.reopened
       ? castingNotifyEmail({
@@ -126,8 +126,9 @@ async function notifyMatchingTalents(
           auditionDeadline: brief.audition_deadline, auditionDeadlineTime: brief.audition_deadline_time,
           timezone: brief.timezone, completedOrders, aiType: opts.aiType, locale,
         });
-    return sendEmail({ category: 'HELLO', to: t.email as string, subject: mail.subject, html: mail.html }).catch(() => {});
+    return { category: 'HELLO' as const, to: t.email as string, subject: mail.subject, html: mail.html };
   }));
+  if (bulk.failed) console.error(`[casting notify] 配對 ${scored.length} 位,實寄成功 ${bulk.sent},失敗 ${bulk.failed}:${bulk.errors.join(' | ')}`);
   const matchedEmails = scored.map((x) => x.t);
   // 重開通知:綁定 LINE 的收件者同步推播提醒(已答應配音員「綁 LINE 會收到重開通知」)。
   // 獨立查詢 + try/catch:欄位或金鑰缺就安靜跳過,絕不影響寄信主流程。
@@ -142,7 +143,7 @@ async function notifyMatchingTalents(
       if (ids.length) await multicastLine(ids, text);
     } catch { /* best-effort */ }
   }
-  return scored.length;
+  return bulk.sent;   // 回報實際寄成功數,不是配對數(2026-08-21:配對 56 實寄 10 卻回報 56)
 }
 
 // Email a SPECIFIC, admin-selected set of talents (the publish-time picker).
@@ -184,8 +185,9 @@ async function notifySelectedTalents(
     genderNeeds: brief.gender_needs || undefined, auditionDeadline: brief.audition_deadline || undefined,
     url, locale: isZh ? 'zh-TW' : 'en',
   });
-  await Promise.all(recips.map((t) => sendEmail({ category: 'HELLO', to: t.email as string, subject, html }).catch(() => {})));
-  return recips.length;
+  const bulk = await sendBulk(recips.map((t) => ({ category: 'HELLO' as const, to: t.email as string, subject, html })));
+  if (bulk.failed) console.error(`[casting notifySelected] 選  位,實寄 ,失敗 `);
+  return bulk.sent;
 }
 
 // Invite a set of emails to a casting call via a免註冊 magic-link (/casting/<token>).
