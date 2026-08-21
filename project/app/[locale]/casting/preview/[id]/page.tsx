@@ -15,7 +15,7 @@ import { ReferenceMedia } from '@/components/ReferenceMedia';
 const serif = { fontFamily: '"Songti TC","Noto Serif TC",serif' } as const;
 const gold = { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 } as const;
 
-type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string; ref_audio?: string };
 type Brief = {
   id: string; brief_number?: string | null; title?: string | null; content_type?: string | null; language?: string | null;
   rate_note?: string | null; status?: string | null; created_at?: string | null;
@@ -162,6 +162,12 @@ export default function CastingPreview() {
                       <div className="bg-[#14131a] border border-white/[0.08] rounded-xl px-3.5 py-3">
                         <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1">試音樣詞</span>
                         <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{r.sample_line}</p>
+                      </div>
+                    )}
+                    {r.ref_audio && (
+                      <div className="bg-[#14131a] border border-white/[0.08] rounded-xl px-3.5 py-3">
+                        <span className="inline-block text-[11px] tracking-[0.18em] text-[#7fb2e8] mb-1.5">這個角色的參考音</span>
+                        <audio controls preload="none" src={r.ref_audio} className="w-full h-9" />
                       </div>
                     )}
                     {r.note && <p className="text-xs text-gray-500 leading-snug"><span className="text-gray-600">備註 </span>{r.note}</p>}
