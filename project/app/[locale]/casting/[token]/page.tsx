@@ -19,7 +19,7 @@ import { tzLabel } from '@/lib/case-time';
 
 const CURRENCIES = ['USD', 'TWD'];
 const cls = 'w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-green-400/60';
-type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string; ref_audio?: string };
 type Brief = { id: string; source?: 'platform' | 'client'; budget?: string; budget_type?: string; title?: string; language?: string; rate_note?: string; brief?: string; audition_script?: string; audition_deadline?: string; audition_deadline_time?: string; deadline_time?: string; timezone?: string; recording_start?: string; recording_methods?: string[]; reference_files?: { name?: string; url: string }[]; reference_links?: string[]; roles?: Role[]; audition_cap?: number; base_revisions?: number; length?: string; deadline?: string; media_scope?: string; territory?: string; license_term?: string; accent?: string; voice_style?: string; voice_age?: string; license_summary?: string | null; audition_parts?: { name?: string; instructions?: string; optional?: boolean; options?: { label: string; instructions: string }[] }[] | null };
 type Audition = { id: string; role_name?: string | null; currency: string; gross_amount: number; status: string; sample_url?: string | null };
 
@@ -311,6 +311,12 @@ function GuestRole({ token, role, count, popular, assigned, done, closed, source
           <div className="bg-[#14131a] border border-white/[0.08] rounded-xl px-3.5 py-3 select-none" style={{ userSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
             <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1">{tx('試音樣詞', 'Audition line')}</span>
             <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{role.sample_line}</p>
+          </div>
+        )}
+        {role.ref_audio && (
+          <div className="bg-[#14131a] border border-white/[0.08] rounded-xl px-3.5 py-3">
+            <span className="inline-block text-[11px] tracking-[0.18em] text-[#7fb2e8] mb-1.5">{tx('這個角色的參考音', 'Reference audio for this role')}</span>
+            <audio controls preload="none" src={role.ref_audio} className="w-full h-9" />
           </div>
         )}
         {role.note && <p className="text-xs text-gray-500 leading-snug"><span className="text-gray-600">{tx('備註', 'Note')} </span>{role.note}</p>}
