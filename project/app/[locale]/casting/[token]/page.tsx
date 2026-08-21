@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { ReferenceMedia } from '@/components/ReferenceMedia';
 import { langLabel } from '@/lib/languages';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -70,18 +71,7 @@ export default function GuestCasting() {
       {((brief.reference_files || []).length > 0 || (brief.reference_links || []).length > 0) && (
         <div className="mb-4">
           <p className="text-xs text-gray-500 mb-1">{tx('參考素材', 'Reference')}</p>
-          {(brief.reference_files || []).map((f, i) => {
-            const ext = (f.url.split('?')[0].split('.').pop() || '').toLowerCase();
-            const isVideo = ['mp4', 'mov', 'webm', 'm4v'].includes(ext);
-            return (
-              <div key={i} className="mb-1.5">
-                {f.name && <span className="text-xs text-gray-400 block mb-0.5">{f.name}</span>}
-                {isVideo
-                  ? <video controls preload="metadata" src={f.url} className="w-full max-h-72 rounded-lg border border-white/10 bg-black" />
-                  : <audio controls src={f.url} className="w-full h-9" />}
-              </div>
-            );
-          })}
+          {(brief.reference_files || []).map((f, i) => <div key={i} className="mb-1.5"><ReferenceMedia file={f} downloadLabel={tx('下載', 'Download')} /></div>)}
           {(brief.reference_links || []).map((l, i) => <a key={i} href={l} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-300 hover:underline block truncate">{l}</a>)}
         </div>
       )}
