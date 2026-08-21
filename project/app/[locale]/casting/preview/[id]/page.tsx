@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { caseCode } from '@/lib/casting';
 import { tzLabel } from '@/lib/case-time';
+import { ReferenceMedia } from '@/components/ReferenceMedia';
 
 const serif = { fontFamily: '"Songti TC","Noto Serif TC",serif' } as const;
 const gold = { color: '#1a160c', background: 'linear-gradient(180deg,#E4CB94,#C9A86A)', fontWeight: 600 } as const;
@@ -101,18 +102,7 @@ export default function CastingPreview() {
       {((b.reference_files || []).length > 0 || (b.reference_links || []).length > 0) && (
         <div className="mb-3">
           <p className="text-xs text-gray-500 mb-1.5">參考素材</p>
-          {(b.reference_files || []).map((f, i) => {
-            const ext = (f.url.split('?')[0].split('.').pop() || '').toLowerCase();
-            const isVideo = ['mp4', 'mov', 'webm', 'm4v'].includes(ext);
-            return (
-              <div key={i} className="mb-1.5">
-                {f.name && <span className="text-xs text-gray-400 block mb-0.5">{f.name}</span>}
-                {isVideo
-                  ? <video controls preload="metadata" src={f.url} className="w-full max-h-72 rounded-lg border border-white/10 bg-black" />
-                  : <audio controls src={f.url} className="w-full h-9" />}
-              </div>
-            );
-          })}
+          {(b.reference_files || []).map((f, i) => <div key={i} className="mb-1.5"><ReferenceMedia file={f} /></div>)}
           {(b.reference_links || []).map((l, i) => <a key={i} href={l} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-300 hover:underline block truncate">{l}</a>)}
         </div>
       )}
