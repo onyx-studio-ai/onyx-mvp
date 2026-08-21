@@ -116,7 +116,7 @@ const quoteStatusLabel = (s: string, tx: (a: string, b: string, c: string) => st
   withdrawn: tx('已撤回', '已撤回', 'Withdrawn'),
 } as Record<string, string>)[s] || s);
 
-type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string };
+type Role = { name?: string; gender?: string; age?: string; timbre?: string; personality?: string; emotion?: string; speed?: string; volume?: string; note?: string; sample_line?: string; is_lead?: boolean; image?: string; ref_audio?: string };
 type Brief = {
   id: string;
   brief_number: string;
@@ -1691,6 +1691,12 @@ function RoleAudition({
             style={{ userSelect: 'none', WebkitUserSelect: 'none' }} onContextMenu={(e) => e.preventDefault()}>
             <span className="inline-block text-[11px] tracking-[0.18em] text-[#C9A86A] mb-1">{tx('試音樣詞', '试音样词', 'Audition line')}</span>
             <p className="text-[15px] leading-relaxed text-gray-100 whitespace-pre-wrap">{role.sample_line}</p>
+          </div>
+        )}
+        {role.ref_audio && (
+          <div className="bg-[#14131a] border border-white/[0.08] rounded-xl px-3.5 py-3">
+            <span className="inline-block text-[11px] tracking-[0.18em] text-[#7fb2e8] mb-1.5">{tx('這個角色的參考音', '这个角色的参考音', 'Reference audio for this role')}</span>
+            <audio controls preload="none" src={role.ref_audio} className="w-full h-9" />
           </div>
         )}
         {role.note && <p className="text-xs text-gray-300 leading-snug"><span className="text-gray-400">{tx('備註', '备注', 'Note')} </span>{role.note}</p>}
