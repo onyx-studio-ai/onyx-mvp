@@ -130,3 +130,27 @@ export function emailLocaleForTalent(
   const hasCN = list.some((l) => /mainland|大陆|普通话/i.test(l));
   return hasCN && !hasTW ? 'zh-CN' : 'zh-TW';
 }
+
+/**
+ * 大量寄信:Resend 的速率上限是 10 requests/秒(ratelimit-policy: 10;w=1)。
+ * 以前各處用 `Promise.all(list.map(sendEmail))` 一次全送,超出的直接被 429 擋掉,
+ * 而呼叫端 `.catch(() => {})` 把錯誤吞了,結果回報「已通知 56 位」實際只寄出 10 封
+ * (2026-08-21 遊戲案踩到)。這裡分批送並回報真實成功數,呼叫端必須用這個數字回報。
+ *
+ * 注意:API route 的 maxDuration 若是 60 秒,以 5 封/秒計約可送 250 封;更大的量要另外排程。
+ */
+export async function sendBulk(
+  items: SendEmailOptions[],
+  opts: { perSecond?: number } = {},
+): Promise<{ sent: number; failed: number; errors: string[] }> {
+  const rate = Math.max(1, Math.min(opts.perSecond ?? 5, 8)); // 上限 10,留餘裕給同時段的其他信
+  let sent = 0;
+  const errors: string[] = [];
+  for (let i = 0; i < items.length; i += rate) {
+    if (i) await new Promise((r) => setTimeout(r, 1100));
+    const rs = await Promise.all(items.slice(i, i + rate).map((o) =>
+      sendEmail(o).catch((e) => ({ success: false, error: e instanceof Error ? e.message : String(e) }))));
+    for (const r of rs) { if (r.success) sent++; else if (r.error) errors.push(r.error); }
+  }
+  return { sent, failed: items.length - sent, errors: [...new Set(errors)].slice(0, 5) };
+}
