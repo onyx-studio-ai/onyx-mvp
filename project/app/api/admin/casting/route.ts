@@ -53,7 +53,7 @@ async function notifyMatchingTalents(
   const wantPrimary = primary(lang);
   if (mode === 'lang' && !isZh && !isEn && !wantPrimary) return 0; // 沒語言可比 → 不廣播
   const { data: talents } = await db.from('talents')
-    .select('email, languages, native_languages, coop_ai_clone, coop_ai_training, gender, accent, tags, specialties')
+    .select('email, languages, native_languages, coop_accept_jobs, coop_ai_clone, coop_ai_training, gender, accent, tags, specialties')
     .eq('type', 'VO')
     .not('application_id', 'is', null) // approved applicants only (no guests / internal personas)
     .not('email', 'is', null)
@@ -77,6 +77,8 @@ async function notifyMatchingTalents(
   const matched = (talents || []).filter((t) => {
     const email = String(t.email || '').trim().toLowerCase();
     if (!EMAIL_OK.test(email) || SKIP.test(email) || seen.has(email) || excl.has(email)) return false;
+    // 配音員後台的「接案配音」開關 —— 關掉就不該再收到試音邀請(2026-08-21 修:以前寄信根本沒讀它)
+    if ((t as { coop_accept_jobs?: boolean }).coop_accept_jobs === false) return false;
     if (opts.aiType === 'clone' && !(t as { coop_ai_clone?: boolean }).coop_ai_clone) return false;
     if (opts.aiType === 'training' && !(t as { coop_ai_training?: boolean }).coop_ai_training) return false;
     if (mode === 'lang') {
@@ -159,7 +161,7 @@ async function notifySelectedTalents(
 ) {
   if (!talentIds.length) return 0;
   const { data: talents } = await db.from('talents')
-    .select('email, is_active, coop_ai_clone, coop_ai_training')
+    .select('email, is_active, coop_accept_jobs, coop_ai_clone, coop_ai_training')
     .in('id', talentIds.slice(0, 500))
     .not('email', 'is', null)
     .limit(500);
@@ -167,6 +169,7 @@ async function notifySelectedTalents(
   const SKIP = /@(?:onyxstudios\.ai|example\.com|test\.com|test\.test)$/i;
   const seen = new Set<string>();
   const recips = (talents || []).filter((t) => {
+    if ((t as { coop_accept_jobs?: boolean }).coop_accept_jobs === false) return false;   // 尊重「接案配音」開關
     // AI case → require the matching consent (any vetting status). Normal case →
     // require vetting (is_active). Belt-and-suspenders on top of the UI picker.
     if (aiType === 'clone') { if (!t.coop_ai_clone) return false; }
