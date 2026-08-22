@@ -19,6 +19,19 @@ import type { getSupabaseServiceClient } from '@/lib/supabase-server';
 
 type Db = ReturnType<typeof getSupabaseServiceClient>;
 
+/*
+  EU AI Act 50(4) 揭露(X14 落點6):凡貼「含 AI 生成語音的音訊/影片」的社群貼文,
+  內文必附下面這句(放 hashtag 之前),且平台自帶的 AI 標記開關要開(IG/FB/YouTube 都有;
+  平台標記單獨不算數,同「metadata alone 不足」的道理)。
+  現行唯一的 kind='casting' 是純文字招募文、不含 AI 音訊,所以【不加】——加了反而是不實揭露。
+  之後接 kind='blog' / 'evergreen' 時,只要貼文帶 AI 語音,組文案時把對應語言這句 push 進 lines。
+*/
+export const AI_AUDIO_DISCLOSURE = {
+  'zh-TW': '本則內容含 AI 生成語音。',
+  'zh-CN': '本则内容含 AI 生成语音。',
+  en: 'This post contains AI-generated audio.',
+} as const;
+
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
 const ZH_RE = /中文|國語|国语|普通话|普通話|台語|台语|粵|粤|cantonese|mandarin|chinese/i;
 
