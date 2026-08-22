@@ -177,6 +177,9 @@ export async function POST(request: NextRequest) {
       talentName,
       audioSpecs: audioSpecs || '24-bit/48kHz WAV',
       qrCodeDataUrl,
+      // EU AI Act 50(4):有指派配音員或 tier-3 = 真人錄音;其餘 voice 單(tier-1/tier-2)為 AI 生成
+      //(判準與 lib/mail-templates.ts 的 voiceMode 一致)。music/orchestra 不在本次揭露範圍。
+      aiGenerated: orderType === 'voice' && !talentId && tier !== 'tier-3',
     });
 
     // Upload PDF to Supabase Storage
