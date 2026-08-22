@@ -79,6 +79,9 @@ async function notifyMatchingTalents(
     if (!EMAIL_OK.test(email) || SKIP.test(email) || seen.has(email) || excl.has(email)) return false;
     // 配音員後台的「接案配音」開關 —— 關掉就不該再收到試音邀請(2026-08-21 修:以前寄信根本沒讀它)
     if ((t as { coop_accept_jobs?: boolean }).coop_accept_jobs === false) return false;
+    // 結構性排除:opencall 語料報名者≠配音員(鐵律 11)、AI 聲音假人不收邀請 ——
+    // 不依賴 coop 開關(誤開也擋得住;2026-08-22 千杅案,Wing 拍板人才池修補項 3/7)
+    if (['opencall', 'ai_voice'].includes(String((t as { category?: string }).category || ''))) return false;
     if (opts.aiType === 'clone' && !(t as { coop_ai_clone?: boolean }).coop_ai_clone) return false;
     if (opts.aiType === 'training' && !(t as { coop_ai_training?: boolean }).coop_ai_training) return false;
     if (mode === 'lang') {
