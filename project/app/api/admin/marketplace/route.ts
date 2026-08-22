@@ -4,7 +4,7 @@ import { requireAdmin, requireAdminOnly } from '@/app/api/admin/_utils/requireAd
 import { sendEmail } from '@/lib/mail';
 import { castingAwardedTalentEmail, castingAwardedClientEmail } from '@/lib/mail-templates';
 import { notifyBriefClosed } from '@/lib/brief-close';
-import { isPlatformCase } from '@/lib/casting';
+import { isPlatformCase, PLATFORM_CASTING_EMAIL } from '@/lib/casting';
 import { normCaseLang } from '@/lib/languages';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.onyxstudios.ai';
@@ -138,6 +138,39 @@ export async function PATCH(request: NextRequest) {
             .eq('brief_id', q.brief_id).neq('id', id).in('status', ['submitted', 'shortlisted']);
           if (rejErr) return NextResponse.json({ error: rejErr.message }, { status: 500 }); // 同上:落選者不能留活報價
         }
+
+        // 平台量產案的「角色殼單」(先建好掛台詞表/角色卡、還沒有配音員)→ 採用的
+        // 當下直接把得標者掛上殼單:talent_id/voice_selection/quote_id 一次補齊,
+        // 儀表板不再一片「未指派」、配音員端交付也接得上(quote 交付路徑靠 quote_id
+        // 找單);之後「建立製作單」的防重閘(brief+role+talent)會自動跳過已掛人的
+        // 角色,不會重複建單(Wing 2026-08-22 拍板)。
+        // 安全邊界:只動平台自營殼單(email=casting@ 常數)且 talent_id 為空的,
+        // 絕不覆蓋已掛人的單、絕不碰外部客戶單(避免繞過客戶付款關卡)。
+        // 失敗不擋採用(殼單可後台手動補),只記 log。
+        try {
+          const { data: shellsAll } = await db.from('voice_orders').select('id, role_name')
+            .eq('brief_id', q.brief_id).eq('email', PLATFORM_CASTING_EMAIL).is('talent_id', null);
+          const norm = (s: unknown) => String(s || '').replace(/\s+/g, '');
+          const target = norm(q.role_name);
+          // 先精確比對;對不到再做「皮膚變體歸主角」:試音的角色名常帶皮膚
+          // (武則天_玫瑰夫人、天啟騎士-關羽,前後綴兩種方向都有)→ 找「被包含
+          // 在試音角色名裡」的殼單主角名,取最長的,避免短名誤吞。
+          let shell = q.role_name
+            ? (shellsAll || []).find((s) => norm(s.role_name) === target)
+            : (shellsAll || []).find((s) => !s.role_name);
+          if (!shell && target) {
+            shell = (shellsAll || [])
+              .filter((s) => norm(s.role_name).length >= 2 && target.includes(norm(s.role_name)))
+              .sort((a, b) => norm(b.role_name).length - norm(a.role_name).length)[0];
+          }
+          if (shell) {
+            const { data: tw } = await db.from('talents').select('name').eq('id', q.talent_id).maybeSingle();
+            const { error: fillErr } = await db.from('voice_orders')
+              .update({ talent_id: q.talent_id, voice_selection: String(tw?.name || ''), quote_id: id, status: 'in_production', updated_at: now })
+              .eq('id', shell.id).is('talent_id', null);
+            if (fillErr) console.error('[admin/marketplace] 殼單掛人失敗:', fillErr.message);
+          }
+        } catch (e) { console.error('[admin/marketplace] 殼單掛人錯誤:', e); }
 
         // Notify the winning talent + the client that a selection was made (best-effort).
         try {
