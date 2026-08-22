@@ -149,7 +149,8 @@ export default function AdminDashboardPage() {
 
     const voiceCount: Record<string, number> = {};
     paidVoice.forEach((o) => {
-      const name = o.voice_selection ? o.voice_selection.split(' ')[0] : 'Unknown';
+      // 沒掛配音員的單(量產案角色殼單等)標「未指派」,別叫 Unknown 嚇人(Wing 2026-08-22)
+      const name = o.voice_selection ? o.voice_selection.split(' ')[0] : '未指派';
       voiceCount[name] = (voiceCount[name] || 0) + 1;
     });
     const totalVoicePaid = paidVoice.length || 1;
