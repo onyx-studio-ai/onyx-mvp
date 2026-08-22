@@ -59,22 +59,23 @@ export async function POST(request: NextRequest) {
   if (send && brief.status !== 'open') return NextResponse.json({ error: '案件未發佈(open),無法邀請' }, { status: 400 });
 
   // 取候選 prospect:指定名單模式用 id;自動模式用語言配對 active 配音員。
-  type P = { id: string; email: string; name: string | null; company: string | null; languages: string[]; unsub_token: string; status: string };
+  type P = { id: string; email: string; name: string | null; company: string | null; languages: string[]; unsub_token: string; status: string; source?: string | null };
   let pool: P[];
   if (ids && ids.length) {
     // 🚨 分批查:一次 .in() 幾百個 UUID 會讓 URL 過長 → Bad Request(同 2026-08-12 被邀次數歸零 bug)。
     const rows: P[] = [];
     for (let i = 0; i < ids.length; i += 100) {
       const { data, error } = await db.from('prospects')
-        .select('id,email,name,company,languages,unsub_token,status').in('id', ids.slice(i, i + 100));
+        .select('id,email,name,company,languages,unsub_token,status,source').in('id', ids.slice(i, i + 100));
       if (error) return NextResponse.json({ error: `名單查詢失敗:${error.message}` }, { status: 500 });
       rows.push(...((data || []) as P[]));
     }
-    // 硬規則:黑名單/已入駐一律不寄(即使被勾選)。
-    pool = rows.filter((p) => p.status === 'active');
+    // 硬規則:黑名單/已入駐一律不寄(即使被勾選);opencall 語料報名者≠配音員(鐵律 11,
+    // 2026-08-22 人才池修補:talents 端有同款結構閘,兩管道一致)。
+    pool = rows.filter((p) => p.status === 'active' && p.source !== 'opencall');
   } else {
     const { data } = await db.from('prospects')
-      .select('id,email,name,company,languages,unsub_token,status').eq('kind', 'talent').eq('status', 'active');
+      .select('id,email,name,company,languages,unsub_token,status,source').eq('kind', 'talent').eq('status', 'active').neq('source', 'opencall');
     pool = ((data || []) as P[]).filter((p) =>
       briefMatchesTalentLangs(String(brief.language || ''), Array.isArray(p.languages) ? p.languages : []));
   }
