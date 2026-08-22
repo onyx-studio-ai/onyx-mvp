@@ -372,6 +372,16 @@ export function getTalentFaqs(tx: FaqTx): FaqCategory[] {
           ),
         },
         {
+          // 2026-08-22 補:配音員問「交件/上傳」Aria 完全答不出,還被 fallback 導去
+          // 客戶端 /hire 發案頁(吳球球連開兩張詢問單)。交件入口在配音員後台。
+          q: tx('接到案子後,完成的音檔要怎麼交件上傳？', '接到项目后,完成的音档要怎么交件上传？', 'How do I deliver my finished audio after winning a job?'),
+          a: tx(
+            '登入配音員後台的「案件機會」頁（onyxstudios.ai/talent/opportunities），在得標或指派給你的案件卡上，先按「同意並接單」，卡片上就會出現「上傳完成音檔」按鈕 —— 可一次選多個檔案，多檔也可打包成 zip。交付標準:WAV / 48kHz / 24bit / 單聲道。上傳後由 Onyx 驗收;若客戶要求修改，同一張卡會顯示修改說明，改完在原處重新上傳即可。若已接單卻看不到上傳按鈕，通常是案件尚未開放製作（例如客戶案還在付款流程中），可透過此對話轉真人，我們馬上幫你查。',
+            '登录配音员后台的「案件机会」页（onyxstudios.ai/talent/opportunities），在得标或指派给你的项目卡上，先按「同意并接单」，卡片上就会出现「上传完成音档」按钮 —— 可一次选多个文件，多档也可打包成 zip。交付标准:WAV / 48kHz / 24bit / 单声道。上传后由 Onyx 验收;若客户要求修改，同一张卡会显示修改说明，改完在原处重新上传即可。若已接单却看不到上传按钮，通常是项目尚未开放制作（例如客户案还在付款流程中），可通过此对话转真人，我们马上帮你查。',
+            'Log in to your talent dashboard and open Opportunities (onyxstudios.ai/talent/opportunities). On the card of a job you won or were assigned, tap "Accept the job" first — the "Upload final audio" button then appears on that card. You can select several files at once, or zip a bundle. Delivery standard: WAV / 48 kHz / 24-bit / mono. Onyx reviews every delivery; if the client requests changes, the notes appear on the same card and you simply re-upload there. If you have accepted but see no upload button, the job may not be open for production yet (e.g. a client order still in payment) — ask to reach the team here and we will check right away.'
+          ),
+        },
+        {
           q: tx('忘記密碼 / 重設密碼怎麼辦？', '忘记密码 / 重设密码怎么办？', 'I forgot my password — how do I reset it?'),
           a: tx(
             '到 onyxstudios.ai/auth 登入頁點「忘記密碼」，輸入你註冊的 email，我們會寄出重設連結（連結 24 小時內有效）。沒收到請先查垃圾信件匣；仍有問題可透過此對話轉真人，我們幫你補寄。',
