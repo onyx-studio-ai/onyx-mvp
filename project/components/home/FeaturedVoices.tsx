@@ -16,6 +16,7 @@ const CARD_STYLES: { badge: string; gradientColors: [string, string] }[] = [
 
 export default function FeaturedVoices() {
   const t = useTranslations('home.featuredVoices');
+  const tAi = useTranslations('ai.disclosure');
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
@@ -153,6 +154,14 @@ export default function FeaturedVoices() {
               >
                 <div className="absolute top-4 right-4 z-10 px-3 py-1 rounded-full text-xs font-semibold border bg-gradient-to-r from-yellow-600/20 to-amber-600/20 border-yellow-500/50 text-yellow-300">
                   {t('badgeExclusive')}
+                </div>
+
+                {/* EU AI Act 50(4):首頁 demo 播放區的 AI 標示(hover 見第二層說明) */}
+                <div
+                  title={tAi('badgeDetail')}
+                  className="absolute top-4 left-4 z-10 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-black/50 border border-sky-400/50 text-sky-300"
+                >
+                  AI
                 </div>
 
                 <div
