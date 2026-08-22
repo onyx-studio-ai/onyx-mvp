@@ -92,8 +92,12 @@ function AudioPreview({ url, label }: { url: string; label: string }) {
 export default function VoiceOrderDetail({ order, onRefresh }: Props) {
   const { toast } = useToast();
   const t = useTranslations('dashboard.voiceDetail');
+  const tAi = useTranslations('ai.disclosure');
   const locale = useLocale();
   const tc = useTranslations('common');
+  // EU AI Act 50(4):有指派配音員或 tier-3 = 真人錄音,不標;其餘(tier-1/tier-2)交付檔為 AI 生成
+  //(判準與 lib/mail-templates.ts 的 voiceMode 一致:hasTalent 優先於 tier)。
+  const isAiDeliverable = !order.talent_id && order.tier !== 'tier-3';
   const [versions, setVersions] = useState<Version[]>([]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -355,6 +359,13 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
               ))}
             </div>
 
+            {/* EU AI Act 50(4):AI 交付檔的揭露告知(客戶=發布方,義務在他,附做法) */}
+            {isAiDeliverable && (
+              <p className="text-xs text-gray-300 leading-relaxed border-t border-white/10 pt-3">
+                {tAi('delivery')}
+              </p>
+            )}
+
             {/* 交付後 7 天自動完成的倒數 + 延期(Wing 2026-08-20:有客戶拿了檔案就忘記回來按確認,
                 配音員的錢一直卡著。有這條倒數與延期鈕,自動完成才站得住腳)。 */}
             {(() => {
@@ -513,6 +524,13 @@ export default function VoiceOrderDetail({ order, onRefresh }: Props) {
               </div>
             ))}
           </div>
+
+          {/* EU AI Act 50(4):AI 交付檔的揭露告知(客戶=發布方,義務在他,附做法) */}
+          {isAiDeliverable && (
+            <p className="text-xs text-gray-300 leading-relaxed border-t border-white/10 pt-3">
+              {tAi('delivery')}
+            </p>
+          )}
         </div>
       )}
 
