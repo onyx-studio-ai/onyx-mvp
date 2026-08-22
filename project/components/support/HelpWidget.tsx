@@ -24,6 +24,9 @@ const INTENT_BOOST: { keys: string[]; target: string[] }[] = [
   { keys: ['發案', '发案', '找配音員', '找配音员', '委託', '委托', '下單', '下单', 'post a project', 'hire'], target: ['發案', '发案', 'post a'] },
   { keys: ['費用', '费用', '價格', '价格', '報價', '报价', '多少錢', '多少钱', '收費', '收费', 'price', 'cost', 'pricing'], target: ['費用', '费用', 'cost'] },
   { keys: ['加入', '應徵', '应征', '成為配音員', '成为配音员', '報名', '报名', 'join', 'become'], target: ['加入', 'join'] },
+  // 配音員「交件/上傳成品」→ 導到後台交件那題,不能被「發案」「檔案格式」的 bigram
+  // 帶去客戶端 /hire(2026-08-22 吳球球案例:問 5 次交件,4 次 fallback、2 次被導去發案頁)
+  { keys: ['交件', '交付', '上傳', '上传', '繳交', '缴交', 'deliver my', 'upload my', 'hand in'], target: ['交件', 'deliver my finished'] },
 ];
 
 // 本地 FAQ 模糊比對:中文用字元 bigram、英文用小寫單詞,對題目(權重高)+答案計重疊分
@@ -77,7 +80,7 @@ export default function HelpWidget({ locale }: { locale: string }) {
     greeting: tx('您好,我是 Aria,Onyx 的線上助理。請問有什麼可以幫您?', '您好,我是 Aria,Onyx 的在线助理。请问有什么可以帮您?', "Hi, I'm Aria — Onyx's assistant. What can I help you with today?"),
     human: tx('找真人客服', '找真人客服', 'Talk to a human'),
     handoff: tx('這題我幫您轉給團隊處理 —— 剛剛的對話我會一併附上,您只要留下稱呼和 email,不用重打一次,我們一個工作日內回覆。', '这题我帮您转给团队处理 —— 刚刚的对话我会一并附上,您只要留下称呼和 email,不用重打一次,我们一个工作日内回复。', "I'll pass this to our team with our conversation attached — just leave your name and email (no need to retype anything) and we'll reply within one business day."),
-    clarify: tx('想幫您答得準一點 —— 您問的比較接近下面哪一個?也可以描述得更具體,例如「AI 配音的費用」「真人配音怎麼發案」。', '想帮您答得准一点 —— 您问的比较接近下面哪一个?也可以描述得更具体,例如「AI 配音的费用」「真人配音怎么发案」。', 'Help me pin this down — is it close to one of these? You can also be more specific, e.g. “AI voiceover pricing” or “how to post a human VO project”.'),
+    clarify: tx('想幫您答得準一點 —— 您問的比較接近下面哪一個?也可以描述得更具體,例如「AI 配音的費用」「真人配音怎麼發案」「配音員接案後怎麼交件」。', '想帮您答得准一点 —— 您问的比较接近下面哪一个?也可以描述得更具体,例如「AI 配音的费用」「真人配音怎么发案」「配音员接案后怎么交件」。', 'Help me pin this down — is it close to one of these? You can also be more specific, e.g. “AI voiceover pricing”, “how to post a human VO project”, or “how do I deliver my finished audio”.'),
     placeholder: tx('輸入您的問題…', '输入您的问题…', 'Type your question…'),
     back: tx('返回', '返回', 'Back'),
     name: tx('你的稱呼', '你的称呼', 'Your name'),
