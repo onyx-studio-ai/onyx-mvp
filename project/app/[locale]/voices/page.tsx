@@ -83,8 +83,17 @@ function talentToVoice(talent: any, locale: string = 'en'): Voice & { langCodes:
   };
 }
 
+// EU AI Act 50(4) 落點3:只有「確有已簽 Voice ID / 買斷授權書」的聲音才能寫
+// 「聲音模型取得原配音員授權」——Alpha=FE-VA-2026-002、Bravo=FE-VA-2026-003(已簽存檔)。
+// Delta(無正式授權文件)與未來新聲音在補件前一律用 productNoLicense 版本。
+const LICENSED_TALENT_IDS = new Set([
+  'c92c83c8-dd96-4ff7-8c68-e1ccb80a797d', // Onyx Alpha
+  'd2786500-61da-4217-aaa2-b07fde6b0e7b', // Onyx Bravo
+]);
+
 export default function VoicesPage() {
   const t = useTranslations('voices');
+  const tAi = useTranslations('ai.disclosure');
   const locale = useLocale();
   const isZh = locale.startsWith('zh');
   const langDisplayName = (lang: typeof languages[number]) => isZh ? lang.zhName : lang.name;
@@ -422,7 +431,17 @@ export default function VoicesPage() {
                         {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                       </button>
                       <Waveform variant="ai" seed={vi} active={isPlaying} />
+                      {/* EU AI Act 50(4):緊鄰播放鍵的 AI 標示(hover 見第二層說明) */}
+                      <span
+                        title={tAi('badgeDetail')}
+                        className="flex-none text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-sky-400/40 text-sky-300"
+                      >
+                        AI
+                      </span>
                     </div>
+                    <p className="text-[11px] text-gray-300 leading-snug">
+                      {LICENSED_TALENT_IDS.has(voice.id.replace(/^db_/, '')) ? tAi('product') : tAi('productNoLicense')}
+                    </p>
 
                     {voice.demos && voice.demos.length > 1 && (
                       <div className="flex flex-wrap gap-1">
@@ -495,6 +514,13 @@ export default function VoicesPage() {
                 <p className="text-sm font-medium text-white truncate">{v.name}</p>
                 <p className="text-[11px] text-gray-400 truncate">{genderLabel(v.gender)}</p>
               </div>
+              {/* EU AI Act 50(4):常駐播放列的 AI 標示 */}
+              <span
+                title={tAi('badgeDetail')}
+                className="flex-none text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-sky-400/40 text-sky-300"
+              >
+                AI
+              </span>
               <button
                 onClick={stopCurrentAudio}
                 aria-label={t('stopPreview')}
