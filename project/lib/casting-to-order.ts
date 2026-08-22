@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isPlatformCase } from './casting';
 
 /*
   Shared "awarded casting brief → production order" creation. Used by both:
@@ -50,6 +51,12 @@ export async function createOrderFromAward(
 
   const currency = (quote.currency as string) || 'USD';
 
+  // 平台自營案(casting@)沒有外部客戶要線上付款 —— 建單直接視為已付款、進製作,
+  // 否則單會卡在 pending_payment,配音員端上傳被「等待客戶付款」鎖死,而後台又
+  // 沒有人會去補按確認(2026-08-22 Wing 拍板:特蕾莎·鄧、吳球球連兩案忘按)。
+  // 外部客戶案不變:仍走 pending_payment → 付款/後台確認 → 才開放製作。
+  const platformCase = isPlatformCase(opts.orderEmail);
+
   // order number: VO-YYMMDD-<seq of the day>
   const d = new Date();
   const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
@@ -73,8 +80,9 @@ export async function createOrderFromAward(
     project_name: brief.title || '',
     talent_id: quote.talent_id || null,
     talent_price: Number(quote.net_amount) || 0,
-    status: 'pending_payment',
-    payment_status: 'pending',
+    status: platformCase ? 'paid' : 'pending_payment',
+    payment_status: platformCase ? 'completed' : 'pending',
+    ...(platformCase ? { paid_at: new Date().toISOString() } : {}),
     revision_count: 0,
     max_revisions: Math.max(1, Math.trunc(Number(quote.included_revisions)) || 1), // from the talent's quote (999 = unlimited)
     rights_level: 'global',
