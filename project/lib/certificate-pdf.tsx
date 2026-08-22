@@ -177,6 +177,8 @@ interface CertificateData {
   talentName?: string;
   audioSpecs?: string;
   qrCodeDataUrl?: string;
+  /** EU AI Act 50(4):交付檔為 AI 生成時 true,證書加揭露段(由 certificates route 依 tier/talent 判定)。 */
+  aiGenerated?: boolean;
 }
 
 function CertificateDocument({ data }: { data: CertificateData }) {
@@ -344,6 +346,20 @@ function CertificateDocument({ data }: { data: CertificateData }) {
             <Text style={styles.value}>{data.rights.indemnification}</Text>
           </View>
         </View>
+
+        {/* AI-generated deliverables only — EU AI Act Art. 50(4) disclosure notice.
+            Unnumbered on purpose: inserting a numbered section would renumber the
+            fixed Sections 1-6 and break visual consistency with issued certificates. */}
+        {data.aiGenerated && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>AI Content Disclosure (EU AI Act, Article 50)</Text>
+            <View style={{ paddingLeft: 10 }}>
+              <Text style={{ fontSize: 8, color: '#444444', lineHeight: 1.6 }}>
+                The Licensed Asset contains AI-generated speech. If the Licensee publishes or distributes this content in the European Union, the Licensee — as the publisher — must disclose to the audience that the content is AI-generated (e.g. a short spoken disclaimer at the start, an end-card or description-field label, or an &quot;AI&quot; badge next to the player). For evidently artistic or creative works, disclosure may be made in a manner that does not hamper display or enjoyment of the work, such as in end credits or accompanying notes. This file carries an embedded C2PA content credential; do not remove it.
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Section 4: Creative Freedom */}
         <View style={styles.section}>
