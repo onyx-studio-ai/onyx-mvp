@@ -62,6 +62,7 @@ const USE_CASE_KEYS: Record<string, string> = {
 
 export default function VoiceConfiguratorPage() {
   const t = useTranslations('voice.create');
+  const tAi = useTranslations('ai.disclosure');
   const locale = useLocale();
   const isZhLocale = locale.startsWith('zh');
   const router = useRouter();
@@ -623,6 +624,11 @@ export default function VoiceConfiguratorPage() {
                       ))}
                     </div>
 
+                    {/* EU AI Act 50(4):AI 方案購買點的產品揭露(tier-1/tier-2 交付檔皆為 AI 生成) */}
+                    {(tier.id === 'tier-1' || tier.id === 'tier-2') && (
+                      <p className="mt-4 text-xs text-gray-300">{tAi('productNoLicense')}</p>
+                    )}
+
                     {isSelected && (
                       <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center">
                         <CheckCircle className="w-4 h-4 text-white" />
@@ -779,6 +785,8 @@ export default function VoiceConfiguratorPage() {
                     errors.scriptText ? 'border-red-500/50' : 'border-white/10'
                   } text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors resize-none`}
                 />
+                {/* EU AI Act 50(1) 互動揭露:必須在按下生成/試聽之前就看得到 */}
+                <p className="mt-2 text-sm text-gray-300">{tAi('interaction')}</p>
                 {/* AI 付款前試聽:選有 embedding 的聲音 + 有稿 → 生前兩句 */}
                 {config.scriptText.trim().length >= 4 && (
                   previewVoiceId ? (
@@ -802,7 +810,15 @@ export default function VoiceConfiguratorPage() {
                           )}
                         </p>
                       )}
-                      {previewUrl && <audio controls src={previewUrl} className="mt-3 w-full" />}
+                      {previewUrl && (
+                        <>
+                          <audio controls src={previewUrl} className="mt-3 w-full" />
+                          {/* EU AI Act 50(4):生成結果播放器旁的揭露標示 */}
+                          <p className="mt-1 text-xs text-gray-300">
+                            <span className="font-bold tracking-wider">AI</span> · {tAi('badgeDetail')}
+                          </p>
+                        </>
+                      )}
                     </div>
                   ) : config.voiceSelection ? (
                     <p className="mt-3 text-sm text-gray-500">
